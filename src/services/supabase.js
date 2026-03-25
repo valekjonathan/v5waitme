@@ -4,7 +4,14 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''
 
 /** Cliente único; con URL/key vacías las llamadas fallarán de forma controlada en los servicios. */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+})
 
 /**
  * Comprueba que las variables Vite estén definidas y no sean placeholders.

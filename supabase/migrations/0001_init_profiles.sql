@@ -1,5 +1,5 @@
 create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
+  id uuid primary key default auth.uid(),
   name text,
   phone text,
   car_brand text,
@@ -7,7 +7,7 @@ create table if not exists public.profiles (
   color text,
   vehicle_type text,
   plate text,
-  created_at timestamp with time zone default now()
+  created_at timestamptz default now()
 );
 
 alter table public.profiles enable row level security;

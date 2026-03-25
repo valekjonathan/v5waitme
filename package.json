@@ -4,7 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node scripts/dev-auto.mjs",
+    "open:prod": "open https://v5waitme.vercel.app",
+    "prod:live": "node scripts/open-prod-refresh.mjs",
+    "auto:ship": "node scripts/auto-ship.mjs",
+    "auto:live": "node scripts/auto-ship.mjs && node scripts/open-prod-refresh.mjs",
     "dev": "vite",
+    "dev:auto": "node scripts/dev-auto.mjs",
+    "dev:clean": "rm -rf node_modules/.vite && vite",
     "build": "vite build",
     "postbuild": "node scripts/gtp-sync.mjs",
     "gtp:sync": "node scripts/gtp-sync.mjs",
@@ -15,8 +22,12 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@posthog/react": "^1.8.2",
+    "@sentry/react": "^10.45.0",
+    "@sentry/tracing": "^7.120.4",
     "@supabase/supabase-js": "^2.100.0",
     "mapbox-gl": "^3.20.0",
+    "posthog-js": "^1.257.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

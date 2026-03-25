@@ -1,0 +1,330 @@
+import { useEffect, useState } from 'react'
+import Button from '../../../ui/Button'
+import { spacing } from '../../../design/spacing'
+import { colors } from '../../../design/colors'
+import { useAuth } from '../../../lib/AuthContext'
+
+/** Official multicolor G (viewBox 24x24), rendered at 26x26 inside 24x24 slot */
+function GoogleMark() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  )
+}
+
+function AppleMark() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+      <path
+        fill="#FFFFFF"
+        stroke="#FFFFFF"
+        strokeWidth={0.45}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        paintOrder="stroke fill"
+        d="M16.6 12.8c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.7-1.8-3.3-1.9-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.6 0-3 .9-3.8 2.2-1.6 2.8-.4 6.9 1.1 9.1.7 1.1 1.6 2.3 2.8 2.2 1.1 0 1.6-.7 3-.7 1.4 0 1.8.7 3 .7 1.2 0 2-.9 2.8-2 .8-1.2 1.2-2.4 1.2-2.5 0 0-2.3-.9-2.3-3.8zM14.3 6.1c.6-.7 1.1-1.8 1-2.9-.9 0-2 .6-2.6 1.3-.6.6-1.1 1.7-1 2.8 1 .1 2-.5 2.6-1.2z"
+      />
+    </svg>
+  )
+}
+
+const OAUTH_BTN_SIDE_PAD = 52
+const OAUTH_ICON_LEFT = 18
+const oauthIconWrap = {
+  position: 'absolute',
+  left: OAUTH_ICON_LEFT,
+  top: '50%',
+  transform: 'translateY(-50%)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 24,
+  height: 24,
+  pointerEvents: 'none',
+}
+
+const OAUTH_ICON_INNER = 26
+
+function oauthIconMicroStyle(pressed, hover, appleOpacity = false) {
+  const scale = pressed ? 0.94 : hover ? 1.08 : 1
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: OAUTH_ICON_INNER,
+    height: OAUTH_ICON_INNER,
+    transition: appleOpacity
+      ? 'transform 120ms ease, opacity 120ms ease'
+      : 'transform 120ms ease',
+    transform: `scale(${scale})`,
+    ...(appleOpacity ? { opacity: hover ? 1 : 0.9 } : {}),
+  }
+}
+
+const OAUTH_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
+const oauthTransitionBase = `background 180ms ${OAUTH_EASE}, background-image 180ms ${OAUTH_EASE}, box-shadow 180ms ${OAUTH_EASE}, filter 180ms ${OAUTH_EASE}, border-color 180ms ${OAUTH_EASE}, backdrop-filter 180ms ${OAUTH_EASE}`
+
+const googleShadow = {
+  idle: '0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(168, 85, 247, 0.06)',
+  hover:
+    '0 10px 32px rgba(0, 0, 0, 0.18), 0 0 40px rgba(168, 85, 247, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+  pressed: '0 2px 10px rgba(0, 0, 0, 0.35), 0 0 14px rgba(168, 85, 247, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+}
+
+const appleShadow = {
+  idle: '0 4px 16px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(147, 51, 234, 0.08)',
+  hover:
+    '0 10px 32px rgba(0, 0, 0, 0.22), 0 0 36px rgba(147, 51, 234, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+  pressed: '0 2px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(147, 51, 234, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.2)',
+}
+
+const googleBg =
+  'linear-gradient(165deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 42%, rgba(24,24,32,0.92) 100%)'
+const appleBg =
+  'linear-gradient(165deg, rgba(124,58,237,0.35) 0%, rgba(88,28,135,0.55) 45%, rgba(59,7,100,0.95) 100%)'
+
+const oauthButtonBase = {
+  position: 'relative',
+  justifyContent: 'center',
+  gap: 0,
+  paddingLeft: OAUTH_BTN_SIDE_PAD,
+  paddingRight: OAUTH_BTN_SIDE_PAD,
+  paddingTop: 2,
+  paddingBottom: 2,
+  cursor: 'pointer',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+}
+
+const LABEL_MIN_HEIGHT = 22
+
+export default function LoginButtons() {
+  const { authError, signInWithGoogle, status } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+  const [appleMessage, setAppleMessage] = useState('')
+  const [googleHover, setGoogleHover] = useState(false)
+  const [googlePressed, setGooglePressed] = useState(false)
+  const [appleHover, setAppleHover] = useState(false)
+  const [applePressed, setApplePressed] = useState(false)
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    try {
+      window.localStorage?.setItem?.('hasSeenLogin', 'true')
+    } catch {
+      /* */
+    }
+  }, [status])
+
+  const onGoogle = async () => {
+    if (isLoading) return
+    setIsLoading(true)
+    setAppleMessage('')
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(10)
+    }
+    try {
+      await signInWithGoogle()
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const onApple = () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(8)
+    }
+    setAppleMessage('Apple login estará disponible próximamente.')
+  }
+
+  const clearGooglePress = () => setGooglePressed(false)
+  const clearApplePress = () => setApplePressed(false)
+
+  const googleTransform = googlePressed ? 'scale(0.96)' : 'scale(1)'
+  const googleTransition = `${oauthTransitionBase}, transform 260ms cubic-bezier(0.34, 1.35, 0.64, 1)`
+
+  const googleShadowKey = googlePressed ? 'pressed' : googleHover ? 'hover' : 'idle'
+  const googleStyle = {
+    ...oauthButtonBase,
+    backgroundColor: colors.surface,
+    backgroundImage: googleBg,
+    color: colors.textPrimary,
+    boxShadow: googleShadow[googleShadowKey],
+    transform: googleTransform,
+    transition: googleTransition,
+    filter: googleHover && !googlePressed ? 'brightness(1.04)' : 'none',
+  }
+
+  const appleTransform = applePressed ? 'scale(0.96)' : 'scale(1)'
+  const appleTransition = `${oauthTransitionBase}, transform 260ms cubic-bezier(0.34, 1.35, 0.64, 1)`
+
+  const appleShadowKey = applePressed ? 'pressed' : appleHover ? 'hover' : 'idle'
+  const appleStyle = {
+    ...oauthButtonBase,
+    backgroundColor: colors.primaryStrong,
+    backgroundImage: appleBg,
+    color: colors.textPrimary,
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    boxShadow: appleShadow[appleShadowKey],
+    transform: appleTransform,
+    transition: appleTransition,
+    filter: appleHover && !applePressed ? 'brightness(1.05)' : 'none',
+  }
+
+  return (
+    <>
+      <style>
+        {`
+          @keyframes waitme-oauth-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+      <Button
+        type="button"
+        variant="primary"
+        disabled={isLoading}
+        onClick={onGoogle}
+        onMouseEnter={() => setGoogleHover(true)}
+        onMouseLeave={() => {
+          setGoogleHover(false)
+          clearGooglePress()
+        }}
+        onMouseDown={() => setGooglePressed(true)}
+        onMouseUp={clearGooglePress}
+        onTouchStart={() => setGooglePressed(true)}
+        onTouchEnd={clearGooglePress}
+        onTouchCancel={clearGooglePress}
+        onPointerLeave={() => {
+          setGoogleHover(false)
+          clearGooglePress()
+        }}
+        style={googleStyle}
+      >
+        <span style={oauthIconWrap} aria-hidden>
+          <span style={oauthIconMicroStyle(googlePressed, googleHover)}>
+            {isLoading ? (
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(255,255,255,0.22)',
+                  borderTopColor: 'rgba(255,255,255,0.92)',
+                  animation: 'waitme-oauth-spin 900ms linear infinite',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <GoogleMark />
+            )}
+          </span>
+        </span>
+        <span
+          style={{
+            position: 'relative',
+            width: '100%',
+            minHeight: LABEL_MIN_HEIGHT,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              lineHeight: `${LABEL_MIN_HEIGHT}px`,
+              opacity: isLoading ? 0 : 1,
+              transition: 'opacity 220ms ease-out',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Continuar con Google
+          </span>
+          <span
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              lineHeight: `${LABEL_MIN_HEIGHT}px`,
+              opacity: isLoading ? 1 : 0,
+              transition: 'opacity 220ms ease-out',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+            aria-live="polite"
+          >
+            Conectando...
+          </span>
+        </span>
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={isLoading}
+        onClick={onApple}
+        onMouseEnter={() => setAppleHover(true)}
+        onMouseLeave={() => {
+          setAppleHover(false)
+          clearApplePress()
+        }}
+        onMouseDown={() => setApplePressed(true)}
+        onMouseUp={clearApplePress}
+        onTouchStart={() => setApplePressed(true)}
+        onTouchEnd={clearApplePress}
+        onTouchCancel={clearApplePress}
+        onPointerLeave={() => {
+          setAppleHover(false)
+          clearApplePress()
+        }}
+        style={appleStyle}
+      >
+        <span style={oauthIconWrap} aria-hidden>
+          <span style={oauthIconMicroStyle(applePressed, appleHover, true)}>
+            <AppleMark />
+          </span>
+        </span>
+        <span style={{ width: '100%', textAlign: 'center' }}>Continuar con Apple</span>
+      </Button>
+      {authError || appleMessage ? (
+        <p
+          role="alert"
+          style={{
+            margin: 0,
+            marginTop: spacing.sm,
+            width: '100%',
+            fontSize: 13,
+            fontWeight: 500,
+            color: colors.danger,
+            lineHeight: 1.4,
+          }}
+        >
+          {authError || appleMessage}
+        </p>
+      ) : null}
+    </>
+  )
+}

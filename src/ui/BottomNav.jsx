@@ -16,7 +16,7 @@ const labelStyle = {
 
 const divider = <div style={{ height: 32, width: 1, background: colors.border }} aria-hidden />
 
-export default function BottomNav() {
+export default function BottomNav({ interactive = true }) {
   const nav = useAppScreen()
 
   return (
@@ -33,7 +33,10 @@ export default function BottomNav() {
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
         paddingTop: spacingExact.navPaddingTop,
         backgroundColor: colors.background,
-        borderTop: `1px solid ${colors.borderSubtle}`,
+        borderTop: '1px solid rgba(255,255,255,0.28)',
+        boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
+        boxSizing: 'border-box',
+        isolation: 'isolate',
         paddingBottom: spacingExact.navPaddingBottomCalc,
       }}
     >
@@ -51,7 +54,7 @@ export default function BottomNav() {
           type="button"
           variant="navActive"
           aria-current="page"
-          onClick={() => nav?.openHome?.()}
+          onClick={interactive ? () => nav?.openHome?.() : undefined}
         >
           <NavMapIcon />
           <span style={labelStyle}>Mapa</span>

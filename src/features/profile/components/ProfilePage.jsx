@@ -1,16 +1,16 @@
+import { usePostHog } from '@posthog/react'
 import { useCallback, useEffect, useState } from 'react'
-import Header from '../../../ui/Header'
-import BottomNav from '../../../ui/BottomNav'
 import ProfileHeader from './ProfileHeader'
 import ProfileForm from './ProfileForm'
 import ProfileActions from './ProfileActions'
 import Plate from './Plate'
 import { VehicleIcon } from './VehicleIcons'
-import { useAppScreen } from '../../../lib/AppScreenContext'
+import { useAuth } from '../../../lib/AuthContext'
 import { colors } from '../../../design/colors'
 import { spacing } from '../../../design/spacing'
-import { ensureAuthenticatedUser } from '../../../services/auth'
+import { getCurrentUser } from '../../../services/auth'
 import { getProfile, updateProfile } from '../../../services/profile'
+import { track } from '../../../lib/tracking.js'
 
 const EMPTY_PROFILE = {
   full_name: 'JONATHAN',
@@ -24,23 +24,32 @@ const EMPTY_PROFILE = {
 }
 
 export default function ProfilePage() {
-  const nav = useAppScreen()
+  const posthog = usePostHog()
+  const { user: sessionUser, signOut } = useAuth()
   const [profile, setProfile] = useState(EMPTY_PROFILE)
   const [savedProfile, setSavedProfile] = useState(EMPTY_PROFILE)
 
   const hasChanges = JSON.stringify(profile) !== JSON.stringify(savedProfile)
 
   useEffect(() => {
+    track('profile_view', { screen: 'profile' }, posthog)
+  }, [posthog])
+
+  useEffect(() => {
+    if (!sessionUser?.id) {
+      void signOut()
+      return
+    }
+
     let cancelled = false
     ;(async () => {
       try {
-        const { user, error: authErr } = await ensureAuthenticatedUser()
+        const user = await getCurrentUser()
         if (cancelled) return
-        if (authErr) {
-          console.error('[WaitMe][ProfilePage] auth al cargar', authErr)
+        if (!user?.id) {
+          void signOut()
           return
         }
-        if (!user?.id) return
 
         const { data, error } = await getProfile(user.id)
         if (cancelled) return
@@ -56,13 +65,13 @@ export default function ProfilePage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [sessionUser?.id, signOut])
 
   const handleSave = useCallback(async () => {
     try {
-      const { user, error: authErr } = await ensureAuthenticatedUser()
-      if (!user) {
-        if (authErr) console.error('[WaitMe][ProfilePage] auth al guardar', authErr)
+      const user = await getCurrentUser()
+      if (!user?.id) {
+        void signOut()
         return
       }
       const { data, error } = await updateProfile(user.id, profile)
@@ -75,14 +84,15 @@ export default function ProfilePage() {
         : { ...profile }
       setProfile(merged)
       setSavedProfile(merged)
+      track('profile_saved', { screen: 'profile' }, posthog)
     } catch (e) {
       console.error('[WaitMe][ProfilePage] handleSave excepción', e)
     }
-  }, [profile])
+  }, [profile, posthog, signOut])
 
-  const handleLogout = useCallback(() => {
-    nav?.openHome?.()
-  }, [nav])
+  const handleLogout = useCallback(async () => {
+    await signOut()
+  }, [signOut])
 
   return (
     <div
@@ -104,7 +114,6 @@ export default function ProfilePage() {
           flexDirection: 'column',
         }}
       >
-        <Header />
         <main
           style={{
             flex: 1,
@@ -128,7 +137,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </main>
-        <BottomNav />
       </div>
     </div>
   )

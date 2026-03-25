@@ -2,56 +2,13 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "waitme: start",
-      "dependsOrder": "parallel",
-      "dependsOn": ["waitme: dev", "waitme: open safari"],
-      "runOptions": {
-        "instanceLimit": 1
-      }
-    },
-    {
-      "label": "waitme: dev",
+      "label": "waitme: auto dev",
       "type": "npm",
-      "script": "dev",
+      "script": "dev:auto",
       "isBackground": true,
-      "problemMatcher": {
-        "owner": "vite",
-        "pattern": { "regexp": "^$" },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".",
-          "endsPattern": "ready in"
-        }
-      },
-      "presentation": {
-        "reveal": "never",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "focus": false
-      }
-    },
-    {
-      "label": "waitme: gtp sync",
-      "type": "npm",
-      "script": "gtp:sync",
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "silent",
-        "panel": "shared",
-        "showReuseMessage": false
-      }
-    },
-    {
-      "label": "waitme: open safari",
-      "type": "shell",
-      "command": "for i in {1..120}; do curl -sf http://localhost:5173 >/dev/null && break; sleep 1; done; open -a Safari http://localhost:5173",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "never",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "focus": false,
-        "close": true
+      "runOptions": {
+        "runOn": "folderOpen"
       }
     }
   ]

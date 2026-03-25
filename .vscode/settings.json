@@ -1,9 +1,3 @@
 {
-  "task.allowAutomaticTasks": "on",
-  "workbench.startupEditor": "none",
-  "workbench.editor.enablePreview": false,
-  "workbench.editor.enablePreviewFromQuickOpen": false,
-  "workbench.welcomePage.walkthroughs.openOnInstall": false,
-  "workbench.panel.opensMaximized": "never",
-  "workbench.secondarySideBar.defaultVisibility": "hidden"
+  "task.allowAutomaticTasks": "on"
 }

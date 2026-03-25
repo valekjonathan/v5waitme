@@ -1,6 +1,46 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
+ * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
+ * Limpia la URL para no re-procesar el error en cada recarga.
+ * Llamar solo después de que el cliente haya podido leer el código/sesión (p. ej. tras getSession).
+ */
+export function consumeOAuthUrlError() {
+  if (typeof window === 'undefined') return null
+  try {
+    const url = new URL(window.location.href)
+    let msg = url.searchParams.get('error_description') || url.searchParams.get('error')
+
+    if (!msg && url.hash) {
+      const hash = new URLSearchParams(url.hash.replace(/^#/, ''))
+      msg = hash.get('error_description') || hash.get('error')
+    }
+
+    if (!msg) return null
+
+    const clean = new URL(window.location.href)
+    ;['error', 'error_description', 'error_code'].forEach((k) => clean.searchParams.delete(k))
+
+    if (clean.hash) {
+      const hp = new URLSearchParams(clean.hash.replace(/^#/, ''))
+      ;['error', 'error_description', 'error_code'].forEach((k) => hp.delete(k))
+      const rest = hp.toString()
+      clean.hash = rest ? `#${rest}` : ''
+    }
+
+    window.history.replaceState({}, '', `${clean.pathname}${clean.search}${clean.hash}`)
+
+    try {
+      return decodeURIComponent(String(msg).replace(/\+/g, ' '))
+    } catch {
+      return String(msg)
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
  * Usuario actual validado contra el servidor Auth (preferible a getSession en cliente).
  */
 export async function getCurrentUser() {
@@ -25,38 +65,34 @@ export async function getCurrentUser() {
 }
 
 /**
- * Crea sesión anónima si el proveedor está habilitado en el panel de Supabase.
+ * Inicia login con Google (OAuth) mediante Supabase Auth.
  */
-export async function signInAnonymously() {
+export async function signInWithGoogle() {
   if (!isSupabaseConfigured()) {
-    return { user: null, error: new Error('supabase_not_configured') }
+    return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
-    const { data, error } = await supabase.auth.signInAnonymously()
+    const redirectTo = `${window.location.origin}${window.location.pathname}`
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+      },
+    })
     if (error) {
-      console.error('[WaitMe][Auth] signInAnonymously', error.message, error)
-      return { user: null, error }
+      console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
+      return { data: null, error }
     }
-    return { user: data.user ?? null, error: null }
+    return { data, error: null }
   } catch (e) {
-    console.error('[WaitMe][Auth] signInAnonymously excepción', e)
-    return { user: null, error: e }
+    console.error('[WaitMe][Auth] signInWithGoogle excepción', e)
+    return { data: null, error: e }
   }
 }
 
 /**
- * Garantiza un usuario (existente o anónimo nuevo) para operaciones posteriores.
+ * Sesión actual (persistente). Útil para restaurar en recargas.
  */
-export async function ensureAuthenticatedUser() {
-  if (!isSupabaseConfigured()) {
-    return { user: null, error: null }
-  }
-  const existing = await getCurrentUser()
-  if (existing) return { user: existing, error: null }
-  const { user, error } = await signInAnonymously()
-  return { user, error }
-}
-
 export async function getSession() {
   if (!isSupabaseConfigured()) {
     return { data: { session: null }, error: null }

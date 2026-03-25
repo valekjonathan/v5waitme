@@ -1,5 +1,5 @@
 WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
-Generado (UTC): 2026-03-25T09:09:29.213Z
+Generado (UTC): 2026-03-25T15:26:10.866Z
 Script: npm run gtp:sync | postbuild tras npm run build
 
 ---
@@ -11,20 +11,31 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 1) ÁRBOL (sin node_modules/, dist/, .git/; sin .env ni .DS_Store)
 ---
 ├── .env.example
+├── .env.local
+├── .github
+│   └── workflows
+│       └── ci.yml
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc
+├── .vercel
+│   ├── README.txt
+│   └── project.json
 ├── .vscode
 │   ├── settings.json
 │   └── tasks.json
 ├── GTP
 │   └── FULL_REPO_CONTEXT.txt
+├── README.md
 ├── eslint.config.js
 ├── index.html
 ├── package-lock.json
 ├── package.json
 ├── scripts
+│   ├── auto-ship.mjs
+│   ├── dev-auto.mjs
 │   ├── gtp-sync.mjs
+│   ├── open-prod-refresh.mjs
 │   └── supabase-setup.mjs
 ├── src
 │   ├── app
@@ -37,6 +48,10 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │   │   ├── shadows.js
 │   │   └── spacing.js
 │   ├── features
+│   │   ├── auth
+│   │   │   └── components
+│   │   │       ├── LoginButtons.jsx
+│   │   │       └── LoginPage.jsx
 │   │   ├── home
 │   │   │   └── components
 │   │   │       ├── CenterPin.jsx
@@ -58,7 +73,11 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │   │           ├── VehicleIcons.jsx
 │   │           └── profileColors.js
 │   ├── lib
-│   │   └── AppScreenContext.jsx
+│   │   ├── AppScreenContext.jsx
+│   │   ├── AuthContext.jsx
+│   │   ├── analytics.js
+│   │   ├── sentry.js
+│   │   └── tracking.js
 │   ├── main.jsx
 │   ├── services
 │   │   ├── auth.js
@@ -88,10 +107,11 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │           └── UserIcon.jsx
 ├── supabase
 │   └── migrations
-│       └── 20260325_000001_init_profiles.sql
+│       └── 0001_init_profiles.sql
 ├── test
 │   ├── location.test.js
 │   └── map-startup.test.js
+├── vercel.json
 └── vite.config.js
 
 ---
@@ -107,7 +127,14 @@ Estilos: src/styles/global.css
 3) SCRIPTS NPM (package.json)
 ---
 {
+  "start": "node scripts/dev-auto.mjs",
+  "open:prod": "open https://v5waitme.vercel.app",
+  "prod:live": "node scripts/open-prod-refresh.mjs",
+  "auto:ship": "node scripts/auto-ship.mjs",
+  "auto:live": "node scripts/auto-ship.mjs && node scripts/open-prod-refresh.mjs",
   "dev": "vite",
+  "dev:auto": "node scripts/dev-auto.mjs",
+  "dev:clean": "rm -rf node_modules/.vite && vite",
   "build": "vite build",
   "postbuild": "node scripts/gtp-sync.mjs",
   "gtp:sync": "node scripts/gtp-sync.mjs",
@@ -123,8 +150,12 @@ Estilos: src/styles/global.css
 ---
 dependencies:
 {
+  "@posthog/react": "^1.8.2",
+  "@sentry/react": "^10.45.0",
+  "@sentry/tracing": "^7.120.4",
   "@supabase/supabase-js": "^2.100.0",
   "mapbox-gl": "^3.20.0",
+  "posthog-js": "^1.257.2",
   "react": "^19.2.4",
   "react-dom": "^19.2.4"
 }
@@ -146,63 +177,23 @@ devDependencies:
 ---
 5) FLUJO DE ARRANQUE
 ---
-Desarrollo: npm run dev → Vite :5173 (localhost, strictPort).
-Cursor/VSCode: tarea waitme: start manual → npm dev + shell que abre Safari cuando responde :5173.
+Producción: npm run auto:ship → build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh. npm run open:prod solo abre URL.
+Watch (Cursor/VSCode): npm run dev:auto → vigila src/, debounce 2s → auto:ship; Safari loop una vez en background (macOS). Tarea waitme: auto dev con runOn folderOpen.
+Desarrollo local opcional: npm run dev → Vite (ver vite.config).
+Vercel: vercel.json (build npm run build, output dist); importar repo en dashboard para auto-deploy en push.
+Cursor/VSCode: waitme: auto dev, waitme: auto ship, waitme: auto live, waitme: open production.
 --- .vscode/tasks.json (extracto / completo si corto) ---
 {
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "waitme: start",
-      "dependsOrder": "parallel",
-      "dependsOn": ["waitme: dev", "waitme: open safari"],
-      "runOptions": {
-        "instanceLimit": 1
-      }
-    },
-    {
-      "label": "waitme: dev",
+      "label": "waitme: auto dev",
       "type": "npm",
-      "script": "dev",
+      "script": "dev:auto",
       "isBackground": true,
-      "problemMatcher": {
-        "owner": "vite",
-        "pattern": { "regexp": "^$" },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": ".",
-          "endsPattern": "ready in"
-        }
-      },
-      "presentation": {
-        "reveal": "never",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "focus": false
-      }
-    },
-    {
-      "label": "waitme: gtp sync",
-      "type": "npm",
-      "script": "gtp:sync",
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "silent",
-        "panel": "shared",
-        "showReuseMessage": false
-      }
-    },
-    {
-      "label": "waitme: open safari",
-      "type": "shell",
-      "command": "for i in {1..120}; do curl -sf http://localhost:5173 >/dev/null && break; sleep 1; done; open -a Safari http://localhost:5173",
-      "problemMatcher": [],
-      "presentation": {
-        "reveal": "never",
-        "panel": "shared",
-        "showReuseMessage": false,
-        "focus": false,
-        "close": true
+      "runOptions": {
+        "runOn": "folderOpen"
       }
     }
   ]
@@ -220,6 +211,10 @@ export default defineConfig({
     host: 'localhost',
     port: 5173,
     strictPort: true,
+    headers: {
+      // Evita que Safari/Chrome sirvan módulos HMR en caché y parezca que “no cambia nada”
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    },
     hmr: {
       overlay: false,
     },
@@ -235,11 +230,14 @@ export default defineConfig({
 - Variables esperadas: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_DB_URL.
 --- .env.example ---
 VITE_MAPBOX_ACCESS_TOKEN=
-VITE_SUPABASE_URL=REEMPLAZAR
-VITE_SUPABASE_ANON_KEY=REEMPLAZAR
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_SENTRY_DSN=
+VITE_POSTHOG_KEY=
+VITE_POSTHOG_HOST=
 
 --- Migraciones ---
-- supabase/migrations/20260325_000001_init_profiles.sql
+- supabase/migrations/0001_init_profiles.sql
 
 ---
 7) PANTALLAS / COMPONENTES (resumen)
@@ -263,24 +261,24 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 ---
 10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
 ---
-- scripts/supabase-setup.mjs  (2026-03-25T09:09:18.373Z)
-- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T09:09:04.935Z)
-- package-lock.json  (2026-03-25T08:54:36.602Z)
-- .env.example  (2026-03-25T08:54:30.595Z)
-- package.json  (2026-03-25T08:54:27.136Z)
-- scripts/gtp-sync.mjs  (2026-03-25T08:35:34.900Z)
-- src/features/profile/components/ProfilePage.jsx  (2026-03-25T06:59:00.248Z)
-- src/services/profile.js  (2026-03-25T06:58:52.147Z)
-- src/services/auth.js  (2026-03-25T06:58:49.016Z)
-- src/services/supabase.js  (2026-03-25T06:58:46.785Z)
-- src/features/map/components/Map.jsx  (2026-03-25T06:43:52.699Z)
-- test/map-startup.test.js  (2026-03-25T06:43:45.383Z)
-- src/features/profile/components/ProfileHeader.jsx  (2026-03-25T06:43:45.200Z)
-- src/features/profile/components/ProfileActions.jsx  (2026-03-25T06:43:44.691Z)
-- src/features/profile/components/ProfileLogoutButton.jsx  (2026-03-25T06:43:44.553Z)
-- src/features/profile/components/ProfileStats.jsx  (2026-03-25T06:43:44.309Z)
-- src/features/profile/components/Plate.jsx  (2026-03-25T06:43:43.957Z)
-- src/features/profile/components/ProfileForm.jsx  (2026-03-25T06:43:43.602Z)
+- package.json  (2026-03-25T15:17:27.493Z)
+- .vscode/settings.json  (2026-03-25T15:15:31.728Z)
+- .vscode/tasks.json  (2026-03-25T15:15:31.660Z)
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:13:13.931Z)
+- scripts/gtp-sync.mjs  (2026-03-25T15:13:13.186Z)
+- scripts/dev-auto.mjs  (2026-03-25T15:13:05.447Z)
+- scripts/auto-ship.mjs  (2026-03-25T15:11:32.063Z)
+- scripts/open-prod-refresh.mjs  (2026-03-25T15:06:59.141Z)
+- .gitignore  (2026-03-25T15:06:56.998Z)
+- src/ui/BottomNav.jsx  (2026-03-25T14:51:14.238Z)
+- src/ui/Header.jsx  (2026-03-25T14:51:10.933Z)
+- src/features/auth/components/LoginButtons.jsx  (2026-03-25T14:51:08.215Z)
+- index.html  (2026-03-25T14:44:14.808Z)
+- vite.config.js  (2026-03-25T14:44:14.355Z)
+- src/features/auth/components/LoginPage.jsx  (2026-03-25T14:37:58.256Z)
+- src/app/App.jsx  (2026-03-25T14:37:46.471Z)
+- src/features/profile/components/ProfilePage.jsx  (2026-03-25T14:37:21.930Z)
+- src/features/home/components/HomePage.jsx  (2026-03-25T14:37:19.215Z)
 
 ---
 11) GIT (último commit — solo si hay repo)

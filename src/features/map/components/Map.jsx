@@ -1,3 +1,4 @@
+import { usePostHog } from '@posthog/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
@@ -13,6 +14,7 @@ import {
   setupMapStyleOnLoad,
 } from '../constants/mapbox.js'
 import { createPositionGuard, distanceMeters, getCurrentPosition, watchPosition } from '../../../services/location.js'
+import { EVENTS, track } from '../../../lib/tracking.js'
 
 const OVIEDO_FALLBACK = {
   lat: OVIEDO_LAT,
@@ -49,6 +51,12 @@ function createGeoObserver() {
 }
 
 export default function Map() {
+  const posthog = usePostHog()
+  const posthogRef = useRef(posthog)
+  useEffect(() => {
+    posthogRef.current = posthog
+  }, [posthog])
+
   const mapRef = useRef(null)
   const containerRef = useRef(null)
   const watchIdRef = useRef(null)
@@ -85,6 +93,14 @@ export default function Map() {
     let cancelled = false
     let map
 
+    const onMapUserInteraction = () => {
+      track(EVENTS.MAP_INTERACTION, { screen: 'map' }, posthogRef.current)
+    }
+
+    const onZoomEnd = (e) => {
+      if (e?.originalEvent) onMapUserInteraction()
+    }
+
     try {
       const token = getMapboxAccessToken()
       map = createMap(container, { token, interactive: false })
@@ -120,6 +136,10 @@ export default function Map() {
         ro.observe(container)
       }
 
+      map.on('dragend', onMapUserInteraction)
+      map.on('zoomend', onZoomEnd)
+
+      track(EVENTS.MAP_LOADED, { screen: 'map' }, posthogRef.current)
       setMapReady(true)
     })
 
@@ -132,6 +152,14 @@ export default function Map() {
       resizeTimeout400Ref.current = null
       resizeObserverRef.current?.disconnect?.()
       resizeObserverRef.current = null
+      if (mapRef.current) {
+        try {
+          mapRef.current.off('dragend', onMapUserInteraction)
+          mapRef.current.off('zoomend', onZoomEnd)
+        } catch {
+          /* */
+        }
+      }
       mapRef.current?.remove()
       mapRef.current = null
     }

@@ -6,7 +6,7 @@ import Button from './Button'
 import SettingsIcon from './icons/SettingsIcon'
 import UserIcon from './icons/UserIcon'
 
-export default function Header() {
+export default function Header({ interactive = true }) {
   const nav = useAppScreen()
 
   return (
@@ -21,6 +21,11 @@ export default function Header() {
         top: 0,
         paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: colors.background,
+        // Un poco más de contraste que 0.08: en Safari + scale(IphoneFrame) el pelo de 1px a veces casi no se percibe
+        borderBottom: '1px solid rgba(255,255,255,0.28)',
+        boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
+        boxSizing: 'border-box',
+        isolation: 'isolate',
       }}
     >
       <div style={{ position: 'relative', padding: `${spacingExact.headerPaddingY}px ${spacingExact.headerPaddingX}px` }}>
@@ -46,7 +51,7 @@ export default function Header() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: spacingExact.headerGap }}>
-            <Button type="button" variant="ghost">
+            <Button type="button" variant="ghost" style={{ overflow: 'visible' }}>
               <SettingsIcon />
             </Button>
 
@@ -54,7 +59,7 @@ export default function Header() {
               type="button"
               variant="ghostProfile"
               aria-label="Perfil"
-              onClick={() => nav?.openProfile?.()}
+              onClick={interactive ? () => nav?.openProfile?.() : undefined}
             >
               <UserIcon />
             </Button>
