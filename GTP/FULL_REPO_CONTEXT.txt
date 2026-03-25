@@ -1,0 +1,292 @@
+WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
+Generado (UTC): 2026-03-25T09:09:29.213Z
+Script: npm run gtp:sync | postbuild tras npm run build
+
+---
+0) DOCUMENTACIÓN DE PROYECTO SOLICITADA Y AUSENTE
+---
+No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHANGE_PROTOCOL.md.
+
+---
+1) ÁRBOL (sin node_modules/, dist/, .git/; sin .env ni .DS_Store)
+---
+├── .env.example
+├── .gitignore
+├── .prettierignore
+├── .prettierrc
+├── .vscode
+│   ├── settings.json
+│   └── tasks.json
+├── GTP
+│   └── FULL_REPO_CONTEXT.txt
+├── eslint.config.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── scripts
+│   ├── gtp-sync.mjs
+│   └── supabase-setup.mjs
+├── src
+│   ├── app
+│   │   └── App.jsx
+│   ├── assets
+│   │   └── logo.png
+│   ├── design
+│   │   ├── colors.js
+│   │   ├── radius.js
+│   │   ├── shadows.js
+│   │   └── spacing.js
+│   ├── features
+│   │   ├── home
+│   │   │   └── components
+│   │   │       ├── CenterPin.jsx
+│   │   │       └── HomePage.jsx
+│   │   ├── map
+│   │   │   ├── components
+│   │   │   │   └── Map.jsx
+│   │   │   └── constants
+│   │   │       └── mapbox.js
+│   │   └── profile
+│   │       └── components
+│   │           ├── Plate.jsx
+│   │           ├── ProfileActions.jsx
+│   │           ├── ProfileForm.jsx
+│   │           ├── ProfileHeader.jsx
+│   │           ├── ProfileLogoutButton.jsx
+│   │           ├── ProfilePage.jsx
+│   │           ├── ProfileStats.jsx
+│   │           ├── VehicleIcons.jsx
+│   │           └── profileColors.js
+│   ├── lib
+│   │   └── AppScreenContext.jsx
+│   ├── main.jsx
+│   ├── services
+│   │   ├── auth.js
+│   │   ├── location.js
+│   │   ├── profile.js
+│   │   └── supabase.js
+│   ├── styles
+│   │   └── global.css
+│   └── ui
+│       ├── BottomNav.jsx
+│       ├── Button.jsx
+│       ├── Card.jsx
+│       ├── Header.jsx
+│       ├── Input.jsx
+│       ├── IphoneFrame.jsx
+│       ├── Switch.jsx
+│       └── icons
+│           ├── CameraIcon.jsx
+│           ├── CarIconHome.jsx
+│           ├── CheckIcon.jsx
+│           ├── LogoutIcon.jsx
+│           ├── MagnifierIcon.jsx
+│           ├── MessageCircleIcon.jsx
+│           ├── NavAlertIcon.jsx
+│           ├── NavMapIcon.jsx
+│           ├── SettingsIcon.jsx
+│           └── UserIcon.jsx
+├── supabase
+│   └── migrations
+│       └── 20260325_000001_init_profiles.sql
+├── test
+│   ├── location.test.js
+│   └── map-startup.test.js
+└── vite.config.js
+
+---
+2) ARCHIVOS CLAVE
+---
+Entrada: index.html → src/main.jsx → src/app/App.jsx
+Estado pantallas: src/lib/AppScreenContext.jsx
+Mapa: src/features/map/components/Map.jsx + src/features/map/constants/mapbox.js
+Geo: src/services/location.js
+Estilos: src/styles/global.css
+
+---
+3) SCRIPTS NPM (package.json)
+---
+{
+  "dev": "vite",
+  "build": "vite build",
+  "postbuild": "node scripts/gtp-sync.mjs",
+  "gtp:sync": "node scripts/gtp-sync.mjs",
+  "supabase:setup": "node scripts/supabase-setup.mjs",
+  "verify": "npm run lint && npm test && npm run build",
+  "test": "node --test",
+  "lint": "eslint .",
+  "format": "prettier --write ."
+}
+
+---
+4) DEPENDENCIAS
+---
+dependencies:
+{
+  "@supabase/supabase-js": "^2.100.0",
+  "mapbox-gl": "^3.20.0",
+  "react": "^19.2.4",
+  "react-dom": "^19.2.4"
+}
+devDependencies:
+{
+  "@babel/eslint-parser": "^7.26.0",
+  "@babel/preset-react": "^7.26.0",
+  "@eslint/js": "^9.18.0",
+  "@vitejs/plugin-react": "^6.0.1",
+  "eslint": "^9.18.0",
+  "eslint-plugin-react": "^7.37.5",
+  "eslint-plugin-react-hooks": "^5.1.0",
+  "eslint-plugin-react-refresh": "^0.4.16",
+  "globals": "^15.14.0",
+  "prettier": "^3.4.2",
+  "vite": "^8.0.1"
+}
+
+---
+5) FLUJO DE ARRANQUE
+---
+Desarrollo: npm run dev → Vite :5173 (localhost, strictPort).
+Cursor/VSCode: tarea waitme: start manual → npm dev + shell que abre Safari cuando responde :5173.
+--- .vscode/tasks.json (extracto / completo si corto) ---
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "waitme: start",
+      "dependsOrder": "parallel",
+      "dependsOn": ["waitme: dev", "waitme: open safari"],
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "waitme: dev",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "ready in"
+        }
+      },
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "focus": false
+      }
+    },
+    {
+      "label": "waitme: gtp sync",
+      "type": "npm",
+      "script": "gtp:sync",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "waitme: open safari",
+      "type": "shell",
+      "command": "for i in {1..120}; do curl -sf http://localhost:5173 >/dev/null && break; sleep 1; done; open -a Safari http://localhost:5173",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "focus": false,
+        "close": true
+      }
+    }
+  ]
+}
+
+
+--- vite.config.js ---
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  build: { chunkSizeWarningLimit: 2500 },
+  server: {
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      overlay: false,
+    },
+  },
+})
+
+
+---
+6) SUPABASE (config / migraciones / estado)
+---
+- Cliente frontend: src/services/supabase.js (solo anon key).
+- Setup automático: npm run supabase:setup → scripts/supabase-setup.mjs.
+- Variables esperadas: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_DB_URL.
+--- .env.example ---
+VITE_MAPBOX_ACCESS_TOKEN=
+VITE_SUPABASE_URL=REEMPLAZAR
+VITE_SUPABASE_ANON_KEY=REEMPLAZAR
+
+--- Migraciones ---
+- supabase/migrations/20260325_000001_init_profiles.sql
+
+---
+7) PANTALLAS / COMPONENTES (resumen)
+---
+- src/features/home/components/HomePage.jsx — landing con mapa bajo overlay, CTAs, logo.
+- src/features/profile/components/ProfilePage.jsx — perfil local (state), formulario, guardar en memoria.
+- src/app/App.jsx — AppScreenProvider + IphoneFrame; home | profile.
+Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
+
+---
+8) TESTS
+---
+- test/location.test.js
+- test/map-startup.test.js
+
+---
+9) RIESGOS (heurística automática + revisión humana recomendada)
+---
+- Mapa: sin token válido, createMap/getMapboxAccessToken falla en runtime.
+
+---
+10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
+---
+- scripts/supabase-setup.mjs  (2026-03-25T09:09:18.373Z)
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T09:09:04.935Z)
+- package-lock.json  (2026-03-25T08:54:36.602Z)
+- .env.example  (2026-03-25T08:54:30.595Z)
+- package.json  (2026-03-25T08:54:27.136Z)
+- scripts/gtp-sync.mjs  (2026-03-25T08:35:34.900Z)
+- src/features/profile/components/ProfilePage.jsx  (2026-03-25T06:59:00.248Z)
+- src/services/profile.js  (2026-03-25T06:58:52.147Z)
+- src/services/auth.js  (2026-03-25T06:58:49.016Z)
+- src/services/supabase.js  (2026-03-25T06:58:46.785Z)
+- src/features/map/components/Map.jsx  (2026-03-25T06:43:52.699Z)
+- test/map-startup.test.js  (2026-03-25T06:43:45.383Z)
+- src/features/profile/components/ProfileHeader.jsx  (2026-03-25T06:43:45.200Z)
+- src/features/profile/components/ProfileActions.jsx  (2026-03-25T06:43:44.691Z)
+- src/features/profile/components/ProfileLogoutButton.jsx  (2026-03-25T06:43:44.553Z)
+- src/features/profile/components/ProfileStats.jsx  (2026-03-25T06:43:44.309Z)
+- src/features/profile/components/Plate.jsx  (2026-03-25T06:43:43.957Z)
+- src/features/profile/components/ProfileForm.jsx  (2026-03-25T06:43:43.602Z)
+
+---
+11) GIT (último commit — solo si hay repo)
+---
+No hay repositorio git inicializado aquí, o git no devolvió lista.
+
+---
+FIN
+---

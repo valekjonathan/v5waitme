@@ -1,0 +1,36 @@
+{
+  "name": "v5waitme",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "postbuild": "node scripts/gtp-sync.mjs",
+    "gtp:sync": "node scripts/gtp-sync.mjs",
+    "supabase:setup": "node scripts/supabase-setup.mjs",
+    "verify": "npm run lint && npm test && npm run build",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.100.0",
+    "mapbox-gl": "^3.20.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.26.0",
+    "@babel/preset-react": "^7.26.0",
+    "@eslint/js": "^9.18.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "vite": "^8.0.1"
+  }
+}
