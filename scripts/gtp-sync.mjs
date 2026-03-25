@@ -123,22 +123,26 @@ function grepFile(rel, pattern) {
   }
 }
 
-function gitRecentFiles(limit = 12) {
+function gitNameOnlyForRev(rev, limit = 40) {
   try {
-    const out = execSync('git log -1 --name-only --pretty=format: 2>/dev/null', {
+    const out = execSync(`git log -1 ${rev} --name-only --pretty=format: 2>/dev/null`, {
       cwd: ROOT,
       encoding: 'utf8',
       maxBuffer: 512 * 1024,
     })
-    const lines = out
+    return out
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean)
       .filter((l) => !l.startsWith('node_modules/') && !l.startsWith('dist/'))
-    return lines.slice(0, limit)
+      .slice(0, limit)
   } catch {
     return []
   }
+}
+
+function gitRecentFiles(limit = 12) {
+  return gitNameOnlyForRev('HEAD', limit)
 }
 
 function risksFromRepo() {
@@ -293,6 +297,18 @@ function main() {
   if (gitRecent.length) {
     lines.push('Archivos tocados en el último commit (git log -1 --name-only):')
     lines.push(...gitRecent.map((g) => `- ${g}`))
+    const lastHasSrc = gitRecent.some((f) => f.startsWith('src/'))
+    if (!lastHasSrc) {
+      for (let i = 1; i <= 10; i++) {
+        const files = gitNameOnlyForRev(`HEAD~${i}`, 60)
+        if (!files.length) continue
+        if (!files.some((f) => f.startsWith('src/'))) continue
+        lines.push('')
+        lines.push(`Último commit con cambios bajo src/ (HEAD~${i}, name-only):`)
+        lines.push(...files.map((g) => `- ${g}`))
+        break
+      }
+    }
   } else {
     lines.push('No hay repositorio git inicializado aquí, o git no devolvió lista.')
   }
