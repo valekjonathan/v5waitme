@@ -1,5 +1,6 @@
 import { AppScreenProvider, useAppScreen } from '../lib/AppScreenContext'
 import { AuthProvider, useAuth } from '../lib/AuthContext'
+import ErrorBoundary from '../lib/ErrorBoundary.jsx'
 import { useEffect, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -102,8 +103,10 @@ function AppGate() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppGate />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppGate />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
