@@ -238,7 +238,7 @@ function main() {
   lines.push('---')
   lines.push('5) FLUJO DE ARRANQUE')
   lines.push('---')
-  lines.push('Producción: npm run auto:ship → build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh. npm run open:prod solo abre URL.')
+  lines.push('Producción: npm run auto:ship → lint + test + build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh (pestaña solo host producción). npm run open:prod solo abre URL.')
   lines.push('Watch (Cursor/VSCode): npm run dev:auto → vigila src/, debounce 2s → auto:ship; Safari loop una vez en background (macOS). Tarea waitme: auto dev con runOn folderOpen.')
   lines.push('Desarrollo local opcional: npm run dev → Vite (ver vite.config).')
   lines.push('Vercel: vercel.json (build npm run build, output dist); importar repo en dashboard para auto-deploy en push.')

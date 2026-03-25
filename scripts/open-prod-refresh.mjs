@@ -1,17 +1,22 @@
 /**
- * Producción real (Vercel): espera un margen tras push, abre Safari solo en PROD_URL y recarga la pestaña activa.
- * Sin localhost. Vercel despliega en cada push a main (dashboard); aquí solo damos tiempo heurístico al build remoto.
+ * Safari: localiza la pestaña cuya URL contiene el host de producción, recarga solo esa pestaña;
+ * si no existe, abre PROD_URL. No toca la pestaña activa si es otra web.
  *
- * Env:
- *   PROD_URL (default https://v5waitme.vercel.app)
- *   PROD_LIVE_INTERVAL_SEC (default 5)
- *   VERCEL_DEPLOY_WAIT_SEC (override fijo; si no, espera aleatoria 5–10s)
- *   SKIP_DEPLOY_WAIT=1 — sin espera inicial (solo refresco periódico)
+ * Env: PROD_URL, PROD_LIVE_INTERVAL_SEC, VERCEL_DEPLOY_WAIT_SEC, SKIP_DEPLOY_WAIT (igual que antes).
  */
 import { spawnSync } from 'node:child_process'
 import { platform } from 'node:os'
 
-const PROD_URL = process.env.PROD_URL || 'https://v5waitme.vercel.app'
+const PROD_URL_RAW = process.env.PROD_URL || 'https://v5waitme.vercel.app'
+let PROD_URL
+try {
+  PROD_URL = new URL(PROD_URL_RAW).href
+} catch {
+  console.error('[open-prod-refresh] PROD_URL inválida:', PROD_URL_RAW)
+  process.exit(1)
+}
+
+const HOST = new URL(PROD_URL).hostname
 const INTERVAL_SEC = Math.max(2, Number(process.env.PROD_LIVE_INTERVAL_SEC) || 5)
 
 function deployWaitSec() {
@@ -42,24 +47,42 @@ function osascript(lines) {
   }
 }
 
-function openProd() {
+/** Escapes for AppleScript string literal */
+function asStringLiteral(s) {
+  return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+/**
+ * Busca pestaña con URL que contiene HOST; recarga esa pestaña y la enfoca.
+ * Si no hay coincidencia, abre PROD_URL en nueva pestaña/ventana.
+ */
+function focusReloadOrOpen() {
+  const needle = asStringLiteral(HOST)
+  const targetUrl = asStringLiteral(PROD_URL)
   osascript([
     'tell application "Safari"',
     '  activate',
-    `  open location "${PROD_URL.replace(/"/g, '\\"')}"`,
-    'end tell',
-  ])
-}
-
-function reloadFrontTab() {
-  osascript([
-    'tell application "Safari"',
-    '  if (count of windows) > 0 then',
-    '    tell front window',
-    '      set u to URL of current tab',
-    '      set URL of current tab to u',
-    '    end tell',
-    '  end if',
+    '  set needle to "' + needle + '"',
+    '  set targetUrl to "' + targetUrl + '"',
+    '  set found to false',
+    '  repeat with w in windows',
+    '    try',
+    '      repeat with t in tabs of w',
+    '        try',
+    '          set u to URL of t',
+    '          if u contains needle then',
+    '            set current tab of w to t',
+    '            set index of w to 1',
+    '            set URL of t to u',
+    '            set found to true',
+    '            exit repeat',
+    '          end if',
+    '        end try',
+    '      end repeat',
+    '      if found then exit repeat',
+    '    end try',
+    '  end repeat',
+    '  if not found then open location targetUrl',
     'end tell',
   ])
 }
@@ -69,12 +92,12 @@ if (INITIAL_WAIT_SEC > 0) {
   sleepSync(INITIAL_WAIT_SEC)
 }
 
-console.error(`[open-prod-refresh] ${PROD_URL} · reload cada ${INTERVAL_SEC}s (Ctrl+C para salir)`)
-openProd()
+console.error(`[open-prod-refresh] ${PROD_URL} (${HOST}) · reload cada ${INTERVAL_SEC}s (Ctrl+C para salir)`)
+focusReloadOrOpen()
 
 const id = setInterval(() => {
   try {
-    reloadFrontTab()
+    focusReloadOrOpen()
   } catch (e) {
     console.error(e)
   }

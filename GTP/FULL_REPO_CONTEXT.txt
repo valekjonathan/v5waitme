@@ -1,5 +1,5 @@
 WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
-Generado (UTC): 2026-03-25T15:26:10.866Z
+Generado (UTC): 2026-03-25T15:44:40.725Z
 Script: npm run gtp:sync | postbuild tras npm run build
 
 ---
@@ -177,7 +177,7 @@ devDependencies:
 ---
 5) FLUJO DE ARRANQUE
 ---
-Producción: npm run auto:ship → build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh. npm run open:prod solo abre URL.
+Producción: npm run auto:ship → lint + test + build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh (pestaña solo host producción). npm run open:prod solo abre URL.
 Watch (Cursor/VSCode): npm run dev:auto → vigila src/, debounce 2s → auto:ship; Safari loop una vez en background (macOS). Tarea waitme: auto dev con runOn folderOpen.
 Desarrollo local opcional: npm run dev → Vite (ver vite.config).
 Vercel: vercel.json (build npm run build, output dist); importar repo en dashboard para auto-deploy en push.
@@ -261,15 +261,17 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 ---
 10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
 ---
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:42:43.980Z)
+- src/features/map/components/Map.jsx  (2026-03-25T15:42:40.117Z)
+- src/features/home/components/HomePage.jsx  (2026-03-25T15:42:29.477Z)
+- scripts/gtp-sync.mjs  (2026-03-25T15:33:42.506Z)
+- .gitignore  (2026-03-25T15:33:41.939Z)
+- scripts/auto-ship.mjs  (2026-03-25T15:33:32.629Z)
+- scripts/dev-auto.mjs  (2026-03-25T15:33:30.927Z)
+- scripts/open-prod-refresh.mjs  (2026-03-25T15:33:17.761Z)
 - package.json  (2026-03-25T15:17:27.493Z)
 - .vscode/settings.json  (2026-03-25T15:15:31.728Z)
 - .vscode/tasks.json  (2026-03-25T15:15:31.660Z)
-- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:13:13.931Z)
-- scripts/gtp-sync.mjs  (2026-03-25T15:13:13.186Z)
-- scripts/dev-auto.mjs  (2026-03-25T15:13:05.447Z)
-- scripts/auto-ship.mjs  (2026-03-25T15:11:32.063Z)
-- scripts/open-prod-refresh.mjs  (2026-03-25T15:06:59.141Z)
-- .gitignore  (2026-03-25T15:06:56.998Z)
 - src/ui/BottomNav.jsx  (2026-03-25T14:51:14.238Z)
 - src/ui/Header.jsx  (2026-03-25T14:51:10.933Z)
 - src/features/auth/components/LoginButtons.jsx  (2026-03-25T14:51:08.215Z)
@@ -277,13 +279,23 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 - vite.config.js  (2026-03-25T14:44:14.355Z)
 - src/features/auth/components/LoginPage.jsx  (2026-03-25T14:37:58.256Z)
 - src/app/App.jsx  (2026-03-25T14:37:46.471Z)
-- src/features/profile/components/ProfilePage.jsx  (2026-03-25T14:37:21.930Z)
-- src/features/home/components/HomePage.jsx  (2026-03-25T14:37:19.215Z)
 
 ---
 11) GIT (último commit — solo si hay repo)
 ---
-No hay repositorio git inicializado aquí, o git no devolvió lista.
+Archivos tocados en el último commit (git log -1 --name-only):
+- .env.example
+- .github/workflows/ci.yml
+- .gitignore
+- .vscode/settings.json
+- .vscode/tasks.json
+- GTP/FULL_REPO_CONTEXT.txt
+- index.html
+- package-lock.json
+- package.json
+- scripts/auto-ship.mjs
+- scripts/dev-auto.mjs
+- scripts/gtp-sync.mjs
 
 ---
 FIN

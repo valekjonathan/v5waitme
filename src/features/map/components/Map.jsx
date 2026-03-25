@@ -70,6 +70,7 @@ export default function Map() {
   const lastRefineAtRef = useRef(0)
 
   const [mapReady, setMapReady] = useState(false)
+  const [mapError, setMapError] = useState(false)
   const [location, setLocation] = useState(() => ({
     lat: null,
     lng: null,
@@ -92,6 +93,41 @@ export default function Map() {
 
     let cancelled = false
     let map
+    let loadTimeoutId = null
+    let loadCompleted = false
+
+    const failMap = (detail, err) => {
+      console.error('Mapbox failed to load', detail, err ?? '')
+      if (cancelled) return
+      if (loadTimeoutId) {
+        clearTimeout(loadTimeoutId)
+        loadTimeoutId = null
+      }
+      clearTimeout(resizeTimeout100Ref.current)
+      clearTimeout(resizeTimeout400Ref.current)
+      resizeTimeout100Ref.current = null
+      resizeTimeout400Ref.current = null
+      resizeObserverRef.current?.disconnect?.()
+      resizeObserverRef.current = null
+      setMapError(true)
+      setMapReady(false)
+      try {
+        if (map) {
+          map.off('error', onMapError)
+          map.off('dragend', onMapUserInteraction)
+          map.off('zoomend', onZoomEnd)
+        }
+      } catch {
+        /* */
+      }
+      try {
+        map?.remove()
+      } catch {
+        /* */
+      }
+      map = undefined
+      mapRef.current = null
+    }
 
     const onMapUserInteraction = () => {
       track(EVENTS.MAP_INTERACTION, { screen: 'map' }, posthogRef.current)
@@ -101,27 +137,50 @@ export default function Map() {
       if (e?.originalEvent) onMapUserInteraction()
     }
 
+    const onMapError = (e) => {
+      failMap('mapbox error event', e?.error ?? e)
+    }
+
     try {
       const token = getMapboxAccessToken()
       map = createMap(container, { token, interactive: false })
     } catch (err) {
-      console.error('[WaitMe][Map] Map initialization failed:', err)
+      console.error('Mapbox failed to load', 'initialization', err)
+      setMapError(true)
       return () => {}
     }
 
     if (cancelled) {
-      map.remove()
+      try {
+        map.remove()
+      } catch {
+        /* */
+      }
       return
     }
 
     mapRef.current = map
+    map.on('error', onMapError)
+
+    loadTimeoutId = setTimeout(() => {
+      if (cancelled || loadCompleted) return
+      failMap('style load timeout', new Error('exceeded 25s'))
+    }, 25000)
 
     map.on('load', () => {
       if (cancelled) return
-      setupMapStyleOnLoad(map)
-      applyRoadStyleForCreate(map)
-      applyMapReadOnly(map, true)
-      map.resize()
+      loadCompleted = true
+      if (loadTimeoutId) clearTimeout(loadTimeoutId)
+      loadTimeoutId = null
+      try {
+        setupMapStyleOnLoad(map)
+        applyRoadStyleForCreate(map)
+        applyMapReadOnly(map, true)
+        map.resize()
+      } catch (err) {
+        failMap('post-load setup', err)
+        return
+      }
 
       const resizeDelayed = () => {
         if (mapRef.current) mapRef.current.resize()
@@ -145,6 +204,7 @@ export default function Map() {
 
     return () => {
       cancelled = true
+      if (loadTimeoutId) clearTimeout(loadTimeoutId)
       setMapReady(false)
       clearTimeout(resizeTimeout100Ref.current)
       clearTimeout(resizeTimeout400Ref.current)
@@ -154,6 +214,7 @@ export default function Map() {
       resizeObserverRef.current = null
       if (mapRef.current) {
         try {
+          mapRef.current.off('error', onMapError)
           mapRef.current.off('dragend', onMapUserInteraction)
           mapRef.current.off('zoomend', onZoomEnd)
         } catch {
@@ -271,6 +332,10 @@ export default function Map() {
     location.tracking,
     location.speedMps,
   ])
+
+  if (mapError) {
+    return null
+  }
 
   return (
     <div style={{ position: 'absolute', inset: 0 }}>

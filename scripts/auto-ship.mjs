@@ -93,6 +93,12 @@ assertMain()
 assertVercelConfig()
 vercelConnectionHint()
 
+console.error('[auto-ship] npm run lint')
+run('npm', ['run', 'lint'])
+
+console.error('[auto-ship] npm run test')
+run('npm', ['run', 'test'])
+
 console.error('[auto-ship] npm run build')
 run('npm', ['run', 'build'])
 
@@ -114,4 +120,16 @@ if (!run('git', ['commit', '-m', COMMIT_MSG], true)) {
 console.error('[auto-ship] git push origin main')
 run('git', ['push', 'origin', 'main'])
 
+printVercelEnvReminder()
+
 console.error('[auto-ship] Push completado. Si Vercel está enlazado al repo, el deploy debería arrancar.')
+
+function printVercelEnvReminder() {
+  console.error('')
+  console.error('[auto-ship] Variables de entorno en Vercel (Project → Settings → Environment Variables → Production):')
+  console.error('  • VITE_MAPBOX_ACCESS_TOKEN — obligatoria para que el mapa renderice (sin ella el área del mapa queda vacía / pantalla muy oscura).')
+  console.error('  • VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY — login/sesión.')
+  console.error('  • Opcional: VITE_POSTHOG_KEY, VITE_POSTHOG_HOST, VITE_SENTRY_DSN')
+  console.error('  Tras añadir o cambiar variables: redeploy en Vercel (nuevo push o "Redeploy").')
+  console.error('')
+}

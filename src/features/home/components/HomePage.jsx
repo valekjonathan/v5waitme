@@ -59,7 +59,14 @@ export default function HomePage({ centerContent = null }) {
 
   return (
     <div style={{ position: 'relative', height: '100%', width: '100%', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          backgroundColor: colors.background,
+        }}
+      >
         <Map />
       </div>
 
