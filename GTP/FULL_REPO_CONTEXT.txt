@@ -1,5 +1,5 @@
 WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
-Generado (UTC): 2026-03-25T15:51:33.715Z
+Generado (UTC): 2026-03-25T15:54:49.132Z
 Script: npm run gtp:sync | postbuild tras npm run build
 
 ---
@@ -257,17 +257,19 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 ---
 9) RIESGOS (heurística automática + revisión humana recomendada)
 ---
-- Mapa: sin token válido, createMap/getMapboxAccessToken falla en runtime.
+- Mapa: sin token o error Mapbox → sin tiles; Home mantiene capa visible (Map no bloqueante).
 
 ---
 10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
 ---
-- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:51:21.323Z)
+- scripts/gtp-sync.mjs  (2026-03-25T15:54:43.758Z)
+- test/map-startup.test.js  (2026-03-25T15:54:40.318Z)
+- src/features/map/components/Map.jsx  (2026-03-25T15:54:38.284Z)
+- src/features/map/constants/mapbox.js  (2026-03-25T15:54:16.556Z)
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:51:33.750Z)
 - src/lib/ErrorBoundary.jsx  (2026-03-25T15:50:45.222Z)
 - src/main.jsx  (2026-03-25T15:48:41.320Z)
 - src/app/App.jsx  (2026-03-25T15:48:27.337Z)
-- scripts/gtp-sync.mjs  (2026-03-25T15:45:56.374Z)
-- src/features/map/components/Map.jsx  (2026-03-25T15:42:40.117Z)
 - src/features/home/components/HomePage.jsx  (2026-03-25T15:42:29.477Z)
 - .gitignore  (2026-03-25T15:33:41.939Z)
 - scripts/auto-ship.mjs  (2026-03-25T15:33:32.629Z)
@@ -278,8 +280,6 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 - .vscode/tasks.json  (2026-03-25T15:15:31.660Z)
 - src/ui/BottomNav.jsx  (2026-03-25T14:51:14.238Z)
 - src/ui/Header.jsx  (2026-03-25T14:51:10.933Z)
-- src/features/auth/components/LoginButtons.jsx  (2026-03-25T14:51:08.215Z)
-- index.html  (2026-03-25T14:44:14.808Z)
 
 ---
 11) GIT (último commit — solo si hay repo)
@@ -287,7 +287,7 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 Archivos tocados en el último commit (git log -1 --name-only):
 - GTP/FULL_REPO_CONTEXT.txt
 
-Último commit con cambios bajo src/ (HEAD~1, name-only):
+Último commit con cambios bajo src/ (HEAD~2, name-only):
 - src/app/App.jsx
 - src/lib/ErrorBoundary.jsx
 - src/main.jsx

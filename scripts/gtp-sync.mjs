@@ -159,8 +159,8 @@ function risksFromRepo() {
     const t = readText(envEx, 800)
     if (!t.includes('MAPBOX')) r.push('.env.example: documentar VITE_MAPBOX_ACCESS_TOKEN.')
   }
-  if (grepFile('src/features/map/constants/mapbox.js', /Missing VITE_MAPBOX_ACCESS_TOKEN/)) {
-    r.push('Mapa: sin token válido, createMap/getMapboxAccessToken falla en runtime.')
+  if (grepFile('src/features/map/components/Map.jsx', /Mapbox omitido/)) {
+    r.push('Mapa: sin token o error Mapbox → sin tiles; Home mantiene capa visible (Map no bloqueante).')
   }
   if (!fs.existsSync(path.join(ROOT, 'test'))) r.push('Carpeta test/ ausente.')
   if (!fs.existsSync(path.join(ROOT, '.vscode', 'tasks.json'))) {

@@ -70,7 +70,6 @@ export default function Map() {
   const lastRefineAtRef = useRef(0)
 
   const [mapReady, setMapReady] = useState(false)
-  const [mapError, setMapError] = useState(false)
   const [location, setLocation] = useState(() => ({
     lat: null,
     lng: null,
@@ -109,7 +108,6 @@ export default function Map() {
       resizeTimeout400Ref.current = null
       resizeObserverRef.current?.disconnect?.()
       resizeObserverRef.current = null
-      setMapError(true)
       setMapReady(false)
       try {
         if (map) {
@@ -143,10 +141,18 @@ export default function Map() {
 
     try {
       const token = getMapboxAccessToken()
+      if (!token) {
+        console.warn('[WaitMe][Map] Mapbox omitido: sin VITE_MAPBOX_ACCESS_TOKEN')
+        return () => {}
+      }
       map = createMap(container, { token, interactive: false })
+      if (!map) {
+        console.warn('[WaitMe][Map] Mapbox omitido: createMap devolvió null')
+        return () => {}
+      }
     } catch (err) {
       console.error('Mapbox failed to load', 'initialization', err)
-      setMapError(true)
+      setMapReady(false)
       return () => {}
     }
 
@@ -159,48 +165,53 @@ export default function Map() {
       return
     }
 
-    mapRef.current = map
-    map.on('error', onMapError)
+    try {
+      mapRef.current = map
+      map.on('error', onMapError)
 
-    loadTimeoutId = setTimeout(() => {
-      if (cancelled || loadCompleted) return
-      failMap('style load timeout', new Error('exceeded 25s'))
-    }, 25000)
+      loadTimeoutId = setTimeout(() => {
+        if (cancelled || loadCompleted) return
+        failMap('style load timeout', new Error('exceeded 10s'))
+      }, 10_000)
 
-    map.on('load', () => {
-      if (cancelled) return
-      loadCompleted = true
-      if (loadTimeoutId) clearTimeout(loadTimeoutId)
-      loadTimeoutId = null
-      try {
-        setupMapStyleOnLoad(map)
-        applyRoadStyleForCreate(map)
-        applyMapReadOnly(map, true)
-        map.resize()
-      } catch (err) {
-        failMap('post-load setup', err)
-        return
-      }
+      map.on('load', () => {
+        if (cancelled) return
+        loadCompleted = true
+        if (loadTimeoutId) clearTimeout(loadTimeoutId)
+        loadTimeoutId = null
+        try {
+          setupMapStyleOnLoad(map)
+          applyRoadStyleForCreate(map)
+          applyMapReadOnly(map, true)
+          map.resize()
+        } catch (err) {
+          failMap('post-load setup', err)
+          return
+        }
 
-      const resizeDelayed = () => {
-        if (mapRef.current) mapRef.current.resize()
-      }
+        const resizeDelayed = () => {
+          if (mapRef.current) mapRef.current.resize()
+        }
 
-      resizeTimeout100Ref.current = setTimeout(resizeDelayed, 100)
-      resizeTimeout400Ref.current = setTimeout(resizeDelayed, 400)
+        resizeTimeout100Ref.current = setTimeout(resizeDelayed, 100)
+        resizeTimeout400Ref.current = setTimeout(resizeDelayed, 400)
 
-      if (typeof ResizeObserver !== 'undefined') {
-        const ro = new ResizeObserver(resizeDelayed)
-        resizeObserverRef.current = ro
-        ro.observe(container)
-      }
+        if (typeof ResizeObserver !== 'undefined') {
+          const ro = new ResizeObserver(resizeDelayed)
+          resizeObserverRef.current = ro
+          ro.observe(container)
+        }
 
-      map.on('dragend', onMapUserInteraction)
-      map.on('zoomend', onZoomEnd)
+        map.on('dragend', onMapUserInteraction)
+        map.on('zoomend', onZoomEnd)
 
-      track(EVENTS.MAP_LOADED, { screen: 'map' }, posthogRef.current)
-      setMapReady(true)
-    })
+        track(EVENTS.MAP_LOADED, { screen: 'map' }, posthogRef.current)
+        setMapReady(true)
+      })
+    } catch (err) {
+      failMap('map setup', err)
+      return () => {}
+    }
 
     return () => {
       cancelled = true
@@ -333,12 +344,8 @@ export default function Map() {
     location.speedMps,
   ])
 
-  if (mapError) {
-    return null
-  }
-
   return (
-    <div style={{ position: 'absolute', inset: 0 }}>
+    <div style={{ width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
     </div>
   )

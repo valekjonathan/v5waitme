@@ -12,16 +12,10 @@ test('getMapboxAccessToken: trims token', () => {
   assert.equal(token, 'abc123')
 })
 
-test('getMapboxAccessToken: throws when token missing', () => {
-  assert.throws(
-    () => getMapboxAccessToken({}),
-    /Missing VITE_MAPBOX_ACCESS_TOKEN/,
-  )
+test('getMapboxAccessToken: returns null when token missing', () => {
+  assert.equal(getMapboxAccessToken({}), null)
 })
 
-test('getMapboxAccessToken: throws when token blank', () => {
-  assert.throws(
-    () => getMapboxAccessToken({ VITE_MAPBOX_ACCESS_TOKEN: '   ' }),
-    /Missing VITE_MAPBOX_ACCESS_TOKEN/,
-  )
+test('getMapboxAccessToken: returns null when token blank', () => {
+  assert.equal(getMapboxAccessToken({ VITE_MAPBOX_ACCESS_TOKEN: '   ' }), null)
 })

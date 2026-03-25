@@ -14,7 +14,7 @@ export const ACCURACY_RECENTER_THRESHOLD = 80
 export function getMapboxAccessToken(env = import.meta.env) {
   const t = env?.VITE_MAPBOX_ACCESS_TOKEN
   if (typeof t === 'string' && t.trim()) return t.trim()
-  throw new Error('[WaitMe][MapboxConfig] Missing VITE_MAPBOX_ACCESS_TOKEN')
+  return null
 }
 
 export function setupMapStyleOnLoad(map) {
@@ -83,16 +83,17 @@ export function applyRoadStyleForCreate(map) {
 
 export function createMap(container, { token, interactive = true }) {
   if (!container || !(container instanceof HTMLElement)) {
-    throw new Error('[WaitMe][MapCreate] invalid container')
+    return null
   }
-  if (!token || typeof token !== 'string') {
-    throw new Error('[WaitMe][MapCreate] invalid mapbox token')
+  const tokenStr = typeof token === 'string' ? token.trim() : ''
+  if (!tokenStr) {
+    return null
   }
   if (container.childNodes.length > 0) {
     container.innerHTML = ''
   }
 
-  mapboxgl.accessToken = token
+  mapboxgl.accessToken = tokenStr
   return new mapboxgl.Map({
     container,
     style: DARK_STYLE,
