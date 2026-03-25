@@ -1,5 +1,5 @@
 WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
-Generado (UTC): 2026-03-25T15:44:45.602Z
+Generado (UTC): 2026-03-25T15:45:10.264Z
 Script: npm run gtp:sync | postbuild tras npm run build
 
 ---
@@ -261,7 +261,7 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 ---
 10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
 ---
-- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:44:40.755Z)
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:44:45.625Z)
 - src/features/map/components/Map.jsx  (2026-03-25T15:42:40.117Z)
 - src/features/home/components/HomePage.jsx  (2026-03-25T15:42:29.477Z)
 - scripts/gtp-sync.mjs  (2026-03-25T15:33:42.506Z)
@@ -284,14 +284,7 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 11) GIT (último commit — solo si hay repo)
 ---
 Archivos tocados en el último commit (git log -1 --name-only):
-- .gitignore
 - GTP/FULL_REPO_CONTEXT.txt
-- scripts/auto-ship.mjs
-- scripts/dev-auto.mjs
-- scripts/gtp-sync.mjs
-- scripts/open-prod-refresh.mjs
-- src/features/home/components/HomePage.jsx
-- src/features/map/components/Map.jsx
 
 ---
 FIN
