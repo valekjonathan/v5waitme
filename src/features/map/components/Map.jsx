@@ -1,5 +1,5 @@
 import { usePostHog } from '@posthog/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
   ACCURACY_RECENTER_THRESHOLD,
@@ -13,7 +13,13 @@ import {
   OVIEDO_LNG,
   setupMapStyleOnLoad,
 } from '../constants/mapbox.js'
-import { createPositionGuard, distanceMeters, getCurrentPosition, watchPosition } from '../../../services/location.js'
+import { colors } from '../../../design/colors'
+import {
+  createPositionGuard,
+  distanceMeters,
+  getCurrentPosition,
+  watchPosition,
+} from '../../../services/location.js'
 import { EVENTS, track } from '../../../lib/tracking.js'
 
 const OVIEDO_FALLBACK = {
@@ -50,12 +56,23 @@ function createGeoObserver() {
   }
 }
 
-export default function Map() {
+export default function Map({ onSettled: onSettledProp }) {
   const posthog = usePostHog()
   const posthogRef = useRef(posthog)
+  const onSettledRef = useRef(onSettledProp)
+  const settledOnceRef = useRef(false)
   useEffect(() => {
     posthogRef.current = posthog
   }, [posthog])
+  useEffect(() => {
+    onSettledRef.current = onSettledProp
+  }, [onSettledProp])
+
+  const fireMapSettled = useCallback(() => {
+    if (settledOnceRef.current) return
+    settledOnceRef.current = true
+    onSettledRef.current?.()
+  }, [])
 
   const mapRef = useRef(null)
   const containerRef = useRef(null)
@@ -70,6 +87,7 @@ export default function Map() {
   const lastRefineAtRef = useRef(0)
 
   const [mapReady, setMapReady] = useState(false)
+  const [mapFailed, setMapFailed] = useState(false)
   const [location, setLocation] = useState(() => ({
     lat: null,
     lng: null,
@@ -81,10 +99,12 @@ export default function Map() {
   }))
 
   const geoObserver = useMemo(() => createGeoObserver(), [])
-  const acceptPosition = useMemo(
-    () => createPositionGuard({ onEvent: geoObserver }),
-    [geoObserver],
-  )
+  const acceptPosition = useMemo(() => createPositionGuard({ onEvent: geoObserver }), [geoObserver])
+
+  useEffect(() => {
+    const t = window.setTimeout(fireMapSettled, 2000)
+    return () => window.clearTimeout(t)
+  }, [fireMapSettled])
 
   useEffect(() => {
     const container = containerRef.current
@@ -109,6 +129,8 @@ export default function Map() {
       resizeObserverRef.current?.disconnect?.()
       resizeObserverRef.current = null
       setMapReady(false)
+      setMapFailed(true)
+      fireMapSettled()
       try {
         if (map) {
           map.off('error', onMapError)
@@ -143,16 +165,22 @@ export default function Map() {
       const token = getMapboxAccessToken()
       if (!token) {
         console.warn('[WaitMe][Map] Mapbox omitido: sin VITE_MAPBOX_ACCESS_TOKEN')
+        setMapFailed(true)
+        fireMapSettled()
         return () => {}
       }
       map = createMap(container, { token, interactive: false })
       if (!map) {
         console.warn('[WaitMe][Map] Mapbox omitido: createMap devolvió null')
+        setMapFailed(true)
+        fireMapSettled()
         return () => {}
       }
     } catch (err) {
       console.error('Mapbox failed to load', 'initialization', err)
       setMapReady(false)
+      setMapFailed(true)
+      fireMapSettled()
       return () => {}
     }
 
@@ -171,8 +199,8 @@ export default function Map() {
 
       loadTimeoutId = setTimeout(() => {
         if (cancelled || loadCompleted) return
-        failMap('style load timeout', new Error('exceeded 10s'))
-      }, 10_000)
+        failMap('style load timeout', new Error('exceeded 8s'))
+      }, 8000)
 
       map.on('load', () => {
         if (cancelled) return
@@ -207,6 +235,8 @@ export default function Map() {
 
         track(EVENTS.MAP_LOADED, { screen: 'map' }, posthogRef.current)
         setMapReady(true)
+        setMapFailed(false)
+        fireMapSettled()
       })
     } catch (err) {
       failMap('map setup', err)
@@ -217,6 +247,7 @@ export default function Map() {
       cancelled = true
       if (loadTimeoutId) clearTimeout(loadTimeoutId)
       setMapReady(false)
+      setMapFailed(false)
       clearTimeout(resizeTimeout100Ref.current)
       clearTimeout(resizeTimeout400Ref.current)
       resizeTimeout100Ref.current = null
@@ -235,7 +266,7 @@ export default function Map() {
       mapRef.current?.remove()
       mapRef.current = null
     }
-  }, [])
+  }, [fireMapSettled])
 
   useEffect(() => {
     let cancelled = false
@@ -297,13 +328,17 @@ export default function Map() {
     if (!hasFlownToUserRef.current) {
       hasFlownToUserRef.current = true
       lastFlownRef.current = { lat, lng }
-      map.easeTo({
-        center: [lng, lat],
-        zoom: DEFAULT_ZOOM,
-        pitch: DEFAULT_PITCH,
-        duration: 850,
-        easing: (t) => t * (2 - t),
-      })
+      try {
+        map.easeTo({
+          center: [lng, lat],
+          zoom: DEFAULT_ZOOM,
+          pitch: DEFAULT_PITCH,
+          duration: 850,
+          easing: (t) => t * (2 - t),
+        })
+      } catch (e) {
+        console.error('[WaitMe][Map] easeTo (primer vuelo) omitido:', e)
+      }
       return
     }
 
@@ -327,13 +362,19 @@ export default function Map() {
     lastRefineAtRef.current = now
 
     lastFlownRef.current = { lat, lng }
-    map.easeTo({
-      center: [lng, lat],
-      zoom: DEFAULT_ZOOM,
-      pitch: DEFAULT_PITCH,
-      duration: 720,
-      easing: (t) => 1 - (1 - t) * (1 - t),
-    })
+    try {
+      map.easeTo({
+        center: [lng, lat],
+        zoom: DEFAULT_ZOOM,
+        pitch: DEFAULT_PITCH,
+        duration: 720,
+        easing: (t) => 1 - (1 - t) * (1 - t),
+      })
+    } catch (e) {
+      console.error('[WaitMe][Map] easeTo (refinar) omitido:', e)
+    }
+    // Cámara: dependencias granulares de `location` (no el objeto entero) para no re-ejecutar en cada tick de `ts`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: `location` completo dispararía recenters innecesarios
   }, [
     mapReady,
     location.lat,
@@ -344,9 +385,32 @@ export default function Map() {
     location.speedMps,
   ])
 
+  const showMapFallback = mapFailed
+
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      {showMapFallback ? (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            padding: 16,
+            backgroundColor: colors.background,
+            color: colors.textMuted,
+            fontSize: 13,
+            fontWeight: 500,
+            textAlign: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          Vista de mapa no disponible por ahora
+        </div>
+      ) : null}
     </div>
   )
 }

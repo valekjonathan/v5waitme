@@ -5,26 +5,32 @@ import ProfileForm from './ProfileForm'
 import ProfileActions from './ProfileActions'
 import Plate from './Plate'
 import { VehicleIcon } from './VehicleIcons'
+import { useAppScreen } from '../../../lib/AppScreenContext'
 import { useAuth } from '../../../lib/AuthContext'
+import { useAppDispatch } from '../../../store/AppProvider.jsx'
 import { colors } from '../../../design/colors'
 import { spacing } from '../../../design/spacing'
 import { getCurrentUser } from '../../../services/auth'
-import { getProfile, updateProfile } from '../../../services/profile'
-import { track } from '../../../lib/tracking.js'
+import { getProfile, isAppProfileComplete, updateProfile } from '../../../services/profile'
+import { EVENTS, track } from '../../../lib/tracking.js'
 
 const EMPTY_PROFILE = {
-  full_name: 'JONATHAN',
-  phone: '+34 600 00 00',
-  brand: 'Porsche',
-  model: 'Macan',
-  plate: '2026VSR',
+  full_name: '',
+  phone: '',
+  brand: '',
+  model: '',
+  plate: '',
   allow_phone_calls: false,
   color: 'negro',
   vehicle_type: 'car',
+  email: '',
+  avatar_url: '',
 }
 
 export default function ProfilePage() {
   const posthog = usePostHog()
+  const dispatchStore = useAppDispatch()
+  const { openHome } = useAppScreen()
   const { user: sessionUser, signOut } = useAuth()
   const [profile, setProfile] = useState(EMPTY_PROFILE)
   const [savedProfile, setSavedProfile] = useState(EMPTY_PROFILE)
@@ -32,7 +38,7 @@ export default function ProfilePage() {
   const hasChanges = JSON.stringify(profile) !== JSON.stringify(savedProfile)
 
   useEffect(() => {
-    track('profile_view', { screen: 'profile' }, posthog)
+    track(EVENTS.PROFILE_VIEW, { screen: 'profile' }, posthog)
   }, [posthog])
 
   useEffect(() => {
@@ -69,6 +75,12 @@ export default function ProfilePage() {
 
   const handleSave = useCallback(async () => {
     try {
+      if (!isAppProfileComplete(profile)) {
+        window.alert(
+          'Faltan datos obligatorios: teléfono, marca, modelo y matrícula (mín. 4 caracteres).'
+        )
+        return
+      }
       const user = await getCurrentUser()
       if (!user?.id) {
         void signOut()
@@ -84,11 +96,13 @@ export default function ProfilePage() {
         : { ...profile }
       setProfile(merged)
       setSavedProfile(merged)
-      track('profile_saved', { screen: 'profile' }, posthog)
+      dispatchStore({ type: 'app/PROFILE_MARK_COMPLETE' })
+      openHome?.()
+      track(EVENTS.PROFILE_SAVED, { screen: 'profile' }, posthog)
     } catch (e) {
       console.error('[WaitMe][ProfilePage] handleSave excepción', e)
     }
-  }, [profile, posthog, signOut])
+  }, [profile, posthog, signOut, dispatchStore, openHome])
 
   const handleLogout = useCallback(async () => {
     await signOut()
@@ -128,10 +142,23 @@ export default function ProfilePage() {
           }}
         >
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: 448, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div
+              style={{
+                width: '100%',
+                maxWidth: 448,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
               <ProfileHeader profile={profile} Plate={Plate} VehicleIcon={VehicleIcon} />
               <div style={{ marginTop: spacing.lg }}>
-                <ProfileForm value={profile} onChange={setProfile} Plate={Plate} VehicleIcon={VehicleIcon} />
+                <ProfileForm
+                  value={profile}
+                  onChange={setProfile}
+                  Plate={Plate}
+                  VehicleIcon={VehicleIcon}
+                />
               </div>
               <ProfileActions hasChanges={hasChanges} onSave={handleSave} onLogout={handleLogout} />
             </div>

@@ -4,10 +4,19 @@ import { spacing } from '../../../design/spacing'
 import { colors } from '../../../design/colors'
 import { useAuth } from '../../../lib/AuthContext'
 
-/** Official multicolor G (viewBox 24x24), rendered at 26x26 inside 24x24 slot */
+const OAUTH_ICON_PX = 22
+const OAUTH_ROW_GAP = 11
+
+/** Official multicolor G (viewBox 24x24), escala uniforme con Apple */
 function GoogleMark() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+    <svg
+      width={OAUTH_ICON_PX}
+      height={OAUTH_ICON_PX}
+      viewBox="0 0 24 24"
+      aria-hidden
+      style={{ display: 'block' }}
+    >
       <path
         fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -30,7 +39,13 @@ function GoogleMark() {
 
 function AppleMark() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden style={{ display: 'block' }}>
+    <svg
+      width={OAUTH_ICON_PX}
+      height={OAUTH_ICON_PX}
+      viewBox="0 0 24 24"
+      aria-hidden
+      style={{ display: 'block' }}
+    >
       <path
         fill="#FFFFFF"
         stroke="#FFFFFF"
@@ -44,36 +59,22 @@ function AppleMark() {
   )
 }
 
-const OAUTH_BTN_SIDE_PAD = 52
-const OAUTH_ICON_LEFT = 18
-const oauthIconWrap = {
-  position: 'absolute',
-  left: OAUTH_ICON_LEFT,
-  top: '50%',
-  transform: 'translateY(-50%)',
-  display: 'inline-flex',
+const oauthIconSlot = {
+  display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: 24,
-  height: 24,
+  width: OAUTH_ICON_PX,
+  height: OAUTH_ICON_PX,
+  flexShrink: 0,
   pointerEvents: 'none',
 }
 
-const OAUTH_ICON_INNER = 26
-
-function oauthIconMicroStyle(pressed, hover, appleOpacity = false) {
-  const scale = pressed ? 0.94 : hover ? 1.08 : 1
+/** Misma caja que Google; Apple añade transición de opacidad en hover. */
+function oauthIconSlotApple(hover) {
   return {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: OAUTH_ICON_INNER,
-    height: OAUTH_ICON_INNER,
-    transition: appleOpacity
-      ? 'transform 120ms ease, opacity 120ms ease'
-      : 'transform 120ms ease',
-    transform: `scale(${scale})`,
-    ...(appleOpacity ? { opacity: hover ? 1 : 0.9 } : {}),
+    ...oauthIconSlot,
+    transition: 'opacity 120ms ease',
+    opacity: hover ? 1 : 0.9,
   }
 }
 
@@ -84,14 +85,16 @@ const googleShadow = {
   idle: '0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(168, 85, 247, 0.06)',
   hover:
     '0 10px 32px rgba(0, 0, 0, 0.18), 0 0 40px rgba(168, 85, 247, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-  pressed: '0 2px 10px rgba(0, 0, 0, 0.35), 0 0 14px rgba(168, 85, 247, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+  pressed:
+    '0 2px 10px rgba(0, 0, 0, 0.35), 0 0 14px rgba(168, 85, 247, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08)',
 }
 
 const appleShadow = {
   idle: '0 4px 16px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(147, 51, 234, 0.08)',
   hover:
     '0 10px 32px rgba(0, 0, 0, 0.22), 0 0 36px rgba(147, 51, 234, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.06)',
-  pressed: '0 2px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(147, 51, 234, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.2)',
+  pressed:
+    '0 2px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(147, 51, 234, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.2)',
 }
 
 const googleBg =
@@ -100,13 +103,10 @@ const appleBg =
   'linear-gradient(165deg, rgba(124,58,237,0.35) 0%, rgba(88,28,135,0.55) 45%, rgba(59,7,100,0.95) 100%)'
 
 const oauthButtonBase = {
-  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
   justifyContent: 'center',
-  gap: 0,
-  paddingLeft: OAUTH_BTN_SIDE_PAD,
-  paddingRight: OAUTH_BTN_SIDE_PAD,
-  paddingTop: 2,
-  paddingBottom: 2,
+  padding: '2px 24px',
   cursor: 'pointer',
   border: '1px solid rgba(255, 255, 255, 0.12)',
   backdropFilter: 'blur(12px)',
@@ -114,6 +114,43 @@ const oauthButtonBase = {
 }
 
 const LABEL_MIN_HEIGHT = 22
+/** Ancho mínimo del bloque de etiqueta Google para evitar salto al alternar "Conectando…". */
+const OAUTH_GOOGLE_LABEL_MIN_WIDTH_PX = 200
+
+const oauthButtonContentRow = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: OAUTH_ROW_GAP,
+  width: '100%',
+  maxWidth: '100%',
+}
+
+const oauthLabelCrossfadeCell = {
+  lineHeight: `${LABEL_MIN_HEIGHT}px`,
+  transition: 'opacity 220ms ease-out',
+  pointerEvents: 'none',
+  whiteSpace: 'nowrap',
+}
+
+function oauthPointerHandlers(setHover, setPressed, clearPress) {
+  return {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => {
+      setHover(false)
+      clearPress()
+    },
+    onMouseDown: () => setPressed(true),
+    onMouseUp: clearPress,
+    onTouchStart: () => setPressed(true),
+    onTouchEnd: clearPress,
+    onTouchCancel: clearPress,
+    onPointerLeave: () => {
+      setHover(false)
+      clearPress()
+    },
+  }
+}
 
 export default function LoginButtons() {
   const { authError, signInWithGoogle, status } = useAuth()
@@ -156,6 +193,9 @@ export default function LoginButtons() {
 
   const clearGooglePress = () => setGooglePressed(false)
   const clearApplePress = () => setApplePressed(false)
+
+  const googleHandlers = oauthPointerHandlers(setGoogleHover, setGooglePressed, clearGooglePress)
+  const appleHandlers = oauthPointerHandlers(setAppleHover, setApplePressed, clearApplePress)
 
   const googleTransform = googlePressed ? 'scale(0.96)' : 'scale(1)'
   const googleTransition = `${oauthTransitionBase}, transform 260ms cubic-bezier(0.34, 1.35, 0.64, 1)`
@@ -203,24 +243,11 @@ export default function LoginButtons() {
         variant="primary"
         disabled={isLoading}
         onClick={onGoogle}
-        onMouseEnter={() => setGoogleHover(true)}
-        onMouseLeave={() => {
-          setGoogleHover(false)
-          clearGooglePress()
-        }}
-        onMouseDown={() => setGooglePressed(true)}
-        onMouseUp={clearGooglePress}
-        onTouchStart={() => setGooglePressed(true)}
-        onTouchEnd={clearGooglePress}
-        onTouchCancel={clearGooglePress}
-        onPointerLeave={() => {
-          setGoogleHover(false)
-          clearGooglePress()
-        }}
+        {...googleHandlers}
         style={googleStyle}
       >
-        <span style={oauthIconWrap} aria-hidden>
-          <span style={oauthIconMicroStyle(googlePressed, googleHover)}>
+        <span style={oauthButtonContentRow}>
+          <span style={oauthIconSlot} aria-hidden>
             {isLoading ? (
               <span
                 style={{
@@ -237,47 +264,34 @@ export default function LoginButtons() {
               <GoogleMark />
             )}
           </span>
-        </span>
-        <span
-          style={{
-            position: 'relative',
-            width: '100%',
-            minHeight: LABEL_MIN_HEIGHT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
           <span
             style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              textAlign: 'center',
-              lineHeight: `${LABEL_MIN_HEIGHT}px`,
-              opacity: isLoading ? 0 : 1,
-              transition: 'opacity 220ms ease-out',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
+              display: 'grid',
+              minHeight: LABEL_MIN_HEIGHT,
+              alignItems: 'center',
+              minWidth: OAUTH_GOOGLE_LABEL_MIN_WIDTH_PX,
+              flexShrink: 1,
             }}
           >
-            Continuar con Google
-          </span>
-          <span
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              textAlign: 'center',
-              lineHeight: `${LABEL_MIN_HEIGHT}px`,
-              opacity: isLoading ? 1 : 0,
-              transition: 'opacity 220ms ease-out',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap',
-            }}
-            aria-live="polite"
-          >
-            Conectando...
+            <span
+              style={{
+                gridArea: '1 / 1',
+                opacity: isLoading ? 0 : 1,
+                ...oauthLabelCrossfadeCell,
+              }}
+            >
+              Continuar con Google
+            </span>
+            <span
+              style={{
+                gridArea: '1 / 1',
+                opacity: isLoading ? 1 : 0,
+                ...oauthLabelCrossfadeCell,
+              }}
+              aria-live="polite"
+            >
+              Conectando...
+            </span>
           </span>
         </span>
       </Button>
@@ -286,28 +300,17 @@ export default function LoginButtons() {
         variant="secondary"
         disabled={isLoading}
         onClick={onApple}
-        onMouseEnter={() => setAppleHover(true)}
-        onMouseLeave={() => {
-          setAppleHover(false)
-          clearApplePress()
-        }}
-        onMouseDown={() => setApplePressed(true)}
-        onMouseUp={clearApplePress}
-        onTouchStart={() => setApplePressed(true)}
-        onTouchEnd={clearApplePress}
-        onTouchCancel={clearApplePress}
-        onPointerLeave={() => {
-          setAppleHover(false)
-          clearApplePress()
-        }}
+        {...appleHandlers}
         style={appleStyle}
       >
-        <span style={oauthIconWrap} aria-hidden>
-          <span style={oauthIconMicroStyle(applePressed, appleHover, true)}>
+        <span style={oauthButtonContentRow}>
+          <span style={oauthIconSlotApple(appleHover)} aria-hidden>
             <AppleMark />
           </span>
+          <span style={{ whiteSpace: 'nowrap', lineHeight: `${LABEL_MIN_HEIGHT}px` }}>
+            Continuar con Apple
+          </span>
         </span>
-        <span style={{ width: '100%', textAlign: 'center' }}>Continuar con Apple</span>
       </Button>
       {authError || appleMessage ? (
         <p

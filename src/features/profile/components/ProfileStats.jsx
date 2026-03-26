@@ -29,7 +29,11 @@ export default function ProfileStats({ allowPhoneCalls, onToggle }) {
         </svg>
         <span style={{ color: colors.textPrimary, fontSize: 14 }}>Permitir llamadas</span>
       </div>
-      <Switch checked={allowPhoneCalls} onToggle={onToggle} ariaLabel="Permitir llamadas telefónicas" />
+      <Switch
+        checked={allowPhoneCalls}
+        onToggle={onToggle}
+        ariaLabel="Permitir llamadas telefónicas"
+      />
     </Card>
   )
 }

@@ -36,8 +36,19 @@ export default [
       'react/react-in-jsx-scope': 'off',
       'react/jsx-uses-react': 'off',
       'react/prop-types': 'off',
+      'react/jsx-uses-vars': 'error',
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // Fast refresh: en CI/quality gate usamos --max-warnings 0; esta regla es solo DX local
+      'react-refresh/only-export-components': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrors: 'none',
+          ignoreRestSiblings: true,
+        },
+      ],
     },
     settings: { react: { version: 'detect' } },
   },

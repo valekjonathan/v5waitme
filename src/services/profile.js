@@ -1,6 +1,35 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
-/** @typedef {{ full_name: string, phone: string, brand: string, model: string, plate: string, allow_phone_calls: boolean, color: string, vehicle_type: string }} AppProfile */
+/**
+ * @typedef {{
+ *   full_name: string,
+ *   phone: string,
+ *   brand: string,
+ *   model: string,
+ *   plate: string,
+ *   allow_phone_calls: boolean,
+ *   color: string,
+ *   vehicle_type: string,
+ *   email?: string,
+ *   avatar_url?: string,
+ * }} AppProfile
+ */
+
+export const PROFILE_INCOMPLETE_MESSAGE = 'Completa tu perfil para usar la app'
+
+/**
+ * Perfil mínimo usable para alertas / flujo de aparcamiento.
+ */
+export function isAppProfileComplete(p) {
+  if (!p) return false
+  const phone = String(p.phone ?? '').replace(/\s/g, '')
+  if (phone.length < 6) return false
+  const brand = String(p.brand ?? '').trim()
+  const model = String(p.model ?? '').trim()
+  const plate = String(p.plate ?? '').replace(/\s/g, '')
+  if (!brand || !model || plate.length < 4) return false
+  return true
+}
 
 /**
  * Fila `profiles` → estado del formulario (allow_phone_calls no está en BD).
@@ -16,6 +45,8 @@ export function rowToAppProfile(row) {
     allow_phone_calls: false,
     color: row.color ?? 'negro',
     vehicle_type: row.vehicle_type ?? 'car',
+    email: row.email ?? '',
+    avatar_url: row.avatar_url ?? '',
   }
 }
 
@@ -29,16 +60,127 @@ function appToRow(userId, p) {
     color: p.color ?? '',
     vehicle_type: p.vehicle_type ?? 'car',
     plate: p.plate ?? '',
+    email: p.email ?? '',
+    avatar_url: p.avatar_url ?? '',
   }
 }
 
-const PROFILE_COLUMNS = 'id,name,phone,car_brand,car_model,color,vehicle_type,plate'
+const PROFILE_COLUMNS =
+  'id,name,phone,car_brand,car_model,color,vehicle_type,plate,avatar_url,email'
+
+/**
+ * Tras OAuth: asegura fila en `profiles` y devuelve si es alta nueva.
+ * @param {{ id: string, email?: string, user_metadata?: Record<string, unknown> }} user
+ */
+export async function ensureProfileForOAuthUser(user) {
+  if (!isSupabaseConfigured() || !supabase) {
+    return {
+      data: null,
+      isNewUser: false,
+      isProfileComplete: true,
+      error: null,
+    }
+  }
+  if (!user?.id) {
+    return {
+      data: null,
+      isNewUser: false,
+      isProfileComplete: true,
+      error: new Error('missing_user_id'),
+    }
+  }
+
+  try {
+    const { data: existing, error: selErr } = await supabase
+      .from('profiles')
+      .select(PROFILE_COLUMNS)
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (selErr) {
+      console.error('[WaitMe][Profile] ensureProfile select', selErr.message, selErr)
+      return {
+        data: null,
+        isNewUser: false,
+        isProfileComplete: true,
+        error: selErr,
+      }
+    }
+
+    if (existing) {
+      const app = rowToAppProfile(existing)
+      return {
+        data: app,
+        isNewUser: false,
+        isProfileComplete: isAppProfileComplete(app),
+        error: null,
+      }
+    }
+
+    const meta =
+      user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {}
+    const fullName =
+      (typeof meta.full_name === 'string' && meta.full_name) ||
+      (typeof meta.name === 'string' && meta.name) ||
+      (typeof user.email === 'string' && user.email.includes('@')
+        ? user.email.split('@')[0]
+        : '') ||
+      ''
+    const avatarUrl = typeof meta.avatar_url === 'string' ? meta.avatar_url : ''
+    const email = typeof user.email === 'string' ? user.email : ''
+
+    const insertRow = {
+      id: user.id,
+      name: fullName,
+      phone: '',
+      car_brand: '',
+      car_model: '',
+      color: 'negro',
+      vehicle_type: 'car',
+      plate: '',
+      avatar_url: avatarUrl || null,
+      email: email || null,
+    }
+
+    const { data: inserted, error: insErr } = await supabase
+      .from('profiles')
+      .insert(insertRow)
+      .select(PROFILE_COLUMNS)
+      .single()
+
+    if (insErr) {
+      console.error('[WaitMe][Profile] ensureProfile insert', insErr.message, insErr)
+      return {
+        data: null,
+        isNewUser: false,
+        isProfileComplete: true,
+        error: insErr,
+      }
+    }
+
+    const app = rowToAppProfile(inserted)
+    return {
+      data: app,
+      isNewUser: true,
+      isProfileComplete: isAppProfileComplete(app),
+      error: null,
+    }
+  } catch (e) {
+    console.error('[WaitMe][Profile] ensureProfile excepción', e)
+    return {
+      data: null,
+      isNewUser: false,
+      isProfileComplete: true,
+      error: e,
+    }
+  }
+}
 
 /**
  * @param {string} userId - UUID de auth.users
  */
 export async function getProfile(userId) {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() || !supabase) {
     console.warn('[WaitMe][Profile] Supabase no configurado; getProfile omitido.')
     return { data: null, error: null }
   }
@@ -69,7 +211,7 @@ export async function getProfile(userId) {
  * @param {AppProfile} profile
  */
 export async function updateProfile(userId, profile) {
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() || !supabase) {
     console.warn('[WaitMe][Profile] Supabase no configurado; updateProfile omitido.')
     return { data: null, error: new Error('supabase_not_configured') }
   }
@@ -80,7 +222,11 @@ export async function updateProfile(userId, profile) {
   }
   const row = appToRow(userId, profile)
   try {
-    const { data, error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' }).select().single()
+    const { data, error } = await supabase
+      .from('profiles')
+      .upsert(row, { onConflict: 'id' })
+      .select()
+      .single()
 
     if (error) {
       console.error('[WaitMe][Profile] updateProfile', error.message, error)

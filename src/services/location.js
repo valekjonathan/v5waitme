@@ -87,7 +87,7 @@ export function getCurrentPosition(onSuccess, onError) {
   navigator.geolocation.getCurrentPosition(
     (pos) => onSuccess?.(validateRawPosition(pos)),
     (err) => onError?.(normalizeGeoError(err)),
-    GEO_OPTS,
+    GEO_OPTS
   )
 }
 
@@ -100,7 +100,7 @@ export function watchPosition(onSuccess, onError) {
   return navigator.geolocation.watchPosition(
     (pos) => onSuccess?.(validateRawPosition(pos)),
     (err) => onError?.(normalizeGeoError(err)),
-    GEO_OPTS,
+    GEO_OPTS
   )
 }
 
@@ -110,11 +110,7 @@ export function watchPosition(onSuccess, onError) {
 // - persistEvent(event): external persistence override
 // - trajectoryValidator(sample): future trust integration
 export function createPositionGuard(options = {}) {
-  const {
-    onEvent: emitEvent,
-    persistEvent = sendEventToBackend,
-    trajectoryValidator,
-  } = options
+  const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 
   let prevAccepted = null
   let badSpeedBursts = 0
@@ -142,13 +138,19 @@ export function createPositionGuard(options = {}) {
 
     const dtMs = Math.max(1, nextValidated.ts - prevAccepted.ts)
     const dtSec = Math.max(0.5, dtMs / 1000)
-    const dMeters = distanceMeters(prevAccepted.lat, prevAccepted.lng, nextValidated.lat, nextValidated.lng)
+    const dMeters = distanceMeters(
+      prevAccepted.lat,
+      prevAccepted.lng,
+      nextValidated.lat,
+      nextValidated.lng
+    )
     const speedMps = dMeters / dtSec
 
     if (speedMps > MAX_PLAUSIBLE_SPEED_MPS) badSpeedBursts += 1
     else badSpeedBursts = Math.max(0, badSpeedBursts - 1)
 
-    if (dMeters > Math.max(MIN_IMPOSSIBLE_JUMP_M, prevAccepted.accuracy * 3.5) && dtSec < 2.2) teleportBursts += 1
+    if (dMeters > Math.max(MIN_IMPOSSIBLE_JUMP_M, prevAccepted.accuracy * 3.5) && dtSec < 2.2)
+      teleportBursts += 1
     else teleportBursts = Math.max(0, teleportBursts - 1)
 
     const precisionRatio = nextValidated.accuracy / Math.max(1, prevAccepted.accuracy)
@@ -184,7 +186,7 @@ export function createPositionGuard(options = {}) {
     const burstPenalty = clamp(
       badSpeedBursts * 0.08 + teleportBursts * 0.1 + suspiciousAccuracyShifts * 0.05,
       0,
-      0.55,
+      0.55
     )
     const jitterPenalty = isJitter && nextValidated.accuracy > prevAccepted.accuracy ? 0.07 : 0
     let confidence = clamp(1 - accPenalty - speedPenalty - burstPenalty - jitterPenalty, 0.02, 0.99)

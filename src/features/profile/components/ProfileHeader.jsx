@@ -9,6 +9,7 @@ import CameraIcon from '../../../ui/icons/CameraIcon'
 export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
   const cardBorder = `1px solid ${colors.primary}`
   const full_name = profile?.full_name
+  const avatar_url = profile?.avatar_url
   const brand = profile?.brand
   const model = profile?.model
   const plate = profile?.plate
@@ -92,9 +93,17 @@ export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
                 justifyContent: 'center',
               }}
             >
-              <span style={{ fontSize: 26, fontWeight: 600, color: colors.textPrimary }}>
-                {nameStr ? nameStr.charAt(0) : 'J'}
-              </span>
+              {String(avatar_url ?? '').trim() ? (
+                <img
+                  src={String(avatar_url).trim()}
+                  alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span style={{ fontSize: 26, fontWeight: 600, color: colors.textPrimary }}>
+                  {nameStr ? nameStr.charAt(0) : '?'}
+                </span>
+              )}
             </div>
             <label
               style={{
@@ -152,7 +161,7 @@ export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
                   transform: 'translateY(4px)',
                 }}
               >
-                {nameStr || 'JONATHAN'}
+                {nameStr || '—'}
               </div>
               <div style={{ flexShrink: 0, display: 'flex', gap: 2, marginLeft: -8 }}>
                 {'★★★★'.split('').map((s, i) => (
@@ -190,7 +199,7 @@ export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
                   width: '100%',
                 }}
               >
-                {carStr || 'Porsche Macan'}
+                {carStr || '—'}
               </p>
             </div>
 
@@ -223,7 +232,7 @@ export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
                       transformOrigin: 'center center',
                     }}
                   >
-                    <Plate value={plate || '2026VSR'} editable={false} />
+                    <Plate value={plate || ''} editable={false} />
                   </div>
                 </div>
               </div>
@@ -237,7 +246,11 @@ export default function ProfileHeader({ profile, Plate, VehicleIcon }) {
                   justifyContent: 'center',
                 }}
               >
-                <VehicleIcon type={vehicle_type || 'car'} color={resolveColorFill(colorKey)} size="default" />
+                <VehicleIcon
+                  type={vehicle_type || 'car'}
+                  color={resolveColorFill(colorKey)}
+                  size="default"
+                />
               </div>
             </div>
           </div>

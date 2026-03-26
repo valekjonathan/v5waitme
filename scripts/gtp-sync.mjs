@@ -160,7 +160,9 @@ function risksFromRepo() {
     if (!t.includes('MAPBOX')) r.push('.env.example: documentar VITE_MAPBOX_ACCESS_TOKEN.')
   }
   if (grepFile('src/features/map/components/Map.jsx', /Mapbox omitido/)) {
-    r.push('Mapa: sin token o error Mapbox → sin tiles; Home mantiene capa visible (Map no bloqueante).')
+    r.push(
+      'Mapa: sin token o error Mapbox → sin tiles; Home mantiene capa visible (Map no bloqueante).'
+    )
   }
   if (!fs.existsSync(path.join(ROOT, 'test'))) r.push('Carpeta test/ ausente.')
   if (!fs.existsSync(path.join(ROOT, '.vscode', 'tasks.json'))) {
@@ -200,7 +202,8 @@ function main() {
   const tests = files.filter((f) => f.startsWith('test/') && f.endsWith('.js'))
 
   const risks = risksFromRepo().filter(Boolean)
-  if (!risks.length) risks.push('(ningún riesgo heurístico extra detectado por el script; revisar manualmente).')
+  if (!risks.length)
+    risks.push('(ningún riesgo heurístico extra detectado por el script; revisar manualmente).')
 
   const lines = []
   lines.push('WAITME / v5waitme — FULL_REPO_CONTEXT (generado)')
@@ -211,7 +214,7 @@ function main() {
   lines.push('0) DOCUMENTACIÓN DE PROYECTO SOLICITADA Y AUSENTE')
   lines.push('---')
   lines.push(
-    'No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHANGE_PROTOCOL.md.',
+    'No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHANGE_PROTOCOL.md.'
   )
   lines.push('')
   lines.push('---')
@@ -242,11 +245,19 @@ function main() {
   lines.push('---')
   lines.push('5) FLUJO DE ARRANQUE')
   lines.push('---')
-  lines.push('Producción: npm run auto:ship → lint + test + build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh (pestaña solo host producción). npm run open:prod solo abre URL.')
-  lines.push('Watch (Cursor/VSCode): npm run dev:auto → vigila src/, debounce 2s → auto:ship; Safari loop una vez en background (macOS). Tarea waitme: auto dev con runOn folderOpen.')
+  lines.push(
+    'Producción: npm run auto:ship → lint + test + build + git add . + commit "auto: update" + push main; npm run auto:live → auto:ship + open-prod-refresh (pestaña solo host producción). npm run open:prod solo abre URL.'
+  )
+  lines.push(
+    'Watch (Cursor/VSCode): npm run dev:auto → vigila src/, debounce 2s → auto:ship; Safari loop una vez en background (macOS). Tarea waitme: auto dev con runOn folderOpen.'
+  )
   lines.push('Desarrollo local opcional: npm run dev → Vite (ver vite.config).')
-  lines.push('Vercel: vercel.json (build npm run build, output dist); importar repo en dashboard para auto-deploy en push.')
-  lines.push('Cursor/VSCode: waitme: auto dev, waitme: auto ship, waitme: auto live, waitme: open production.')
+  lines.push(
+    'Vercel: vercel.json (build npm run build, output dist); importar repo en dashboard para auto-deploy en push.'
+  )
+  lines.push(
+    'Cursor/VSCode: waitme: auto dev, waitme: auto ship, waitme: auto live, waitme: open production.'
+  )
   lines.push('--- .vscode/tasks.json (extracto / completo si corto) ---')
   lines.push(tasksTxt || '(no encontrado)')
   lines.push('')
@@ -265,7 +276,7 @@ function main() {
   lines.push(
     supabaseMigrationFiles.length
       ? supabaseMigrationFiles.map((m) => `- ${m}`).join('\n')
-      : '(sin migraciones)',
+      : '(sin migraciones)'
   )
   lines.push('')
   lines.push('---')
@@ -277,7 +288,9 @@ function main() {
   lines.push('---')
   lines.push('8) TESTS')
   lines.push('---')
-  lines.push(tests.length ? tests.map((t) => `- ${t}`).join('\n') : '(ninguno encontrado bajo test/)')
+  lines.push(
+    tests.length ? tests.map((t) => `- ${t}`).join('\n') : '(ninguno encontrado bajo test/)'
+  )
   lines.push('')
   lines.push('---')
   lines.push('9) RIESGOS (heurística automática + revisión humana recomendada)')
@@ -287,9 +300,7 @@ function main() {
   lines.push('---')
   lines.push('10) ARCHIVOS RECIENTES (mtime en esta máquina, top)')
   lines.push('---')
-  lines.push(
-    ...recent.map(({ r, m }) => `- ${r}  (${new Date(m).toISOString()})`),
-  )
+  lines.push(...recent.map(({ r, m }) => `- ${r}  (${new Date(m).toISOString()})`))
   lines.push('')
   lines.push('---')
   lines.push('11) GIT (último commit — solo si hay repo)')

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Instalado en .git/hooks/pre-commit por scripts/ensure-git-hooks.mjs (npm install / prepare)
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+npm run quality

@@ -1,5 +1,5 @@
 import { usePostHog } from '@posthog/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import CenterPin from './CenterPin'
 import Map from '../../map/components/Map'
 import logo from '../../../assets/logo.png'
@@ -18,6 +18,16 @@ export default function HomePage({ centerContent = null }) {
   const isLoginLayout = Boolean(centerContent)
   const [loginHeroIn, setLoginHeroIn] = useState(!isLoginLayout)
   const [loginCtaIn, setLoginCtaIn] = useState(!isLoginLayout)
+  const [mapLayerSettled, setMapLayerSettled] = useState(false)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setMapLayerSettled(true), 2000)
+    return () => window.clearTimeout(t)
+  }, [])
+
+  const onMapSettled = useCallback(() => {
+    setMapLayerSettled(true)
+  }, [])
 
   useEffect(() => {
     if (!isLoginLayout) {
@@ -66,8 +76,10 @@ export default function HomePage({ centerContent = null }) {
           zIndex: 0,
           backgroundColor: colors.background,
         }}
+        aria-busy={!mapLayerSettled}
+        aria-label="Capa de mapa"
       >
-        <Map />
+        <Map onSettled={onMapSettled} />
       </div>
 
       <div
@@ -76,10 +88,6 @@ export default function HomePage({ centerContent = null }) {
           inset: 0,
           zIndex: 5,
           pointerEvents: 'none',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
           backgroundColor: colors.overlayPurple,
         }}
       />
@@ -94,7 +102,15 @@ export default function HomePage({ centerContent = null }) {
           justifyContent: 'center',
         }}
       >
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            pointerEvents: 'none',
+          }}
+        >
           <div
             style={{
               pointerEvents: 'none',
@@ -185,7 +201,13 @@ export default function HomePage({ centerContent = null }) {
                 >
                   Aparca donde te <span style={{ color: colors.primary }}>avisen!</span>
                 </p>
-                <div style={{ display: 'flex', justifyContent: 'center', padding: `${spacing.lg}px 0` }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: `${spacing.lg}px 0`,
+                  }}
+                >
                   <CenterPin />
                 </div>
               </div>
@@ -210,7 +232,9 @@ export default function HomePage({ centerContent = null }) {
                     <Button
                       type="button"
                       variant="primary"
-                      onClick={() => track(EVENTS.SEARCH_CLICK, { device: 'web', screen: 'home' }, posthog)}
+                      onClick={() =>
+                        track(EVENTS.SEARCH_CLICK, { device: 'web', screen: 'home' }, posthog)
+                      }
                     >
                       <MagnifierIcon />
                       ¿Dónde quieres aparcar?
@@ -218,7 +242,9 @@ export default function HomePage({ centerContent = null }) {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => track(EVENTS.PARK_CLICK, { device: 'web', screen: 'home' }, posthog)}
+                      onClick={() =>
+                        track(EVENTS.PARK_CLICK, { device: 'web', screen: 'home' }, posthog)
+                      }
                     >
                       <CarIconHome />
                       ¡Estoy aparcado aquí!

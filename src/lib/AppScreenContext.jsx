@@ -1,15 +1,16 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useReducer } from 'react'
+import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
 
 const AppScreenContext = createContext(null)
 
 export function AppScreenProvider({ children }) {
-  const [screen, setScreen] = useState('home')
+  const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
 
   const value = useMemo(
     () => ({
       screen,
-      openProfile: () => setScreen('profile'),
-      openHome: () => setScreen('home'),
+      openProfile: () => dispatch({ type: 'openProfile' }),
+      openHome: () => dispatch({ type: 'openHome' }),
     }),
     [screen]
   )

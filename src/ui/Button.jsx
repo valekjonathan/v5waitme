@@ -22,6 +22,21 @@ const entryBtnBase = {
   boxSizing: 'border-box',
 }
 
+const navButtonShared = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: colors.primary,
+  height: spacingExact.bottomNavHeight,
+  borderRadius: radius.medium,
+  margin: '0 4px',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  boxSizing: 'border-box',
+}
+
 const variantStyles = {
   primary: {
     ...entryBtnBase,
@@ -69,36 +84,14 @@ const variantStyles = {
     fontFamily: 'inherit',
   },
   nav: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: colors.primary,
-    height: spacingExact.bottomNavHeight,
-    borderRadius: radius.medium,
-    margin: '0 4px',
+    ...navButtonShared,
     border: 0,
     background: 'transparent',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
   },
   navActive: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: colors.primary,
-    height: spacingExact.bottomNavHeight,
-    borderRadius: radius.medium,
-    margin: '0 4px',
+    ...navButtonShared,
     border: `1px solid ${colors.primaryBorderMuted}`,
     background: colors.primaryMutedBg,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
   },
   profileSave: {
     width: '100%',
@@ -182,8 +175,17 @@ const variantStyles = {
 }
 
 const Button = forwardRef(function Button(
-  { variant = 'primary', disabled, style, children, onMouseEnter, onMouseLeave, type = 'button', ...rest },
-  ref,
+  {
+    variant = 'primary',
+    disabled,
+    style,
+    children,
+    onMouseEnter,
+    onMouseLeave,
+    type = 'button',
+    ...rest
+  },
+  ref
 ) {
   const [hover, setHover] = useState(false)
 
@@ -193,9 +195,7 @@ const Button = forwardRef(function Button(
       : variantStyles[variant] || variantStyles.primary
 
   const dangerHover =
-    variant === 'danger'
-      ? { backgroundColor: hover ? colors.dangerBgHover : colors.dangerBg }
-      : {}
+    variant === 'danger' ? { backgroundColor: hover ? colors.dangerBgHover : colors.dangerBg } : {}
 
   return (
     <button

@@ -48,6 +48,7 @@ export async function getCurrentUser() {
     console.warn('[WaitMe][Auth] Supabase no configurado; getCurrentUser omitido.')
     return null
   }
+  if (!supabase) return null
   try {
     const {
       data: { user },
@@ -69,6 +70,9 @@ export async function getCurrentUser() {
  */
 export async function signInWithGoogle() {
   if (!isSupabaseConfigured()) {
+    return { data: null, error: new Error('supabase_not_configured') }
+  }
+  if (!supabase) {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
@@ -97,6 +101,9 @@ export async function getSession() {
   if (!isSupabaseConfigured()) {
     return { data: { session: null }, error: null }
   }
+  if (!supabase) {
+    return { data: { session: null }, error: null }
+  }
   try {
     return await supabase.auth.getSession()
   } catch (e) {
@@ -107,6 +114,9 @@ export async function getSession() {
 
 export async function signOut() {
   if (!isSupabaseConfigured()) {
+    return { error: null }
+  }
+  if (!supabase) {
     return { error: null }
   }
   try {

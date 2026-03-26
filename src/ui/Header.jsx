@@ -28,7 +28,12 @@ export default function Header({ interactive = true }) {
         isolation: 'isolate',
       }}
     >
-      <div style={{ position: 'relative', padding: `${spacingExact.headerPaddingY}px ${spacingExact.headerPaddingX}px` }}>
+      <div
+        style={{
+          position: 'relative',
+          padding: `${spacingExact.headerPaddingY}px ${spacingExact.headerPaddingX}px`,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
             <div style={{ width: 40, height: 40 }} />
@@ -46,11 +51,27 @@ export default function Header({ interactive = true }) {
                 padding: `${spacingExact.balancePillPaddingY}px ${spacingExact.balancePillPaddingX}px`,
               }}
             >
-              <span style={{ position: 'relative', fontSize: 14, fontWeight: 700, color: colors.primary }}>0.00€</span>
+              <span
+                style={{
+                  position: 'relative',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: colors.primary,
+                }}
+              >
+                0.00€
+              </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: spacingExact.headerGap }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: spacingExact.headerGap,
+            }}
+          >
             <Button type="button" variant="ghost" style={{ overflow: 'visible' }}>
               <SettingsIcon />
             </Button>

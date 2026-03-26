@@ -77,7 +77,10 @@ function Field({ id, labelText, value, onChange, maxLength, placeholder }) {
 
 function DropdownField({ id, labelText, value, onChange, options, renderTrigger, renderItem }) {
   const [open, setOpen] = useState(false)
-  const active = useMemo(() => options.find((o) => o.value === value) || options[0], [options, value])
+  const active = useMemo(
+    () => options.find((o) => o.value === value) || options[0],
+    [options, value]
+  )
   const rootRef = useRef(null)
 
   useEffect(() => {
@@ -203,6 +206,20 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
       data-form-type="other"
       onSubmit={(e) => e.preventDefault()}
     >
+      <div style={fieldWrap}>
+        <label htmlFor="profile-email" style={labelStyle}>
+          Email
+        </label>
+        <Input
+          id="profile-email"
+          value={String(value.email ?? '')}
+          readOnly
+          disabled
+          autoComplete="email"
+          style={{ width: '100%', height: 36, textAlign: 'center', opacity: 0.85 }}
+        />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
         <div style={fieldWrap}>
           <label htmlFor="profile-full_name" style={labelStyle}>
@@ -211,7 +228,9 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
           <Input
             value={String(value.full_name ?? '').slice(0, 10)}
             maxLength={10}
-            onChange={(e) => onChange((prev) => ({ ...prev, full_name: e.target.value.slice(0, 10) }))}
+            onChange={(e) =>
+              onChange((prev) => ({ ...prev, full_name: e.target.value.slice(0, 10) }))
+            }
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="none"
@@ -256,11 +275,26 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
         </div>
       </div>
 
-      <ProfileStats allowPhoneCalls={value.allow_phone_calls} onToggle={patch('allow_phone_calls')} />
+      <ProfileStats
+        allowPhoneCalls={value.allow_phone_calls}
+        onToggle={patch('allow_phone_calls')}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
-        <Field id="profile-brand" labelText="Marca" value={value.brand} onChange={patch('brand')} placeholder="Seat, Renault..." />
-        <Field id="profile-model" labelText="Modelo" value={value.model} onChange={patch('model')} placeholder="Ibiza, Megane..." />
+        <Field
+          id="profile-brand"
+          labelText="Marca"
+          value={value.brand}
+          onChange={patch('brand')}
+          placeholder="Seat, Renault..."
+        />
+        <Field
+          id="profile-model"
+          labelText="Modelo"
+          value={value.model}
+          onChange={patch('model')}
+          placeholder="Ibiza, Megane..."
+        />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
@@ -272,17 +306,41 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
           options={COLOR_OPTIONS}
           renderTrigger={(active) => (
             <>
-              <div style={{ width: 72, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <VehicleIcon type={value.vehicle_type || 'car'} color={resolveColorFill(active.value)} size="default" />
+              <div
+                style={{
+                  width: 72,
+                  height: 38,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <VehicleIcon
+                  type={value.vehicle_type || 'car'}
+                  color={resolveColorFill(active.value)}
+                  size="default"
+                />
               </div>
-              <span style={{ color: colors.textPrimary, whiteSpace: 'nowrap', fontSize: 13, transform: 'scale(0.95)' }}>
+              <span
+                style={{
+                  color: colors.textPrimary,
+                  whiteSpace: 'nowrap',
+                  fontSize: 13,
+                  transform: 'scale(0.95)',
+                }}
+              >
                 {active.label}
               </span>
             </>
           )}
           renderItem={(o) => (
             <span style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-              <VehicleIcon type={value.vehicle_type || 'car'} color={resolveColorFill(o.value)} size="default" />
+              <VehicleIcon
+                type={value.vehicle_type || 'car'}
+                color={resolveColorFill(o.value)}
+                size="default"
+              />
               {o.label}
             </span>
           )}
@@ -295,10 +353,26 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
           options={VEHICLE_TYPE_OPTIONS}
           renderTrigger={() => (
             <>
-              <div style={{ width: 72, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 72,
+                  height: 38,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
                 <VehicleIcon type={value.vehicle_type} color={selectedFill} size="default" />
               </div>
-              <span style={{ color: colors.textPrimary, whiteSpace: 'nowrap', fontSize: 13, transform: 'scale(0.95)' }}>
+              <span
+                style={{
+                  color: colors.textPrimary,
+                  whiteSpace: 'nowrap',
+                  fontSize: 13,
+                  transform: 'scale(0.95)',
+                }}
+              >
                 {vehicleLabel(value.vehicle_type)}
               </span>
             </>
@@ -344,7 +418,11 @@ export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
                 transformOrigin: 'center center',
               }}
             >
-              <Plate value={value.plate} editable={true} onChange={(plate) => onChange((prev) => ({ ...prev, plate }))} />
+              <Plate
+                value={value.plate}
+                editable={true}
+                onChange={(plate) => onChange((prev) => ({ ...prev, plate }))}
+              />
             </div>
           </div>
         </div>

@@ -46,7 +46,7 @@ async function validateAuthAndRls(url, anonKey) {
   const { data: signInData, error: signInError } = await supabase.auth.signInAnonymously()
   if (signInError) {
     throw new Error(
-      `Anonymous auth failed: ${signInError.message}. Enable Anonymous sign-ins in Supabase Auth settings.`,
+      `Anonymous auth failed: ${signInError.message}. Enable Anonymous sign-ins in Supabase Auth settings.`
     )
   }
   const userId = signInData?.user?.id
@@ -67,9 +67,12 @@ async function validateAuthAndRls(url, anonKey) {
   // Quick existence check (helps produce clearer errors).
   const { error: existsError } = await supabase.from('profiles').select('id').limit(1)
   if (existsError) {
-    if (/schema cache/i.test(existsError.message) || /Could not find the table/i.test(existsError.message)) {
+    if (
+      /schema cache/i.test(existsError.message) ||
+      /Could not find the table/i.test(existsError.message)
+    ) {
       throw new Error(
-        "Table profiles missing in PostgREST schema cache. Create `public.profiles` + RLS + policies (see `supabase/migrations/20260325_000001_init_profiles.sql`) then re-run npm run supabase:setup.",
+        'Table profiles missing in PostgREST schema cache. Create `public.profiles` + RLS + policies (see `supabase/migrations/20260325_000001_init_profiles.sql`) then re-run npm run supabase:setup.'
       )
     }
     throw new Error(`profiles check failed: ${existsError.message}`)
@@ -82,7 +85,11 @@ async function validateAuthAndRls(url, anonKey) {
     .maybeSingle()
   if (upsertError) throw new Error(`Insert/upsert failed: ${upsertError.message}`)
 
-  const { error: selectError } = await supabase.from('profiles').select('id').eq('id', userId).maybeSingle()
+  const { error: selectError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle()
   if (selectError) throw new Error(`Select failed: ${selectError.message}`)
 
   const { error: updateError } = await supabase
@@ -91,7 +98,10 @@ async function validateAuthAndRls(url, anonKey) {
     .eq('id', userId)
   if (updateError) throw new Error(`Update failed: ${updateError.message}`)
 
-  console.log('[supabase:setup] Insert/Select/Update validation OK', upserted?.id ? `(row: ${upserted.id})` : '')
+  console.log(
+    '[supabase:setup] Insert/Select/Update validation OK',
+    upserted?.id ? `(row: ${upserted.id})` : ''
+  )
 
   await supabase.auth.signOut()
 }

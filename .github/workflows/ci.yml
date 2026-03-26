@@ -1,3 +1,5 @@
+# Calidad obligatoria: lint + test + (build si hay VITE_SUPABASE_* en secrets).
+# No ejecuta auto-ship ni otros scripts de deploy.
 name: CI
 
 on:
@@ -7,33 +9,33 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
+  quality:
+    name: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: npm
 
-      - name: Install
+      - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Quality gate
+        env:
+          # Opcional: añade en Repo → Settings → Secrets → Actions para ejecutar también `vite build` en CI
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run quality
 
-      - name: Test
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
+      - name: UI tests (Vitest) + coverage mínimo
+        run: npm run test:ui -- --coverage

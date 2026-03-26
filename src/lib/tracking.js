@@ -45,7 +45,6 @@ export async function track(event, data = {}, posthogInstance = null) {
 
   try {
     ph.capture(event, data)
-    console.log('[Tracking OK]', event, data)
   } catch (e) {
     console.error('[Tracking ERROR]', e)
   }

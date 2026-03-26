@@ -46,7 +46,14 @@ export default function CenterPin() {
       }}
     >
       <style>{PIN_STYLE_TAG}</style>
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
         <div
           className="center-pin-pulse-halo"
           style={{

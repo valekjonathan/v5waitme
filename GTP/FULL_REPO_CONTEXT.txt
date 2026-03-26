@@ -1,5 +1,5 @@
 WAITME / v5waitme — FULL_REPO_CONTEXT (generado)
-Generado (UTC): 2026-03-25T15:54:49.132Z
+Generado (UTC): 2026-03-25T20:04:36.996Z
 Script: npm run gtp:sync | postbuild tras npm run build
 
 ---
@@ -25,6 +25,7 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │   ├── settings.json
 │   └── tasks.json
 ├── GTP
+│   ├── AUDITORIA_MAESTRA.txt
 │   └── FULL_REPO_CONTEXT.txt
 ├── README.md
 ├── eslint.config.js
@@ -32,10 +33,15 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 ├── package-lock.json
 ├── package.json
 ├── scripts
+│   ├── auto-clean.mjs
 │   ├── auto-ship.mjs
 │   ├── dev-auto.mjs
+│   ├── ensure-git-hooks.mjs
+│   ├── git-hooks
+│   │   └── pre-commit
 │   ├── gtp-sync.mjs
 │   ├── open-prod-refresh.mjs
+│   ├── quality-gate.mjs
 │   └── supabase-setup.mjs
 ├── src
 │   ├── app
@@ -77,7 +83,6 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │   │   ├── AuthContext.jsx
 │   │   ├── ErrorBoundary.jsx
 │   │   ├── analytics.js
-│   │   ├── sentry.js
 │   │   └── tracking.js
 │   ├── main.jsx
 │   ├── services
@@ -85,6 +90,9 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │   │   ├── location.js
 │   │   ├── profile.js
 │   │   └── supabase.js
+│   ├── store
+│   │   ├── AppProvider.jsx
+│   │   └── appStore.js
 │   ├── styles
 │   │   └── global.css
 │   └── ui
@@ -111,7 +119,7 @@ No están en el repo: WAITME_AGENT_CONTEXT.md, CURSOR_RULES_WAITME.md, SAFE_CHAN
 │       └── 0001_init_profiles.sql
 ├── test
 │   ├── location.test.js
-│   └── map-startup.test.js
+│   └── mapbox.test.js
 ├── vercel.json
 └── vite.config.js
 
@@ -140,10 +148,12 @@ Estilos: src/styles/global.css
   "postbuild": "node scripts/gtp-sync.mjs",
   "gtp:sync": "node scripts/gtp-sync.mjs",
   "supabase:setup": "node scripts/supabase-setup.mjs",
-  "verify": "npm run lint && npm test && npm run build",
+  "quality": "node scripts/quality-gate.mjs",
+  "prepare": "node scripts/ensure-git-hooks.mjs",
   "test": "node --test",
-  "lint": "eslint .",
-  "format": "prettier --write ."
+  "lint": "eslint . --max-warnings 0",
+  "format": "prettier --write .",
+  "clean": "node scripts/auto-clean.mjs"
 }
 
 ---
@@ -152,8 +162,6 @@ Estilos: src/styles/global.css
 dependencies:
 {
   "@posthog/react": "^1.8.2",
-  "@sentry/react": "^10.45.0",
-  "@sentry/tracing": "^7.120.4",
   "@supabase/supabase-js": "^2.100.0",
   "mapbox-gl": "^3.20.0",
   "posthog-js": "^1.257.2",
@@ -202,24 +210,36 @@ Cursor/VSCode: waitme: auto dev, waitme: auto ship, waitme: auto live, waitme: o
 
 
 --- vite.config.js ---
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [react()],
-  build: { chunkSizeWarningLimit: 2500 },
-  server: {
-    host: 'localhost',
-    port: 5173,
-    strictPort: true,
-    headers: {
-      // Evita que Safari/Chrome sirvan módulos HMR en caché y parezca que “no cambia nada”
-      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+export default defineConfig(({ mode }) => {
+  const fileEnv = loadEnv(mode, process.cwd(), '')
+  const url = String(fileEnv.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim()
+  const key = String(
+    fileEnv.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+  ).trim()
+  if (!url || !key) {
+    throw new Error(
+      '[vite] Build/dev bloqueado: definen VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY (p. ej. .env.local o variables del proveedor de deploy).'
+    )
+  }
+
+  return {
+    plugins: [react()],
+    build: { chunkSizeWarningLimit: 2500 },
+    server: {
+      host: 'localhost',
+      port: 5173,
+      strictPort: true,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+      },
+      hmr: {
+        overlay: false,
+      },
     },
-    hmr: {
-      overlay: false,
-    },
-  },
+  }
 })
 
 
@@ -230,10 +250,10 @@ export default defineConfig({
 - Setup automático: npm run supabase:setup → scripts/supabase-setup.mjs.
 - Variables esperadas: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_DB_URL.
 --- .env.example ---
+# VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY son obligatorias: sin ellas `vite` (dev/build) no arranca.
 VITE_MAPBOX_ACCESS_TOKEN=
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-VITE_SENTRY_DSN=
 VITE_POSTHOG_KEY=
 VITE_POSTHOG_HOST=
 
@@ -252,7 +272,7 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 8) TESTS
 ---
 - test/location.test.js
-- test/map-startup.test.js
+- test/mapbox.test.js
 
 ---
 9) RIESGOS (heurística automática + revisión humana recomendada)
@@ -262,35 +282,34 @@ Componentes UI: Header, BottomNav, CenterPin, IphoneFrame, perfil/*, Map.
 ---
 10) ARCHIVOS RECIENTES (mtime en esta máquina, top)
 ---
-- scripts/gtp-sync.mjs  (2026-03-25T15:54:43.758Z)
-- test/map-startup.test.js  (2026-03-25T15:54:40.318Z)
-- src/features/map/components/Map.jsx  (2026-03-25T15:54:38.284Z)
-- src/features/map/constants/mapbox.js  (2026-03-25T15:54:16.556Z)
-- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T15:51:33.750Z)
-- src/lib/ErrorBoundary.jsx  (2026-03-25T15:50:45.222Z)
-- src/main.jsx  (2026-03-25T15:48:41.320Z)
-- src/app/App.jsx  (2026-03-25T15:48:27.337Z)
-- src/features/home/components/HomePage.jsx  (2026-03-25T15:42:29.477Z)
-- .gitignore  (2026-03-25T15:33:41.939Z)
-- scripts/auto-ship.mjs  (2026-03-25T15:33:32.629Z)
-- scripts/dev-auto.mjs  (2026-03-25T15:33:30.927Z)
-- scripts/open-prod-refresh.mjs  (2026-03-25T15:33:17.761Z)
-- package.json  (2026-03-25T15:17:27.493Z)
-- .vscode/settings.json  (2026-03-25T15:15:31.728Z)
-- .vscode/tasks.json  (2026-03-25T15:15:31.660Z)
-- src/ui/BottomNav.jsx  (2026-03-25T14:51:14.238Z)
-- src/ui/Header.jsx  (2026-03-25T14:51:10.933Z)
+- src/app/App.jsx  (2026-03-25T20:04:29.230Z)
+- src/lib/AuthContext.jsx  (2026-03-25T20:04:28.164Z)
+- src/store/AppProvider.jsx  (2026-03-25T20:04:26.927Z)
+- GTP/AUDITORIA_MAESTRA.txt  (2026-03-25T20:02:12.929Z)
+- GTP/FULL_REPO_CONTEXT.txt  (2026-03-25T20:02:05.249Z)
+- scripts/dev-auto.mjs  (2026-03-25T20:01:58.447Z)
+- scripts/auto-ship.mjs  (2026-03-25T20:01:58.211Z)
+- scripts/auto-clean.mjs  (2026-03-25T20:01:54.385Z)
+- package-lock.json  (2026-03-25T19:57:10.464Z)
+- .gitignore  (2026-03-25T19:53:48.241Z)
+- .env.example  (2026-03-25T19:53:47.009Z)
+- package.json  (2026-03-25T19:53:46.894Z)
+- src/main.jsx  (2026-03-25T19:53:45.871Z)
+- test/mapbox.test.js  (2026-03-25T19:53:45.523Z)
+- scripts/quality-gate.mjs  (2026-03-25T19:41:57.549Z)
+- vite.config.js  (2026-03-25T19:41:27.511Z)
+- vercel.json  (2026-03-25T19:41:27.509Z)
+- src/ui/icons/SettingsIcon.jsx  (2026-03-25T19:41:27.496Z)
 
 ---
 11) GIT (último commit — solo si hay repo)
 ---
 Archivos tocados en el último commit (git log -1 --name-only):
 - GTP/FULL_REPO_CONTEXT.txt
-
-Último commit con cambios bajo src/ (HEAD~2, name-only):
-- src/app/App.jsx
-- src/lib/ErrorBoundary.jsx
-- src/main.jsx
+- scripts/gtp-sync.mjs
+- src/features/map/components/Map.jsx
+- src/features/map/constants/mapbox.js
+- test/map-startup.test.js
 
 ---
 FIN

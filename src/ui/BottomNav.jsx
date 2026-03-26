@@ -1,4 +1,7 @@
+import { useContext } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
+import { AppStateContext } from '../store/AppProvider.jsx'
+import { PROFILE_INCOMPLETE_MESSAGE } from '../services/profile.js'
 import { colors } from '../design/colors'
 import { spacingExact } from '../design/spacing'
 import Button from './Button'
@@ -18,6 +21,18 @@ const divider = <div style={{ height: 32, width: 1, background: colors.border }}
 
 export default function BottomNav({ interactive = true }) {
   const nav = useAppScreen()
+  const appState = useContext(AppStateContext)
+
+  const guardOr = (fn) => {
+    if (!interactive) return undefined
+    return () => {
+      if (appState && appState.authStatus === 'authenticated' && !appState.isProfileComplete) {
+        window.alert(PROFILE_INCOMPLETE_MESSAGE)
+        return
+      }
+      fn?.()
+    }
+  }
 
   return (
     <nav
@@ -41,10 +56,8 @@ export default function BottomNav({ interactive = true }) {
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
-        <Button type="button" variant="nav">
-          <div style={{ position: 'relative' }}>
-            <NavAlertIcon />
-          </div>
+        <Button type="button" variant="nav" onClick={guardOr(() => {})}>
+          <NavAlertIcon />
           <span style={labelStyle}>Alertas</span>
         </Button>
 
@@ -62,10 +75,8 @@ export default function BottomNav({ interactive = true }) {
 
         {divider}
 
-        <Button type="button" variant="nav">
-          <div style={{ position: 'relative' }}>
-            <MessageCircleIcon />
-          </div>
+        <Button type="button" variant="nav" onClick={guardOr(() => {})}>
+          <MessageCircleIcon />
           <span style={labelStyle}>Chats</span>
         </Button>
       </div>

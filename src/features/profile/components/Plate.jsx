@@ -3,7 +3,9 @@ import { radius } from '../../../design/radius'
 
 export default function Plate({ value, editable = false, onChange }) {
   const formatPlate = (raw) => {
-    const clean = String(raw || '').replace(/\s/g, '').toUpperCase()
+    const clean = String(raw || '')
+      .replace(/\s/g, '')
+      .toUpperCase()
     if (clean.length <= 4) return clean
     return clean.slice(0, 4) + ' ' + clean.slice(4, 7)
   }
@@ -46,7 +48,8 @@ export default function Plate({ value, editable = false, onChange }) {
           alignItems: 'center',
           justifyContent: 'center',
           height: '100%',
-          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
           fontSize: 14,
           fontWeight: 700,
           letterSpacing: '0.08em',
