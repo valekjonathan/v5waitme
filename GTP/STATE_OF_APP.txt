@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-03-28T15:43:00.359Z
-Git HEAD: f38194831bbb4c0ee160b08ed64ef5affa603d69
+Generated: 2026-03-28T15:50:28.692Z
+Git HEAD: dd39c0e7fc3b27ad30a037a66b8cbe80463baa5a
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -20,10 +20,13 @@ playwright.config.ts
 README.md
 scripts/
   auto-clean.mjs
+  build-check.mjs
+  build-env.mjs
   ensure-git-hooks.mjs
   generate-state-of-app.mjs
   git-hooks/
     pre-commit
+    pre-push
   quality-gate.mjs
   supabase-setup.mjs
 src/

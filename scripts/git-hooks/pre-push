@@ -1,0 +1,6 @@
+#!/bin/sh
+# Antes de push: mismo gate que CI (STATE_OF_APP, lint, tests, Vitest, build).
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+npm run quality

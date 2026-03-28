@@ -8,6 +8,7 @@
     "start": "vite",
     "dev:clean": "rm -rf node_modules/.vite && vite",
     "build": "vite build",
+    "build:check": "node scripts/build-check.mjs",
     "prepare": "node scripts/ensure-git-hooks.mjs",
     "test": "node --test \"test/*.test.js\"",
     "test:ui": "vitest run",

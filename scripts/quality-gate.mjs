@@ -8,6 +8,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { basename, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { envWithBuildPlaceholders } from './build-env.mjs'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const srcDir = join(root, 'src')
@@ -336,6 +337,22 @@ function runNpm(script) {
   }
 }
 
+function runNpmBuild() {
+  console.error(SEP)
+  console.error('[quality-gate] npm run build (env Supabase rellenado si falta)')
+  console.error(SEP)
+  const r = spawnSync('npm', ['run', 'build'], {
+    stdio: 'inherit',
+    cwd: root,
+    env: envWithBuildPlaceholders(),
+  })
+  if (r.status !== 0) {
+    console.error('')
+    console.error('[quality-gate] ESTADO: ERROR (falló npm run build)')
+    process.exit(r.status ?? 1)
+  }
+}
+
 function main() {
   console.error('')
   console.error('[quality-gate] Inicio (src + lint + test + test:ui + build)')
@@ -355,7 +372,7 @@ function main() {
   runNpm('test')
   runNpm('test:ui')
 
-  runNpm('build')
+  runNpmBuild()
 
   console.error(SEP)
   console.error('[quality-gate] ESTADO: OK')
