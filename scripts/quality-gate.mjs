@@ -1,8 +1,6 @@
 /**
- * Control de calidad automático: state-of-app + chequeos estáticos + lint + test + test:ui + vite build (siempre).
- * Cualquier fallo → exit 1 (CI / `npm run quality`). El hook pre-commit solo ejecuta lint + test.
- * JSX y variables/imports no usados: ESLint (no-unused-vars, react/jsx-uses-vars, --max-warnings 0).
- * Sin dependencias extra (solo Node + npm + vite ya en el proyecto).
+ * Gate completo: STATE_OF_APP + chequeos en src/ + lint + test + test:ui + build.
+ * CI y pre-push usan este script; pre-commit hace lint + test + build:check (sin repetir todo el gate).
  */
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'

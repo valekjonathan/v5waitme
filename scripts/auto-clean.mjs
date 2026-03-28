@@ -1,7 +1,5 @@
 /**
- * Formato seguro: informe UNUSED (grafo desde main.jsx, resuelve .js/.jsx/.ts/.tsx), eslint --fix, Prettier sin HomePage.jsx.
- * No ejecuta quality (pre-commit: lint+test; CI: quality completo).
- * No borra archivos.
+ * Formato: grafo unused desde main.jsx, eslint --fix, Prettier (HomePage excluido). No borra archivos; no sustituye a `quality`.
  */
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -179,7 +177,7 @@ function main() {
   console.error('')
 
   console.error(REPORT_LINE)
-  console.error('[OK] Formato y autofix listos (pre-commit: lint+test; CI: npm run quality)')
+  console.error('[OK] Formato y autofix listos (CI/pre-push: npm run quality)')
   console.error('')
 }
 
