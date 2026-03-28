@@ -23,3 +23,9 @@ npm run build
 ```
 
 TypeScript gradual: `layout.ts`, `ScreenShell.tsx`, `services/reviews.ts`; el resto sigue en JS/JSX.
+
+## Main y CI
+
+- Cada **push** o **PR** a `main` ejecuta [`.github/workflows/ci.yml`](.github/workflows/ci.yml): `npm run quality` (incluye regeneración de `GTP/STATE_OF_APP.txt`, lint, tests, Vitest, build si hay secrets) y luego **Playwright E2E**.
+- Antes de subir cambios: `npm run quality` en local (equivale al núcleo del hook **pre-commit**). Si pasa, haz **commit** y **push**; revisa que el workflow quede verde en GitHub **Actions**.
+- Snapshot automático del repo: `GTP/STATE_OF_APP.txt` (no editar a mano; lo actualiza el quality gate).

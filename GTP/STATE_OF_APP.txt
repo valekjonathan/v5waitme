@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-03-28T15:33:23.288Z
-Git HEAD: 8778e966f578056f563361a448ae8f38bf8d9092
+Generated: 2026-03-28T15:37:10.265Z
+Git HEAD: 3c35b9cbe97f484644bf64c7f1c37c8ea026d4ff
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -11,7 +11,6 @@ e2e/
   smoke.spec.ts
 eslint.config.js
 GTP/
-  AUDITORIA_MAESTRA.txt
   STATE_OF_APP.txt
 index.html
 node_modules/  [omitido]
