@@ -15,6 +15,7 @@
     "lint": "eslint . --max-warnings 0 && tsc --noEmit",
     "format": "prettier --write .",
     "quality": "node scripts/quality-gate.mjs",
+    "state:app": "node scripts/generate-state-of-app.mjs",
     "clean": "node scripts/auto-clean.mjs",
     "supabase:setup": "node scripts/supabase-setup.mjs",
     "supabase:types": "supabase gen types typescript --linked"

@@ -1,0 +1,178 @@
+=== STATE_OF_APP v1 ===
+Generated: 2026-03-28T15:33:23.288Z
+Git HEAD: 8778e966f578056f563361a448ae8f38bf8d9092
+
+=== ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
+dist/  [omitido]
+e2e/
+  nav.spec.ts
+  README.md
+  shell.spec.ts
+  smoke.spec.ts
+eslint.config.js
+GTP/
+  AUDITORIA_MAESTRA.txt
+  STATE_OF_APP.txt
+index.html
+node_modules/  [omitido]
+package-lock.json
+package.json
+playwright.config.ts
+README.md
+scripts/
+  auto-clean.mjs
+  ensure-git-hooks.mjs
+  generate-state-of-app.mjs
+  git-hooks/
+    pre-commit
+  quality-gate.mjs
+  supabase-setup.mjs
+src/
+  app/
+    App.jsx
+  assets/
+    logo.png
+  design/
+    colors.js
+    radius.js
+    shadows.js
+  features/
+    auth/
+      components/
+        LoginButtons.jsx
+        LoginPage.jsx
+    home/
+      components/
+        CenterPin.jsx
+        HomePage.jsx
+    map/
+      components/
+        Map.jsx
+      constants/
+        mapbox.js
+    profile/
+      components/
+        Plate.jsx
+        profileColors.js
+        ProfileForm.jsx
+        ProfileHeader.jsx
+        ProfileLogoutButton.jsx
+        ProfilePage.jsx
+        VehicleIcons.jsx
+    reviews/
+      components/
+        ReviewItem.jsx
+        ReviewsList.jsx
+        ReviewsSummary.jsx
+      pages/
+        ReviewsPage.jsx
+    shared/
+      components/
+        MainLayout.jsx
+      layout/
+        ProfileReviewsLayout.jsx
+      profileReviewsLayout.js
+  lib/
+    AppScreenContext.jsx
+    appScreenState.js
+    AuthContext.jsx
+    devFlowLog.js
+    ErrorBoundary.jsx
+    errorBoundaryReset.js
+    ProfileIncompleteNoticeContext.jsx
+    ratingStars.js
+  main.jsx
+  services/
+    auth.js
+    location.js
+    profile.js
+    reviews.ts
+    supabase.js
+  store/
+  styles/
+    global.css
+  ui/
+    BottomNav.d.ts
+    BottomNav.jsx
+    Button.jsx
+    DropdownCustom.jsx
+    Header.d.ts
+    Header.jsx
+    icons/
+      CameraIcon.jsx
+      CarIconHome.jsx
+      LogoutIcon.jsx
+      MagnifierIcon.jsx
+      MessageCircleIcon.jsx
+      NavAlertIcon.jsx
+      NavMapIcon.jsx
+      SettingsIcon.jsx
+      UserIcon.jsx
+    IconSlot.jsx
+    InputBase.jsx
+    IphoneFrame.jsx
+    layout/
+      layout.ts
+      ScreenShell.tsx
+      Section.jsx
+    primitives/
+      ButtonBase.jsx
+      Row.jsx
+      Stack.jsx
+    Switch.jsx
+  vite-env.d.ts
+supabase/
+  migrations/
+    0001_init_profiles.sql
+    0002_profiles_avatar_email.sql
+test/
+  appScreenState.test.js
+  authService.test.js
+  errorBoundaryReset.test.js
+  location.test.js
+  loginLayoutInvariant.test.js
+  loginStructure.test.js
+  mapbox.test.js
+  navigationShellInvariant.test.js
+  oauthUrl.test.js
+  profileCompleteness.test.js
+  ui/
+    app.critical.test.jsx
+    vitest.setup.js
+test-results/  [omitido]
+tsconfig.json
+vercel.json
+vite.config.js
+vitest.config.js
+
+=== DEPENDENCIAS CLAVE (package.json) ===
+runtime: @supabase/supabase-js, mapbox-gl, react, react-dom
+dev: @babel/eslint-parser, @babel/preset-react, @eslint/js, @playwright/test, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, prettier, supabase, typescript, vite, vitest
+
+=== SERVICIOS (src/services/) ===
+auth.js, location.js, profile.js, reviews.ts, supabase.js
+
+=== PANTALLAS / RUTAS LÓGICAS ===
+Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
+Pantallas internas (appScreenState): home | profile | reviews — ver reduceAppScreen en src/lib/appScreenState.js
+Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage (mapa: Map lazy).
+
+=== ARCHIVOS CRÍTICOS (arranque y shell) ===
+src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext.jsx, src/ui/layout/ScreenShell.tsx, src/ui/layout/layout.ts
+
+=== GRAFO DESDE main.jsx (módulos críticos) ===
+src/lib/AuthContext.jsx  ← 4 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ./devFlowLog.js
+src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
+src/services/reviews.ts  ← 0 import(s) relativos (muestra): —
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5, map 2
+
+=== ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
+ninguno
+
+=== RIESGOS / NOTAS ===
+- Cambios en ScreenShell/layout afectan todas las pantallas con shell.
+- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
+- Map bundle es pesado (lazy load en App).
+- Sin huérfanos detectados en el grafo actual.
+
+=== FIN ===

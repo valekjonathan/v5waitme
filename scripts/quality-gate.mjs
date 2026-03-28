@@ -1,5 +1,5 @@
 /**
- * Control de calidad automático: chequeos estáticos + lint + test + build.
+ * Control de calidad automático: state-of-app + chequeos estáticos + lint + test + test:ui + build.
  * Cualquier fallo → exit 1 (bloquea pre-commit / CI).
  * JSX y variables/imports no usados: ESLint (no-unused-vars, react/jsx-uses-vars, --max-warnings 0).
  * Build: solo si VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY están definidas (misma lógica que Vite: loadEnv + process.env).
@@ -308,6 +308,20 @@ function printIconConsistencyReport() {
   console.error('')
 }
 
+function runStateOfApp() {
+  const script = join(root, 'scripts', 'generate-state-of-app.mjs')
+  const r = spawnSync(process.execPath, [script, '--enforce-orphans'], {
+    cwd: root,
+    stdio: 'inherit',
+    env: process.env,
+  })
+  if (r.status !== 0) {
+    console.error('')
+    console.error('[quality-gate] ESTADO: ERROR (GTP/STATE_OF_APP.txt o módulos huérfanos)')
+    process.exit(r.status ?? 1)
+  }
+}
+
 function runNpm(script) {
   console.error(SEP)
   console.error(`[quality-gate] npm run ${script}`)
@@ -344,6 +358,8 @@ function main() {
   checkLikelyUnimportedJsxModules()
   printIconConsistencyReport()
   printReport()
+
+  runStateOfApp()
 
   runNpm('lint')
   runNpm('test')
