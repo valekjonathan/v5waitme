@@ -2,7 +2,7 @@ import { colors } from '../design/colors'
 import { radius } from '../design/radius'
 
 /**
- * Interruptor "Permitir llamadas" — mismas medidas y colores que ProfileStats.
+ * Interruptor "Permitir llamadas" (perfil / teléfono).
  */
 export default function Switch({ checked, onToggle, ariaLabel }) {
   const trackStyle = {

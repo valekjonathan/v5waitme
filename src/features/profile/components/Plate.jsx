@@ -1,7 +1,8 @@
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
+import InputBase from '../../../ui/InputBase'
 
-export default function Plate({ value, editable = false, onChange }) {
+export default function Plate({ value, editable = false, onChange, width = 154 }) {
   const formatPlate = (raw) => {
     const clean = String(raw || '')
       .replace(/\s/g, '')
@@ -13,7 +14,7 @@ export default function Plate({ value, editable = false, onChange }) {
   return (
     <div
       style={{
-        width: 154,
+        width,
         height: 36,
         display: 'flex',
         alignItems: 'center',
@@ -57,7 +58,7 @@ export default function Plate({ value, editable = false, onChange }) {
         }}
       >
         {editable ? (
-          <input
+          <InputBase
             value={formatPlate(value)}
             onChange={(e) => {
               const clean = e.target.value.replace(/\s/g, '').toUpperCase()
@@ -77,7 +78,7 @@ export default function Plate({ value, editable = false, onChange }) {
               width: '100%',
               height: '100%',
               border: 'none',
-              outline: 'none',
+              boxShadow: 'none',
               background: 'transparent',
               textAlign: 'center',
               font: 'inherit',

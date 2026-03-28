@@ -2,13 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "waitme: auto dev",
-      "type": "npm",
-      "script": "dev:auto",
-      "isBackground": true,
+      "label": "dev",
+      "type": "shell",
+      "command": "npm run dev",
       "problemMatcher": [],
       "runOptions": {
-        "runOn": "folderOpen"
+        "instanceLimit": 1
       }
     }
   ]

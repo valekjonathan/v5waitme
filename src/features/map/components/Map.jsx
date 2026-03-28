@@ -1,4 +1,3 @@
-import { usePostHog } from '@posthog/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
@@ -20,7 +19,6 @@ import {
   getCurrentPosition,
   watchPosition,
 } from '../../../services/location.js'
-import { EVENTS, track } from '../../../lib/tracking.js'
 
 const OVIEDO_FALLBACK = {
   lat: OVIEDO_LAT,
@@ -57,13 +55,8 @@ function createGeoObserver() {
 }
 
 export default function Map({ onSettled: onSettledProp }) {
-  const posthog = usePostHog()
-  const posthogRef = useRef(posthog)
   const onSettledRef = useRef(onSettledProp)
   const settledOnceRef = useRef(false)
-  useEffect(() => {
-    posthogRef.current = posthog
-  }, [posthog])
   useEffect(() => {
     onSettledRef.current = onSettledProp
   }, [onSettledProp])
@@ -149,9 +142,7 @@ export default function Map({ onSettled: onSettledProp }) {
       mapRef.current = null
     }
 
-    const onMapUserInteraction = () => {
-      track(EVENTS.MAP_INTERACTION, { screen: 'map' }, posthogRef.current)
-    }
+    const onMapUserInteraction = () => {}
 
     const onZoomEnd = (e) => {
       if (e?.originalEvent) onMapUserInteraction()
@@ -233,7 +224,6 @@ export default function Map({ onSettled: onSettledProp }) {
         map.on('dragend', onMapUserInteraction)
         map.on('zoomend', onZoomEnd)
 
-        track(EVENTS.MAP_LOADED, { screen: 'map' }, posthogRef.current)
         setMapReady(true)
         setMapFailed(false)
         fireMapSettled()

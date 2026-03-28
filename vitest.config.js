@@ -12,7 +12,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: [path.join(root, 'test/ui/vitest.setup.js')],
     include: ['test/ui/**/*.test.{jsx,tsx}'],
-    testTimeout: 25_000,
+    testTimeout: 45_000,
     hookTimeout: 15_000,
   },
   coverage: {

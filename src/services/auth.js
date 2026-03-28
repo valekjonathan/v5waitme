@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
+ */
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
@@ -76,11 +79,10 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
-    const redirectTo = `${window.location.origin}${window.location.pathname}`
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: window.location.origin,
       },
     })
     if (error) {

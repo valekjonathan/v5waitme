@@ -1,21 +1,98 @@
 import { AppScreenProvider, useAppScreen } from '../lib/AppScreenContext'
 import { AppAuthRoot, useAuth } from '../lib/AuthContext'
+import {
+  ProfileIncompleteNoticeProvider,
+  useProfileIncompleteNotice,
+} from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
+import ReviewsPage from '../features/reviews/pages/ReviewsPage'
 import LoginPage from '../features/auth/components/LoginPage'
 import IphoneFrame from '../ui/IphoneFrame'
-import Header from '../ui/Header'
-import BottomNav from '../ui/BottomNav'
+import ScreenShell from '../ui/layout/ScreenShell'
+import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
+import Button from '../ui/Button'
 import { colors } from '../design/colors'
-import { AppStateContext } from '../store/AppProvider.jsx'
-import { PROFILE_INCOMPLETE_MESSAGE } from '../services/profile.js'
+import { APP_SCREEN_PROFILE, APP_SCREEN_REVIEWS } from '../lib/appScreenState.js'
 
-/** Bloquea CTAs del home (sin editar HomePage.jsx): captura en fase burbuja. */
+const fade200Style = { transition: 'opacity 200ms ease-out' }
+const homeGateStyle = { height: '100%', width: '100%' }
+
+const modalOverlayStyle = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 2147483646,
+  backgroundColor: 'rgba(0,0,0,0.55)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 24,
+  boxSizing: 'border-box',
+}
+
+const modalBoxStyle = {
+  maxWidth: 320,
+  width: '100%',
+  backgroundColor: colors.background,
+  borderRadius: 16,
+  padding: 20,
+  border: `1px solid ${colors.border}`,
+  boxSizing: 'border-box',
+}
+
+const modalTextStyle = {
+  margin: 0,
+  marginBottom: 16,
+  fontSize: 15,
+  fontWeight: 600,
+  lineHeight: 1.4,
+  color: colors.textPrimary,
+  textAlign: 'center',
+}
+
+function IncompleteProfileModal({ open, onClose, onConfirm }) {
+  if (!open) return null
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="waitme-incomplete-profile-title"
+      style={modalOverlayStyle}
+      onClick={onClose}
+    >
+      <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
+        <p id="waitme-incomplete-profile-title" style={modalTextStyle}>
+          Debes completar tu perfil para usar esta función
+        </p>
+        <Button type="button" variant="primary" style={{ width: '100%' }} onClick={onConfirm}>
+          OK
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function IncompleteProfileModalHost({ open, onClose }) {
+  const { openProfile } = useAppScreen()
+  return (
+    <IncompleteProfileModal
+      open={open}
+      onClose={onClose}
+      onConfirm={() => {
+        openProfile()
+        onClose()
+      }}
+    />
+  )
+}
+
+/** Home: acciones bloqueadas si el perfil no cumple reglas (modal, sin eventos window). */
 function HomeActionGate({ children }) {
-  const state = useContext(AppStateContext)
-  const complete = Boolean(state?.isProfileComplete)
+  const { isProfileComplete } = useAuth()
+  const notice = useProfileIncompleteNotice()
+  const complete = Boolean(isProfileComplete)
   const rootRef = useRef(null)
 
   useEffect(() => {
@@ -32,69 +109,31 @@ function HomeActionGate({ children }) {
       if (
         label.includes('¿Dónde quieres aparcar') ||
         label.includes('Estoy aparcado') ||
-        label.includes('aparcado aquí')
+        label.includes('aparcado aquí') ||
+        label.includes('Crear alerta') ||
+        label.includes('primera alerta')
       ) {
         e.preventDefault()
         e.stopPropagation()
-        window.alert(PROFILE_INCOMPLETE_MESSAGE)
+        notice?.requestNotice?.()
       }
     }
 
     root.addEventListener('pointerdown', onPointerDownCapture, true)
     return () => root.removeEventListener('pointerdown', onPointerDownCapture, true)
-  }, [complete])
+  }, [complete, notice])
 
   return (
-    <div ref={rootRef} data-waitme-home-gate style={{ height: '100%', width: '100%' }}>
+    <div ref={rootRef} data-waitme-home-gate style={homeGateStyle}>
       {children}
     </div>
   )
 }
 
-/** Tras bootstrap de perfil: primera carga autenticada → home o perfil según completitud. */
-function PostAuthScreenIntent() {
-  const state = useContext(AppStateContext)
-  const { openProfile, openHome } = useAppScreen()
-  const prevReady = useRef(false)
-
-  useEffect(() => {
-    if (state?.authStatus !== 'authenticated' || !state?.profileBootstrapReady) {
-      prevReady.current = false
-      return
-    }
-    const justReady = !prevReady.current
-    prevReady.current = true
-    if (justReady) {
-      if (state.isProfileComplete) openHome()
-      else openProfile()
-    }
-  }, [
-    state?.authStatus,
-    state?.profileBootstrapReady,
-    state?.isProfileComplete,
-    openHome,
-    openProfile,
-  ])
-
-  return null
-}
-
-function RouterShell() {
-  const { screen } = useAppScreen()
-  return screen === 'profile' ? (
-    <ProfilePage />
-  ) : (
-    <HomeActionGate>
-      <HomePage />
-    </HomeActionGate>
-  )
-}
-
-/** Boundary con reset al cambiar pestaña (home/profile) para no dejar la shell colgada tras un error de render. */
 function AuthenticatedShellWithBoundary({ opacity, children }) {
   const { screen } = useAppScreen()
   return (
-    <div style={{ opacity, transition: 'opacity 200ms ease-out' }}>
+    <div style={{ ...fade200Style, opacity }}>
       <ErrorBoundary resetKeys={[screen]} name="shell">
         {children}
       </ErrorBoundary>
@@ -102,13 +141,21 @@ function AuthenticatedShellWithBoundary({ opacity, children }) {
   )
 }
 
-function AppLayout({ children, isInteractive = true }) {
+function AppLayout({ children }) {
+  return <IphoneFrame>{children}</IphoneFrame>
+}
+
+/** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
+function AuthenticatedMainChrome() {
+  const { screen } = useAppScreen()
+  if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
+  if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
   return (
-    <IphoneFrame>
-      <Header interactive={isInteractive} />
-      {children}
-      <BottomNav interactive={isInteractive} />
-    </IphoneFrame>
+    <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+      <HomeActionGate>
+        <HomePage />
+      </HomeActionGate>
+    </ScreenShell>
   )
 }
 
@@ -131,28 +178,60 @@ function AuthBootScreen() {
   )
 }
 
+function computeTargetView(status, user, profileBootstrapReady) {
+  if (status === 'loading') return 'loading'
+  if (status === 'authenticated' && user && !profileBootstrapReady) return 'loading'
+  if (!user || status === 'unauthenticated') return 'login'
+  return 'authenticated'
+}
+
+function NavDecisionLog({ isProfileComplete }) {
+  const { screen } = useAppScreen()
+  useEffect(() => {
+    if (!isProfileComplete) {
+      console.info('[WaitMe] NAV_DECISION', { route: 'profile_required', screen })
+      return
+    }
+    console.info('[WaitMe] NAV_DECISION', {
+      route: screen === 'profile' ? 'profile_tab' : 'home_tab',
+      screen,
+    })
+  }, [isProfileComplete, screen])
+  return null
+}
+
 function AppGate() {
-  const { status } = useAuth()
-  const appState = useContext(AppStateContext)
+  const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
   const [displayedView, setDisplayedView] = useState('loading')
   const [opacity, setOpacity] = useState(1)
   const [targetView, setTargetView] = useState('loading')
+  const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
+
+  const noticeValue = useMemo(
+    () => ({
+      requestNotice: () => setIncompleteModalOpen(true),
+    }),
+    []
+  )
 
   useEffect(() => {
-    if (status === 'loading') {
-      setTargetView('loading')
-      return
-    }
-    if (status === 'unauthenticated') {
-      setTargetView('login')
-      return
-    }
-    if (status === 'authenticated' && !appState?.profileBootstrapReady) {
-      setTargetView('loading')
-      return
-    }
-    setTargetView('home')
-  }, [status, appState?.profileBootstrapReady])
+    console.info('[WaitMe] AUTH_STATE', {
+      status,
+      userId: user?.id ?? null,
+      profileBootstrapReady,
+      isProfileComplete,
+    })
+  }, [status, user?.id, profileBootstrapReady, isProfileComplete])
+
+  useEffect(() => {
+    if (!(status === 'authenticated' && profileBootstrapReady && user)) return
+    console.info('[WaitMe] PROFILE_COMPLETE', { isProfileComplete })
+  }, [status, profileBootstrapReady, user, isProfileComplete])
+
+  useEffect(() => {
+    const next = computeTargetView(status, user, profileBootstrapReady)
+    setTargetView(next)
+  }, [status, user, profileBootstrapReady])
 
   useEffect(() => {
     if (displayedView === targetView) return
@@ -164,25 +243,41 @@ function AppGate() {
     return () => clearTimeout(swapTimer)
   }, [displayedView, targetView])
 
+  useEffect(() => {
+    if (displayedView === 'loading') console.info('[WaitMe] NAV_DECISION', { route: 'loading' })
+    else if (displayedView === 'login') console.info('[WaitMe] NAV_DECISION', { route: 'login' })
+  }, [displayedView])
+
+  const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
+
   return (
     <AppScreenProvider>
-      {/* RULE: All screens MUST be wrapped in AppLayout (Header + BottomNav) */}
       {displayedView === 'loading' ? (
-        <AppLayout isInteractive={false}>
-          <AuthBootScreen />
+        <AppLayout>
+          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+            <AuthBootScreen />
+          </ScreenShell>
         </AppLayout>
       ) : displayedView === 'login' ? (
-        <div style={{ opacity, transition: 'opacity 200ms ease-out' }}>
-          <AppLayout isInteractive={false}>
-            <LoginPage />
+        <div style={{ ...fade200Style, opacity }}>
+          <AppLayout>
+            <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+              <LoginPage />
+            </ScreenShell>
           </AppLayout>
         </div>
       ) : (
         <AuthenticatedShellWithBoundary opacity={opacity}>
-          <AppLayout>
-            <PostAuthScreenIntent />
-            <RouterShell />
-          </AppLayout>
+          <ProfileIncompleteNoticeProvider value={noticeValue}>
+            <AppLayout>
+              <IncompleteProfileModalHost
+                open={incompleteModalOpen}
+                onClose={closeIncompleteModal}
+              />
+              <NavDecisionLog isProfileComplete={isProfileComplete} />
+              {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
+            </AppLayout>
+          </ProfileIncompleteNoticeProvider>
         </AuthenticatedShellWithBoundary>
       )}
     </AppScreenProvider>

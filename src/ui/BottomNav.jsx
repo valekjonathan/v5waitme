@@ -1,14 +1,17 @@
-import { useContext } from 'react'
+import { forwardRef } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
-import { AppStateContext } from '../store/AppProvider.jsx'
-import { PROFILE_INCOMPLETE_MESSAGE } from '../services/profile.js'
+import { useAuth } from '../lib/AuthContext'
+import { useProfileIncompleteNotice } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import { colors } from '../design/colors'
-import { spacingExact } from '../design/spacing'
+import { LAYOUT } from './layout/layout'
 import Button from './Button'
 import NavAlertIcon from './icons/NavAlertIcon'
 import NavMapIcon from './icons/NavMapIcon'
 import MessageCircleIcon from './icons/MessageCircleIcon'
 
+const s = LAYOUT.spacing
+const navPaddingTop = s.sm - 2
+const navPaddingBottomCalc = `calc(${s.xs}px + env(safe-area-inset-bottom, 0px))`
 const labelStyle = {
   marginTop: 2,
   fontSize: 10,
@@ -19,15 +22,16 @@ const labelStyle = {
 
 const divider = <div style={{ height: 32, width: 1, background: colors.border }} aria-hidden />
 
-export default function BottomNav({ interactive = true }) {
+const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
-  const appState = useContext(AppStateContext)
+  const { status, isProfileComplete } = useAuth()
+  const notice = useProfileIncompleteNotice()
 
   const guardOr = (fn) => {
     if (!interactive) return undefined
     return () => {
-      if (appState && appState.authStatus === 'authenticated' && !appState.isProfileComplete) {
-        window.alert(PROFILE_INCOMPLETE_MESSAGE)
+      if (status === 'authenticated' && !isProfileComplete) {
+        notice?.requestNotice?.()
         return
       }
       fn?.()
@@ -36,6 +40,7 @@ export default function BottomNav({ interactive = true }) {
 
   return (
     <nav
+      ref={ref}
       data-waitme-nav
       style={{
         pointerEvents: 'auto',
@@ -46,13 +51,13 @@ export default function BottomNav({ interactive = true }) {
         zIndex: 2147483647,
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
-        paddingTop: spacingExact.navPaddingTop,
+        paddingTop: navPaddingTop,
         backgroundColor: colors.background,
         borderTop: '1px solid rgba(255,255,255,0.28)',
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
-        paddingBottom: spacingExact.navPaddingBottomCalc,
+        paddingBottom: navPaddingBottomCalc,
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
@@ -82,4 +87,8 @@ export default function BottomNav({ interactive = true }) {
       </div>
     </nav>
   )
-}
+})
+
+BottomNav.displayName = 'BottomNav'
+
+export default BottomNav

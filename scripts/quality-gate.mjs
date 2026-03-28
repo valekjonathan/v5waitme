@@ -1,6 +1,6 @@
 /**
  * Control de calidad automático: chequeos estáticos + lint + test + build.
- * Cualquier fallo → exit 1 (bloquea auto-ship / deploy local / pre-commit).
+ * Cualquier fallo → exit 1 (bloquea pre-commit / CI).
  * JSX y variables/imports no usados: ESLint (no-unused-vars, react/jsx-uses-vars, --max-warnings 0).
  * Build: solo si VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY están definidas (misma lógica que Vite: loadEnv + process.env).
  * Sin dependencias extra (solo Node + npm + vite ya en el proyecto).
@@ -234,8 +234,6 @@ function checkLikelyUnimportedJsxModules() {
     'main.jsx',
     'App.jsx',
     'Button.jsx',
-    'Input.jsx',
-    'Card.jsx',
     'Switch.jsx',
     'Header.jsx',
     'BottomNav.jsx',

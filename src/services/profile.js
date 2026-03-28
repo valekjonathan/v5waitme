@@ -1,3 +1,6 @@
+/**
+ * @fileoverview CRUD perfil Supabase + reglas de completitud (`AppProfile`).
+ */
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
@@ -22,6 +25,7 @@ export const PROFILE_INCOMPLETE_MESSAGE = 'Completa tu perfil para usar la app'
  */
 export function isAppProfileComplete(p) {
   if (!p) return false
+  if (String(p.full_name ?? '').trim().length === 0) return false
   const phone = String(p.phone ?? '').replace(/\s/g, '')
   if (phone.length < 6) return false
   const brand = String(p.brand ?? '').trim()
@@ -29,6 +33,11 @@ export function isAppProfileComplete(p) {
   const plate = String(p.plate ?? '').replace(/\s/g, '')
   if (!brand || !model || plate.length < 4) return false
   return true
+}
+
+/** Alias explícito para gating de Login / Auth (misma regla que perfil completo en app). */
+export function checkProfileComplete(profile) {
+  return isAppProfileComplete(profile)
 }
 
 /**

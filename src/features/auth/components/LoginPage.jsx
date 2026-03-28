@@ -1,6 +1,10 @@
-import HomePage from '../../home/components/HomePage'
+import MainLayout from '../../shared/components/MainLayout'
 import LoginButtons from './LoginButtons'
 
 export default function LoginPage() {
-  return <HomePage centerContent={<LoginButtons />} />
+  return (
+    <MainLayout loginEntrance>
+      <LoginButtons />
+    </MainLayout>
+  )
 }

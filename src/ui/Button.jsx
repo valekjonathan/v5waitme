@@ -1,7 +1,12 @@
-import { useState, forwardRef } from 'react'
+// ⚠️ CRÍTICO LOGIN:
+// Este componente NO debe alterar layout interno (flex, align, justify).
+// El layout lo controla ButtonBase. Cambios aquí pueden romper Login.
+import { useState, forwardRef, isValidElement } from 'react'
 import { colors } from '../design/colors'
-import { spacing, spacingExact } from '../design/spacing'
 import { radius } from '../design/radius'
+import { LAYOUT } from './layout/layout'
+
+const s = LAYOUT.spacing
 
 const entryBtnBase = {
   display: 'inline-flex',
@@ -10,10 +15,10 @@ const entryBtnBase = {
   width: '100%',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: spacingExact.entryButtonGap,
+  gap: s.lg,
   whiteSpace: 'nowrap',
   borderRadius: radius.xxl,
-  padding: `0 ${spacing.lg}px`,
+  padding: `0 ${s.lg}px`,
   fontSize: 16,
   fontWeight: 500,
   cursor: 'pointer',
@@ -29,7 +34,7 @@ const navButtonShared = {
   alignItems: 'center',
   justifyContent: 'center',
   color: colors.primary,
-  height: spacingExact.bottomNavHeight,
+  height: 60,
   borderRadius: radius.medium,
   margin: '0 4px',
   cursor: 'pointer',
@@ -52,8 +57,8 @@ const variantStyles = {
   },
   danger: {
     width: '100%',
-    marginTop: spacing.sm,
-    padding: `${spacing.md}px ${spacing.lg}px`,
+    marginTop: s.sm,
+    padding: `${s.md}px ${s.lg}px`,
     borderRadius: radius.xl,
     display: 'flex',
     alignItems: 'center',
@@ -80,7 +85,7 @@ const variantStyles = {
     border: 0,
     background: 'transparent',
     padding: 0,
-    marginLeft: spacing.sm,
+    marginLeft: s.sm,
     fontFamily: 'inherit',
   },
   nav: {
@@ -95,9 +100,9 @@ const variantStyles = {
   },
   profileSave: {
     width: '100%',
-    marginTop: spacing.lg,
+    marginTop: s.lg,
     marginBottom: 0,
-    padding: `${spacing.md}px ${spacing.lg}px`,
+    padding: `${s.md}px ${s.lg}px`,
     borderRadius: radius.xl,
     cursor: 'pointer',
     fontSize: 16,
@@ -110,9 +115,9 @@ const variantStyles = {
   },
   profileSaveDisabled: {
     width: '100%',
-    marginTop: spacing.lg,
+    marginTop: s.lg,
     marginBottom: 0,
-    padding: `${spacing.md}px ${spacing.lg}px`,
+    padding: `${s.md}px ${s.lg}px`,
     borderRadius: radius.xl,
     cursor: 'not-allowed',
     fontSize: 16,
@@ -194,8 +199,24 @@ const Button = forwardRef(function Button(
       ? variantStyles.profileSaveDisabled
       : variantStyles[variant] || variantStyles.primary
 
+  function stripLoginButtonLayoutProps(style) {
+    // Botón wrapper SOLO para estilos/geom. El layout del contenido icono+texto
+    // lo controla ButtonBase.
+    const { alignItems, justifyContent, gap, ...rest } = style
+    return rest
+  }
+
+  // Si el botón envuelve un ButtonBase (caso Login), el wrapper no debe imponer
+  // layout de alineación/distribución al contenido.
+  const isButtonBaseChild = isValidElement(children) && children.type?.displayName === 'ButtonBase'
+
   const dangerHover =
     variant === 'danger' ? { backgroundColor: hover ? colors.dangerBgHover : colors.dangerBg } : {}
+
+  const baseForRender =
+    isButtonBaseChild && (variant === 'primary' || variant === 'secondary')
+      ? stripLoginButtonLayoutProps(base)
+      : base
 
   return (
     <button
@@ -203,7 +224,7 @@ const Button = forwardRef(function Button(
       type={type}
       disabled={disabled}
       style={{
-        ...base,
+        ...baseForRender,
         ...dangerHover,
         ...style,
       }}

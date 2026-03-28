@@ -10,6 +10,7 @@ export function AppScreenProvider({ children }) {
     () => ({
       screen,
       openProfile: () => dispatch({ type: 'openProfile' }),
+      openReviews: () => dispatch({ type: 'openReviews' }),
       openHome: () => dispatch({ type: 'openHome' }),
     }),
     [screen]

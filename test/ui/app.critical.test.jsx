@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor, fireEvent, act, cleanup } from '@testing-library/react'
 import App from '../../src/app/App.jsx'
-import { AppScreenProvider } from '../../src/lib/AppScreenContext.jsx'
-import { useAppScreen } from '../../src/lib/AppScreenContext.jsx'
+import { AppScreenProvider, useAppScreen } from '../../src/lib/AppScreenContext.jsx'
+import { AuthProvider } from '../../src/lib/AuthContext.jsx'
+import { ProfileIncompleteNoticeProvider } from '../../src/lib/ProfileIncompleteNoticeContext.jsx'
 import Header from '../../src/ui/Header.jsx'
 import BottomNav from '../../src/ui/BottomNav.jsx'
 import ErrorBoundaryUi from '../../src/lib/ErrorBoundary.jsx'
@@ -71,6 +72,7 @@ vi.mock('../../src/services/supabase.js', () => {
           if (signInError) {
             return { data: null, error: new Error(signInError) }
           }
+          sessionMode = 'auth'
           // Simula el cambio de auth que en runtime ocurriría por Supabase.
           if (onAuthStateChangeHandler) {
             onAuthStateChangeHandler('SIGNED_IN', { user: testUser })
@@ -118,7 +120,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
-  it('Login completo: click Google -> authenticated -> home muestra fallback de Map', async () => {
+  it('Login completo: click Google -> authenticated -> Home si perfil completo (fallback mapa)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     render(<App />)
 
@@ -130,7 +132,6 @@ describe('UI crítica (React): auth, errores y navegación', () => {
 
     await waitFor(
       () => {
-        // El indicador fiable del "home" en estos tests es el fallback del mapa.
         expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
       },
       { timeout: 15_000 }
@@ -157,9 +158,12 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     render(<App />)
 
     // Espera a que el home autenticado esté montado (evita clicar durante "Cargando…"/AppLayout no interactivo).
-    await waitFor(() => {
-      expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
-    })
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
+      },
+      { timeout: 15_000 }
+    )
 
     const headerPerfilBtn = document.querySelector(
       'header[data-waitme-header="true"] button[aria-label="Perfil"]'
@@ -231,15 +235,21 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
   }
 
   it('home → profile: cambia screen y ErrorBoundary se activa; al volver, se recupera por resetKeys', async () => {
+    sessionMode = 'auth'
+    const notice = { requestNotice: vi.fn() }
     render(
-      <AppScreenProvider>
-        <Header interactive />
-        <BottomNav interactive />
-        <ResetBoundary>
-          <MaybeThrower />
-        </ResetBoundary>
-        <RouteProbe />
-      </AppScreenProvider>
+      <AuthProvider>
+        <AppScreenProvider>
+          <ProfileIncompleteNoticeProvider value={notice}>
+            <Header interactive />
+            <BottomNav interactive />
+            <ResetBoundary>
+              <MaybeThrower />
+            </ResetBoundary>
+            <RouteProbe />
+          </ProfileIncompleteNoticeProvider>
+        </AppScreenProvider>
+      </AuthProvider>
     )
 
     expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('home')

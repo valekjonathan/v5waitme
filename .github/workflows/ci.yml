@@ -1,5 +1,4 @@
 # Calidad obligatoria: lint + test + (build si hay VITE_SUPABASE_* en secrets).
-# No ejecuta auto-ship ni otros scripts de deploy.
 name: CI
 
 on:
@@ -39,3 +38,9 @@ jobs:
 
       - name: UI tests (Vitest) + coverage mínimo
         run: npm run test:ui -- --coverage
+
+      - name: Install Playwright (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E (Playwright)
+        run: npm run test:e2e

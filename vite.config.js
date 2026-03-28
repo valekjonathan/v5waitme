@@ -31,6 +31,9 @@ export default defineConfig(({ mode, command }) => {
       hmr: {
         overlay: false,
       },
+      watch: {
+        usePolling: true,
+      },
     },
   }
 })

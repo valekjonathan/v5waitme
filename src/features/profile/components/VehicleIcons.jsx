@@ -9,6 +9,7 @@ export const carColors = [
 
 function iconStyle(size) {
   if (size === 'header') return { width: 64, height: 40 }
+  if (size === 'small') return { width: 22, height: 14 }
   return { width: 56, height: 36 }
 }
 
@@ -95,6 +96,29 @@ function SedanVehicle({ size, body, windowFill, windowStroke, ariaLabel }) {
   )
 }
 
+function MotoVehicle({ size, body, windowFill, windowStroke, ariaLabel }) {
+  const sz = iconStyle(size)
+  const a11y = ariaLabel ? { 'aria-label': ariaLabel } : { 'aria-hidden': true }
+  const wf = windowFill ?? 'rgba(255,255,255,0.22)'
+  const ws = windowStroke ?? 'white'
+  return (
+    <svg viewBox="0 0 48 24" style={sz} fill="none" {...a11y}>
+      <path
+        d="M6 18 V14.5 L10 12 L22 10 L32 12 L40 15.5 L42 18 H6 Z"
+        fill={body}
+        stroke="white"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path d="M22 10.5 L26 6 L33 8 L31 11.5 Z" fill={wf} stroke={ws} strokeWidth="0.5" />
+      <circle cx="12" cy="18" r="3.6" fill="#333" stroke="white" strokeWidth="1" />
+      <circle cx="12" cy="18" r="1.8" fill="#666" />
+      <circle cx="34" cy="18" r="3.6" fill="#333" stroke="white" strokeWidth="1" />
+      <circle cx="34" cy="18" r="1.8" fill="#666" />
+    </svg>
+  )
+}
+
 export function VehicleIconProfile({ type, color, size = 'default' }) {
   if (type === 'suv') {
     return (
@@ -122,6 +146,30 @@ export function VehicleIconProfile({ type, color, size = 'default' }) {
     )
   }
 
+  if (type === 'moto') {
+    return (
+      <MotoVehicle
+        size={size}
+        body={color}
+        windowFill="rgba(255,255,255,0.22)"
+        windowStroke="white"
+        ariaLabel="Moto"
+      />
+    )
+  }
+
+  if (type === 'other') {
+    return (
+      <SedanVehicle
+        size={size}
+        body={color}
+        windowFill="rgba(255,255,255,0.3)"
+        windowStroke="white"
+        ariaLabel="Otro"
+      />
+    )
+  }
+
   return (
     <SedanVehicle
       size={size}
@@ -137,7 +185,8 @@ export function vehicleLabel(t) {
   if (t === 'suv') return 'Voluminoso'
   if (t === 'van' || t === 'furgoneta') return 'Furgoneta'
   if (t === 'moto') return 'Moto'
-  return 'Normal'
+  if (t === 'other') return 'Otro'
+  return 'Coche normal'
 }
 
 function isWhiteVehicleColor(color) {
@@ -173,6 +222,28 @@ export function VehicleIcon({ type, color, size = 'default' }) {
         windowFill={windowFill}
         windowStroke={windowStroke}
         detailStroke="#222"
+      />
+    )
+  }
+  if (type === 'moto') {
+    return (
+      <MotoVehicle
+        size={size}
+        body={body}
+        windowFill={windowFill}
+        windowStroke={windowStroke}
+        ariaLabel="Moto"
+      />
+    )
+  }
+  if (type === 'other') {
+    return (
+      <SedanVehicle
+        size={size}
+        body={body}
+        windowFill={windowFill}
+        windowStroke={windowStroke}
+        ariaLabel="Otro"
       />
     )
   }

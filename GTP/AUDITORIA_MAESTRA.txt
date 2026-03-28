@@ -1,86 +1,46 @@
-# AUDITORÍA MAESTRA v5waitme
-# Único archivo de seguimiento de auditorías/limpiezas/refactors importantes.
-# Actualizado: 2026-03-25 — pipeline dev-auto: clean → quality-gate → ship --no-quality; PostHog $exception; tests 39
+# AUDITORÍA MAESTRA v5waitme — GTP/
+# Actualizado: 2026-03-28 — TS gradual (layout/shell/reviews), Playwright E2E, contrato layout.ts.
 
-## ARCHIVOS BORRADOS
-- src/lib/sentry.js — código muerto: import en main.jsx estaba comentado; dependencias Sentry no se ejecutaban en runtime.
-- test/map-startup.test.js — duplicado exacto de los tests de getMapboxAccessToken (mismo contenido que el nuevo mapbox.test.js).
+--------------------------------------------------------------------------------
+1) RESUMEN
+--------------------------------------------------------------------------------
+- SPA React 19 + Vite 8; quality-gate; tests node + Vitest; **Playwright E2E** (`npm run test:e2e`).
+- Layout: **src/ui/layout/layout.ts** (contrato); **ScreenShell.tsx** (único shell); modos inset / fullBleed.
+- **lint** = eslint + **tsc --noEmit** (JS/JSX sin migrar; TS en layout/shell/reviews).
+- E2E: specs en **e2e/**; Vite en **puerto 5174** vía playwright.config (no choca con dev en 5173).
 
-## ARCHIVOS MODIFICADOS
-- package.json — eliminadas dependencias @sentry/react y @sentry/tracing; eliminado script duplicado "verify" (equivalente a quality); lockfile sincronizado vía npm install.
-- package-lock.json — regenerado tras npm install (sin paquetes Sentry).
-- src/main.jsx — eliminada línea comentada de Sentry.
-- .env.example — eliminada VITE_SENTRY_DSN (sin integración activa).
-- scripts/auto-ship.mjs — mensaje de variables Vercel sin mención a Sentry.
-- scripts/quality-gate.mjs — eliminada heurística POSSIBLY_UNIMPORTED_MODULE (ruido/falsos positivos); imports multilínea en detección de imports duplicados (extractCompleteImportStatements).
-- .gitignore — añadido **/.DS_Store.
-- GTP/FULL_REPO_CONTEXT.txt — regenerado por postbuild/gtp-sync (snapshot de código; no es informe de auditoría).
-- scripts/auto-clean.mjs — ya no ejecuta npm run quality; solo informe UNUSED + eslint --fix + prettier.
-- scripts/auto-ship.mjs — sin URL/rama fijas; push dinámico; flag `--no-quality` omite quality-gate (dev-auto ya lo ejecutó).
-- scripts/dev-auto.mjs — pipeline en serie: auto-clean → quality-gate.mjs → `npm run auto:ship -- --no-quality` (quality una sola vez por ciclo).
-- src/lib/AppScreenContext.jsx — useReducer(reduceAppScreen).
-- src/lib/ErrorBoundary.jsx — captureClientError en componentDidCatch.
-- src/main.jsx — captureClientError en onerror / onunhandledrejection.
-- src/store/AppProvider.jsx — eliminados hooks useApp / useUI (no referenciados en src).
-- src/services/supabase.js — (sesión previa) import.meta.env tolerante en Node/tests.
+--------------------------------------------------------------------------------
+2) CONTRATO DE LAYOUT
+--------------------------------------------------------------------------------
+- **IphoneFrame** → **ScreenShell** → contenido.
+- **Inset:** `shellInsetMainPaddingStyle` con alturas medidas (Header/BottomNav) + scroll en `<main>`; maxWidth shell = LAYOUT.screen.maxWidth.
+- **FullBleed:** sin padding estructural en `<main>` (login/home/boot).
+- **Perfil/reseñas:** ProfileReviewsLayout + tokens en profileReviewsLayout.js; ancho tarjeta PROFILE_REVIEWS_MAX_WIDTH.
+--------------------------------------------------------------------------------
+3) TYPESCRIPT
+--------------------------------------------------------------------------------
+- layout.ts, ScreenShell.tsx, services/reviews.ts tipados.
+- Header.d.ts / BottomNav.d.ts: tipos para imports desde TSX.
+- vite-env.d.ts: referencia Vite.
 
-## ARCHIVOS CREADOS
-- test/mapbox.test.js — tests de mapbox token (antes en map-startup.test.js).
-- test/appStore.test.js, test/errorBoundaryReset.test.js, test/oauthUrl.test.js, test/appScreenState.test.js, test/authService.test.js — lógica pura / auth sin Supabase en Node.
-- src/lib/appScreenState.js — navegación home/profile (reductor puro).
-- src/lib/captureClientError.js — envío seguro de errores a PostHog.
-- src/lib/errorBoundaryReset.js — comparación de resetKeys (sesión previa; usado por ErrorBoundary).
-- GTP/AUDITORIA_MAESTRA.txt — este archivo maestro (regla de proyecto: un solo TXT de auditoría aquí).
+--------------------------------------------------------------------------------
+4) E2E
+--------------------------------------------------------------------------------
+- **No** placeholder: `playwright test`, Chromium instalado en CI (`npx playwright install --with-deps chromium`).
+- Local: `npx playwright install chromium` si hace falta.
 
-## CÓDIGO DUPLICADO DETECTADO
-- Resuelto en sesiones previas: VehicleIcons.jsx unificó SVGs (Suv/Van/Sedan); LoginButtons.jsx usa oauthPointerHandlers para Google/Apple.
-- Pendiente menor (no bloqueante): patrones de estilo OAuth en LoginButtons (sombras/gradientes) siguen siendo verbosos pero no duplicados por copiar/pegar ciego.
-- Iconos: CheckIcon.jsx y CameraIcon.jsx usan #hex fijo; resto mezcla currentColor/colors.* — coherencia visual documentada en informe de quality-gate (solo lectura).
+--------------------------------------------------------------------------------
+5) npm
+--------------------------------------------------------------------------------
+- dev, build, test, test:ui, test:e2e, lint, format, quality, clean, prepare, supabase:setup.
+- **quality** no ejecuta test:e2e (evita doble servidor); **CI** ejecuta E2E tras quality.
 
-## ARCHIVOS/CARPETAS INNECESARIOS
-- dist/ — artefacto de build; en .gitignore; no debe versionarse. Regenerable con npm run build.
-- node_modules/ — ignorado; no versionar.
-- .vercel/, .waitme/ — locales; en .gitignore.
-- .DS_Store — basura macOS; ignorada por patrón; borrar en disco si aparece.
-- GTP/FULL_REPO_CONTEXT.txt — generado automáticamente (postbuild); útil como snapshot para contexto GTP, no sustituye esta auditoría.
+--------------------------------------------------------------------------------
+6) REFERENCIA RÁPIDA
+--------------------------------------------------------------------------------
+- src/app/App.jsx, src/ui/IphoneFrame.jsx, src/ui/layout/layout.ts, src/ui/layout/ScreenShell.tsx
+- src/features/shared/components/MainLayout.jsx, ProfileReviewsLayout.jsx, profileReviewsLayout.js
 
-## RUIDO TÉCNICO DETECTADO
-- FULL_REPO_CONTEXT.txt puede quedar desfasado hasta el siguiente build; es esperado.
-- Map bundle ~2.3MB gzip ~633KB — mapbox-gl; no es “ruido” de código sino de dependencia.
-
-## RIESGOS REALES
-- vite.config.js: `vite build` exige VITE_SUPABASE_*; `vite` dev puede arrancar sin ellas (app degradada). quality-gate omite build si faltan vars (CI con secrets para build real).
-- auto-ship con varios remotes sin `git push -u`: exige `branch.<rama>.remote` o un solo remote (o origin si existe).
-- open-prod-refresh.mjs: solo macOS/Safari; en Linux/Windows no aplica.
-- fs.watch en algunos SO/editores pierde eventos; dev-auto compensa con poll de mtime cada 3s (mitigación real, no eliminación del riesgo al 100%).
-
-## COSAS MAL MONTADAS A NIVEL ESTRUCTURAL
-- Estado auth repartido: AppProvider (appStore) + AuthProvider (acciones) + useAuth fusiona ambos — funciona pero exige orden estricto de providers (documentado en App.jsx).
-- supabase.js en producción sin env deja supabase=null; rutas deben usar isSupabaseConfigured() (correcto en servicios conocidos; riesgo si se añade código nuevo sin comprobar).
-
-## AUTOMATIZACIONES EXISTENTES
-- scripts/quality-gate.mjs — estáticos + lint + test + build condicional (Supabase).
-- scripts/auto-clean.mjs — informe UNUSED + eslint --fix + prettier (excluye HomePage.jsx); sin quality.
-- scripts/dev-auto.mjs — watch src + poll mtime 3s, debounce → auto-clean → quality-gate → auto:ship --no-quality (una sola pasada de quality por ciclo).
-- scripts/auto-ship.mjs — por defecto quality-gate + git add/commit/push; con --no-quality solo git (tras quality ya ejecutado).
-- scripts/ensure-git-hooks.mjs + scripts/git-hooks/pre-commit — npm run quality en commit.
-- scripts/gtp-sync.mjs — postbuild FULL_REPO_CONTEXT.txt.
-- scripts/open-prod-refresh.mjs — Safari producción.
-- scripts/supabase-setup.mjs — setup asistido.
-- .github/workflows/ci.yml — Node 20, npm ci, npm run quality.
-- package.json: prepare instala hooks.
-
-## AUTOMATIZACIONES QUE FALTAN
-- npm audit / dependabot en CI (opcional; valor si se política de seguridad).
-- Tests E2E o de humo del bundle React (no hay Playwright/Cypress).
-- TypeScript (proyecto es JS/JSX; migración sería proyecto aparte).
-- Release/changelog automatizado si el equipo lo necesita.
-
-## VALIDACIÓN FINAL
-- npm run lint — OK, 2026-03-25.
-- npm test — OK, 39 tests (reducers, OAuth URL, auth service sin Supabase, mapbox, location, appScreen, errorBoundaryReset).
-- npm run quality — OK; build condicional según env Supabase.
-
-## QUÉ ME TIENE QUE PASAR EL USUARIO A CHATGPT
-1. GTP/AUDITORIA_MAESTRA.txt (obligatorio; contiene el estado y el detalle acordado).
-2. Solo si hace falta verificar código concreto no descrito aquí: añadir la ruta exacta del archivo tocado (ej. scripts/quality-gate.mjs) — no listas largas por defecto.
+--------------------------------------------------------------------------------
+FIN
+--------------------------------------------------------------------------------

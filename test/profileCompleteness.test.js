@@ -10,6 +10,7 @@ test('isAppProfileComplete: false sin datos', () => {
 test('isAppProfileComplete: true con mínimos', () => {
   assert.equal(
     isAppProfileComplete({
+      full_name: 'Ana',
       phone: '+34 600 00 00',
       brand: 'Seat',
       model: 'Ibiza',
@@ -22,10 +23,24 @@ test('isAppProfileComplete: true con mínimos', () => {
 test('isAppProfileComplete: false si falta matrícula corta', () => {
   assert.equal(
     isAppProfileComplete({
+      full_name: 'Ana',
       phone: '+346000000',
       brand: 'Seat',
       model: 'Ibiza',
       plate: '12',
+    }),
+    false
+  )
+})
+
+test('isAppProfileComplete: false si falta nombre', () => {
+  assert.equal(
+    isAppProfileComplete({
+      full_name: '',
+      phone: '+346000000',
+      brand: 'Seat',
+      model: 'Ibiza',
+      plate: '1234 ABC',
     }),
     false
   )

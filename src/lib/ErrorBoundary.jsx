@@ -1,6 +1,5 @@
 import React from 'react'
 import { colors } from '../design/colors'
-import { captureClientError } from './captureClientError.js'
 import { resetKeysChanged } from './errorBoundaryReset.js'
 
 export default class ErrorBoundary extends React.Component {
@@ -19,12 +18,6 @@ export default class ErrorBoundary extends React.Component {
       : '[WaitMe][ErrorBoundary]'
     console.error(label, error?.message ?? error, info?.componentStack ?? info)
     if (error?.stack) console.error(`${label} stack:`, error.stack)
-    captureClientError({
-      error,
-      boundaryName: this.props.name,
-      source: 'ErrorBoundary',
-      extra: { componentStack: info?.componentStack ?? '' },
-    })
   }
 
   componentDidUpdate(prevProps) {

@@ -1,6 +1,6 @@
 /**
  * Formato seguro: informe UNUSED (grafo desde main.jsx), eslint --fix, Prettier sin HomePage.jsx.
- * No ejecuta quality (eso va en auto-ship / pre-commit / CI).
+ * No ejecuta quality (eso va en pre-commit / CI).
  * No borra archivos.
  */
 import { spawnSync } from 'node:child_process'
@@ -169,7 +169,7 @@ function main() {
   console.error('')
 
   console.error(REPORT_LINE)
-  console.error('[OK] Formato y autofix listos (quality se ejecuta en auto-ship / pre-commit / CI)')
+  console.error('[OK] Formato y autofix listos (quality se ejecuta en pre-commit / CI)')
   console.error('')
 }
 

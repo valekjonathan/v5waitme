@@ -1,3 +1,7 @@
+/**
+ * Marco del dispositivo: define el viewport lógico (390×844) escalado.
+ * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
+ */
 import { useLayoutEffect, useState } from 'react'
 import { radius } from '../design/radius'
 import { shadows } from '../design/shadows'

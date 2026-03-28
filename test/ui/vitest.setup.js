@@ -1,9 +1,20 @@
 import { beforeEach, vi } from 'vitest'
 
-vi.mock('@posthog/react', () => ({
-  PostHogProvider: ({ children }) => children,
-  usePostHog: () => ({ capture: vi.fn() }),
-}))
+/** jsdom no expone ResizeObserver; el shell lo usa para medir header/nav. */
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    constructor(callback) {
+      this.callback = callback
+    }
+    observe(_el) {
+      queueMicrotask(() => {
+        this.callback([], this)
+      })
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+}
 
 vi.mock('mapbox-gl', () => {
   class MockMap {

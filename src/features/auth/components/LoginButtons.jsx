@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react'
 import Button from '../../../ui/Button'
-import { spacing } from '../../../design/spacing'
+import IconSlot from '../../../ui/IconSlot'
+import ButtonBase from '../../../ui/primitives/ButtonBase'
 import { colors } from '../../../design/colors'
 import { useAuth } from '../../../lib/AuthContext'
+import { LAYOUT } from '../../../ui/layout/layout'
 
-const OAUTH_ICON_PX = 22
-const OAUTH_ROW_GAP = 11
+const OAUTH_ICON_SLOT_PX = 24
+const GOOGLE_ICON_PX = 22
+const APPLE_ICON_PX = 26
+const iconSvgStyle = { display: 'block' }
 
 /** Official multicolor G (viewBox 24x24), escala uniforme con Apple */
 function GoogleMark() {
   return (
     <svg
-      width={OAUTH_ICON_PX}
-      height={OAUTH_ICON_PX}
-      viewBox="0 0 24 24"
+      width={GOOGLE_ICON_PX}
+      height={GOOGLE_ICON_PX}
+      viewBox="-2 0 24 24"
       aria-hidden
-      style={{ display: 'block' }}
+      style={iconSvgStyle}
     >
       <path
         fill="#4285F4"
@@ -40,42 +44,18 @@ function GoogleMark() {
 function AppleMark() {
   return (
     <svg
-      width={OAUTH_ICON_PX}
-      height={OAUTH_ICON_PX}
+      width={APPLE_ICON_PX}
+      height={APPLE_ICON_PX}
       viewBox="0 0 24 24"
       aria-hidden
-      style={{ display: 'block' }}
+      style={iconSvgStyle}
     >
       <path
         fill="#FFFFFF"
-        stroke="#FFFFFF"
-        strokeWidth={0.45}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        paintOrder="stroke fill"
         d="M16.6 12.8c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.7-1.8-3.3-1.9-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-3-.8-1.6 0-3 .9-3.8 2.2-1.6 2.8-.4 6.9 1.1 9.1.7 1.1 1.6 2.3 2.8 2.2 1.1 0 1.6-.7 3-.7 1.4 0 1.8.7 3 .7 1.2 0 2-.9 2.8-2 .8-1.2 1.2-2.4 1.2-2.5 0 0-2.3-.9-2.3-3.8zM14.3 6.1c.6-.7 1.1-1.8 1-2.9-.9 0-2 .6-2.6 1.3-.6.6-1.1 1.7-1 2.8 1 .1 2-.5 2.6-1.2z"
       />
     </svg>
   )
-}
-
-const oauthIconSlot = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: OAUTH_ICON_PX,
-  height: OAUTH_ICON_PX,
-  flexShrink: 0,
-  pointerEvents: 'none',
-}
-
-/** Misma caja que Google; Apple añade transición de opacidad en hover. */
-function oauthIconSlotApple(hover) {
-  return {
-    ...oauthIconSlot,
-    transition: 'opacity 120ms ease',
-    opacity: hover ? 1 : 0.9,
-  }
 }
 
 const OAUTH_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
@@ -113,25 +93,80 @@ const oauthButtonBase = {
   WebkitBackdropFilter: 'blur(12px)',
 }
 
-const LABEL_MIN_HEIGHT = 22
-/** Ancho mínimo del bloque de etiqueta Google para evitar salto al alternar "Conectando…". */
-const OAUTH_GOOGLE_LABEL_MIN_WIDTH_PX = 200
-
-const oauthButtonContentRow = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: OAUTH_ROW_GAP,
-  width: '100%',
-  maxWidth: '100%',
-}
-
-const oauthLabelCrossfadeCell = {
-  lineHeight: `${LABEL_MIN_HEIGHT}px`,
+const oauthLabel = {
+  lineHeight: '22px',
   transition: 'opacity 220ms ease-out',
   pointerEvents: 'none',
   whiteSpace: 'nowrap',
+  display: 'block',
+  width: '100%',
+  textAlign: 'center',
 }
+
+const slowNoticeWrapStyle = {
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'center',
+  marginTop: LAYOUT.spacing.sm,
+}
+
+const slowNoticePillStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: 12,
+  color: colors.textPrimary,
+  background: 'rgba(168, 85, 247, 0.14)',
+  border: '1px solid rgba(168, 85, 247, 0.38)',
+  borderRadius: 999,
+  padding: `${LAYOUT.spacing.sm - 2}px ${LAYOUT.spacing.md - 2}px`,
+}
+
+const slowNoticeDotStyle = {
+  width: 8,
+  height: 8,
+  borderRadius: '50%',
+  background: '#a855f7',
+  animation: 'waitme-oauth-pulse 1s ease-out infinite',
+}
+
+const spinnerStyle = {
+  width: 18,
+  height: 18,
+  borderRadius: '50%',
+  border: '2px solid rgba(255,255,255,0.22)',
+  borderTopColor: 'rgba(255,255,255,0.92)',
+  animation: 'waitme-oauth-spin 900ms linear infinite',
+  flexShrink: 0,
+}
+
+const alertStyle = {
+  margin: 0,
+  marginTop: LAYOUT.spacing.sm,
+  width: '100%',
+  fontSize: 13,
+  fontWeight: 500,
+  color: colors.danger,
+  lineHeight: 1.4,
+}
+
+const oauthSpinStyleTag = `
+  @keyframes waitme-oauth-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes waitme-oauth-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(168,85,247,0.45); }
+    80% { box-shadow: 0 0 0 7px rgba(168,85,247,0); }
+    100% { box-shadow: 0 0 0 0 rgba(168,85,247,0); }
+  }
+`
+
+const googleIconStyle = {
+  size: OAUTH_ICON_SLOT_PX,
+  'aria-hidden': true,
+}
+const appleIconStyle = { size: OAUTH_ICON_SLOT_PX, 'aria-hidden': true }
 
 function oauthPointerHandlers(setHover, setPressed, clearPress) {
   return {
@@ -152,6 +187,21 @@ function oauthPointerHandlers(setHover, setPressed, clearPress) {
   }
 }
 
+function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label }) {
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      disabled={disabled}
+      onClick={onClick}
+      {...handlers}
+      style={style}
+    >
+      <ButtonBase icon={icon} label={<span style={oauthLabel}>{label}</span>} />
+    </Button>
+  )
+}
+
 export default function LoginButtons() {
   const { authError, signInWithGoogle, status } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
@@ -160,6 +210,7 @@ export default function LoginButtons() {
   const [googlePressed, setGooglePressed] = useState(false)
   const [appleHover, setAppleHover] = useState(false)
   const [applePressed, setApplePressed] = useState(false)
+  const [showSlowNotice, setShowSlowNotice] = useState(false)
 
   useEffect(() => {
     if (status !== 'authenticated') return
@@ -169,6 +220,15 @@ export default function LoginButtons() {
       /* */
     }
   }, [status])
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowSlowNotice(false)
+      return undefined
+    }
+    const t = window.setTimeout(() => setShowSlowNotice(true), 1000)
+    return () => window.clearTimeout(t)
+  }, [isLoading])
 
   const onGoogle = async () => {
     if (isLoading) return
@@ -210,6 +270,7 @@ export default function LoginButtons() {
     transform: googleTransform,
     transition: googleTransition,
     filter: googleHover && !googlePressed ? 'brightness(1.04)' : 'none',
+    opacity: isLoading ? 0.86 : 1,
   }
 
   const appleTransform = applePressed ? 'scale(0.96)' : 'scale(1)'
@@ -230,101 +291,43 @@ export default function LoginButtons() {
 
   return (
     <>
-      <style>
-        {`
-          @keyframes waitme-oauth-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
-      <Button
-        type="button"
+      <style>{oauthSpinStyleTag}</style>
+      <OAuthButton
         variant="primary"
         disabled={isLoading}
         onClick={onGoogle}
-        {...googleHandlers}
+        handlers={googleHandlers}
         style={googleStyle}
-      >
-        <span style={oauthButtonContentRow}>
-          <span style={oauthIconSlot} aria-hidden>
-            {isLoading ? (
-              <span
-                style={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  border: '2px solid rgba(255,255,255,0.22)',
-                  borderTopColor: 'rgba(255,255,255,0.92)',
-                  animation: 'waitme-oauth-spin 900ms linear infinite',
-                  flexShrink: 0,
-                }}
-              />
-            ) : (
-              <GoogleMark />
-            )}
+        icon={
+          <IconSlot {...googleIconStyle}>
+            {isLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
+          </IconSlot>
+        }
+        label={isLoading ? 'Conectando...' : 'Continuar con Google'}
+      />
+      {showSlowNotice ? (
+        <div role="status" aria-live="polite" style={slowNoticeWrapStyle}>
+          <span style={slowNoticePillStyle}>
+            <span aria-hidden style={slowNoticeDotStyle} />
+            Verificando acceso seguro...
           </span>
-          <span
-            style={{
-              display: 'grid',
-              minHeight: LABEL_MIN_HEIGHT,
-              alignItems: 'center',
-              minWidth: OAUTH_GOOGLE_LABEL_MIN_WIDTH_PX,
-              flexShrink: 1,
-            }}
-          >
-            <span
-              style={{
-                gridArea: '1 / 1',
-                opacity: isLoading ? 0 : 1,
-                ...oauthLabelCrossfadeCell,
-              }}
-            >
-              Continuar con Google
-            </span>
-            <span
-              style={{
-                gridArea: '1 / 1',
-                opacity: isLoading ? 1 : 0,
-                ...oauthLabelCrossfadeCell,
-              }}
-              aria-live="polite"
-            >
-              Conectando...
-            </span>
-          </span>
-        </span>
-      </Button>
-      <Button
-        type="button"
+        </div>
+      ) : null}
+      <OAuthButton
         variant="secondary"
         disabled={isLoading}
         onClick={onApple}
-        {...appleHandlers}
+        handlers={appleHandlers}
         style={appleStyle}
-      >
-        <span style={oauthButtonContentRow}>
-          <span style={oauthIconSlotApple(appleHover)} aria-hidden>
+        icon={
+          <IconSlot {...appleIconStyle}>
             <AppleMark />
-          </span>
-          <span style={{ whiteSpace: 'nowrap', lineHeight: `${LABEL_MIN_HEIGHT}px` }}>
-            Continuar con Apple
-          </span>
-        </span>
-      </Button>
+          </IconSlot>
+        }
+        label="Continuar con Apple"
+      />
       {authError || appleMessage ? (
-        <p
-          role="alert"
-          style={{
-            margin: 0,
-            marginTop: spacing.sm,
-            width: '100%',
-            fontSize: 13,
-            fontWeight: 500,
-            color: colors.danger,
-            lineHeight: 1.4,
-          }}
-        >
+        <p role="alert" style={alertStyle}>
           {authError || appleMessage}
         </p>
       ) : null}

@@ -1,16 +1,25 @@
+import { forwardRef } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
 import { colors } from '../design/colors'
-import { spacing, spacingExact } from '../design/spacing'
 import { radius } from '../design/radius'
+import { LAYOUT } from './layout/layout'
 import Button from './Button'
 import SettingsIcon from './icons/SettingsIcon'
 import UserIcon from './icons/UserIcon'
 
-export default function Header({ interactive = true }) {
+const s = LAYOUT.spacing
+const HEADER_GAP = s.md
+const HEADER_PADDING_Y = s.md
+const HEADER_PADDING_X = s.lg
+const BALANCE_PILL_PADDING_Y = s.sm - 2
+const BALANCE_PILL_PADDING_X = s.md
+
+const Header = forwardRef(function Header({ interactive = true }, ref) {
   const nav = useAppScreen()
 
   return (
     <header
+      ref={ref}
       data-waitme-header
       style={{
         pointerEvents: 'auto',
@@ -31,11 +40,11 @@ export default function Header({ interactive = true }) {
       <div
         style={{
           position: 'relative',
-          padding: `${spacingExact.headerPaddingY}px ${spacingExact.headerPaddingX}px`,
+          padding: `${HEADER_PADDING_Y}px ${HEADER_PADDING_X}px`,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: s.sm }}>
             <div style={{ width: 40, height: 40 }} />
             <div
               style={{
@@ -43,12 +52,12 @@ export default function Header({ interactive = true }) {
                 display: 'flex',
                 cursor: 'pointer',
                 alignItems: 'center',
-                gap: spacing.xs,
+                gap: s.xs,
                 overflow: 'visible',
                 borderRadius: radius.pill,
                 border: `1px solid ${colors.primaryBorder}`,
                 backgroundColor: colors.primarySoft,
-                padding: `${spacingExact.balancePillPaddingY}px ${spacingExact.balancePillPaddingX}px`,
+                padding: `${BALANCE_PILL_PADDING_Y}px ${BALANCE_PILL_PADDING_X}px`,
               }}
             >
               <span
@@ -69,7 +78,7 @@ export default function Header({ interactive = true }) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
-              gap: spacingExact.headerGap,
+              gap: HEADER_GAP,
             }}
           >
             <Button type="button" variant="ghost" style={{ overflow: 'visible' }}>
@@ -117,4 +126,8 @@ export default function Header({ interactive = true }) {
       </div>
     </header>
   )
-}
+})
+
+Header.displayName = 'Header'
+
+export default Header

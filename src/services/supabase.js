@@ -1,3 +1,6 @@
+/**
+ * @fileoverview Cliente Supabase singleton; `null` si faltan variables de entorno.
+ */
 import { createClient } from '@supabase/supabase-js'
 
 /** En ejecución Vite siempre existe; en Node (p. ej. tests) puede ser undefined. */

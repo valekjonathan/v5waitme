@@ -1,160 +1,60 @@
-import ProfileStats from './ProfileStats'
-import { resolveColorFill } from './profileColors'
-import { vehicleLabel } from './VehicleIcons'
-import { useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
-import { spacing } from '../../../design/spacing'
-import { radius } from '../../../design/radius'
-import { shadows } from '../../../design/shadows'
-import Input from '../../../ui/Input'
-import Button from '../../../ui/Button'
-import CheckIcon from '../../../ui/icons/CheckIcon'
+import InputBase from '../../../ui/InputBase'
+import Switch from '../../../ui/Switch'
+import DropdownCustom from '../../../ui/DropdownCustom'
+import { Row } from '../../../ui/primitives/Row'
+import { Stack } from '../../../ui/primitives/Stack'
+import { LAYOUT } from '../../../ui/layout/layout'
+import { profileFormVerticalGapPx } from '../../shared/profileReviewsLayout'
+import { resolveColorFill } from './profileColors'
+import { VehicleIcon } from './VehicleIcons'
 
+const s = LAYOUT.spacing
+const formStyle = { width: '100%' }
+const rowStyle = { width: '100%', alignItems: 'center' }
 const labelStyle = {
-  display: 'block',
+  width: 92,
+  flexShrink: 0,
+  fontSize: 16,
   color: colors.primary,
-  fontSize: 14,
-  marginBottom: spacing.sm,
-  textAlign: 'center',
-  width: '100%',
+  fontWeight: 600,
 }
-
-const fieldWrap = { marginBottom: spacing.sm }
-
-const selectInnerLayout = {
-  position: 'absolute',
-  left: '50%',
-  transform: 'translateX(-50%)',
+const inputWrapStyle = { flex: 1, minWidth: 0 }
+const phoneInputWrapStyle = { flex: 1, minWidth: 0, marginRight: 14 }
+const errorTextStyle = { margin: 0, marginTop: 4, color: '#fda4af', fontSize: 12 }
+const toggleWrapStyle = {
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  width: '100%',
-  paddingLeft: spacing.sm,
-  paddingRight: 28,
-  pointerEvents: 'none',
+  alignSelf: 'center',
+  gap: 8,
+  flexShrink: 0,
 }
-
-const chevronStyle = {
-  position: 'absolute',
-  right: 12,
-  top: '50%',
-  transform: 'translateY(-50%)',
-  fontSize: 16,
-  fontWeight: 700,
+const toggleLabelStyle = {
+  margin: 0,
+  fontSize: 12,
   color: colors.textMuted,
-  pointerEvents: 'none',
+  fontWeight: 700,
 }
-
-function Field({ id, labelText, value, onChange, maxLength, placeholder }) {
-  return (
-    <div style={fieldWrap}>
-      <label htmlFor={id} style={labelStyle}>
-        {labelText}
-      </label>
-      <Input
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="none"
-        spellCheck={false}
-        name="x"
-        data-form-type="other"
-        data-lpignore="true"
-        inputMode="none"
-        readOnly
-        onFocus={(e) => {
-          e.target.removeAttribute('readOnly')
-        }}
-        maxLength={maxLength}
-        placeholder={placeholder}
-      />
-    </div>
-  )
+const selectWrapStyle = { flex: 1, minWidth: 0 }
+const colorIconStyle = {
+  width: 15,
+  height: 15,
+  borderRadius: '50%',
+  border: `1px solid ${colors.border}`,
+  flexShrink: 0,
 }
+const stackFullWidthStyle = { width: '100%' }
 
-function DropdownField({ id, labelText, value, onChange, options, renderTrigger, renderItem }) {
-  const [open, setOpen] = useState(false)
-  const active = useMemo(
-    () => options.find((o) => o.value === value) || options[0],
-    [options, value]
-  )
-  const rootRef = useRef(null)
-
-  useEffect(() => {
-    if (!open) return undefined
-    const onPointerDown = (event) => {
-      if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false)
-    }
-    const onEscape = (event) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    window.addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('keydown', onEscape)
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
-
-  return (
-    <div ref={rootRef} style={{ ...fieldWrap, position: 'relative' }}>
-      <label htmlFor={id} style={labelStyle}>
-        {labelText}
-      </label>
-      <Button id={id} type="button" variant="selectTrigger" onClick={() => setOpen((v) => !v)}>
-        <div style={selectInnerLayout}>
-          {renderTrigger ? renderTrigger(active) : <span>{active.label}</span>}
-        </div>
-        <div style={chevronStyle}>{'⌄'}</div>
-      </Button>
-      {open ? (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 52,
-            zIndex: 30,
-            background: colors.surface,
-            border: `1px solid ${colors.border}`,
-            borderRadius: radius.medium,
-            padding: spacing.xs,
-            boxShadow: shadows.dropdown,
-          }}
-        >
-          {options.map((o) => (
-            <Button
-              key={o.value}
-              type="button"
-              variant="menuRow"
-              onClick={() => {
-                onChange(o.value)
-                setOpen(false)
-              }}
-            >
-              <span>{renderItem ? renderItem(o) : o.label}</span>
-              <span style={{ width: 14, height: 14, opacity: o.value === value ? 1 : 0 }}>
-                <CheckIcon />
-              </span>
-            </Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
+function colorDotStyleFor(value) {
+  return { ...colorIconStyle, background: resolveColorFill(value) }
 }
 
 const COLOR_OPTIONS = [
-  { value: 'gris', label: 'Gris' },
   { value: 'negro', label: 'Negro' },
   { value: 'blanco', label: 'Blanco' },
+  { value: 'gris', label: 'Gris' },
   { value: 'rojo', label: 'Rojo' },
   { value: 'azul', label: 'Azul' },
-  { value: 'verde', label: 'Verde' },
-  { value: 'amarillo', label: 'Amarillo' },
   { value: 'otro', label: 'Otro' },
 ]
 
@@ -164,269 +64,178 @@ const VEHICLE_TYPE_OPTIONS = [
   { value: 'van', label: 'Furgoneta' },
 ]
 
-export default function ProfileForm({ value, onChange, Plate, VehicleIcon }) {
-  const patch = (key) => (v) => onChange((prev) => ({ ...prev, [key]: v }))
-  const selectedFill = useMemo(() => resolveColorFill(value.color), [value.color])
+function legacyColorSelected(value) {
+  if (value === 'verde') return { value: 'verde', label: 'Verde' }
+  if (value === 'amarillo') return { value: 'amarillo', label: 'Amarillo' }
+  return null
+}
 
-  const phoneShellStyle = {
-    width: '100%',
-    boxSizing: 'border-box',
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    color: colors.textPrimary,
-    borderRadius: radius.small,
-    height: 36,
-    padding: '0 12px',
-    fontSize: 14,
-    outline: 'none',
-    textAlign: 'center',
-    fontFamily: 'inherit',
-    display: 'flex',
-    alignItems: 'center',
-  }
+function legacyVehicleSelected(value) {
+  if (value === 'furgoneta') return { value: 'furgoneta', label: 'Furgoneta' }
+  if (value === 'moto') return { value: 'moto', label: 'Moto' }
+  if (value === 'other') return { value: 'other', label: 'Otro' }
+  return null
+}
 
-  const phoneInputStyle = {
-    flex: 1,
-    minWidth: 0,
-    width: '100%',
-    height: '100%',
-    border: 'none',
-    outline: 'none',
-    background: 'transparent',
-    textAlign: 'center',
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontFamily: 'inherit',
-  }
+function renderColorDot(option) {
+  return <span aria-hidden style={colorDotStyleFor(option.value)} />
+}
 
+function LabeledInputRow({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  error,
+  inputMode = 'text',
+  autoCapitalize = 'none',
+  rightSlot = null,
+}) {
   return (
-    <form
-      style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}
-      autoComplete="off"
-      data-form-type="other"
-      onSubmit={(e) => e.preventDefault()}
-    >
-      <div style={fieldWrap}>
-        <label htmlFor="profile-email" style={labelStyle}>
-          Email
+    <Stack gap={4} style={stackFullWidthStyle}>
+      <Row gap={s.sm} style={rowStyle}>
+        <label htmlFor={id} style={labelStyle}>
+          {label}
         </label>
-        <Input
-          id="profile-email"
-          value={String(value.email ?? '')}
-          readOnly
-          disabled
-          autoComplete="email"
-          style={{ width: '100%', height: 36, textAlign: 'center', opacity: 0.85 }}
-        />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
-        <div style={fieldWrap}>
-          <label htmlFor="profile-full_name" style={labelStyle}>
-            Nombre
-          </label>
-          <Input
-            value={String(value.full_name ?? '').slice(0, 10)}
-            maxLength={10}
-            onChange={(e) =>
-              onChange((prev) => ({ ...prev, full_name: e.target.value.slice(0, 10) }))
-            }
+        <div style={rightSlot ? phoneInputWrapStyle : inputWrapStyle}>
+          <InputBase
+            id={id}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
             autoComplete="off"
             autoCorrect="off"
-            autoCapitalize="none"
+            autoCapitalize={autoCapitalize}
             spellCheck={false}
             name="x"
             data-form-type="other"
             data-lpignore="true"
-            inputMode="none"
+            inputMode={inputMode}
             readOnly
-            onFocus={(e) => {
-              e.target.removeAttribute('readOnly')
-            }}
-            id="profile-full_name"
-            style={{ width: '100%', height: 36, textAlign: 'center' }}
+            onFocus={(e) => e.target.removeAttribute('readOnly')}
+            placeholder={placeholder}
           />
         </div>
-        <div style={fieldWrap}>
-          <label htmlFor="profile-phone" style={labelStyle}>
-            Teléfono
-          </label>
-          <div style={phoneShellStyle}>
-            <input
-              id="profile-phone"
-              value={String(value.phone ?? '')}
-              onChange={(e) => patch('phone')(e.target.value)}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              name="x"
-              data-form-type="other"
-              data-lpignore="true"
-              inputMode="tel"
-              readOnly
-              onFocus={(e) => {
-                e.target.removeAttribute('readOnly')
-              }}
-              placeholder="+34 …"
-              style={phoneInputStyle}
-            />
-          </div>
-        </div>
-      </div>
+        {rightSlot}
+      </Row>
+      {error ? <p style={errorTextStyle}>{error}</p> : null}
+    </Stack>
+  )
+}
 
-      <ProfileStats
-        allowPhoneCalls={value.allow_phone_calls}
-        onToggle={patch('allow_phone_calls')}
-      />
+export default function ProfileForm({ value, onChange, errors = {} }) {
+  const patch = (key) => (v) => onChange((prev) => ({ ...prev, [key]: v }))
+  const phoneToggleText = value.allow_phone_calls ? 'ON' : 'OFF'
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
-        <Field
-          id="profile-brand"
-          labelText="Marca"
-          value={value.brand}
-          onChange={patch('brand')}
-          placeholder="Seat, Renault..."
+  return (
+    <form
+      style={formStyle}
+      autoComplete="off"
+      data-form-type="other"
+      onSubmit={(e) => e.preventDefault()}
+    >
+      <Stack gap={profileFormVerticalGapPx}>
+        <LabeledInputRow
+          id="profile-full_name"
+          label="Nombre"
+          value={String(value.full_name ?? '')}
+          onChange={(v) => patch('full_name')(v)}
+          placeholder=""
+          error={errors.full_name}
+          autoCapitalize="words"
         />
-        <Field
-          id="profile-model"
-          labelText="Modelo"
-          value={value.model}
-          onChange={patch('model')}
-          placeholder="Ibiza, Megane..."
-        />
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.md }}>
-        <DropdownField
-          id="profile-color"
-          labelText="Color"
-          value={value.color}
-          onChange={patch('color')}
-          options={COLOR_OPTIONS}
-          renderTrigger={(active) => (
-            <>
-              <div
-                style={{
-                  width: 72,
-                  height: 38,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <VehicleIcon
-                  type={value.vehicle_type || 'car'}
-                  color={resolveColorFill(active.value)}
-                  size="default"
-                />
-              </div>
-              <span
-                style={{
-                  color: colors.textPrimary,
-                  whiteSpace: 'nowrap',
-                  fontSize: 13,
-                  transform: 'scale(0.95)',
-                }}
-              >
-                {active.label}
-              </span>
-            </>
-          )}
-          renderItem={(o) => (
-            <span style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-              <VehicleIcon
-                type={value.vehicle_type || 'car'}
-                color={resolveColorFill(o.value)}
-                size="default"
+        <LabeledInputRow
+          id="profile-phone"
+          label="Teléfono"
+          value=""
+          onChange={patch('phone')}
+          placeholder=""
+          error={errors.phone}
+          inputMode="tel"
+          rightSlot={
+            <div style={toggleWrapStyle}>
+              <Switch
+                checked={Boolean(value.allow_phone_calls)}
+                onToggle={(next) => patch('allow_phone_calls')(next)}
+                ariaLabel="Permitir llamadas"
               />
-              {o.label}
-            </span>
-          )}
+              <p style={toggleLabelStyle}>{phoneToggleText}</p>
+            </div>
+          }
         />
-        <DropdownField
-          id="profile-vehicle_type"
-          labelText="Vehículo"
-          value={value.vehicle_type}
-          onChange={patch('vehicle_type')}
-          options={VEHICLE_TYPE_OPTIONS}
-          renderTrigger={() => (
-            <>
-              <div
-                style={{
-                  width: 72,
-                  height: 38,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <VehicleIcon type={value.vehicle_type} color={selectedFill} size="default" />
-              </div>
-              <span
-                style={{
-                  color: colors.textPrimary,
-                  whiteSpace: 'nowrap',
-                  fontSize: 13,
-                  transform: 'scale(0.95)',
-                }}
-              >
-                {vehicleLabel(value.vehicle_type)}
-              </span>
-            </>
-          )}
-          renderItem={(o) => (
-            <span style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-              <VehicleIcon type={o.value} color={selectedFill} size="default" />
-              {o.label}
-            </span>
-          )}
-        />
-      </div>
 
-      <div style={fieldWrap}>
-        <label htmlFor="profile-plate" style={labelStyle}>
-          Matrícula
-        </label>
-        <div
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginTop: spacing.sm,
-          }}
-        >
-          <div
-            style={{
-              width: 124,
-              height: 36,
-              overflow: 'hidden',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <div
-              style={{
-                width: 154,
-                height: 36,
-                flexShrink: 0,
-                transform: 'scaleX(0.8051948051948052)',
-                transformOrigin: 'center center',
-              }}
-            >
-              <Plate
-                value={value.plate}
-                editable={true}
-                onChange={(plate) => onChange((prev) => ({ ...prev, plate }))}
+        <LabeledInputRow
+          id="profile-brand"
+          label="Marca"
+          value=""
+          onChange={patch('brand')}
+          placeholder=""
+          error={errors.brand}
+        />
+
+        <LabeledInputRow
+          id="profile-model"
+          label="Modelo"
+          value=""
+          onChange={patch('model')}
+          placeholder=""
+          error={errors.model}
+        />
+
+        <Stack gap={4} style={stackFullWidthStyle}>
+          <Row gap={s.sm} style={rowStyle}>
+            <label htmlFor="profile-color" style={labelStyle}>
+              Color
+            </label>
+            <div style={selectWrapStyle}>
+              <DropdownCustom
+                value={String(value.color ?? 'negro')}
+                onChange={patch('color')}
+                options={COLOR_OPTIONS}
+                ariaLabel="Color del vehículo"
+                renderIcon={renderColorDot}
+                legacySelected={legacyColorSelected}
+                triggerStyleOverride={{
+                  justifyContent: 'center',
+                }}
               />
             </div>
-          </div>
-        </div>
-      </div>
+          </Row>
+        </Stack>
+
+        <Stack gap={4} style={stackFullWidthStyle}>
+          <Row gap={s.sm} style={rowStyle}>
+            <label htmlFor="profile-vehicle_type" style={labelStyle}>
+              Tipo
+            </label>
+            <div style={selectWrapStyle}>
+              <DropdownCustom
+                value={String(value.vehicle_type ?? 'car')}
+                onChange={patch('vehicle_type')}
+                options={VEHICLE_TYPE_OPTIONS}
+                ariaLabel="Tipo de vehículo"
+                showTriggerIcon={false}
+                legacySelected={legacyVehicleSelected}
+                optionIconSlotPx={56}
+                renderIcon={(option) => (
+                  <VehicleIcon type={option.value} color={resolveColorFill('negro')} />
+                )}
+              />
+            </div>
+          </Row>
+        </Stack>
+
+        <LabeledInputRow
+          id="profile-plate"
+          label="Matrícula"
+          value={String(value.plate ?? '')}
+          onChange={patch('plate')}
+          placeholder=""
+          error={errors.plate}
+          autoCapitalize="characters"
+        />
+      </Stack>
     </form>
   )
 }

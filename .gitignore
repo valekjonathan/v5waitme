@@ -7,4 +7,5 @@ dist/
 *.log
 .DS_Store
 .vercel
-.waitme/
+playwright-report/
+test-results/
