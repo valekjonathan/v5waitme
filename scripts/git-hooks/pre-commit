@@ -1,6 +1,8 @@
 #!/bin/sh
 # Instalado en .git/hooks/pre-commit por scripts/ensure-git-hooks.mjs (npm install / prepare)
+# Rápido: lint + test. El gate completo (quality) corre en CI y con npm run quality.
 set -e
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT" || exit 1
-npm run quality
+npm run lint
+npm run test

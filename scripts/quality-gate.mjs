@@ -1,15 +1,13 @@
 /**
- * Control de calidad automático: state-of-app + chequeos estáticos + lint + test + test:ui + build.
- * Cualquier fallo → exit 1 (bloquea pre-commit / CI).
+ * Control de calidad automático: state-of-app + chequeos estáticos + lint + test + test:ui + vite build (siempre).
+ * Cualquier fallo → exit 1 (CI / `npm run quality`). El hook pre-commit solo ejecuta lint + test.
  * JSX y variables/imports no usados: ESLint (no-unused-vars, react/jsx-uses-vars, --max-warnings 0).
- * Build: solo si VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY están definidas (misma lógica que Vite: loadEnv + process.env).
  * Sin dependencias extra (solo Node + npm + vite ya en el proyecto).
  */
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { basename, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadEnv } from 'vite'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const srcDir = join(root, 'src')
@@ -338,17 +336,9 @@ function runNpm(script) {
   }
 }
 
-/** Misma fuente que `vite build`: archivos .env + variables ya exportadas en el proceso. */
-function hasSupabaseEnvForBuild() {
-  const env = loadEnv('production', root, 'VITE_')
-  const url = String(env.VITE_SUPABASE_URL ?? '').trim()
-  const key = String(env.VITE_SUPABASE_ANON_KEY ?? '').trim()
-  return Boolean(url && key)
-}
-
 function main() {
   console.error('')
-  console.error('[quality-gate] Inicio (src + lint + test + test:ui + build condicional)')
+  console.error('[quality-gate] Inicio (src + lint + test + test:ui + build)')
   console.error('')
 
   checkEmptyFiles()
@@ -365,16 +355,7 @@ function main() {
   runNpm('test')
   runNpm('test:ui')
 
-  if (hasSupabaseEnvForBuild()) {
-    runNpm('build')
-  } else {
-    console.error(SEP)
-    console.error('[quality-gate] Build omitido: variables de entorno no configuradas')
-    console.error(
-      '[quality-gate] (definir VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env.local o en el entorno)'
-    )
-    console.error(SEP)
-  }
+  runNpm('build')
 
   console.error(SEP)
   console.error('[quality-gate] ESTADO: OK')

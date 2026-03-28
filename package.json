@@ -12,6 +12,7 @@
     "test": "node --test \"test/*.test.js\"",
     "test:ui": "vitest run",
     "test:e2e": "playwright test",
+    "e2e": "playwright test",
     "lint": "eslint . --max-warnings 0 && tsc --noEmit",
     "format": "prettier --write .",
     "quality": "node scripts/quality-gate.mjs",
