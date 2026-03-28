@@ -38,19 +38,8 @@ const MAX_FOLLOW_SPEED_MPS = 42
 function createGeoObserver() {
   const enabled = import.meta.env.DEV && import.meta.env.VITE_WAITME_GEO_DEBUG === '1'
   if (!enabled) return null
-
-  return function observe(event) {
-    if (event.type === 'position_discarded') {
-      console.debug('[WaitMe][Geo]', event.type, event.reason)
-      return
-    }
-    if (event.type === 'tracking_changed') {
-      console.debug('[WaitMe][Geo]', event.type, event.tracking, event.confidence)
-      return
-    }
-    if (event.type === 'low_confidence') {
-      console.debug('[WaitMe][Geo]', event.type, event.confidence)
-    }
+  return function observe() {
+    /* breakpoint / extender si VITE_WAITME_GEO_DEBUG=1 */
   }
 }
 

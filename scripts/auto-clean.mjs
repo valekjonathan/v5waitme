@@ -1,5 +1,5 @@
 /**
- * Formato seguro: informe UNUSED (grafo desde main.jsx), eslint --fix, Prettier sin HomePage.jsx.
+ * Formato seguro: informe UNUSED (grafo desde main.jsx, resuelve .js/.jsx/.ts/.tsx), eslint --fix, Prettier sin HomePage.jsx.
  * No ejecuta quality (eso va en pre-commit / CI).
  * No borra archivos.
  */
@@ -18,7 +18,7 @@ function toRel(p) {
   return relative(root, p).split('\\').join('/')
 }
 
-function walkSrcJsFiles() {
+function walkSrcSourceFiles() {
   /** @type {string[]} */
   const out = []
   function walk(dir) {
@@ -26,7 +26,7 @@ function walkSrcJsFiles() {
     for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, ent.name)
       if (ent.isDirectory()) walk(p)
-      else if (/\.(jsx|js)$/.test(ent.name)) out.push(p)
+      else if (/\.(jsx?|tsx?)$/.test(ent.name)) out.push(p)
     }
   }
   walk(srcDir)
@@ -40,8 +40,12 @@ function resolveRelativeImport(fromFile, specifier) {
     base,
     `${base}.jsx`,
     `${base}.js`,
+    `${base}.tsx`,
+    `${base}.ts`,
     join(base, 'index.jsx'),
     join(base, 'index.js'),
+    join(base, 'index.tsx'),
+    join(base, 'index.ts'),
   ]
   for (const c of candidates) {
     try {
@@ -106,11 +110,17 @@ function buildReachableFromMain() {
 function reportUnusedFiles() {
   const reachable = buildReachableFromMain()
   const allowNeverReport = new Set(['src/main.jsx', 'src/app/App.jsx', HOMEPAGE_REL])
+  /** Referencias de tipos / ambiente: no entran en imports JS pero son válidas. */
+  const allowAmbientOnly = new Set([
+    'src/vite-env.d.ts',
+    'src/ui/Header.d.ts',
+    'src/ui/BottomNav.d.ts',
+  ])
 
   const unused = []
-  for (const abs of walkSrcJsFiles()) {
+  for (const abs of walkSrcSourceFiles()) {
     const rel = toRel(abs)
-    if (allowNeverReport.has(rel)) continue
+    if (allowNeverReport.has(rel) || allowAmbientOnly.has(rel)) continue
     if (!reachable.has(rel)) unused.push(rel)
   }
   unused.sort()

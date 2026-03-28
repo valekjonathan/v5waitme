@@ -231,16 +231,13 @@ export function AuthProvider({ children }) {
           typeof window !== 'undefined'
             ? new URLSearchParams(window.location.search).get('code')
             : null
-        if (code) console.info('[WaitMe][OAuth] OAUTH_CODE_DETECTED')
-
         // PKCE: un solo intercambio por retorno OAuth; luego limpiar URL.
         if (!session?.user && code && !pkceExchangeConsumed) {
           pkceExchangeConsumed = true
-          console.info('[WaitMe][OAuth] OAUTH_EXCHANGE_START')
           const { data: exchanged, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code)
           if (exchangeError) {
-            console.info(
+            console.warn(
               '[WaitMe][OAuth] OAUTH_EXCHANGE_FAIL',
               exchangeError.message ?? exchangeError
             )
@@ -258,10 +255,8 @@ export function AuthProvider({ children }) {
             } catch {
               /* */
             }
-            console.info('[WaitMe][OAuth] FALLBACK_LOGIN')
             session = null
           } else {
-            console.info('[WaitMe][OAuth] OAUTH_EXCHANGE_SUCCESS')
             session = exchanged?.session ?? null
             try {
               window.history.replaceState({}, '', window.location.pathname || '/')
@@ -276,12 +271,9 @@ export function AuthProvider({ children }) {
           if (oauthErr) setAuthError(oauthErr)
         }
 
-        console.info('[WaitMe][OAuth] SESSION_SYNC_START')
         await syncFromSession(session)
-        console.info('[WaitMe][OAuth] SESSION_SYNC_DONE')
       } catch (e) {
         console.error('[WaitMe][Auth] arranque de sesión falló; se continúa sin sesión.', e)
-        console.info('[WaitMe][OAuth] FALLBACK_LOGIN')
         if (!cancelled) {
           try {
             await signOutRequest()
@@ -330,7 +322,6 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signInWithGoogle = useCallback(async () => {
-    console.info('[WaitMe][Debug] ACTION: LOGIN')
     logFlow('LOGIN_CLICK')
     setAuthError(null)
     if (!isSupabaseConfigured()) {

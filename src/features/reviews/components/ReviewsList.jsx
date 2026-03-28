@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { mergeReviewsWithTestRow } from '../../../services/reviews'
+import { useState } from 'react'
 import { Stack } from '../../../ui/primitives/Stack'
 import ReviewItem from './ReviewItem'
 
@@ -28,9 +27,8 @@ const keyframesStyle = (
   `}</style>
 )
 
-export default function ReviewsList({ reviews: originalReviews = [] }) {
+export default function ReviewsList({ reviews = [] }) {
   const [selectedId, setSelectedId] = useState(null)
-  const reviews = useMemo(() => mergeReviewsWithTestRow(originalReviews || []), [originalReviews])
 
   return (
     <section style={listWrapStyle} aria-label="Lista de reseñas">

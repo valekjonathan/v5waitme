@@ -185,21 +185,6 @@ function computeTargetView(status, user, profileBootstrapReady) {
   return 'authenticated'
 }
 
-function NavDecisionLog({ isProfileComplete }) {
-  const { screen } = useAppScreen()
-  useEffect(() => {
-    if (!isProfileComplete) {
-      console.info('[WaitMe] NAV_DECISION', { route: 'profile_required', screen })
-      return
-    }
-    console.info('[WaitMe] NAV_DECISION', {
-      route: screen === 'profile' ? 'profile_tab' : 'home_tab',
-      screen,
-    })
-  }, [isProfileComplete, screen])
-  return null
-}
-
 function AppGate() {
   const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
   const [displayedView, setDisplayedView] = useState('loading')
@@ -215,20 +200,6 @@ function AppGate() {
   )
 
   useEffect(() => {
-    console.info('[WaitMe] AUTH_STATE', {
-      status,
-      userId: user?.id ?? null,
-      profileBootstrapReady,
-      isProfileComplete,
-    })
-  }, [status, user?.id, profileBootstrapReady, isProfileComplete])
-
-  useEffect(() => {
-    if (!(status === 'authenticated' && profileBootstrapReady && user)) return
-    console.info('[WaitMe] PROFILE_COMPLETE', { isProfileComplete })
-  }, [status, profileBootstrapReady, user, isProfileComplete])
-
-  useEffect(() => {
     const next = computeTargetView(status, user, profileBootstrapReady)
     setTargetView(next)
   }, [status, user, profileBootstrapReady])
@@ -242,11 +213,6 @@ function AppGate() {
     }, 200)
     return () => clearTimeout(swapTimer)
   }, [displayedView, targetView])
-
-  useEffect(() => {
-    if (displayedView === 'loading') console.info('[WaitMe] NAV_DECISION', { route: 'loading' })
-    else if (displayedView === 'login') console.info('[WaitMe] NAV_DECISION', { route: 'login' })
-  }, [displayedView])
 
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
@@ -274,7 +240,6 @@ function AppGate() {
                 open={incompleteModalOpen}
                 onClose={closeIncompleteModal}
               />
-              <NavDecisionLog isProfileComplete={isProfileComplete} />
               {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
             </AppLayout>
           </ProfileIncompleteNoticeProvider>

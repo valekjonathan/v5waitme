@@ -11,7 +11,7 @@ import ProfileReviewsLayout, {
   profileReviewsShellContentStyle,
 } from '../../shared/layout/ProfileReviewsLayout'
 import { profileReviewsSectionFlushStyle } from '../../shared/profileReviewsLayout'
-import { getReviewsMock } from '../../../services/reviews'
+import { getReviewsForScreen } from '../../../services/reviews'
 
 const shellStyle = { backgroundColor: colors.background }
 
@@ -37,7 +37,7 @@ function profileFromUser(user) {
 export default function ReviewsPage() {
   const { user } = useAuth()
   const profile = useMemo(() => profileFromUser(user), [user])
-  const reviews = useMemo(() => getReviewsMock(), [])
+  const reviews = useMemo(() => getReviewsForScreen(), [])
 
   return (
     <ScreenShell
@@ -48,7 +48,7 @@ export default function ReviewsPage() {
     >
       <ProfileReviewsLayout header={<ProfileHeader profile={profile} />}>
         <Section style={profileReviewsSectionFlushStyle}>
-          <ReviewsSummary />
+          <ReviewsSummary reviews={reviews} />
         </Section>
         <Section
           style={{

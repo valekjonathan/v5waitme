@@ -61,6 +61,13 @@ export function mergeReviewsWithTestRow(base: Review[]): Review[] {
   return [REVIEWS_TEST_ROW, ...base]
 }
 
+/**
+ * Fuente única para la pantalla Reseñas: lista + resumen deben usar solo esto (mismo array lógico).
+ */
+export function getReviewsForScreen(): Review[] {
+  return mergeReviewsWithTestRow(getReviewsMock())
+}
+
 export async function fetchReviews(): Promise<{ reviews: Review[] }> {
   return { reviews: MOCK_REVIEWS }
 }

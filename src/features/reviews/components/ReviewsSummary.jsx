@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { Row } from '../../../ui/primitives/Row'
-import {
-  buildRatingDistribution,
-  computeAverageRating,
-  getReviewsMock,
-  mergeReviewsWithTestRow,
-} from '../../../services/reviews'
+import { buildRatingDistribution, computeAverageRating } from '../../../services/reviews'
 
 const cardStyle = {
   width: '100%',
@@ -117,8 +112,7 @@ function AnimatedBarFill({ ratio }) {
   )
 }
 
-export default function ReviewsSummary() {
-  const reviews = useMemo(() => mergeReviewsWithTestRow(getReviewsMock() || []), [])
+export default function ReviewsSummary({ reviews = [] }) {
   const distribution = useMemo(() => buildRatingDistribution(reviews), [reviews])
   const average = useMemo(() => computeAverageRating(reviews), [reviews])
   const rows = normalizeDistribution(distribution)

@@ -334,7 +334,7 @@ function hasSupabaseEnvForBuild() {
 
 function main() {
   console.error('')
-  console.error('[quality-gate] Inicio (src + lint + test + build condicional)')
+  console.error('[quality-gate] Inicio (src + lint + test + test:ui + build condicional)')
   console.error('')
 
   checkEmptyFiles()
@@ -347,6 +347,7 @@ function main() {
 
   runNpm('lint')
   runNpm('test')
+  runNpm('test:ui')
 
   if (hasSupabaseEnvForBuild()) {
     runNpm('build')

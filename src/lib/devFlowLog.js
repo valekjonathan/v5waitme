@@ -11,7 +11,7 @@ const ALLOWED_EVENTS = new Set([
 ])
 
 export function logFlow(event, meta) {
-  if (!ALLOWED_EVENTS.has(event)) return
+  if (!import.meta.env.DEV || !ALLOWED_EVENTS.has(event)) return
   if (meta == null) {
     console.info(`[WaitMe][Flow] ${event}`)
     return

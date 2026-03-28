@@ -346,7 +346,6 @@ export default function ProfilePage() {
 
   const handleContinue = useCallback(async () => {
     setSubmitAttempted(true)
-    console.info('[WaitMe][Debug] ACTION: SAVE_PROFILE')
     if (!checkProfileComplete(profile)) return
     if (!canContinue) return
     if (hasPendingChanges || isSaving || autosaveStatusRef.current === 'saving') {
