@@ -15,28 +15,8 @@ import { getReviewsForScreen } from '../../../services/reviews'
 
 const shellStyle = { backgroundColor: colors.background }
 
-function profileFromUser(user) {
-  const meta =
-    user?.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {}
-  const name =
-    (typeof meta.full_name === 'string' && meta.full_name) ||
-    (typeof meta.name === 'string' && meta.name) ||
-    ''
-  const avatarUrl = typeof meta.avatar_url === 'string' ? meta.avatar_url : ''
-  return {
-    full_name: name,
-    avatar_url: avatarUrl,
-    brand: '',
-    model: '',
-    plate: '',
-    color: 'negro',
-    vehicle_type: 'car',
-  }
-}
-
 export default function ReviewsPage() {
-  const { user } = useAuth()
-  const profile = useMemo(() => profileFromUser(user), [user])
+  const { headerProfile } = useAuth()
   const reviews = useMemo(() => getReviewsForScreen(), [])
 
   return (
@@ -46,7 +26,7 @@ export default function ReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={profile} />}>
+      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
         <Section style={profileReviewsSectionFlushStyle}>
           <ReviewsSummary reviews={reviews} />
         </Section>

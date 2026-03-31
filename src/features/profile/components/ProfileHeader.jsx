@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
@@ -12,6 +11,7 @@ import { Row } from '../../../ui/primitives/Row'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import { renderHeaderStarSlots } from '../../../lib/ratingStars'
+import { profileDisplayFirstName } from '../../../services/profile.js'
 import {
   PROFILE_REVIEWS_MAX_WIDTH,
   innerPurplePaddingX,
@@ -22,6 +22,7 @@ import {
 } from '../../shared/profileReviewsLayout'
 
 const s = LAYOUT.spacing
+
 const rootStyle = {
   width: '100%',
   boxSizing: 'border-box',
@@ -44,6 +45,27 @@ const outerYellowCardStyle = {
   overflow: 'visible',
   background: `${colors.accentYellow}10`,
   cursor: 'pointer',
+}
+const emailContainerStyle = {
+  position: 'absolute',
+  top: 4,
+  left: reviewsAvatarWidth,
+  right: 0,
+  height: 48,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  pointerEvents: 'none',
+  zIndex: 20,
+}
+const emailTextStyle = {
+  margin: 0,
+  fontSize: 13,
+  color: '#ddd',
+  lineHeight: '16px',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
 }
 
 const innerPurpleCardStyle = {
@@ -114,6 +136,8 @@ const nameTextStyle = {
   fontWeight: 700,
   letterSpacing: '0.01em',
   color: colors.textPrimary,
+  minWidth: 0,
+  flex: 1,
 }
 const secondaryTextStyle = {
   margin: 0,
@@ -125,24 +149,6 @@ const secondaryTextStyle = {
   textOverflow: 'ellipsis',
 }
 const nameRowStyle = { width: '100%', minWidth: 0 }
-const emailContainerStyle = {
-  position: 'absolute',
-  top: 4,
-  right: 4,
-  width: 160,
-  height: 48,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 18,
-}
-const emailStyle = {
-  fontSize: 13,
-  color: '#ddd',
-  textAlign: 'center',
-  lineHeight: '16px',
-}
-const nameHeaderStackStyle = { width: '100%', minWidth: 0 }
 const starsWrapStyle = { flexShrink: 0, display: 'flex', gap: 1, marginLeft: 'auto' }
 const starStyle = { color: colors.accentYellow, textShadow: shadows.starGlow }
 const starEmptyStyle = { color: colors.textMuted, textShadow: 'none' }
@@ -153,54 +159,53 @@ const carRowStyle = {
   display: 'flex',
   alignItems: 'center',
 }
-const plateVehicleRowStyle = { width: '100%', minWidth: 0, alignItems: 'center' }
-const plateWrapStyle = { flexShrink: 0, width: 124 }
-const plateBoxStyle = {
-  width: 124,
-  height: 36,
+const plateVehicleRowStyle = {
+  width: '100%',
+  minWidth: 0,
   display: 'flex',
+  flexDirection: 'row',
   alignItems: 'center',
-  justifyContent: 'center',
+  gap: s.sm,
 }
+const plateWrapStyle = { flexShrink: 0, width: 124 }
 const vehicleWrapStyle = {
   flex: 1,
-  height: 38,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingRight: innerPurplePaddingX,
+  boxSizing: 'border-box',
+  marginRight: 3,
+}
+const vehicleIconNudgeStyle = {
+  marginLeft: -6,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
 }
+const avatarImgStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+}
 
+/**
+ * Tarjeta amarilla única (Perfil y Reseñas montan este mismo componente).
+ * Estructura: tokens `reviewsBadgeLayerStyle` + email en esquina + bloque morado con nombre único.
+ */
 export default function ProfileHeader({ profile }) {
   const { openReviews } = useAppScreen()
-  const displayName =
-    String(profile?.full_name ?? '')
-      .trim()
-      .split(/\s+/)[0]
-      .slice(0, 10) || 'Nombre'
+  const displayName = profileDisplayFirstName(profile?.full_name)
   const carText =
     String(
       [profile?.brand, profile?.model].filter((v) => String(v ?? '').trim()).join(' ')
     ).trim() || 'Marca Modelo'
   const plateText = String(profile?.plate ?? '').trim() || '0000 XXX'
-  const avatarUrl = String(profile?.avatar_url ?? '').trim()
+  const displayEmail = profile?.email || ''
+  const avatarUrl = profile?.avatar_url || ''
   const colorKey = String(profile?.color || 'gris').toLowerCase()
   const vehicleType = profile?.vehicle_type || 'car'
-  const [avatarReady, setAvatarReady] = useState(false)
-  const fallbackInitial = useMemo(() => {
-    const raw = String(displayName ?? '').trim()
-    return raw ? raw.charAt(0).toUpperCase() : 'U'
-  }, [displayName])
-  const avatarImageStyle = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    opacity: avatarReady ? 1 : 0,
-    transition: 'opacity 220ms ease-out',
-  }
-
-  useEffect(() => {
-    setAvatarReady(false)
-  }, [avatarUrl])
+  const fallbackLetter = (displayName || profile?.email || 'U').charAt(0)
 
   return (
     <div style={rootStyle}>
@@ -226,21 +231,19 @@ export default function ProfileHeader({ profile }) {
             Reseñas
           </Button>
         </div>
-        <div style={emailContainerStyle}>
-          <span style={emailStyle}>{profile?.email || 'tuemail@tuemail.com'}</span>
-        </div>
+        {displayEmail ? (
+          <div style={emailContainerStyle}>
+            <span style={emailTextStyle}>{displayEmail}</span>
+          </div>
+        ) : null}
+
         <div style={innerPurpleCardStyle}>
           <div style={avatarColStyle}>
             <div style={avatarStyle}>
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Avatar del perfil"
-                  onLoad={() => setAvatarReady(true)}
-                  style={avatarImageStyle}
-                />
+                <img src={avatarUrl} alt="" referrerPolicy="no-referrer" style={avatarImgStyle} />
               ) : (
-                <span style={avatarFallbackLetterStyle}>{fallbackInitial}</span>
+                <div style={avatarFallbackLetterStyle}>{fallbackLetter}</div>
               )}
             </div>
             <label style={avatarUploadLabelStyle} onClick={(event) => event.stopPropagation()}>
@@ -250,31 +253,29 @@ export default function ProfileHeader({ profile }) {
           </div>
 
           <Stack gap={0} style={infoColStyle}>
-            <Stack gap={0} style={nameHeaderStackStyle}>
-              <Row gap={s.sm} align="flex-start" style={nameRowStyle}>
-                <p style={nameTextStyle}>{displayName}</p>
-                <div style={starsWrapStyle}>
-                  {renderHeaderStarSlots(1).map((star, i) => (
-                    <span key={i} style={star === '★' ? starStyle : starEmptyStyle}>
-                      {star}
-                    </span>
-                  ))}
-                </div>
-              </Row>
-            </Stack>
+            <Row gap={s.sm} align="flex-start" style={nameRowStyle}>
+              <p style={nameTextStyle}>{displayName}</p>
+              <div style={starsWrapStyle}>
+                {renderHeaderStarSlots(1).map((star, i) => (
+                  <span key={i} style={star === '★' ? starStyle : starEmptyStyle}>
+                    {star}
+                  </span>
+                ))}
+              </div>
+            </Row>
             <div style={carRowStyle}>
               <p style={secondaryTextStyle}>{carText}</p>
             </div>
-            <Row gap={s.sm} align="flex-end" style={plateVehicleRowStyle}>
+            <div style={plateVehicleRowStyle}>
               <div style={plateWrapStyle}>
-                <div style={plateBoxStyle}>
-                  <Plate width={124} value={plateText} editable={false} />
-                </div>
+                <Plate width={124} value={plateText} editable={false} />
               </div>
               <div style={vehicleWrapStyle}>
-                <VehicleIcon type={vehicleType} color={resolveColorFill(colorKey)} size="default" />
+                <div style={vehicleIconNudgeStyle}>
+                  <VehicleIcon type={vehicleType} color={resolveColorFill(colorKey)} size="large" />
+                </div>
               </div>
-            </Row>
+            </div>
           </Stack>
         </div>
       </div>

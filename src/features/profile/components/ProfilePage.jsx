@@ -8,7 +8,13 @@ import { useAuth } from '../../../lib/AuthContext'
 import { colors } from '../../../design/colors'
 import { isSupabaseConfigured } from '../../../services/supabase.js'
 import { getCurrentUser } from '../../../services/auth'
-import { checkProfileComplete, getProfile, updateProfile } from '../../../services/profile'
+import {
+  checkProfileComplete,
+  EMPTY_APP_PROFILE,
+  getProfile,
+  seedProfileStateFromSession,
+  updateProfile,
+} from '../../../services/profile'
 import { logFlow } from '../../../lib/devFlowLog.js'
 import ScreenShell from '../../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
@@ -24,46 +30,29 @@ import {
   profileReviewsFullWidthButtonStyle,
 } from '../../shared/profileReviewsLayout'
 
-const EMPTY_PROFILE = {
-  full_name: '',
-  phone: '',
-  brand: '',
-  model: '',
-  plate: '',
-  allow_phone_calls: false,
-  color: 'negro',
-  vehicle_type: 'car',
-  email: '',
-  avatar_url: '',
-}
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
 const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
 const AUTOSAVE_DEBOUNCE_MS = 600
 const shellStyle = { backgroundColor: colors.background }
 
-function profileFromUser(user) {
-  const meta =
-    user?.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {}
-  const name =
-    (typeof meta.full_name === 'string' && meta.full_name) ||
-    (typeof meta.name === 'string' && meta.name) ||
-    ''
-  const email = typeof user?.email === 'string' ? user.email : ''
-  const avatarUrl = typeof meta.avatar_url === 'string' ? meta.avatar_url : ''
-  return { name, email, avatarUrl }
-}
-
 export default function ProfilePage() {
   const { openHome } = useAppScreen()
-  const { user: sessionUser, signOut, markProfileComplete } = useAuth()
-  const sessionUserEmail = sessionUser?.email
-  const sessionUserMeta = sessionUser?.user_metadata
-  const [profile, setProfile] = useState(EMPTY_PROFILE)
-  const [savedProfile, setSavedProfile] = useState(EMPTY_PROFILE)
+  const {
+    user: sessionUser,
+    signOut,
+    markProfileComplete,
+    headerProfile,
+    profile,
+    setProfile,
+  } = useAuth()
+  const [savedProfile, setSavedProfile] = useState(() => {
+    const seed = profile ?? seedProfileStateFromSession(sessionUser ?? null)
+    return { ...seed }
+  })
   const [isSaving, setIsSaving] = useState(false)
   const [autosaveStatus, setAutosaveStatus] = useState('idle')
   const [submitAttempted, setSubmitAttempted] = useState(false)
-  const [hasPendingChanges, setHasPendingChanges] = useState(false)
+  const hasChanges = JSON.stringify(profile) !== JSON.stringify(savedProfile)
   const autosaveTimerRef = useRef(null)
   const autosaveInFlightRef = useRef(false)
   const autosavePendingRef = useRef(false)
@@ -74,25 +63,25 @@ export default function ProfilePage() {
 
   const fieldErrors = submitAttempted
     ? {
-        full_name: String(profile.full_name ?? '').trim() ? '' : 'Indica tu nombre',
+        full_name: String(profile?.full_name ?? '').trim() ? '' : 'Indica tu nombre',
         plate:
-          String(profile.plate ?? '').replace(/\s/g, '').length >= 4
+          String(profile?.plate ?? '').replace(/\s/g, '').length >= 4
             ? ''
             : 'Introduce tu matrícula',
-        brand: String(profile.brand ?? '').trim() ? '' : 'Indica la marca',
-        model: String(profile.model ?? '').trim() ? '' : 'Indica el modelo',
+        brand: String(profile?.brand ?? '').trim() ? '' : 'Indica la marca',
+        model: String(profile?.model ?? '').trim() ? '' : 'Indica el modelo',
         phone:
-          String(profile.phone ?? '').replace(/\s/g, '').length >= 6
+          String(profile?.phone ?? '').replace(/\s/g, '').length >= 6
             ? ''
             : 'Añade un teléfono válido',
       }
     : {}
   const canContinue =
-    String(profile.full_name ?? '').trim().length > 0 &&
-    String(profile.plate ?? '').replace(/\s/g, '').length >= 4 &&
-    String(profile.brand ?? '').trim().length > 0 &&
-    String(profile.model ?? '').trim().length > 0 &&
-    String(profile.phone ?? '').replace(/\s/g, '').length >= 6
+    String(profile?.full_name ?? '').trim().length > 0 &&
+    String(profile?.plate ?? '').replace(/\s/g, '').length >= 4 &&
+    String(profile?.brand ?? '').trim().length > 0 &&
+    String(profile?.model ?? '').trim().length > 0 &&
+    String(profile?.phone ?? '').replace(/\s/g, '').length >= 6
 
   useEffect(() => {
     profileRef.current = profile
@@ -104,10 +93,6 @@ export default function ProfilePage() {
     sessionUserIdRef.current = sessionUser?.id ?? null
   }, [sessionUser?.id])
   useEffect(() => {
-    const pending = JSON.stringify(profile) !== JSON.stringify(savedProfile)
-    setHasPendingChanges(pending)
-  }, [profile, savedProfile])
-  useEffect(() => {
     autosaveStatusRef.current = autosaveStatus
   }, [autosaveStatus])
 
@@ -117,15 +102,13 @@ export default function ProfilePage() {
       return
     }
 
+    const sessionSeed = seedProfileStateFromSession(sessionUser)
     let cancelled = false
     ;(async () => {
       try {
         if (!isSupabaseConfigured()) {
           if (!cancelled) {
-            const seed = profileFromUser({
-              email: sessionUserEmail,
-              user_metadata: sessionUserMeta,
-            })
+            const seed = sessionSeed
             let draft = null
             try {
               const raw = window.localStorage?.getItem?.(PROFILE_DRAFT_KEY)
@@ -133,14 +116,26 @@ export default function ProfilePage() {
             } catch {
               draft = null
             }
-            const next = {
-              ...(draft && typeof draft === 'object' ? draft : EMPTY_PROFILE),
-              full_name: (draft?.full_name || '').trim() ? draft.full_name : seed.name,
+            const base = {
+              ...(draft && typeof draft === 'object' ? draft : EMPTY_APP_PROFILE),
+              full_name: (draft?.full_name || '').trim() ? draft.full_name : seed.full_name,
               email: (draft?.email || '').trim() ? draft.email : seed.email,
-              avatar_url: (draft?.avatar_url || '').trim() ? draft.avatar_url : seed.avatarUrl,
+              avatar_url: (draft?.avatar_url || '').trim() ? draft.avatar_url : seed.avatar_url,
             }
-            setProfile(next)
-            setSavedProfile(next)
+            setProfile((prev) => ({
+              ...prev,
+              ...base,
+              full_name: prev.full_name || base.full_name,
+              email: prev.email || base.email,
+              avatar_url: prev.avatar_url || base.avatar_url,
+            }))
+            setSavedProfile((prev) => ({
+              ...prev,
+              ...base,
+              full_name: prev.full_name || base.full_name,
+              email: prev.email || base.email,
+              avatar_url: prev.avatar_url || base.avatar_url,
+            }))
           }
           return
         }
@@ -155,29 +150,35 @@ export default function ProfilePage() {
         if (cancelled) return
         if (error) return
         if (data) {
-          const seed = profileFromUser({ email: sessionUserEmail, user_metadata: sessionUserMeta })
-          const merged = {
-            ...data,
-            full_name: data.full_name || seed.name,
-            email: data.email || seed.email,
-            avatar_url: data.avatar_url || seed.avatarUrl,
-          }
+          const serverProfile = { ...data }
           try {
             const raw = window.localStorage?.getItem?.(PROFILE_DRAFT_KEY)
             const draft = raw ? JSON.parse(raw) : null
             if (draft && typeof draft === 'object') {
-              merged.phone = draft.phone || merged.phone
-              merged.brand = draft.brand || merged.brand
-              merged.model = draft.model || merged.model
-              merged.plate = draft.plate || merged.plate
-              merged.color = draft.color || merged.color
-              merged.vehicle_type = draft.vehicle_type || merged.vehicle_type
+              serverProfile.phone = draft.phone || serverProfile.phone
+              serverProfile.brand = draft.brand || serverProfile.brand
+              serverProfile.model = draft.model || serverProfile.model
+              serverProfile.plate = draft.plate || serverProfile.plate
+              serverProfile.color = draft.color || serverProfile.color
+              serverProfile.vehicle_type = draft.vehicle_type || serverProfile.vehicle_type
             }
           } catch {
             /* */
           }
-          setProfile(merged)
-          setSavedProfile(merged)
+          setProfile((prev) => ({
+            ...prev,
+            ...serverProfile,
+            full_name: prev.full_name || serverProfile.full_name,
+            email: prev.email || serverProfile.email,
+            avatar_url: prev.avatar_url || serverProfile.avatar_url,
+          }))
+          setSavedProfile((prev) => ({
+            ...prev,
+            ...serverProfile,
+            full_name: prev.full_name || serverProfile.full_name,
+            email: prev.email || serverProfile.email,
+            avatar_url: prev.avatar_url || serverProfile.avatar_url,
+          }))
         }
       } catch (e) {
         console.error('[WaitMe][ProfilePage] carga inicial excepción', e)
@@ -186,7 +187,8 @@ export default function ProfilePage() {
     return () => {
       cancelled = true
     }
-  }, [sessionUser?.id, sessionUserEmail, sessionUserMeta, signOut])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- una carga por id; evita flash al refrescar metadata
+  }, [sessionUser?.id, signOut])
 
   useEffect(() => {
     if (!sessionUser?.id) return
@@ -271,7 +273,7 @@ export default function ProfilePage() {
         void runAutosave()
       }
     }
-  }, [signOut])
+  }, [signOut, setProfile])
 
   const flushAutosave = useCallback(async () => {
     if (autosaveTimerRef.current) {
@@ -322,7 +324,7 @@ export default function ProfilePage() {
     }
     window.addEventListener('online', onOnline)
     return () => window.removeEventListener('online', onOnline)
-  }, [runAutosave])
+  }, [runAutosave, setProfile])
 
   useEffect(() => {
     const persistBeforeLeave = () => {
@@ -346,9 +348,9 @@ export default function ProfilePage() {
 
   const handleContinue = useCallback(async () => {
     setSubmitAttempted(true)
-    if (!checkProfileComplete(profile)) return
+    if (!checkProfileComplete(profile ?? EMPTY_APP_PROFILE)) return
     if (!canContinue) return
-    if (hasPendingChanges || isSaving || autosaveStatusRef.current === 'saving') {
+    if (hasChanges || isSaving || autosaveStatusRef.current === 'saving') {
       await flushAutosave()
     }
     if (autosaveStatusRef.current === 'error') {
@@ -358,13 +360,14 @@ export default function ProfilePage() {
     const saved = profileRef.current
     if (!checkProfileComplete(saved)) return
     markProfileComplete(saved)
+    setSavedProfile(saved)
     logFlow('PROFILE_SAVED', { mode: isSupabaseConfigured() ? 'supabase' : 'dev-local' })
     logFlow('NAVIGATE_HOME')
     openHome?.()
   }, [
     profile,
     canContinue,
-    hasPendingChanges,
+    hasChanges,
     isSaving,
     flushAutosave,
     markProfileComplete,
@@ -382,10 +385,10 @@ export default function ProfilePage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={profile} />}>
+      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
         <div style={profileFormVerticalSlotStyle}>
           <Section style={profileFormSectionLayoutStyle}>
-            <ProfileForm value={profile} onChange={setProfile} errors={fieldErrors} />
+            <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
           </Section>
         </div>
         <div style={profileActionsFooterStyle}>
@@ -393,7 +396,7 @@ export default function ProfilePage() {
             <Button
               type="button"
               variant="profileSave"
-              disabled={!canContinue || isSaving || autosaveStatus === 'saving'}
+              disabled={!hasChanges}
               onClick={handleContinue}
               style={profileReviewsFullWidthButtonStyle}
             >

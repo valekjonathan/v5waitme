@@ -5,7 +5,11 @@ import {
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
 } from '../services/auth.js'
-import { checkProfileComplete, ensureProfileForOAuthUser, getProfile } from '../services/profile.js'
+import {
+  buildResolvedHeaderProfile,
+  checkProfileComplete,
+  ensureProfileForOAuthUser,
+} from '../services/profile.js'
 import { logFlow } from './devFlowLog.js'
 
 const AuthContext = createContext(null)
@@ -74,7 +78,7 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading')
   const [user, setUser] = useState(null)
   const [session, setSession] = useState(null)
-  const [profile, setProfile] = useState(null)
+  const [profile, setProfile] = useState(() => buildResolvedHeaderProfile(null, user))
   const [profileBootstrapReady, setProfileBootstrapReady] = useState(false)
   const [isNewUser, setIsNewUser] = useState(false)
   const [isProfileComplete, setIsProfileComplete] = useState(false)
@@ -84,6 +88,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     authStatusRef.current = status
   }, [status])
+
+  useEffect(() => {
+    if (user && !profile) {
+      setProfile(buildResolvedHeaderProfile(null, user))
+    }
+  }, [user, profile])
 
   useEffect(() => {
     const bootTimer = window.setTimeout(() => {
@@ -134,11 +144,6 @@ export function AuthProvider({ children }) {
         setUser(nextUser)
         setSession(session ?? null)
         setStatus('authenticated')
-        void getProfile(nextUser.id).then(({ data, error }) => {
-          if (cancelled || error || !data) return
-          setProfile(data)
-          setIsProfileComplete(checkProfileComplete(data))
-        })
         return
       }
 
@@ -161,11 +166,25 @@ export function AuthProvider({ children }) {
         return
       }
 
+      setProfile(buildResolvedHeaderProfile(null, nextUser))
+
       const seq = (profileBootSeq += 1)
       const result = await ensureProfileForOAuthUser(nextUser)
       if (cancelled || seq !== profileBootSeq) return
       lastProfileBootUserId = nextUser.id
-      setProfile(result.data ?? null)
+      setProfile(() => {
+        const base = buildResolvedHeaderProfile(null, nextUser)
+
+        return result.data
+          ? {
+              ...base,
+              ...result.data,
+              full_name: result.data.full_name || base.full_name,
+              email: result.data.email || base.email,
+              avatar_url: result.data.avatar_url || base.avatar_url,
+            }
+          : base
+      })
       setIsNewUser(result.isNewUser)
       setIsProfileComplete(result.isProfileComplete)
       setProfileBootstrapReady(true)
@@ -371,6 +390,10 @@ export function AuthProvider({ children }) {
     setIsProfileComplete(false)
   }, [])
 
+  const headerProfile = useMemo(() => {
+    return buildResolvedHeaderProfile(profile, user)
+  }, [profile, user])
+
   const markProfileComplete = useCallback((nextProfile) => {
     if (nextProfile && typeof nextProfile === 'object') {
       setProfile(nextProfile)
@@ -388,6 +411,8 @@ export function AuthProvider({ children }) {
       user,
       session,
       profile,
+      setProfile,
+      headerProfile,
       authError,
       signInWithGoogle,
       signOut,
@@ -403,6 +428,8 @@ export function AuthProvider({ children }) {
       user,
       session,
       profile,
+      setProfile,
+      headerProfile,
       authError,
       signInWithGoogle,
       signOut,

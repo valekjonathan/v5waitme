@@ -6,6 +6,7 @@ import { Row } from '../../../ui/primitives/Row'
 import { Stack } from '../../../ui/primitives/Stack'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { profileFormVerticalGapPx } from '../../shared/profileReviewsLayout'
+import { profileDisplayFirstName } from '../../../services/profile.js'
 import { resolveColorFill } from './profileColors'
 import { VehicleIcon } from './VehicleIcons'
 
@@ -126,6 +127,7 @@ function LabeledInputRow({
 export default function ProfileForm({ value, onChange, errors = {} }) {
   const patch = (key) => (v) => onChange((prev) => ({ ...prev, [key]: v }))
   const phoneToggleText = value.allow_phone_calls ? 'ON' : 'OFF'
+  const displayName = profileDisplayFirstName(value.full_name)
 
   return (
     <form
@@ -138,7 +140,7 @@ export default function ProfileForm({ value, onChange, errors = {} }) {
         <LabeledInputRow
           id="profile-full_name"
           label="Nombre"
-          value={String(value.full_name ?? '')}
+          value={displayName}
           onChange={(v) => patch('full_name')(v)}
           placeholder=""
           error={errors.full_name}
@@ -148,7 +150,7 @@ export default function ProfileForm({ value, onChange, errors = {} }) {
         <LabeledInputRow
           id="profile-phone"
           label="Teléfono"
-          value=""
+          value={String(value.phone ?? '')}
           onChange={patch('phone')}
           placeholder=""
           error={errors.phone}
@@ -168,7 +170,7 @@ export default function ProfileForm({ value, onChange, errors = {} }) {
         <LabeledInputRow
           id="profile-brand"
           label="Marca"
-          value=""
+          value={String(value.brand ?? '')}
           onChange={patch('brand')}
           placeholder=""
           error={errors.brand}
@@ -177,7 +179,7 @@ export default function ProfileForm({ value, onChange, errors = {} }) {
         <LabeledInputRow
           id="profile-model"
           label="Modelo"
-          value=""
+          value={String(value.model ?? '')}
           onChange={patch('model')}
           placeholder=""
           error={errors.model}

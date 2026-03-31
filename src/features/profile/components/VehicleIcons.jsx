@@ -9,6 +9,7 @@ export const carColors = [
 
 function iconStyle(size) {
   if (size === 'header') return { width: 64, height: 40 }
+  if (size === 'large') return { width: 72, height: 46 }
   if (size === 'small') return { width: 22, height: 14 }
   return { width: 56, height: 36 }
 }

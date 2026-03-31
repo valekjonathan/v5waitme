@@ -68,10 +68,6 @@ export function getReviewsForScreen(): Review[] {
   return mergeReviewsWithTestRow(getReviewsMock())
 }
 
-export async function fetchReviews(): Promise<{ reviews: Review[] }> {
-  return { reviews: MOCK_REVIEWS }
-}
-
 export function buildRatingDistribution(reviews: Review[]): RatingBucket[] {
   return [4, 3, 2, 1].map((stars) => ({
     stars,

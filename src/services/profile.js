@@ -40,6 +40,83 @@ export function checkProfileComplete(profile) {
   return isAppProfileComplete(profile)
 }
 
+/** Estado vacío del formulario / cabecera (misma forma que `rowToAppProfile`). */
+export const EMPTY_APP_PROFILE = {
+  full_name: '',
+  phone: '',
+  brand: '',
+  model: '',
+  plate: '',
+  allow_phone_calls: false,
+  color: 'negro',
+  vehicle_type: 'car',
+  email: '',
+  avatar_url: '',
+}
+
+/**
+ * Objeto único para `ProfileHeader`: perfil (local/servidor) + fallback de sesión en nombre, email y avatar.
+ * Avatar: metadata y, si hace falta, identidades OAuth (picture / avatar_url).
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {{ user_metadata?: object, email?: string, identities?: unknown[] } | null | undefined} sessionUser
+ */
+export function buildResolvedHeaderProfile(profile, sessionUser) {
+  const p = profile && typeof profile === 'object' ? profile : {}
+  const meta =
+    sessionUser?.user_metadata && typeof sessionUser.user_metadata === 'object'
+      ? sessionUser.user_metadata
+      : {}
+
+  let avatarFromIds = ''
+  const ids = Array.isArray(sessionUser?.identities) ? sessionUser.identities : []
+  for (const row of ids) {
+    const d = row?.identity_data && typeof row.identity_data === 'object' ? row.identity_data : {}
+    const u =
+      (typeof d.avatar_url === 'string' && d.avatar_url.trim()) ||
+      (typeof d.picture === 'string' && d.picture.trim()) ||
+      ''
+    if (u) {
+      avatarFromIds = u
+      break
+    }
+  }
+
+  const sessionAvatar =
+    (typeof meta.avatar_url === 'string' && meta.avatar_url.trim()) ||
+    (typeof meta.picture === 'string' && meta.picture.trim()) ||
+    avatarFromIds
+
+  const sessionName =
+    (typeof meta.full_name === 'string' && meta.full_name) ||
+    (typeof meta.name === 'string' && meta.name) ||
+    ''
+
+  const sessionEmail = typeof sessionUser?.email === 'string' ? sessionUser.email : ''
+
+  return {
+    ...EMPTY_APP_PROFILE,
+    ...p,
+    full_name: String(p.full_name ?? '').trim() || sessionName,
+    email: String(p.email ?? '').trim() || sessionEmail,
+    avatar_url: String(p.avatar_url ?? '').trim() || sessionAvatar,
+  }
+}
+
+/**
+ * Primera palabra del nombre para cabecera y campo nombre (máx. 10 caracteres).
+ * @param {unknown} fullName
+ */
+export function profileDisplayFirstName(fullName) {
+  const raw = String(fullName ?? '').trim()
+  const firstWord = raw.split(' ')[0] ?? ''
+  return firstWord.length > 10 ? firstWord.slice(0, 10) : firstWord
+}
+
+/** Estado inicial del formulario / semilla offline (una sola entrada; usa `buildResolvedHeaderProfile` internamente). */
+export function seedProfileStateFromSession(sessionUser) {
+  return buildResolvedHeaderProfile(null, sessionUser ?? null)
+}
+
 /**
  * Fila `profiles` → estado del formulario (allow_phone_calls no está en BD).
  */
