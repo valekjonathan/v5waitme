@@ -1,0 +1,37 @@
+---
+description: Un objetivo por bloque — repo limpio, quality, commit; nunca mezclar limpieza y features ni acumular cambios sin cerrar.
+alwaysApply: true
+---
+
+# Flujo Git y calidad (v5waitme)
+
+## Principios
+
+- **Un objetivo = un bloque** (una tarea terminada antes de la siguiente).
+- **Nunca** mezclar limpieza/refactor/tooling con features o pantallas nuevas en el mismo bloque.
+- **Nunca** acumular muchos archivos sin commit intermedio; evitar lotes de 10+ archivos sin cerrar.
+- **Siempre** cerrar el bloque con commit antes de empezar otra tarea.
+
+## Antes de empezar una tarea
+
+- `git status` debe estar **limpio** (sin cambios pendientes), salvo que se acabe de hacer pull y el trabajo sea explícitamente sobre un WIP acordado.
+
+## Al terminar una tarea (p. ej. una pantalla)
+
+1. Ejecutar **`npm run quality`** (incluye lint, tests, test:ui, knip, depcheck, build según el proyecto).
+2. Si **todo** pasa:
+   - `git add .`
+   - `git commit -m "feat: …"` (o `fix:`, `chore:`, etc. según Conventional Commits y **un solo** objetivo en el mensaje).
+3. **Solo entonces** empezar la siguiente pantalla o tarea.
+
+## Prohibido en este flujo
+
+- Trabajar con muchos archivos sin commit cuando ya hay un bloque de trabajo cerrable.
+- Dejar cambios pendientes “para después” mezclando objetivos.
+- Confiar en “Keep All” o aceptación masiva en el IDE **sin** haber pasado quality y **sin** commit que cierre el bloque.
+
+## Agente / asistente
+
+- Antes de tocar código en una sesión nueva, asumir que el usuario quiere **un solo objetivo** por bloque.
+- Al completar trabajo sustantivo: proponer o ejecutar **quality + commit** antes de nueva feature.
+- No mezclar en un mismo diff: tooling (knip, eslint masivo), mapa/auth, y UI de pantallas salvo que el usuario pida explícitamente un bloque unificado.
