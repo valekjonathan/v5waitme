@@ -1,6 +1,12 @@
 import { forwardRef } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
-import { APP_SCREEN_HOME } from '../lib/appScreenState.js'
+import {
+  APP_SCREEN_ALERTS,
+  APP_SCREEN_CHATS,
+  APP_SCREEN_HOME,
+  APP_SCREEN_PARK_HERE,
+  APP_SCREEN_SEARCH_PARKING,
+} from '../lib/appScreenState.js'
 import { useAuth } from '../lib/AuthContext'
 import { useProfileIncompleteNotice } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import { colors } from '../design/colors'
@@ -29,9 +35,12 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
   const { status, isProfileComplete } = useAuth()
   const notice = useProfileIncompleteNotice()
 
-  const isMapActive = screen === APP_SCREEN_HOME
-  const isAlertsActive = false
-  const isChatActive = false
+  const isMapActive =
+    screen === APP_SCREEN_HOME ||
+    screen === APP_SCREEN_SEARCH_PARKING ||
+    screen === APP_SCREEN_PARK_HERE
+  const isAlertsActive = screen === APP_SCREEN_ALERTS
+  const isChatActive = screen === APP_SCREEN_CHATS
 
   const guardOr = (fn) => {
     if (!interactive) return undefined
@@ -71,7 +80,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
           type="button"
           variant={isAlertsActive ? 'navActive' : 'nav'}
           aria-current={isAlertsActive ? 'page' : undefined}
-          onClick={guardOr(() => {})}
+          onClick={guardOr(() => nav?.openAlerts?.())}
         >
           <NavAlertIcon />
           <span style={labelStyle}>Alertas</span>
@@ -95,7 +104,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
           type="button"
           variant={isChatActive ? 'navActive' : 'nav'}
           aria-current={isChatActive ? 'page' : undefined}
-          onClick={guardOr(() => {})}
+          onClick={guardOr(() => nav?.openChats?.())}
         >
           <MessageCircleIcon />
           <span style={labelStyle}>Chats</span>

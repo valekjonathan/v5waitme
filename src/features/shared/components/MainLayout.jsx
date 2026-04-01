@@ -1,6 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import CenterPin from '../../home/components/CenterPin'
+import MapViewportCenterPin from '../../map/components/MapViewportCenterPin'
+import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
+import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import logo from '../../../assets/logo.png'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
@@ -120,6 +123,7 @@ function overlayLayerStyle(background) {
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
   const { mapFocusGeneration } = useAppScreen()
+  const simulatedUsers = useSimulatedParkingUsers()
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
@@ -153,8 +157,10 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
         <Suspense fallback={<div style={mapSuspenseFallbackStyle} />}>
-          <Map onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
+          <Map readOnly onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
         </Suspense>
+        <SimulatedCarsOnMap enabled users={simulatedUsers} />
+        <MapViewportCenterPin />
       </div>
 
       <div style={overlayLayerStyle(overlayBackground)} />

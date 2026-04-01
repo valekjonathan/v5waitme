@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
-  applyMapReadOnly,
-  applyRoadStyleForCreate,
   createMap,
   DEFAULT_PITCH,
   DEFAULT_ZOOM,
   getMapboxAccessToken,
-  setupMapStyleOnLoad,
+  reapplyMapVisualLayers,
 } from '../constants/mapbox.js'
-import { colors } from '../../../design/colors'
+import { setMapReadOnlySession } from '../mapSession.js'
+import { setGlobalMapInstance } from '../mapInstance.js'
 import {
   getCurrentLocationFast,
   getCurrentPosition,
@@ -21,11 +20,9 @@ let globalContainer = null
 /** Una sola suscripción al stream GPS para el mapa singleton. */
 let locationSubscribed = false
 
-function applyPostLoadStyle(map) {
+function applyPostLoadStyle(map, readOnly) {
   try {
-    setupMapStyleOnLoad(map)
-    applyRoadStyleForCreate(map)
-    applyMapReadOnly(map, true)
+    reapplyMapVisualLayers(map, readOnly)
   } catch {
     /* */
   }
@@ -46,7 +43,7 @@ function centerMapOnUser(map, loc) {
   }
 }
 
-export default function Map({ onSettled, mapFocusGeneration = 0 }) {
+export default function Map({ onSettled, mapFocusGeneration = 0, readOnly = true }) {
   const containerRef = useRef(null)
   const [unavailable, setUnavailable] = useState(false)
   const settledRef = useRef(false)
@@ -58,10 +55,21 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
   }, [onSettled])
 
   useEffect(() => {
+    setMapReadOnlySession(readOnly)
+    if (!globalMap?.isStyleLoaded?.()) return
+    try {
+      reapplyMapVisualLayers(globalMap, readOnly)
+    } catch {
+      /* */
+    }
+  }, [readOnly])
+
+  useEffect(() => {
     if (!containerRef.current) return
 
     if (import.meta.env?.MODE === 'test') {
       setUnavailable(true)
+      setGlobalMapInstance(null)
       fireSettled()
       return
     }
@@ -87,15 +95,16 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
     }
 
     if (globalMap) {
+      setGlobalMapInstance(globalMap)
       ensureLocationPipe()
       if (globalMap.isStyleLoaded?.()) {
-        applyPostLoadStyle(globalMap)
+        applyPostLoadStyle(globalMap, readOnly)
         const fast = getCurrentLocationFast()
         if (fast) centerMapOnUser(globalMap, fast)
         fireSettled()
       } else {
         globalMap.once('load', () => {
-          applyPostLoadStyle(globalMap)
+          applyPostLoadStyle(globalMap, readOnly)
           const fast = getCurrentLocationFast()
           if (fast) centerMapOnUser(globalMap, fast)
           fireSettled()
@@ -107,16 +116,20 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
     const token = getMapboxAccessToken()
     if (!token) {
       setUnavailable(true)
+      setGlobalMapInstance(null)
       fireSettled()
       return
     }
 
-    globalMap = createMap(globalContainer, { token, interactive: false })
+    globalMap = createMap(globalContainer, { token, interactive: true })
     if (!globalMap || typeof globalMap.jumpTo !== 'function') {
       setUnavailable(true)
+      setGlobalMapInstance(null)
       fireSettled()
       return
     }
+
+    setGlobalMapInstance(globalMap)
 
     try {
       globalMap.setFadeDuration?.(0)
@@ -125,7 +138,7 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
     }
 
     const onFirstLoad = () => {
-      applyPostLoadStyle(globalMap)
+      applyPostLoadStyle(globalMap, readOnly)
       const fast = getCurrentLocationFast()
       if (fast) {
         centerMapOnUser(globalMap, fast)
@@ -151,7 +164,7 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
     } else {
       globalMap.once('load', onFirstLoad)
     }
-  }, [fireSettled])
+  }, [fireSettled, readOnly])
 
   useEffect(() => {
     if (mapFocusGeneration === 0) return
@@ -179,24 +192,15 @@ export default function Map({ onSettled, mapFocusGeneration = 0 }) {
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {unavailable ? (
         <div
+          aria-hidden
+          data-waitme-map-unavailable="true"
           style={{
             position: 'absolute',
             inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-            padding: 16,
-            backgroundColor: colors.background,
-            color: colors.textMuted,
-            fontSize: 13,
-            fontWeight: 500,
-            textAlign: 'center',
+            backgroundColor: '#0B0B0F',
             pointerEvents: 'none',
           }}
-        >
-          Vista de mapa no disponible por ahora
-        </div>
+        />
       ) : null}
     </div>
   )

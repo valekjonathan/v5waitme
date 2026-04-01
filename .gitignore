@@ -9,6 +9,3 @@ dist/
 .vercel
 playwright-report/
 test-results/
-
-# Informe autogenerado por quality-gate (no versionar).
-GTP/STATE_OF_APP.txt

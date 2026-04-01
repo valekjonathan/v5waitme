@@ -1,0 +1,78 @@
+=== STATE_OF_APP v2 — Cierre de sesión / base estable ===
+Fecha y hora (UTC): 2026-04-01T18:31:10Z
+Git (cierre de sesión): mensaje de commit = "clean: estado base estable + limpieza completa + ready for next session"
+SHA exacto: ejecutar `git rev-parse HEAD` en el repo (no fijar aquí para evitar deriva tras amend).
+
+=== ESTADO DE LA APP ===
+ESTABLE — UI VALIDADA PIXEL PERFECT
+
+Stack: React 19 + Vite 8 + Mapbox GL + Supabase.
+Entrada: src/main.jsx → src/app/App.jsx (Auth, AppScreen, shell IphoneFrame + ScreenShell).
+
+=== FEATURES ACTIVAS (validadas) ===
+- Tarjeta usuario final: src/features/parking/waitme/UserAlertCard.jsx (+ UserAlertCardActions.jsx)
+- Contador tiempo real MM:SS en botón tipo badge "Info usuario" (misma paleta morada)
+- Buscador de calles con texto centrado: src/features/parking/waitme/StreetSearch.jsx
+- Overlays mapa: SearchParkingOverlayImpl, ParkHereOverlayImpl, MapScreenPanel, MapZoomControls, MapFilters, StreetSearch, CenterPin (waitme)
+- Mapa funcional: instancia global (mapInstance.js), controles (mapControls.js), sesión capas (mapSession.js), token/estilo en map/constants/mapbox.js
+- Usuarios simulados en mapa: simulatedUsers.js + useSimulatedParkingUsers.js + SimulatedCarsOnMap.jsx
+- Geocoding España: services/geocodingSpain.js (usado por StreetSearch)
+
+=== COMPONENTES CLAVE (mapa / parking / shell) ===
+- Map (lazy): src/features/map/components/Map.jsx — NO editar salvo acuerdo explícito
+- MainLayout.jsx — shell mapa + overlays + SimulatedCarsOnMap + MapViewportCenterPin + CenterPin home
+- SearchParkingOverlay.jsx / ParkHereOverlay.jsx — envoltorios de página
+- SearchParkingPage.jsx, ParkHerePage.jsx — rutas AppScreen
+- HomePage.jsx — CTA a buscar / aparcar
+- ScreenShell.tsx, IphoneFrame.jsx, Header.jsx, BottomNav.jsx
+
+=== HOOKS / ESTADO RELEVANTE ===
+- useAuth (AuthContext.jsx) — sesión Supabase, perfil, bootstrap
+- useAppScreen (AppScreenContext.jsx) + appScreenState.js — pantalla activa (home, profile, reviews, search parking, park here, alerts, chats)
+- useSimulatedParkingUsers — ancla GPS + lista simulada
+- subscribeToLocation / getCurrentLocationFast (location.js) — GPS
+- React useState/useEffect en overlays (pin, filtros, tarjeta)
+
+=== SISTEMA DE ESTILOS (un solo eje de diseño) ===
+- Tokens: src/design/colors.js, radius.js, shadows.js
+- Global: src/styles/global.css
+- WaitMe / parking overlay: estilos en línea en JSX (sin Tailwind en waitme)
+- Mapbox: hoja dark/light/satellite vía MapZoomControls + mapbox.js
+
+=== CONSOLIDACIÓN (un sistema por dominio) ===
+- Usuarios simulados: ÚNICO — src/features/map/simulatedUsers.js + useSimulatedParkingUsers.js (+ simulatedUserToAlert para la tarjeta)
+- Mapa: ÚNICO — Map.jsx + mapInstance.js + mapControls.js + mapSession.js + constants/mapbox.js
+- Overlays: ÚNICO — carpeta features/parking/waitme/* + features/parking/components/*Overlay.jsx
+- Estilos: tokens design/* + inline waitme (sin duplicar hojas CSS por pantalla)
+
+=== AUDITORÍA "ARCHIVOS LEGACY" (lista externa) ===
+Los nombres mapStyles.js, simulatedMapUsers.js, StreetSearchBar.jsx, MapScreenShell.jsx, etc. NO existen en este repo.
+Equivalentes reales ya integrados:
+- mapbox / token: features/map/constants/mapbox.js
+- usuarios simulados: features/map/simulatedUsers.js
+- geocoding: services/geocodingSpain.js (no mapboxGeocoding.js suelto)
+- shell: ui/layout/ScreenShell.tsx (no MapScreenShell.jsx)
+- búsqueda: features/parking/waitme/StreetSearch.jsx
+- pins: features/home/components/CenterPin.jsx (home), waitme/CenterPin.jsx (mapa parking), MapViewportCenterPin.jsx (layout)
+
+Acción: ningún archivo eliminado por nombre legacy — no había duplicados con esos paths.
+
+=== VERIFICACIÓN AUTOMÁTICA (última pasada) ===
+- npm run lint — OK (0 warnings)
+- npm run build — OK (Vite production build)
+
+=== COMANDO ÚTIL ===
+Regenerar inventario automático (árbol + grafo): npm run state:app
+
+=== NEXT STEPS ===
+Ajustes pendientes (ninguno bloqueante conocido en esta base):
+- Revisar copy exacto de placeholders Home vs overlay si se unifican textos ("¿Dónde quieres aparcar?" etc.)
+- E2E: ejecutar npm run test:e2e tras cambios de mapa si se toca flujo crítico
+
+Mejoras reales (no especulativas):
+- Opcional: ejecutar npm run quality antes de PR (scripts/quality-gate.mjs)
+
+Bugs detectados:
+- Ninguno registrado en esta sesión de cierre (build + lint verdes).
+
+=== FIN ===

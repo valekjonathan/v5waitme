@@ -9,13 +9,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReviewsPage from '../features/reviews/pages/ReviewsPage'
+import SearchParkingPage from '../features/parking/SearchParkingPage'
+import ParkHerePage from '../features/parking/ParkHerePage'
+import AlertsPage from '../features/alerts/AlertsPage'
+import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import Button from '../ui/Button'
 import { colors } from '../design/colors'
-import { APP_SCREEN_PROFILE, APP_SCREEN_REVIEWS } from '../lib/appScreenState.js'
+import {
+  APP_SCREEN_ALERTS,
+  APP_SCREEN_CHATS,
+  APP_SCREEN_PARK_HERE,
+  APP_SCREEN_PROFILE,
+  APP_SCREEN_REVIEWS,
+  APP_SCREEN_SEARCH_PARKING,
+} from '../lib/appScreenState.js'
 
 const fade200Style = { transition: 'opacity 200ms ease-out' }
 const homeGateStyle = { height: '100%', width: '100%' }
@@ -150,6 +161,10 @@ function AuthenticatedMainChrome() {
   const { screen } = useAppScreen()
   if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
   if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
+  if (screen === APP_SCREEN_SEARCH_PARKING) return <SearchParkingPage />
+  if (screen === APP_SCREEN_PARK_HERE) return <ParkHerePage />
+  if (screen === APP_SCREEN_ALERTS) return <AlertsPage />
+  if (screen === APP_SCREEN_CHATS) return <ChatsPage />
   return (
     <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
       <HomeActionGate>

@@ -12,15 +12,37 @@ export function AppScreenProvider({ children }) {
     setMapFocusGeneration((g) => g + 1)
   }, [])
 
+  const openSearchParking = useCallback(() => {
+    dispatch({ type: 'openSearchParking' })
+    setMapFocusGeneration((g) => g + 1)
+  }, [])
+
+  const openParkHere = useCallback(() => {
+    dispatch({ type: 'openParkHere' })
+    setMapFocusGeneration((g) => g + 1)
+  }, [])
+
+  const openAlerts = useCallback(() => {
+    dispatch({ type: 'openAlerts' })
+  }, [])
+
+  const openChats = useCallback(() => {
+    dispatch({ type: 'openChats' })
+  }, [])
+
   const value = useMemo(
     () => ({
       screen,
       openProfile: () => dispatch({ type: 'openProfile' }),
       openReviews: () => dispatch({ type: 'openReviews' }),
       openHome,
+      openSearchParking,
+      openParkHere,
+      openAlerts,
+      openChats,
       mapFocusGeneration,
     }),
-    [screen, openHome, mapFocusGeneration]
+    [screen, openHome, openSearchParking, openParkHere, openAlerts, openChats, mapFocusGeneration]
   )
 
   return <AppScreenContext.Provider value={value}>{children}</AppScreenContext.Provider>

@@ -132,7 +132,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
 
     await waitFor(
       () => {
-        expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
+        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
       },
       { timeout: 15_000 }
     )
@@ -145,8 +145,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
 
     await waitFor(
       () => {
-        const els = screen.queryAllByText(/Vista de mapa no disponible por ahora/i)
-        expect(els.length).toBeGreaterThanOrEqual(1)
+        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
       },
       { timeout: 15_000 }
     )
@@ -160,7 +159,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     // Espera a que el home autenticado esté montado (evita clicar durante "Cargando…"/AppLayout no interactivo).
     await waitFor(
       () => {
-        expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
+        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
       },
       { timeout: 15_000 }
     )

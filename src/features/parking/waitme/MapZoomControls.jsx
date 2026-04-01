@@ -1,0 +1,131 @@
+/**
+ * Controles mapa: zoom +/-, ubicación, capas (instancia global; sin tocar Map.jsx).
+ */
+import { useEffect, useState } from 'react'
+import { reapplyMapVisualLayers } from '../../map/constants/mapbox.js'
+import { recenterGlobalMapOnUser } from '../../map/mapControls.js'
+import { getGlobalMapInstance } from '../../map/mapInstance.js'
+import { getMapReadOnlySession } from '../../map/mapSession.js'
+import { IconLayers, IconMapPinFilled, IconMinus, IconPlus } from './icons.jsx'
+
+function zoomIn(map) {
+  if (!map) return
+  if (typeof map.zoomIn === 'function') {
+    map.zoomIn()
+  } else if (typeof map.easeTo === 'function' && typeof map.getZoom === 'function') {
+    map.easeTo({ zoom: map.getZoom() + 1 })
+  }
+}
+
+function zoomOut(map) {
+  if (!map) return
+  if (typeof map.zoomOut === 'function') {
+    map.zoomOut()
+  } else if (typeof map.easeTo === 'function' && typeof map.getZoom === 'function') {
+    map.easeTo({ zoom: map.getZoom() - 1 })
+  }
+}
+
+const STYLE_URL = {
+  dark: 'mapbox://styles/mapbox/dark-v11',
+  light: 'mapbox://styles/mapbox/light-v11',
+  satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
+}
+
+/** Mismo aspecto que el contenedor del buscador (`StreetSearch.jsx`): panel oscuro + borde morado + blur. */
+const btnStyle = {
+  boxSizing: 'border-box',
+  width: 36,
+  height: 36,
+  borderRadius: 12,
+  border: '1px solid rgba(168, 85, 247, 0.5)',
+  color: '#fff',
+  background: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  padding: 0,
+}
+
+const zoomControlsWrapStyle = {
+  position: 'absolute',
+  top: 140,
+  left: 16,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 10,
+  zIndex: 20,
+  pointerEvents: 'auto',
+}
+
+export default function MapZoomControls({ className = '', measureLabel }) {
+  const [mapStyle, setMapStyle] = useState('dark')
+
+  useEffect(() => {
+    if (!measureLabel || !import.meta.env.DEV) return
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-zoom-controls]')
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const key = measureLabel === 'create' ? 'createZoomTop' : 'navigateZoomTop'
+      const prev = window.__WAITME_ZOOM_MEASURE || {}
+      const next = { ...prev, [key]: rect.top }
+      window.__WAITME_ZOOM_MEASURE = next
+      console.log(`[MapZoomControls] ${key}=${rect.top.toFixed(2)}`)
+      if (next.createZoomTop != null && next.navigateZoomTop != null) {
+        const d = Math.abs(next.createZoomTop - next.navigateZoomTop)
+        console.log(
+          `[MapZoomControls] differenceZoom=${d.toFixed(2)}px ${d <= 1 ? '✓' : '✗'}`
+        )
+      }
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [measureLabel])
+
+  const onZoomIn = () => zoomIn(getGlobalMapInstance())
+  const onZoomOut = () => zoomOut(getGlobalMapInstance())
+  const onLocate = () => recenterGlobalMapOnUser()
+
+  const onLayers = () => {
+    setMapStyle((prev) => {
+      const next = prev === 'dark' ? 'light' : prev === 'light' ? 'satellite' : 'dark'
+      const map = getGlobalMapInstance()
+      if (map) {
+        try {
+          map.setStyle(STYLE_URL[next])
+          map.once('style.load', () => {
+            reapplyMapVisualLayers(map, getMapReadOnlySession())
+          })
+        } catch {
+          /* */
+        }
+      }
+      return next
+    })
+  }
+
+  return (
+    <div data-zoom-controls className={className} style={zoomControlsWrapStyle}>
+      <button type="button" aria-label="Acercar" style={btnStyle} onClick={onZoomIn}>
+        <IconPlus size={20} />
+      </button>
+      <button type="button" aria-label="Alejar" style={btnStyle} onClick={onZoomOut}>
+        <IconMinus size={20} />
+      </button>
+      <button type="button" aria-label="Ubicación" style={btnStyle} onClick={onLocate}>
+        <IconMapPinFilled size={20} />
+      </button>
+      <button
+        type="button"
+        aria-label={`Capas del mapa (${mapStyle})`}
+        style={btnStyle}
+        onClick={onLayers}
+      >
+        <IconLayers size={20} />
+      </button>
+    </div>
+  )
+}
