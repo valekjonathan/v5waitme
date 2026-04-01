@@ -91,17 +91,100 @@ export function getCurrentPosition(onSuccess, onError) {
   )
 }
 
-export function watchPosition(onSuccess, onError) {
-  if (!navigator.geolocation) {
-    onError?.({ type: 'unavailable', code: 0, raw: null })
-    return null
-  }
+/** Última posición en memoria; también se hidrata desde `localStorage` al cargar el módulo. */
+let currentLocation = null
+const locationSubscribers = new Set()
+let locationTrackingStarted = false
 
-  return navigator.geolocation.watchPosition(
-    (pos) => onSuccess?.(validateRawPosition(pos)),
-    (err) => onError?.(normalizeGeoError(err)),
+try {
+  const cached = typeof localStorage !== 'undefined' ? localStorage.getItem('last_location') : null
+  if (cached) {
+    const parsed = JSON.parse(cached)
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      Number.isFinite(parsed.latitude) &&
+      Number.isFinite(parsed.longitude)
+    ) {
+      currentLocation = { latitude: parsed.latitude, longitude: parsed.longitude }
+    }
+  }
+} catch {
+  /* */
+}
+
+function persistAndNotifyLocation(lat, lng) {
+  if (!isValidGps(lat, lng)) return
+  currentLocation = { latitude: lat, longitude: lng }
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('last_location', JSON.stringify(currentLocation))
+    }
+  } catch {
+    /* */
+  }
+  for (const cb of locationSubscribers) {
+    try {
+      cb(currentLocation)
+    } catch {
+      /* */
+    }
+  }
+}
+
+/**
+ * Un único `watchPosition` global para toda la app. Idempotente.
+ * Un `getCurrentPosition` inicial acelera la primera posición si no hay caché.
+ */
+export function startLocationTracking() {
+  if (locationTrackingStarted) return
+  locationTrackingStarted = true
+  if (typeof navigator === 'undefined' || !navigator.geolocation) return
+
+  getCurrentPosition(
+    (validated) => {
+      if (validated) persistAndNotifyLocation(validated.lat, validated.lng)
+    },
+    () => {}
+  )
+
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos?.coords?.latitude
+      const lng = pos?.coords?.longitude
+      persistAndNotifyLocation(lat, lng)
+    },
+    () => {
+      /* errores puntuales: el stream sigue vivo */
+    },
     GEO_OPTS
   )
+}
+
+export function subscribeToLocation(callback) {
+  if (typeof callback !== 'function') return () => {}
+
+  locationSubscribers.add(callback)
+  if (currentLocation) {
+    try {
+      callback(currentLocation)
+    } catch {
+      /* */
+    }
+  }
+
+  return () => {
+    locationSubscribers.delete(callback)
+  }
+}
+
+export function getCurrentLocation() {
+  return currentLocation
+}
+
+/** Lectura síncrona inmediata de la caché en memoria (sin esperar al GPS). */
+export function getCurrentLocationFast() {
+  return currentLocation
 }
 
 // API remains backward compatible: createPositionGuard() still works.

@@ -10,6 +10,7 @@ import {
   checkProfileComplete,
   ensureProfileForOAuthUser,
 } from '../services/profile.js'
+import { startLocationTracking } from '../services/location.js'
 import { logFlow } from './devFlowLog.js'
 
 const AuthContext = createContext(null)
@@ -88,6 +89,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     authStatusRef.current = status
   }, [status])
+
+  useEffect(() => {
+    startLocationTracking()
+  }, [])
 
   useEffect(() => {
     if (user && !profile) {

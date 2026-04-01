@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
+import { APP_SCREEN_HOME } from '../lib/appScreenState.js'
 import { useAuth } from '../lib/AuthContext'
 import { useProfileIncompleteNotice } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import { colors } from '../design/colors'
@@ -24,8 +25,13 @@ const divider = <div style={{ height: 32, width: 1, background: colors.border }}
 
 const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
+  const { screen } = nav
   const { status, isProfileComplete } = useAuth()
   const notice = useProfileIncompleteNotice()
+
+  const isMapActive = screen === APP_SCREEN_HOME
+  const isAlertsActive = false
+  const isChatActive = false
 
   const guardOr = (fn) => {
     if (!interactive) return undefined
@@ -61,7 +67,12 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
-        <Button type="button" variant="nav" onClick={guardOr(() => {})}>
+        <Button
+          type="button"
+          variant={isAlertsActive ? 'navActive' : 'nav'}
+          aria-current={isAlertsActive ? 'page' : undefined}
+          onClick={guardOr(() => {})}
+        >
           <NavAlertIcon />
           <span style={labelStyle}>Alertas</span>
         </Button>
@@ -70,8 +81,8 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
 
         <Button
           type="button"
-          variant="navActive"
-          aria-current="page"
+          variant={isMapActive ? 'navActive' : 'nav'}
+          aria-current={isMapActive ? 'page' : undefined}
           onClick={interactive ? () => nav?.openHome?.() : undefined}
         >
           <NavMapIcon />
@@ -80,7 +91,12 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
 
         {divider}
 
-        <Button type="button" variant="nav" onClick={guardOr(() => {})}>
+        <Button
+          type="button"
+          variant={isChatActive ? 'navActive' : 'nav'}
+          aria-current={isChatActive ? 'page' : undefined}
+          onClick={guardOr(() => {})}
+        >
           <MessageCircleIcon />
           <span style={labelStyle}>Chats</span>
         </Button>

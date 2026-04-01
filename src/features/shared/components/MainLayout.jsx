@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { useAppScreen } from '../../../lib/AppScreenContext'
 import CenterPin from '../../home/components/CenterPin'
 import logo from '../../../assets/logo.png'
 import { colors } from '../../../design/colors'
@@ -118,15 +119,11 @@ function overlayLayerStyle(background) {
  * @param {boolean} [props.loginEntrance]
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
+  const { mapFocusGeneration } = useAppScreen()
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
   const [mapLayerSettled, setMapLayerSettled] = useState(false)
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setMapLayerSettled(true), 2000)
-    return () => window.clearTimeout(t)
-  }, [])
 
   const onMapSettled = useCallback(() => {
     setMapLayerSettled(true)
@@ -156,7 +153,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
         <Suspense fallback={<div style={mapSuspenseFallbackStyle} />}>
-          <Map onSettled={onMapSettled} />
+          <Map onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
         </Suspense>
       </div>
 
