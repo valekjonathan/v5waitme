@@ -72,7 +72,8 @@ export default function AlertsPage() {
             height: 44,
             padding: 0,
             border: 'none',
-            borderBottom: scope === 'reservations' ? `2px solid ${PURPLE}` : '2px solid transparent',
+            borderBottom:
+              scope === 'reservations' ? `2px solid ${PURPLE}` : '2px solid transparent',
             background: 'transparent',
             color: scope === 'reservations' ? TEXT_WHITE : TEXT_GRAY,
             fontSize: 15,

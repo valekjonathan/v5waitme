@@ -27,7 +27,10 @@ test('reduceAppScreen: openHome idempotent', () => {
 })
 
 test('reduceAppScreen: openSearchParking', () => {
-  assert.equal(reduceAppScreen(APP_SCREEN_HOME, { type: 'openSearchParking' }), APP_SCREEN_SEARCH_PARKING)
+  assert.equal(
+    reduceAppScreen(APP_SCREEN_HOME, { type: 'openSearchParking' }),
+    APP_SCREEN_SEARCH_PARKING
+  )
 })
 
 test('reduceAppScreen: openParkHere', () => {

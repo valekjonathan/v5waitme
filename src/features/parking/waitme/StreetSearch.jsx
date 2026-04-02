@@ -31,16 +31,18 @@ const inputStyle = {
   height: 32,
   fontSize: 14,
   padding: 0,
-  flex: 1,
   minWidth: 0,
   fontFamily: 'inherit',
+  width: '100%',
+  boxSizing: 'border-box',
+  textAlign: 'center',
 }
 
 const streetSearchInputClass = 'waitme-street-search-input'
 
 export default function StreetSearch({
   onSelect,
-  placeholder = 'Buscar calle o dirección...',
+  placeholder = '¿Dónde quieres aparcar?',
   className = '',
 }) {
   const [query, setQuery] = useState('')
@@ -52,35 +54,43 @@ export default function StreetSearch({
 
   const hasToken = Boolean(getMapboxAccessToken())
 
-  const fetchSuggestions = useCallback(async (q) => {
-    if (!hasToken || !q || q.trim().length < 2) {
-      setSuggestions([])
-      return
-    }
+  const clearSearchField = useCallback(() => {
+    setOpen(false)
+    setQuery('')
+  }, [])
 
-    if (abortRef.current) abortRef.current.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
+  const fetchSuggestions = useCallback(
+    async (q) => {
+      if (!hasToken || !q || q.trim().length < 2) {
+        setSuggestions([])
+        return
+      }
 
-    setLoading(true)
-    try {
-      const rows = await searchSpainStreets(q, { signal: controller.signal })
-      const features = rows
-        .filter((r) => Array.isArray(r.center) && r.center.length >= 2)
-        .map((r) => ({
-          id: r.id,
-          place_name: r.label,
-          text: r.label,
-          geometry: { coordinates: r.center },
-        }))
-      setSuggestions(features)
-    } catch (err) {
-      if (err?.name !== 'AbortError') setSuggestions([])
-    } finally {
-      setLoading(false)
-      abortRef.current = null
-    }
-  }, [hasToken])
+      if (abortRef.current) abortRef.current.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+
+      setLoading(true)
+      try {
+        const rows = await searchSpainStreets(q, { signal: controller.signal })
+        const features = rows
+          .filter((r) => Array.isArray(r.center) && r.center.length >= 2)
+          .map((r) => ({
+            id: r.id,
+            place_name: r.label,
+            text: r.label,
+            geometry: { coordinates: r.center },
+          }))
+        setSuggestions(features)
+      } catch (err) {
+        if (err?.name !== 'AbortError') setSuggestions([])
+      } finally {
+        setLoading(false)
+        abortRef.current = null
+      }
+    },
+    [hasToken]
+  )
 
   useEffect(() => {
     const q = (query || '').trim()
@@ -96,7 +106,7 @@ export default function StreetSearch({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false)
+        clearSearchField()
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -105,7 +115,7 @@ export default function StreetSearch({
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('touchstart', handleClickOutside)
     }
-  }, [])
+  }, [clearSearchField])
 
   const handleSelect = (feature) => {
     const center = feature?.geometry?.coordinates
@@ -119,16 +129,24 @@ export default function StreetSearch({
     }
   }
 
+  const handleInputBlur = () => {
+    window.setTimeout(() => {
+      if (!containerRef.current?.contains(document.activeElement)) {
+        clearSearchField()
+      }
+    }, 0)
+  }
+
   if (!hasToken) return null
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      style={{ position: 'relative', marginTop: 10 }}
-    >
+    <div ref={containerRef} className={className} style={{ position: 'relative', marginTop: 10 }}>
       <style>{`
-        .${streetSearchInputClass}::placeholder { color: #6b7280; opacity: 1; }
+        .${streetSearchInputClass}::placeholder {
+          color: #6b7280;
+          opacity: 1;
+          text-align: center;
+        }
       `}</style>
       <div
         style={{
@@ -140,29 +158,50 @@ export default function StreetSearch({
           padding: '8px 12px',
           display: 'flex',
           alignItems: 'center',
-          gap: 8,
         }}
       >
-        <span style={{ color: '#c084fc', flexShrink: 0, display: 'flex' }}>
-          <IconSearch size={20} />
-        </span>
-        <input
-          className={streetSearchInputClass}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setOpen(true)
-          }}
-          onFocus={() => setOpen(true)}
-          placeholder={placeholder}
-          autoComplete="off"
+        <div
           style={{
-            ...inputStyle,
-            textAlign: 'center',
-            paddingLeft: 0,
-            paddingRight: 0,
+            position: 'relative',
+            flex: 1,
+            minWidth: 0,
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
           }}
-        />
+        >
+          <span
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#c084fc',
+              display: 'flex',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <IconSearch size={20} />
+          </span>
+          <input
+            className={streetSearchInputClass}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setOpen(true)
+            }}
+            onFocus={() => setOpen(true)}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            autoComplete="off"
+            style={{
+              ...inputStyle,
+              paddingLeft: 28,
+              paddingRight: 28,
+            }}
+          />
+        </div>
       </div>
 
       {open && (suggestions.length > 0 || loading) && (
@@ -179,7 +218,7 @@ export default function StreetSearch({
             border: '2px solid rgba(168, 85, 247, 0.5)',
             borderRadius: 12,
             overflow: 'hidden',
-            zIndex: 100,
+            zIndex: 1000,
             maxHeight: 220,
             overflowY: 'auto',
             listStyle: 'none',
@@ -202,6 +241,7 @@ export default function StreetSearch({
                 cursor: 'pointer',
                 borderBottom: '1px solid rgba(55, 65, 81, 0.5)',
               }}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(f)}
               onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
             >

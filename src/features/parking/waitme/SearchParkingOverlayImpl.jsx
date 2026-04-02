@@ -61,7 +61,7 @@ const filterBtnStyle = {
   position: 'absolute',
   top: 140,
   right: 16,
-  zIndex: 1000,
+  zIndex: 999,
   pointerEvents: 'auto',
 }
 
@@ -69,6 +69,7 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
   const cardRef = useRef(null)
   const [pinTop, setPinTop] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [cardCollapsed, setCardCollapsed] = useState(false)
   const [filters, setFilters] = useState({ maxPrice: 7, maxMinutes: 25, maxDistance: 1 })
   const [userLocation, setUserLocation] = useState(() => {
     const fast = getCurrentLocationFast()
@@ -157,7 +158,7 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }} role="search">
-          <StreetSearch onSelect={onStreetSelect} placeholder="¿ Donde quieres aparcar ?" />
+          <StreetSearch onSelect={onStreetSelect} placeholder="¿Dónde quieres aparcar?" />
         </div>
       </div>
 
@@ -194,13 +195,57 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
         </>
       ) : null}
 
-      <div ref={cardRef} style={{ pointerEvents: 'none' }}>
-        <MapScreenPanel overflowHidden measureLabel="navigate" cardShiftUp={7}>
+      <div
+        ref={cardRef}
+        style={{
+          pointerEvents: 'none',
+          position: 'relative',
+          overflow: 'visible',
+        }}
+      >
+        <button
+          type="button"
+          aria-label={cardCollapsed ? 'Mostrar tarjeta' : 'Ocultar tarjeta'}
+          aria-expanded={!cardCollapsed}
+          onClick={() => setCardCollapsed((v) => !v)}
+          style={{
+            position: 'absolute',
+            top: -22,
+            right: 14,
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: '#111827',
+            border: '1.5px solid #8B5CF6',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 80,
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            boxShadow: '0 -2px 8px rgba(0,0,0,0.22)',
+            padding: 0,
+            fontFamily: 'inherit',
+          }}
+        >
+          <span
+            style={{
+              color: '#fff',
+              fontSize: 14,
+              lineHeight: '14px',
+              fontWeight: 700,
+            }}
+          >
+            {cardCollapsed ? '↑' : '↓'}
+          </span>
+        </button>
+        <MapScreenPanel measureLabel="navigate" cardShiftUp={7}>
           <div style={{ pointerEvents: 'auto' }}>
             <UserAlertCard
               alert={alert}
               isEmpty={!highlightUser}
               userLocation={userLocation}
+              collapsed={cardCollapsed}
             />
           </div>
         </MapScreenPanel>

@@ -13,9 +13,7 @@ export default function MapScreenPanel({
 }) {
   const gapPx = Math.max(0, 22 - cardShiftUp)
   const isCard = measureLabel === 'create' || measureLabel === 'navigate'
-  const innerStyle = isCard
-    ? { minHeight: 260, maxHeight: 300 }
-    : { maxHeight: 'min(55vh, 340px)' }
+  const innerStyle = isCard ? { minHeight: 260, maxHeight: 300 } : { maxHeight: 'min(55vh, 340px)' }
 
   return (
     <div

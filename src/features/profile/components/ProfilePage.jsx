@@ -364,15 +364,7 @@ export default function ProfilePage() {
     logFlow('PROFILE_SAVED', { mode: isSupabaseConfigured() ? 'supabase' : 'dev-local' })
     logFlow('NAVIGATE_HOME')
     openHome?.()
-  }, [
-    profile,
-    canContinue,
-    hasChanges,
-    isSaving,
-    flushAutosave,
-    markProfileComplete,
-    openHome,
-  ])
+  }, [profile, canContinue, hasChanges, isSaving, flushAutosave, markProfileComplete, openHome])
 
   const handleLogout = useCallback(async () => {
     await signOut()
@@ -388,7 +380,11 @@ export default function ProfilePage() {
       <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
         <div style={profileFormVerticalSlotStyle}>
           <Section style={profileFormSectionLayoutStyle}>
-            <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
+            <ProfileForm
+              value={profile ?? EMPTY_APP_PROFILE}
+              onChange={setProfile}
+              errors={fieldErrors}
+            />
           </Section>
         </div>
         <div style={profileActionsFooterStyle}>

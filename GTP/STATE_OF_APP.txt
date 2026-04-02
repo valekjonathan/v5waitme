@@ -1,78 +1,212 @@
-=== STATE_OF_APP v2 — Cierre de sesión / base estable ===
-Fecha y hora (UTC): 2026-04-01T18:31:10Z
-Git (cierre de sesión): mensaje de commit = "clean: estado base estable + limpieza completa + ready for next session"
-SHA exacto: ejecutar `git rev-parse HEAD` en el repo (no fijar aquí para evitar deriva tras amend).
+=== STATE_OF_APP v1 ===
+Generated: 2026-04-02T17:19:31.842Z
+Git HEAD: 1415f7414e3239ba7b19151fa42089d59c67bf90
 
-=== ESTADO DE LA APP ===
-ESTABLE — UI VALIDADA PIXEL PERFECT
+=== ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
+dist/  [omitido]
+e2e/
+  nav.spec.ts
+  README.md
+  shell.spec.ts
+  smoke.spec.ts
+eslint.config.js
+GTP/
+  STATE_OF_APP.txt
+index.html
+node_modules/  [omitido]
+package-lock.json
+package.json
+playwright.config.ts
+README.md
+scripts/
+  auto-clean.mjs
+  build-check.mjs
+  build-env.mjs
+  ensure-git-hooks.mjs
+  generate-state-of-app.mjs
+  git-hooks/
+    pre-commit
+    pre-push
+  quality-gate.mjs
+  supabase-setup.mjs
+src/
+  app/
+    App.jsx
+  assets/
+    logo.png
+  design/
+    colors.js
+    radius.js
+    shadows.js
+  features/
+    alerts/
+      AlertsPage.jsx
+    auth/
+      components/
+        LoginButtons.jsx
+        LoginPage.jsx
+    chats/
+      ChatsPage.jsx
+    home/
+      components/
+        CenterPin.jsx
+        HomePage.jsx
+    map/
+      components/
+        Map.jsx
+        MapViewportCenterPin.jsx
+        SimulatedCarsOnMap.jsx
+      constants/
+        mapbox.js
+      mapControls.js
+      mapInstance.js
+      mapSession.js
+      simulatedUsers.js
+      useSimulatedParkingUsers.js
+    parking/
+      components/
+        ParkHereOverlay.jsx
+        SearchParkingOverlay.jsx
+      ParkHerePage.jsx
+      SearchParkingPage.jsx
+      waitme/
+        carUtils.js
+        CenterPin.jsx
+        CreateAlertCard.jsx
+        dateEs.js
+        icons.jsx
+        MapFilters.jsx
+        MapScreenPanel.jsx
+        MapZoomControls.jsx
+        ParkHereOverlayImpl.jsx
+        SearchParkingOverlayImpl.jsx
+        simulatedUserToAlert.js
+        StreetSearch.jsx
+        UserAlertCard.jsx
+        UserAlertCardActions.jsx
+    profile/
+      components/
+        Plate.jsx
+        profileColors.js
+        ProfileForm.jsx
+        ProfileHeader.jsx
+        ProfileLogoutButton.jsx
+        ProfilePage.jsx
+        VehicleIcons.jsx
+    reviews/
+      components/
+        ReviewItem.jsx
+        ReviewsList.jsx
+        ReviewsSummary.jsx
+      pages/
+        ReviewsPage.jsx
+    shared/
+      components/
+        MainLayout.jsx
+      layout/
+        ProfileReviewsLayout.jsx
+      profileReviewsLayout.js
+  lib/
+    AppScreenContext.jsx
+    appScreenState.js
+    AuthContext.jsx
+    devFlowLog.js
+    ErrorBoundary.jsx
+    errorBoundaryReset.js
+    ProfileIncompleteNoticeContext.jsx
+    ratingStars.js
+  main.jsx
+  services/
+    auth.js
+    geocodingSpain.js
+    location.js
+    profile.js
+    reviews.ts
+    supabase.js
+  styles/
+    global.css
+  ui/
+    BottomNav.d.ts
+    BottomNav.jsx
+    Button.jsx
+    DropdownCustom.jsx
+    Header.d.ts
+    Header.jsx
+    icons/
+      CameraIcon.jsx
+      CarIconHome.jsx
+      LogoutIcon.jsx
+      MagnifierIcon.jsx
+      MessageCircleIcon.jsx
+      NavAlertIcon.jsx
+      NavMapIcon.jsx
+      SettingsIcon.jsx
+      UserIcon.jsx
+    IconSlot.jsx
+    InputBase.jsx
+    IphoneFrame.jsx
+    layout/
+      layout.ts
+      ScreenShell.tsx
+      Section.jsx
+    primitives/
+      ButtonBase.jsx
+      Row.jsx
+      Stack.jsx
+    Switch.jsx
+  vite-env.d.ts
+supabase/
+  migrations/
+    0001_init_profiles.sql
+    0002_profiles_avatar_email.sql
+test/
+  appScreenState.test.js
+  authService.test.js
+  errorBoundaryReset.test.js
+  location.test.js
+  loginLayoutInvariant.test.js
+  loginStructure.test.js
+  mapbox.test.js
+  navigationShellInvariant.test.js
+  oauthUrl.test.js
+  profileCompleteness.test.js
+  ui/
+    app.critical.test.jsx
+    vitest.setup.js
+test-results/  [omitido]
+tsconfig.json
+vercel.json
+vite.config.js
+vitest.config.js
 
-Stack: React 19 + Vite 8 + Mapbox GL + Supabase.
-Entrada: src/main.jsx → src/app/App.jsx (Auth, AppScreen, shell IphoneFrame + ScreenShell).
+=== DEPENDENCIAS CLAVE (package.json) ===
+runtime: @supabase/supabase-js, mapbox-gl, react, react-dom
+dev: @babel/eslint-parser, @babel/preset-react, @eslint/js, @playwright/test, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, prettier, supabase, typescript, vite, vitest
 
-=== FEATURES ACTIVAS (validadas) ===
-- Tarjeta usuario final: src/features/parking/waitme/UserAlertCard.jsx (+ UserAlertCardActions.jsx)
-- Contador tiempo real MM:SS en botón tipo badge "Info usuario" (misma paleta morada)
-- Buscador de calles con texto centrado: src/features/parking/waitme/StreetSearch.jsx
-- Overlays mapa: SearchParkingOverlayImpl, ParkHereOverlayImpl, MapScreenPanel, MapZoomControls, MapFilters, StreetSearch, CenterPin (waitme)
-- Mapa funcional: instancia global (mapInstance.js), controles (mapControls.js), sesión capas (mapSession.js), token/estilo en map/constants/mapbox.js
-- Usuarios simulados en mapa: simulatedUsers.js + useSimulatedParkingUsers.js + SimulatedCarsOnMap.jsx
-- Geocoding España: services/geocodingSpain.js (usado por StreetSearch)
+=== SERVICIOS (src/services/) ===
+auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
 
-=== COMPONENTES CLAVE (mapa / parking / shell) ===
-- Map (lazy): src/features/map/components/Map.jsx — NO editar salvo acuerdo explícito
-- MainLayout.jsx — shell mapa + overlays + SimulatedCarsOnMap + MapViewportCenterPin + CenterPin home
-- SearchParkingOverlay.jsx / ParkHereOverlay.jsx — envoltorios de página
-- SearchParkingPage.jsx, ParkHerePage.jsx — rutas AppScreen
-- HomePage.jsx — CTA a buscar / aparcar
-- ScreenShell.tsx, IphoneFrame.jsx, Header.jsx, BottomNav.jsx
+=== PANTALLAS / RUTAS LÓGICAS ===
+Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
+Pantallas internas (appScreenState): home | profile | reviews — ver reduceAppScreen en src/lib/appScreenState.js
+Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage (mapa: Map lazy).
 
-=== HOOKS / ESTADO RELEVANTE ===
-- useAuth (AuthContext.jsx) — sesión Supabase, perfil, bootstrap
-- useAppScreen (AppScreenContext.jsx) + appScreenState.js — pantalla activa (home, profile, reviews, search parking, park here, alerts, chats)
-- useSimulatedParkingUsers — ancla GPS + lista simulada
-- subscribeToLocation / getCurrentLocationFast (location.js) — GPS
-- React useState/useEffect en overlays (pin, filtros, tarjeta)
+=== ARCHIVOS CRÍTICOS (arranque y shell) ===
+src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext.jsx, src/ui/layout/ScreenShell.tsx, src/ui/layout/layout.ts
 
-=== SISTEMA DE ESTILOS (un solo eje de diseño) ===
-- Tokens: src/design/colors.js, radius.js, shadows.js
-- Global: src/styles/global.css
-- WaitMe / parking overlay: estilos en línea en JSX (sin Tailwind en waitme)
-- Mapbox: hoja dark/light/satellite vía MapZoomControls + mapbox.js
+=== GRAFO DESDE main.jsx (módulos críticos) ===
+src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
+src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
+src/services/reviews.ts  ← 0 import(s) relativos (muestra): —
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5, map 9
 
-=== CONSOLIDACIÓN (un sistema por dominio) ===
-- Usuarios simulados: ÚNICO — src/features/map/simulatedUsers.js + useSimulatedParkingUsers.js (+ simulatedUserToAlert para la tarjeta)
-- Mapa: ÚNICO — Map.jsx + mapInstance.js + mapControls.js + mapSession.js + constants/mapbox.js
-- Overlays: ÚNICO — carpeta features/parking/waitme/* + features/parking/components/*Overlay.jsx
-- Estilos: tokens design/* + inline waitme (sin duplicar hojas CSS por pantalla)
+=== ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
+ninguno
 
-=== AUDITORÍA "ARCHIVOS LEGACY" (lista externa) ===
-Los nombres mapStyles.js, simulatedMapUsers.js, StreetSearchBar.jsx, MapScreenShell.jsx, etc. NO existen en este repo.
-Equivalentes reales ya integrados:
-- mapbox / token: features/map/constants/mapbox.js
-- usuarios simulados: features/map/simulatedUsers.js
-- geocoding: services/geocodingSpain.js (no mapboxGeocoding.js suelto)
-- shell: ui/layout/ScreenShell.tsx (no MapScreenShell.jsx)
-- búsqueda: features/parking/waitme/StreetSearch.jsx
-- pins: features/home/components/CenterPin.jsx (home), waitme/CenterPin.jsx (mapa parking), MapViewportCenterPin.jsx (layout)
-
-Acción: ningún archivo eliminado por nombre legacy — no había duplicados con esos paths.
-
-=== VERIFICACIÓN AUTOMÁTICA (última pasada) ===
-- npm run lint — OK (0 warnings)
-- npm run build — OK (Vite production build)
-
-=== COMANDO ÚTIL ===
-Regenerar inventario automático (árbol + grafo): npm run state:app
-
-=== NEXT STEPS ===
-Ajustes pendientes (ninguno bloqueante conocido en esta base):
-- Revisar copy exacto de placeholders Home vs overlay si se unifican textos ("¿Dónde quieres aparcar?" etc.)
-- E2E: ejecutar npm run test:e2e tras cambios de mapa si se toca flujo crítico
-
-Mejoras reales (no especulativas):
-- Opcional: ejecutar npm run quality antes de PR (scripts/quality-gate.mjs)
-
-Bugs detectados:
-- Ninguno registrado en esta sesión de cierre (build + lint verdes).
+=== RIESGOS / NOTAS ===
+- Cambios en ScreenShell/layout afectan todas las pantallas con shell.
+- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
+- Map bundle es pesado (lazy load en App).
+- Sin huérfanos detectados en el grafo actual.
 
 === FIN ===

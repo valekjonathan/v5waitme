@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { OVIEDO_LAT, OVIEDO_LNG } from './constants/mapbox.js'
 import { buildSimulatedUsers } from './simulatedUsers.js'
-import { distanceMeters, getCurrentLocationFast, subscribeToLocation } from '../../services/location.js'
+import {
+  distanceMeters,
+  getCurrentLocationFast,
+  subscribeToLocation,
+} from '../../services/location.js'
 
 /**
  * Ancla GPS para generar 10 coches cercanos + 40 en Oviedo; una sola fuente de verdad.
@@ -57,7 +61,11 @@ export function useClosestSimulatedUser(users) {
       return
     }
 
-    if (!userLocation || !Number.isFinite(userLocation.latitude) || !Number.isFinite(userLocation.longitude)) {
+    if (
+      !userLocation ||
+      !Number.isFinite(userLocation.latitude) ||
+      !Number.isFinite(userLocation.longitude)
+    ) {
       const stable = [...users].sort((a, b) => a.id.localeCompare(b.id))[0]
       setClosestUser((prev) => (prev?.id === stable.id ? prev : stable))
       return

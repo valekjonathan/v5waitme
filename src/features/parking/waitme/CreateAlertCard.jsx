@@ -38,8 +38,7 @@ export default function CreateAlertCard({
         borderRadius: 16,
         padding: '16px 20px',
         border: '2px solid rgba(168, 85, 247, 0.7)',
-        boxShadow:
-          '0 0 30px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(168, 85, 247, 0.15)',
+        boxShadow: '0 0 30px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(168, 85, 247, 0.15)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -78,7 +77,16 @@ export default function CreateAlertCard({
         }
       `}</style>
 
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, minHeight: 0, gap: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          flex: 1,
+          minHeight: 0,
+          gap: 24,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: '#c084fc', flexShrink: 0, display: 'flex' }}>
             <IconMapPin size={22} />
@@ -141,7 +149,15 @@ export default function CreateAlertCard({
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
               Me voy en:
-              <span style={{ color: '#c084fc', fontWeight: 700, fontSize: 22, lineHeight: 1, marginLeft: 8 }}>
+              <span
+                style={{
+                  color: '#c084fc',
+                  fontWeight: 700,
+                  fontSize: 22,
+                  lineHeight: 1,
+                  marginLeft: 8,
+                }}
+              >
                 {minutes} minutos
               </span>
             </label>
@@ -173,7 +189,15 @@ export default function CreateAlertCard({
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
               Precio:
-              <span style={{ color: '#c084fc', fontWeight: 700, fontSize: 22, lineHeight: 1, marginLeft: 42 }}>
+              <span
+                style={{
+                  color: '#c084fc',
+                  fontWeight: 700,
+                  fontSize: 22,
+                  lineHeight: 1,
+                  marginLeft: 42,
+                }}
+              >
                 {price} euros
               </span>
             </label>

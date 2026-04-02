@@ -2,13 +2,7 @@
  * Acciones inferiores de UserAlertCard (WaitMe): evita duplicación de bloques chat/tel/navegar.
  */
 import { useEffect, useState } from 'react'
-import {
-  IconClock,
-  IconMessageCircle,
-  IconNavigation,
-  IconPhone,
-  IconPhoneOff,
-} from './icons.jsx'
+import { IconClock, IconMessageCircle, IconNavigation, IconPhone, IconPhoneOff } from './icons.jsx'
 
 function openMapsDirections(alert) {
   if (alert?.latitude != null && alert?.longitude != null) {
@@ -93,6 +87,12 @@ const phoneStyleRowEnabled = {
   color: '#000',
   border: '1px solid rgba(209, 213, 219, 0.5)',
   cursor: 'pointer',
+}
+
+/** Mismo tamaño que la hora en “Te espera hasta las …” en `UserAlertCard.jsx`. */
+const countdownNumberStyle = {
+  fontSize: 15,
+  fontWeight: 700,
 }
 
 export default function UserAlertCardActions({
@@ -228,7 +228,7 @@ export default function UserAlertCardActions({
           onClick={handleBuy}
           disabled={isLoading}
         >
-          {isLoading ? 'Procesando...' : formatted}
+          {isLoading ? 'Procesando...' : <span style={countdownNumberStyle}>{formatted}</span>}
         </button>
       </div>
     </div>

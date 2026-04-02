@@ -6,7 +6,14 @@ import { reapplyMapVisualLayers } from '../../map/constants/mapbox.js'
 import { recenterGlobalMapOnUser } from '../../map/mapControls.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { getMapReadOnlySession } from '../../map/mapSession.js'
-import { IconLayers, IconMapPinFilled, IconMinus, IconPlus } from './icons.jsx'
+import { IconLayers, IconMinus, IconPlus } from './icons.jsx'
+
+const locationIcon = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+    <circle cx="12" cy="12" r="3" fill="white" />
+  </svg>
+)
 
 function zoomIn(map) {
   if (!map) return
@@ -74,13 +81,6 @@ export default function MapZoomControls({ className = '', measureLabel }) {
       const prev = window.__WAITME_ZOOM_MEASURE || {}
       const next = { ...prev, [key]: rect.top }
       window.__WAITME_ZOOM_MEASURE = next
-      console.log(`[MapZoomControls] ${key}=${rect.top.toFixed(2)}`)
-      if (next.createZoomTop != null && next.navigateZoomTop != null) {
-        const d = Math.abs(next.createZoomTop - next.navigateZoomTop)
-        console.log(
-          `[MapZoomControls] differenceZoom=${d.toFixed(2)}px ${d <= 1 ? '✓' : '✗'}`
-        )
-      }
     })
     return () => cancelAnimationFrame(raf)
   }, [measureLabel])
@@ -116,7 +116,7 @@ export default function MapZoomControls({ className = '', measureLabel }) {
         <IconMinus size={20} />
       </button>
       <button type="button" aria-label="Ubicación" style={btnStyle} onClick={onLocate}>
-        <IconMapPinFilled size={20} />
+        {locationIcon}
       </button>
       <button
         type="button"

@@ -22,7 +22,12 @@ const profileStarFilled = {
   fontSize: 16,
   lineHeight: 1,
 }
-const profileStarEmpty = { color: colors.textMuted, textShadow: 'none', fontSize: 16, lineHeight: 1 }
+const profileStarEmpty = {
+  color: colors.textMuted,
+  textShadow: 'none',
+  fontSize: 16,
+  lineHeight: 1,
+}
 
 /** Clon de `LoginButtons.jsx` (Continuar con Apple): gradiente, sombras, transición, hover/press. */
 const OAUTH_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
@@ -58,6 +63,7 @@ function UserAlertCard({
   showDistanceInMeters: _showDistanceInMeters = false,
   showCountdownTimer: _showCountdownTimer = false,
   isOperationAccepted = false,
+  collapsed = false,
 }) {
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -90,25 +96,28 @@ function UserAlertCard({
     return null
   }
 
-  const calculateDistanceLabel = useCallback((lat, lng) => {
-    const nLat = Number(lat)
-    const nLng = Number(lng)
-    if (!Number.isFinite(nLat) || !Number.isFinite(nLng) || !normalizedUserLocation) return null
+  const calculateDistanceLabel = useCallback(
+    (lat, lng) => {
+      const nLat = Number(lat)
+      const nLng = Number(lng)
+      if (!Number.isFinite(nLat) || !Number.isFinite(nLng) || !normalizedUserLocation) return null
 
-    const R = 6371e3
-    const φ1 = normalizedUserLocation.latitude * (Math.PI / 180)
-    const φ2 = nLat * (Math.PI / 180)
-    const Δφ = (nLat - normalizedUserLocation.latitude) * (Math.PI / 180)
-    const Δλ = (nLng - normalizedUserLocation.longitude) * (Math.PI / 180)
+      const R = 6371e3
+      const φ1 = normalizedUserLocation.latitude * (Math.PI / 180)
+      const φ2 = nLat * (Math.PI / 180)
+      const Δφ = (nLat - normalizedUserLocation.latitude) * (Math.PI / 180)
+      const Δλ = (nLng - normalizedUserLocation.longitude) * (Math.PI / 180)
 
-    const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    const meters = R * c
+      const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      const meters = R * c
 
-    if (!Number.isFinite(meters)) return null
+      if (!Number.isFinite(meters)) return null
 
-    return { value: Math.round(meters), unit: ' m' }
-  }, [normalizedUserLocation])
+      return { value: Math.round(meters), unit: ' m' }
+    },
+    [normalizedUserLocation]
+  )
 
   const waitUntilTs = alert?.wait_until ? toMs(alert.wait_until) : null
   const waitUntilLabel = useMemo(() => {
@@ -166,7 +175,9 @@ function UserAlertCard({
         }}
       >
         <div style={{ textAlign: 'center', color: '#6b7280' }}>
-          <div style={{ color: '#A855F7', display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+          <div
+            style={{ color: '#A855F7', display: 'flex', justifyContent: 'center', marginBottom: 8 }}
+          >
             <IconMapPin size={40} />
           </div>
           <p style={{ fontSize: 12, margin: 0 }}>Toca un coche en el mapa para ver sus datos</p>
@@ -207,7 +218,11 @@ function UserAlertCard({
   }
 
   const applePremiumTransition = `${oauthTransitionBase}, transform 260ms cubic-bezier(0.34, 1.35, 0.64, 1)`
-  const waitMePremiumShadowKey = waitMePremiumPressed ? 'pressed' : waitMePremiumHover ? 'hover' : 'idle'
+  const waitMePremiumShadowKey = waitMePremiumPressed
+    ? 'pressed'
+    : waitMePremiumHover
+      ? 'hover'
+      : 'idle'
   const waitMePremiumTransform = waitMePremiumPressed ? 'scale(0.96)' : 'scale(1)'
   const waitMePremiumStyle = {
     ...oauthButtonBase,
@@ -234,6 +249,45 @@ function UserAlertCard({
     cursor: isLoading ? 'wait' : 'pointer',
   }
 
+  const nameStyle = {
+    fontWeight: 700,
+    fontSize: 20,
+    color: '#fff',
+    lineHeight: 1,
+    minHeight: 22,
+    margin: 0,
+    display: 'block',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  }
+
+  const vehicleIconNode = (
+    <svg
+      viewBox="0 0 48 24"
+      style={{ width: 64, height: 40, display: 'block' }}
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M8 16 L10 10 L16 8 L32 8 L38 10 L42 14 L42 18 L8 18 Z"
+        fill={getCarFill(alert?.color)}
+        stroke="white"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M16 9 L18 12 L30 12 L32 9 Z"
+        fill="rgba(255,255,255,0.3)"
+        stroke="white"
+        strokeWidth="0.5"
+      />
+      <circle cx="14" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
+      <circle cx="14" cy="18" r="2" fill="#666" />
+      <circle cx="36" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
+      <circle cx="36" cy="18" r="2" fill="#666" />
+    </svg>
+  )
+
   return (
     <div
       style={{
@@ -242,6 +296,9 @@ function UserAlertCard({
         padding: 8,
         border: '2px solid rgba(168, 85, 247, 0.5)',
         position: 'relative',
+        overflow: 'visible',
+        transform: collapsed ? 'translateY(85%)' : 'translateY(0)',
+        transition: 'transform 0.3s ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -285,7 +342,9 @@ function UserAlertCard({
               height: 28,
             }}
           >
-            <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 14, display: 'flex', gap: 2 }}>
+            <span
+              style={{ color: '#4ade80', fontWeight: 700, fontSize: 14, display: 'flex', gap: 2 }}
+            >
               {priceText.replace('.00', '')} <span style={{ fontSize: 10 }}>↑</span>
             </span>
           </div>
@@ -341,33 +400,20 @@ function UserAlertCard({
             position: 'relative',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              minWidth: 0,
-              gap: 8,
-            }}
-          >
-            <span
+          <div style={{ display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={nameStyle}>{alert?.user_name || 'Usuario'}</span>
+            </div>
+            <div
               style={{
-                fontWeight: 700,
-                fontSize: 20,
-                color: '#fff',
-                lineHeight: 1,
-                minHeight: 22,
-                margin: 0,
-                minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                width: 64,
+                marginLeft: 'auto',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexShrink: 0,
               }}
             >
-              {(alert?.user_name || '').split(' ')[0] || 'Usuario'}
-            </span>
-            <div style={{ display: 'flex', gap: 1, marginLeft: 14, marginRight: 32, flexShrink: 0 }}>
               {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
                 <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
                   {star}
@@ -395,30 +441,8 @@ function UserAlertCard({
             {carLabel}
           </p>
 
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'stretch',
-              position: 'relative',
-              marginTop: 4,
-              minHeight: 0,
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-end',
-                height: '100%',
-                flexShrink: 0,
-                maxWidth: '100%',
-                minWidth: 0,
-              }}
-            >
-              <Plate value={alert?.plate} width={140} />
-            </div>
+          <div style={{ position: 'relative', marginTop: 4 }}>
+            <Plate value={alert?.plate} width={140} />
             <div
               style={{
                 position: 'absolute',
@@ -428,24 +452,7 @@ function UserAlertCard({
                 pointerEvents: 'none',
               }}
             >
-              <svg viewBox="0 0 48 24" style={{ width: 64, height: 40, display: 'block' }} fill="none" aria-hidden>
-                <path
-                  d="M8 16 L10 10 L16 8 L32 8 L38 10 L42 14 L42 18 L8 18 Z"
-                  fill={getCarFill(alert?.color)}
-                  stroke="white"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M16 9 L18 12 L30 12 L32 9 Z"
-                  fill="rgba(255,255,255,0.3)"
-                  stroke="white"
-                  strokeWidth="0.5"
-                />
-                <circle cx="14" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
-                <circle cx="14" cy="18" r="2" fill="#666" />
-                <circle cx="36" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
-                <circle cx="36" cy="18" r="2" fill="#666" />
-              </svg>
+              {vehicleIconNode}
             </div>
           </div>
         </div>
@@ -545,7 +552,9 @@ function UserAlertCard({
                 <span style={{ color: CLOCK_PURPLE, fontWeight: 600 }}>
                   {alert.isIncomingRequest ? 'Debes esperar hasta las ' : 'Te espera hasta las '}
                 </span>
-                <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15 }}>{waitUntilLabel}</span>
+                <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15 }}>
+                  {waitUntilLabel}
+                </span>
               </span>
             </span>
           ) : null}
