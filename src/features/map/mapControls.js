@@ -10,8 +10,8 @@ import { getCurrentLocationFast, getCurrentPosition } from '../../services/locat
 
 let mapStyleCycleIndex = 0
 
-const GAP_SEARCH_BOTTOM = '[data-waitme-parking-gap-search-bottom]'
-const GAP_CARD_TOP = '[data-waitme-parking-gap-card-top]'
+const GAP_SEARCH_BOTTOM = '[data-search-box]'
+const GAP_CARD_TOP = '[data-alert-card]'
 
 export function isWaitmeParkingLayoutReady() {
   if (typeof document === 'undefined') return false
@@ -173,11 +173,7 @@ export function flyGlobalMapTo(lng, lat) {
       map.once('moveend', () => {
         if (getUserGpsMarker()) {
           const fast = getCurrentLocationFast()
-          if (
-            fast &&
-            Number.isFinite(fast.longitude) &&
-            Number.isFinite(fast.latitude)
-          ) {
+          if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
             alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
           }
         } else {

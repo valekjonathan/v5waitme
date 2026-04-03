@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getMapboxAccessToken } from '../../map/constants/mapbox.js'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { searchSpainStreets } from '../../../services/geocodingSpain.js'
+import { formatAddress, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
 
 const inputStyle = {
@@ -38,7 +38,7 @@ export default function StreetSearch({
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const abortRef = useRef(null)
-  const fetchGenRef = useRef(0)
+  const requestIdRef = useRef(0)
 
   const hasToken = Boolean(getMapboxAccessToken())
 
@@ -50,7 +50,6 @@ export default function StreetSearch({
   const fetchSuggestions = useCallback(
     async (q) => {
       if (!hasToken || !q || q.trim().length < 2) {
-        setSuggestions([])
         return
       }
 
@@ -58,8 +57,8 @@ export default function StreetSearch({
       const controller = new AbortController()
       abortRef.current = controller
 
+      const myId = (requestIdRef.current += 1)
       setLoading(true)
-      const gen = (fetchGenRef.current += 1)
       try {
         const fast = getCurrentLocationFast()
         const proximity =
@@ -70,20 +69,13 @@ export default function StreetSearch({
           signal: controller.signal,
           proximity,
         })
-        if (gen !== fetchGenRef.current) return
-        const features = rows.map((r) => ({
-          id: r.id,
-          place_name: r.formattedSelect || r.label,
-          listLabel: r.label,
-          listSubtitle: r.subtitle,
-          geometry: { coordinates: r.center },
-        }))
-        setSuggestions(features)
+        if (myId !== requestIdRef.current) return
+        setSuggestions(Array.isArray(rows) ? rows : [])
       } catch (err) {
-        if (gen !== fetchGenRef.current) return
+        if (myId !== requestIdRef.current) return
         if (err?.name !== 'AbortError') setSuggestions([])
       } finally {
-        if (gen === fetchGenRef.current) setLoading(false)
+        if (myId === requestIdRef.current) setLoading(false)
         abortRef.current = null
       }
     },
@@ -93,13 +85,19 @@ export default function StreetSearch({
   useEffect(() => {
     const q = (query || '').trim()
     if (q.length < 2) {
-      setSuggestions([])
-      setLoading(false)
-      return
+      requestIdRef.current += 1
+      if (abortRef.current) {
+        abortRef.current.abort()
+        abortRef.current = null
+      }
+      const t = window.setTimeout(() => {
+        setSuggestions([])
+        setLoading(false)
+      }, 200)
+      return () => window.clearTimeout(t)
     }
-    setLoading(true)
-    const t = setTimeout(() => fetchSuggestions(q), 150)
-    return () => clearTimeout(t)
+    const t = window.setTimeout(() => fetchSuggestions(q), 150)
+    return () => window.clearTimeout(t)
   }, [query, fetchSuggestions])
 
   useEffect(() => {
@@ -117,18 +115,18 @@ export default function StreetSearch({
   }, [clearSearchField])
 
   const handleSelect = (feature) => {
-    const center = feature?.geometry?.coordinates
-    if (Array.isArray(center) && center.length >= 2) {
-      const [lng, lat] = center
-      const formatted =
-        typeof feature.place_name === 'string' && feature.place_name.trim()
-          ? feature.place_name.trim()
-          : String(feature.listLabel || '').trim()
-      setQuery(formatted)
-      setSuggestions([])
-      setOpen(false)
-      onSelect?.({ lng, lat, place_name: formatted })
-    }
+    const center = feature?.center
+    if (!Array.isArray(center) || center.length < 2) return
+    const [lng, lat] = center
+    const formatted =
+      formatAddress(feature) ||
+      (typeof feature.place_name === 'string' && feature.place_name.trim()) ||
+      (typeof feature.text === 'string' && feature.text.trim()) ||
+      ''
+    setQuery(formatted)
+    setSuggestions([])
+    setOpen(false)
+    onSelect?.({ lng, lat, place_name: formatted })
   }
 
   const handleInputBlur = () => {
@@ -156,6 +154,7 @@ export default function StreetSearch({
         }
       `}</style>
       <div
+        data-search-box
         data-waitme-parking-search-morado
         data-waitme-parking-gap-search-bottom
         style={{
@@ -243,9 +242,9 @@ export default function StreetSearch({
               No se encontraron resultados
             </li>
           )}
-          {suggestions.map((f) => (
+          {suggestions.map((f, i) => (
             <li
-              key={f.id || f.place_name}
+              key={String(f.id ?? f.place_name ?? i)}
               role="button"
               tabIndex={0}
               style={{
@@ -259,7 +258,9 @@ export default function StreetSearch({
               onClick={() => handleSelect(f)}
               onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
             >
-              {f.place_name}
+              {formatAddress(f) ||
+                (typeof f.place_name === 'string' ? f.place_name : '') ||
+                (typeof f.text === 'string' ? f.text : '')}
             </li>
           ))}
         </ul>

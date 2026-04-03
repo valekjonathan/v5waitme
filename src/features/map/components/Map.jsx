@@ -23,18 +23,13 @@ import {
   getCurrentPosition,
   subscribeToLocation,
 } from '../../../services/location.js'
-import {
-  alignParkedGpsMarkerToGap,
-  applyWaitmeCameraJumpOrEase,
-  isWaitmeParkingLayoutReady,
-  jumpMapToLngLatAndAlignToGap,
-} from '../mapControls.js'
+import { alignParkedGpsMarkerToGap, applyWaitmeCameraJumpOrEase } from '../mapControls.js'
 import CenterPin from '../../home/components/CenterPin.jsx'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 
-/** Bordes morados del hueco (misma caja que el borde 2px, no wrappers externos). */
-const GAP_SEARCH_BOTTOM = '[data-waitme-parking-gap-search-bottom]'
-const GAP_CARD_TOP = '[data-waitme-parking-gap-card-top]'
+/** Mismos selectores que `mapControls.js` (hueco buscador–tarjeta). */
+const GAP_SEARCH_BOTTOM = '[data-search-box]'
+const GAP_CARD_TOP = '[data-alert-card]'
 
 /**
  * Home/Login: `__WAITME_PIN_OFFSET_Y__` = punta del pin vs centro vertical del mapa.
@@ -114,6 +109,10 @@ export default function Map({
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
   followUserGpsRef.current = followUserGps
+  const parkingPinModeRef = useRef(parkingPinMode)
+  const parkingBandPinAdjustRef = useRef(parkingBandPinAdjust)
+  parkingPinModeRef.current = parkingPinMode
+  parkingBandPinAdjustRef.current = parkingBandPinAdjust
 
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
@@ -336,45 +335,6 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
 
-  /**
-   * SEARCH: una vez al entrar (o al reenfocar mapa), situar el mapa para que la ubicación inicial
-   * (GPS si existe) quede bajo el pin del hueco; después la verdad es map.getCenter() al panear.
-   */
-  useEffect(() => {
-    if (!parkingBandPinAdjust || parkingPinMode !== 'search' || unavailable) return
-    let cancelled = false
-    let attempts = 0
-    const tick = () => {
-      if (cancelled) return
-      attempts += 1
-      const map = getGlobalMapInstance()
-      if (map?.isStyleLoaded?.() && isWaitmeParkingLayoutReady()) {
-        const fast = getCurrentLocationFast()
-        const apply = (lng, lat) => {
-          if (cancelled) return
-          jumpMapToLngLatAndAlignToGap(map, lng, lat)
-        }
-        if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-          apply(fast.longitude, fast.latitude)
-          return
-        }
-        getCurrentPosition(
-          (v) => {
-            if (!cancelled && v) apply(v.lng, v.lat)
-          },
-          () => {}
-        )
-        return
-      }
-      if (attempts < 100) requestAnimationFrame(tick)
-    }
-    const t = window.setTimeout(tick, 80)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable, mapFocusGeneration])
-
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -401,6 +361,9 @@ export default function Map({
       locationSubscribed = true
       subscribeToLocation((loc) => {
         if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
+        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          return
+        }
         const userPin = getUserGpsMarker()
         if (userPin && typeof userPin.setLngLat === 'function') {
           userPin.setLngLat([loc.longitude, loc.latitude])

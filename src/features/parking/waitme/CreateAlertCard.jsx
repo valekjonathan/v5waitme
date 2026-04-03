@@ -196,6 +196,7 @@ export default function CreateAlertCard({
 
   return (
     <div
+      data-alert-card
       data-create-alert-card
       data-waitme-parking-gap-card-top
       style={{
@@ -281,7 +282,7 @@ export default function CreateAlertCard({
             style={{
               color: '#c084fc',
               flexShrink: 0,
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               width: 22,
@@ -323,7 +324,7 @@ export default function CreateAlertCard({
             style={{
               color: '#c084fc',
               flexShrink: 0,
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               width: 22,

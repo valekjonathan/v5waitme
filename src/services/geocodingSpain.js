@@ -22,9 +22,10 @@ export async function reverseGeocodeMapbox(lat, lng, opts = {}) {
 }
 
 /**
- * Búsqueda forward: Mapbox (country, types, proximity, autocomplete); sin filtrar resultados en cliente.
+ * Forward geocoding: respuesta Mapbox sin transformar en cliente (pinta StreetSearch).
  * @param {string} query
  * @param {{ signal?: AbortSignal, proximity?: { lng: number, lat: number } | null }} opts
+ * @returns {Promise<Array>}
  */
 export async function searchSpainStreets(query, opts = {}) {
   const { signal, proximity } = opts
@@ -39,8 +40,6 @@ export async function searchSpainStreets(query, opts = {}) {
   params.set('types', 'address,street')
   params.set('autocomplete', 'true')
   params.set('limit', '10')
-  /** Península + Baleares aprox.; refuerza España sin sustituir `country`. */
-  params.set('bbox', '-9.5,35.0,4.5,44.0')
   if (proximity && Number.isFinite(proximity.lng) && Number.isFinite(proximity.lat)) {
     params.set('proximity', `${proximity.lng},${proximity.lat}`)
   }
@@ -48,52 +47,25 @@ export async function searchSpainStreets(query, opts = {}) {
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?${params.toString()}`
 
   const res = await fetch(url, { signal })
-  let data
+  let data = {}
   try {
     data = await res.json()
   } catch {
     return []
   }
-  const features = Array.isArray(data?.features) ? data.features : []
 
   if (import.meta.env.DEV) {
     const safeUrl = url.replace(/access_token=[^&]+/i, 'access_token=***')
-    const sample = features.slice(0, 3).map((f) => ({
-      place_name: typeof f?.place_name === 'string' ? f.place_name : '',
-      text: typeof f?.text === 'string' ? f.text : '',
-    }))
-    console.log('[geocodingSpain]', {
+    console.log('MAPBOX:', {
       query: q,
       url: safeUrl,
-      status: res.status,
-      ok: res.ok,
-      featureCount: features.length,
-      sample,
+      count: data.features?.length,
+      sample: data.features?.slice(0, 3),
     })
   }
 
   if (!res.ok) return []
-
-  /** Sin filtrar relevancia: solo excluir filas sin `center` (no hay punto en mapa). */
-  const rows = []
-  for (const f of features) {
-    if (!Array.isArray(f.center) || f.center.length < 2) continue
-    const formatted = formatAddress(f)
-    const fallback =
-      (typeof f.place_name === 'string' && f.place_name.trim()) ||
-      (typeof f.text === 'string' && f.text.trim()) ||
-      ''
-    const line = formatted || fallback
-    rows.push({
-      id: String(f.id ?? f.place_name ?? Math.random()),
-      label: formatStreetLabel(f),
-      subtitle: formatSubtitle(f),
-      place_name: line,
-      formattedSelect: line,
-      center: [f.center[0], f.center[1]],
-    })
-  }
-  return rows
+  return data.features || []
 }
 
 /**
@@ -142,38 +114,10 @@ function extractCityFromContext(f) {
   return (place?.text || locality?.text || '').trim() || 'Oviedo'
 }
 
-function formatStreetLabel(f) {
-  const street = typeof f.text === 'string' ? f.text : ''
-  const num =
-    (typeof f.address === 'string' && f.address) ||
-    (f.properties && typeof f.properties.address === 'string' && f.properties.address) ||
-    ''
-  let s = street
-  if (/^calle\s+/i.test(s)) {
-    s = s.replace(/^calle\s+/i, 'C/ ')
-  } else if (s && !/^C\//i.test(s)) {
-    s = `C/ ${s}`
-  }
-  if (num) return `${s}, n${num}`
-  return s || (typeof f.place_name === 'string' ? f.place_name : '')
-}
-
-function formatSubtitle(f) {
-  const ctx = Array.isArray(f.context) ? f.context : []
-  const locality = ctx.find((c) => (c.id || '').startsWith('place.'))
-  const region = ctx.find((c) => (c.id || '').startsWith('region.'))
-  const parts = []
-  if (locality?.text) parts.push(locality.text)
-  if (region?.short_code) {
-    const short = String(region.short_code).replace(/^es-/i, '').toUpperCase()
-    if (short) parts.push(short)
-  }
-  return parts.join(' · ')
-}
-
 /**
- * Vuela el mapa global al resultado (usa mapControls / instancia).
+ * Centro Mapbox Feature → [lng, lat]
  */
-export function suggestionCenter(s) {
-  return Array.isArray(s?.center) && s.center.length >= 2 ? s.center : null
+export function suggestionCenter(f) {
+  const c = f?.center
+  return Array.isArray(c) && c.length >= 2 ? c : null
 }
