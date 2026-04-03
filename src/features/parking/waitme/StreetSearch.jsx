@@ -85,21 +85,6 @@ export default function StreetSearch({
   }, [])
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      const q = (query || '').trim()
-      console.log('RESULTS_UI:', {
-        q,
-        resultsLength: results.length,
-        first3: results.slice(0, 3).map((r) => ({
-          id: r.id,
-          place_name: r.place_name,
-          text: r.text,
-        })),
-      })
-    }
-  }, [query, results])
-
-  useEffect(() => {
     const q = (query || '').trim()
     if (q.length < 2) {
       requestIdRef.current += 1
@@ -157,7 +142,12 @@ export default function StreetSearch({
     <div
       ref={containerRef}
       className={className}
-      style={{ position: 'relative', zIndex: 10, marginTop: 10 }}
+      style={{
+        position: 'relative',
+        zIndex: 1,
+        marginTop: 10,
+        overflow: 'visible',
+      }}
     >
       <style>{`
         .${streetSearchInputClass}::placeholder {
@@ -239,10 +229,10 @@ export default function StreetSearch({
             WebkitBackdropFilter: 'blur(12px)',
             border: '2px solid rgba(168, 85, 247, 0.5)',
             borderRadius: 12,
-            overflow: 'hidden',
-            zIndex: 11,
+            zIndex: 300000,
             maxHeight: 220,
             overflowY: 'auto',
+            overflowX: 'hidden',
             listStyle: 'none',
             margin: 0,
             padding: 0,

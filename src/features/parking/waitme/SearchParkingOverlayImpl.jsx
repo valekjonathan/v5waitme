@@ -140,28 +140,37 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         inset: 0,
         zIndex: 10,
         pointerEvents: 'none',
+        overflow: 'visible',
       }}
-      aria-hidden
     >
       <div
         style={{
-          position: 'absolute',
-          top: 70,
-          left: 0,
-          right: 0,
-          paddingLeft: 16,
-          paddingRight: 16,
-          paddingTop: 0,
-          paddingBottom: 8,
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8,
-          pointerEvents: 'auto',
-          zIndex: 10050,
+          position: 'relative',
+          zIndex: 200000,
+          isolation: 'isolate',
+          overflow: 'visible',
         }}
       >
-        <div style={{ flex: 1, minWidth: 0 }} role="search">
-          <StreetSearch onSelect={onStreetSelect} placeholder={streetPlaceholder} />
+        <div
+          style={{
+            position: 'absolute',
+            top: 70,
+            left: 0,
+            right: 0,
+            paddingLeft: 16,
+            paddingRight: 16,
+            paddingTop: 0,
+            paddingBottom: 8,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            pointerEvents: 'auto',
+            overflow: 'visible',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0, overflow: 'visible' }} role="search">
+            <StreetSearch onSelect={onStreetSelect} placeholder={streetPlaceholder} />
+          </div>
         </div>
       </div>
 

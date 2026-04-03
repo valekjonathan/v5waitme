@@ -20,7 +20,6 @@ import {
   alignParkedGpsMarkerToGap,
   applyWaitmeCameraJumpOrEase,
   isWaitmeParkingLayoutReady,
-  jumpMapToLngLatAndAlignToGap,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 
@@ -226,12 +225,12 @@ export default function Map({
   }, [parkingBandPinAdjust, parkingPinMode])
 
   /**
-   * Search: snap inicial GPS → hueco; luego verdad = map.getCenter().
-   * Parked: alinear cámara a GPS bajo el pin fijo (mismo hueco).
+   * Solo PARKED: alinear cámara inicial a GPS bajo el pin (hueco buscador–tarjeta).
+   * SEARCH: verdad = map.getCenter(); sin snap GPS aquí (evita competir con el usuario / fly).
    */
   useEffect(() => {
     if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
-    if (parkingPinMode !== 'search' && parkingPinMode !== 'parked') return
+    if (parkingPinMode !== 'parked') return
     let cancelled = false
     let attempts = 0
     const maxAttempts = 100
@@ -246,15 +245,7 @@ export default function Map({
       const fast = getCurrentLocationFast()
       const applyCoords = (lng, lat) => {
         if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-        if (parkingPinMode === 'search') {
-          jumpMapToLngLatAndAlignToGap(map, lng, lat, {
-            zoom: typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM,
-            pitch: typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH,
-            bearing: typeof map.getBearing === 'function' ? map.getBearing() : 0,
-          })
-        } else {
-          alignParkedGpsMarkerToGap(map, { lng, lat })
-        }
+        alignParkedGpsMarkerToGap(map, { lng, lat })
       }
       if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
         applyCoords(fast.longitude, fast.latitude)
