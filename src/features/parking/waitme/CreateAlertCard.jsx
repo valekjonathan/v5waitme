@@ -286,7 +286,7 @@ export default function CreateAlertCard({
               display: 'flex',
             }}
           >
-            <IconClock size={22} />
+            <IconClock size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>

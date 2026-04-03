@@ -46,25 +46,48 @@ export async function searchSpainStreets(query, opts = {}) {
   const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?${params.toString()}`
 
   const res = await fetch(url, { signal })
-  if (!res.ok) return []
-  const data = await res.json()
-  const raw = Array.isArray(data.features) ? data.features : []
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    return []
+  }
+  const features = Array.isArray(data?.features) ? data.features : []
 
   if (import.meta.env.DEV) {
-    console.log('[geocodingSpain]', { query: q, featureCount: raw.length, features: raw })
+    const safeUrl = url.replace(/access_token=[^&]+/i, 'access_token=***')
+    const sample = features.slice(0, 3).map((f) => ({
+      place_name: typeof f?.place_name === 'string' ? f.place_name : '',
+      text: typeof f?.text === 'string' ? f.text : '',
+    }))
+    console.log('[geocodingSpain]', {
+      query: q,
+      url: safeUrl,
+      status: res.status,
+      ok: res.ok,
+      featureCount: features.length,
+      sample,
+    })
   }
+
+  if (!res.ok) return []
 
   /** Sin filtrar relevancia: solo excluir filas sin `center` (no hay punto en mapa). */
   const rows = []
-  for (const f of raw) {
+  for (const f of features) {
     if (!Array.isArray(f.center) || f.center.length < 2) continue
     const formatted = formatAddress(f)
+    const fallback =
+      (typeof f.place_name === 'string' && f.place_name.trim()) ||
+      (typeof f.text === 'string' && f.text.trim()) ||
+      ''
+    const line = formatted || fallback
     rows.push({
       id: String(f.id ?? f.place_name ?? Math.random()),
       label: formatStreetLabel(f),
       subtitle: formatSubtitle(f),
-      place_name: formatted,
-      formattedSelect: formatted,
+      place_name: line,
+      formattedSelect: line,
       center: [f.center[0], f.center[1]],
     })
   }

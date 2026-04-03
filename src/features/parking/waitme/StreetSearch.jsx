@@ -98,7 +98,7 @@ export default function StreetSearch({
       return
     }
     setLoading(true)
-    const t = setTimeout(() => fetchSuggestions(q), 200)
+    const t = setTimeout(() => fetchSuggestions(q), 150)
     return () => clearTimeout(t)
   }, [query, fetchSuggestions])
 

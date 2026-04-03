@@ -155,9 +155,20 @@ export function flyGlobalMapTo(lng, lat) {
         duration: 700,
         essential: true,
       })
-      if (getUserGpsMarker()) {
-        map.once('moveend', () => alignParkedGpsMarkerToGap(map, { lng, lat }))
-      }
+      map.once('moveend', () => {
+        if (getUserGpsMarker()) {
+          const fast = getCurrentLocationFast()
+          if (
+            fast &&
+            Number.isFinite(fast.longitude) &&
+            Number.isFinite(fast.latitude)
+          ) {
+            alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
+          }
+        } else {
+          alignParkedGpsMarkerToGap(map, { lng, lat })
+        }
+      })
     } else {
       map.flyTo({
         center: [lng, lat],

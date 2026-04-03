@@ -125,6 +125,60 @@ export function IconMapPinFilled({ className = '', size = 20 }) {
   )
 }
 
+/** Misma base que filtros / zoom (`MapZoomControls`, `SearchParkingOverlayImpl`). */
+export const WAITME_GLASS_MAP_CONTROL_36 = {
+  boxSizing: 'border-box',
+  width: 36,
+  height: 36,
+  borderRadius: 12,
+  border: '1px solid rgba(168, 85, 247, 0.5)',
+  color: '#fff',
+  background: 'rgba(15, 23, 42, 0.9)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  padding: 0,
+}
+
+/** Ocultar/mostrar tarjeta inferior: mismo control en búsqueda y “aparcado”. */
+export function HideParkingCardToggle({ expanded, onToggle, style = {} }) {
+  return (
+    <button
+      type="button"
+      aria-label={expanded ? 'Ocultar tarjeta' : 'Mostrar tarjeta'}
+      onClick={onToggle}
+      style={{
+        ...WAITME_GLASS_MAP_CONTROL_36,
+        position: 'absolute',
+        top: -42,
+        right: 0,
+        width: 36,
+        height: 36,
+        transform: expanded ? 'none' : 'rotate(180deg)',
+        transition: 'transform 0.25s ease',
+        ...style,
+      }}
+    >
+      <svg
+        width={20}
+        height={20}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </button>
+  )
+}
+
 export function IconX({ className = '', size = 20 }) {
   return (
     <svg
@@ -144,7 +198,7 @@ export function IconX({ className = '', size = 20 }) {
   )
 }
 
-export function IconEuro({ className = '', size = 16 }) {
+export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
   return (
     <svg
       className={className}
@@ -153,24 +207,9 @@ export function IconEuro({ className = '', size = 16 }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <path d="M4 10h12M4 14h12M7 6c-1.5 2-2 4-2 6s.5 4 2 6M17 6c1.5 2 2 4 2 6s-.5 4-2 6" />
-    </svg>
-  )
-}
-
-export function IconClock({ className = '', size = 16 }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
     >
       <circle cx="12" cy="12" r="10" />
@@ -179,7 +218,8 @@ export function IconClock({ className = '', size = 16 }) {
   )
 }
 
-export function IconNavigation({ className = '', size = 12 }) {
+/** Mismo criterio que `IconClock` (filtros: tamaño / grosor). */
+export function IconEuro({ className = '', size = 16, strokeWidth = 2 }) {
   return (
     <svg
       className={className}
@@ -188,7 +228,28 @@ export function IconNavigation({ className = '', size = 12 }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M14.25 7.756a4.5 4.5 0 1 0 0 8.488M7.5 10.5h5.25m-5.25 3h5.25" />
+    </svg>
+  )
+}
+
+export function IconNavigation({ className = '', size = 12, strokeWidth = 2 }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
     >
       <polygon points="3 11 22 2 13 21 11 13 3 11" />

@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-02T17:19:31.842Z
-Git HEAD: 1415f7414e3239ba7b19151fa42089d59c67bf90
+Generated: 2026-04-03T15:20:29.202Z
+Git HEAD: 6c401696593538c4293d7f6bf14db68fe8795f56
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -65,20 +65,15 @@ src/
       useSimulatedParkingUsers.js
     parking/
       components/
-        ParkHereOverlay.jsx
         SearchParkingOverlay.jsx
-      ParkHerePage.jsx
-      SearchParkingPage.jsx
+      MapParkingPage.jsx
       waitme/
         carUtils.js
-        CenterPin.jsx
         CreateAlertCard.jsx
         dateEs.js
         icons.jsx
         MapFilters.jsx
-        MapScreenPanel.jsx
         MapZoomControls.jsx
-        ParkHereOverlayImpl.jsx
         SearchParkingOverlayImpl.jsx
         simulatedUserToAlert.js
         StreetSearch.jsx

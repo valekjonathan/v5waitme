@@ -4,12 +4,22 @@
 import React, { useEffect, useState } from 'react'
 import { IconClock, IconEuro, IconNavigation, IconX } from './icons.jsx'
 
+/** Estado inicial Search (precio 10 €, 30 min, 800 m). Exportado para el padre sin duplicar. */
+export const WAITME_DEFAULT_SEARCH_FILTERS = {
+  maxPrice: 10,
+  maxMinutes: 30,
+  maxDistance: 0.8,
+}
+
+const rangeWrapClass = 'waitme-map-filters-range-wrap'
+
+/** `fixed` + capa alta: por encima del pin y del canvas/markers del mapa (stacking global). */
 const panelOuterStyle = {
-  position: 'absolute',
+  position: 'fixed',
   right: 0,
   top: '50%',
   height: 'auto',
-  zIndex: 1000,
+  zIndex: 200000,
   pointerEvents: 'auto',
   maxHeight: '100%',
 }
@@ -24,9 +34,10 @@ const panelStyle = {
   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
   width: 288,
   maxHeight: '85vh',
-  overflow: 'hidden',
+  overflow: 'visible',
   display: 'flex',
   flexDirection: 'column',
+  boxSizing: 'border-box',
 }
 
 const rangeClass = 'waitme-map-filters-range'
@@ -48,21 +59,25 @@ const iconWrap = {
 }
 
 function FilterRangeBlock({ icon, title, valueEl, min, max, step, value, onChange }) {
+  const pct = max <= min ? 0 : ((Number(value) - min) / (max - min)) * 100
   return (
-    <div>
+    <div style={{ overflow: 'visible', width: '100%', minWidth: 0 }}>
       <label style={labelBase}>
         <span style={iconWrap}>{icon}</span>
         {title} {valueEl}
       </label>
-      <input
-        type="range"
-        className={rangeClass}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-      />
+      <div className={rangeWrapClass}>
+        <input
+          type="range"
+          className={rangeClass}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={onChange}
+          style={{ ['--wm-fill-pct']: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }
@@ -83,36 +98,64 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
   return (
     <>
       <style>{`
+        .${rangeWrapClass} {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          min-height: 24px;
+        }
         .${rangeClass} {
           -webkit-appearance: none;
           appearance: none;
           width: 100%;
-          height: 6px;
-          background: #374151;
-          border-radius: 3px;
+          height: 24px;
+          margin: 0;
+          padding: 0;
+          background: transparent;
           outline: none;
+        }
+        .${rangeClass}::-webkit-slider-runnable-track {
+          height: 6px;
+          border-radius: 999px;
+          background: linear-gradient(
+            to right,
+            #7c3aed 0%,
+            #a855f7 var(--wm-fill-pct, 0%),
+            #27272f var(--wm-fill-pct, 0%),
+            #27272f 100%
+          );
         }
         .${rangeClass}::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 16px;
-          height: 16px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           background: #a855f7;
-          border: 2px solid #c084fc;
+          border: 2px solid #f8fafc;
           cursor: pointer;
-        }
-        .${rangeClass}::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #a855f7;
-          border: 2px solid #c084fc;
-          cursor: pointer;
+          box-shadow: none;
+          margin-top: -8px;
         }
         .${rangeClass}::-moz-range-track {
           height: 6px;
-          background: #374151;
-          border-radius: 3px;
+          border-radius: 999px;
+          background: linear-gradient(
+            to right,
+            #7c3aed 0%,
+            #a855f7 var(--wm-fill-pct, 0%),
+            #27272f var(--wm-fill-pct, 0%),
+            #27272f 100%
+          );
+        }
+        .${rangeClass}::-moz-range-thumb {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          background: #a855f7;
+          border: 2px solid #f8fafc;
+          cursor: pointer;
+          box-shadow: none;
+          margin-top: -8px;
         }
       `}</style>
       <div
@@ -174,9 +217,19 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
 
           <div style={{ borderTop: '1px solid #374151', margin: '16px 0' }} />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto' }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 20,
+              overflowY: 'auto',
+              overflowX: 'visible',
+              minHeight: 0,
+              width: '100%',
+            }}
+          >
             <FilterRangeBlock
-              icon={<IconEuro size={16} />}
+              icon={<IconEuro size={16} strokeWidth={2} />}
               title="Precio máximo:"
               valueEl={
                 <span style={{ color: '#c084fc', fontWeight: 700 }}>
@@ -190,7 +243,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
               onChange={(e) => onFilterChange({ ...filters, maxPrice: Number(e.target.value) })}
             />
             <FilterRangeBlock
-              icon={<IconClock size={16} />}
+              icon={<IconClock size={16} strokeWidth={2} />}
               title="Disponible en:"
               valueEl={
                 <span style={{ color: '#c084fc', fontWeight: 700 }}>{filters.maxMinutes} min</span>
@@ -202,7 +255,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
               onChange={(e) => onFilterChange({ ...filters, maxMinutes: Number(e.target.value) })}
             />
             <FilterRangeBlock
-              icon={<IconNavigation size={16} />}
+              icon={<IconNavigation size={16} strokeWidth={2} />}
               title="Distancia máxima:"
               valueEl={<span style={{ color: '#c084fc', fontWeight: 700 }}>{distLabel}</span>}
               min={0}
@@ -240,7 +293,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
 
             <button
               type="button"
-              onClick={() => onFilterChange({ maxPrice: 7, maxMinutes: 25, maxDistance: 1 })}
+              onClick={() => onFilterChange({ ...WAITME_DEFAULT_SEARCH_FILTERS })}
               style={{
                 width: '100%',
                 padding: '10px 16px',
