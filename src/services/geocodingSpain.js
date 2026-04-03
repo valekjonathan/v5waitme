@@ -96,9 +96,11 @@ export function formatAddress(result) {
   if (raw) return raw
 
   const ctx = Array.isArray(result.context) ? result.context : []
-  const ctxParts = ctx
-    .map((c) => (c && typeof c.text === 'string' ? c.text.trim() : ''))
-    .filter(Boolean)
+  const ctxParts = []
+  for (const c of ctx) {
+    const t = c && typeof c.text === 'string' ? c.text.trim() : ''
+    if (t) ctxParts.push(t)
+  }
   if (ctxParts.length) return ctxParts.join(', ')
 
   return ''

@@ -24,7 +24,7 @@ export function isWaitmeParkingLayoutReady() {
 }
 
 /** Salto de cámara + misma alineación que `alignParkedGpsMarkerToGap` (un solo núcleo). */
-export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
+export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}, pinAlignOpts = {}) {
   if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
   try {
     map.jumpTo({
@@ -33,14 +33,17 @@ export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
       pitch: camera.pitch ?? (typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH),
       bearing: camera.bearing ?? (typeof map.getBearing === 'function' ? map.getBearing() : 0),
     })
-    alignParkedGpsMarkerToGap(map, { lng, lat })
+    alignParkedGpsMarkerToGap(map, { lng, lat }, pinAlignOpts)
   } catch {
     /* */
   }
 }
 
-/** Única API de alineación al hueco: (lng,lat) bajo el pin fijo (contenedor Mapbox). */
-export function alignParkedGpsMarkerToGap(map, lngLat) {
+/**
+ * Única API de alineación al hueco: (lng,lat) bajo el pin fijo (contenedor Mapbox).
+ * @param {{ mode?: 'search' | 'parked' }} pinAlignOpts — solo para `PIN_ALIGN` en DEV.
+ */
+export function alignParkedGpsMarkerToGap(map, lngLat, pinAlignOpts = {}) {
   if (!map?.project || !map?.unproject || !lngLat) return
   const lng = lngLat.lng
   const lat = lngLat.lat
@@ -66,6 +69,18 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
 
   const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
   const newCenter = map.unproject(newCenterPx)
+
+  if (import.meta.env.DEV && pinAlignOpts.mode) {
+    console.log('PIN_ALIGN', {
+      mode: pinAlignOpts.mode,
+      searchBottom,
+      cardTop,
+      targetY,
+      point: { x: point.x, y: point.y },
+      centerPx: { x: centerPx.x, y: centerPx.y },
+      newCenterPx,
+    })
+  }
 
   map.easeTo({
     center: newCenter,
@@ -138,7 +153,11 @@ export function globalMapZoomBy(delta) {
       const fast = getCurrentLocationFast()
       if (fast) {
         map.once('moveend', () =>
-          alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
+          alignParkedGpsMarkerToGap(
+            map,
+            { lng: fast.longitude, lat: fast.latitude },
+            { mode: 'parked' }
+          )
         )
       }
     }
@@ -180,10 +199,14 @@ export function flyGlobalMapTo(lng, lat) {
         if (follow) {
           const fast = getCurrentLocationFast()
           if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-            alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
+            alignParkedGpsMarkerToGap(
+              map,
+              { lng: fast.longitude, lat: fast.latitude },
+              { mode: 'parked' }
+            )
           }
         } else {
-          alignParkedGpsMarkerToGap(map, { lng, lat })
+          alignParkedGpsMarkerToGap(map, { lng, lat }, { mode: 'search' })
         }
       })
     } else {
