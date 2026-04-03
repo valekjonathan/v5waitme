@@ -209,4 +209,12 @@ ninguno
 - Map bundle es pesado (lazy load en App).
 - Sin huérfanos detectados en el grafo actual.
 
+=== CHECKPOINT PRODUCCIÓN (2026-04) ===
+- Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.
+- APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.
+- Shell: header + bottom nav OK en layout; fix de altura aplicado en src/app/App.jsx (fade200Style: height 100% + flex column) y src/ui/layout/ScreenShell.tsx (shellRootStyle: flex 1).
+- Problema previo resuelto: centro negro / área central por altura 0 en cadena flex (header/nav fixed no daban altura al flujo).
+- Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.
+- Retomar mañana: «continúa donde lo dejamos en WaitMe v5 producción iPhone (mapa ya renderiza, revisar UX y ajustes finales)».
+
 === FIN ===
