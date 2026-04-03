@@ -210,7 +210,7 @@ export const WAITME_ROW_ICON_SLOT = {
 }
 
 /**
- * Shell SVG único compartido por IconClock e IconEuro: viewBox 24×24, stroke 2, caps redondos.
+ * Shell SVG compartido por IconClock: viewBox 24×24, stroke 2, caps redondos.
  * El slot de fila es WAITME_ROW_ICON_SLOT (22×22); el tamaño del trazo es el prop `size` (p. ej. 22 en CreateAlertCard aparcado).
  */
 function WaitmeIconStroke24({ className, size = 16, strokeWidth = 2, children }) {
@@ -241,11 +241,27 @@ export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
   )
 }
 
+/** € rellena mejor el viewBox: escala interna en <g> (sin CSS) para alinear visualmente con IconClock. */
 export function IconEuro({ className = '', size = 16, strokeWidth = 2 }) {
   return (
-    <WaitmeIconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
-      <path d="M14.25 7.756a4.5 4.5 0 1 0 0 8.488M7.5 10.5h5.25m-5.25 3h5.25" />
-    </WaitmeIconStroke24>
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <g transform="translate(2,0) scale(1.2)">
+        <path d="M4 10h8" />
+        <path d="M4 14h8" />
+        <path d="M12 6a6 6 0 1 0 0 12" />
+      </g>
+    </svg>
   )
 }
 
