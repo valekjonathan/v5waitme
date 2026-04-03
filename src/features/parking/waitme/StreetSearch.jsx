@@ -3,30 +3,17 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getMapboxAccessToken } from '../../map/constants/mapbox.js'
+import { getCurrentLocationFast } from '../../../services/location.js'
 import { searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
-
-function formatStreetName(placeName) {
-  if (!placeName || typeof placeName !== 'string') return placeName || ''
-  const parts = placeName
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)
-  if (parts.length === 0) return placeName
-
-  let street = parts[0] || ''
-  street = street
-    .replace(/^Calle\s+/i, 'C/ ')
-    .replace(/^Avenida\s+/i, 'Av. ')
-    .replace(/^Plaza\s+/i, 'Pl. ')
-
-  return `${street}, Oviedo`
-}
 
 const inputStyle = {
   background: 'transparent',
   border: 'none',
-  color: '#fff',
+  color: '#FFFFFF',
+  WebkitTextFillColor: '#FFFFFF',
+  caretColor: '#FFFFFF',
+  opacity: 1,
   outline: 'none',
   height: 32,
   fontSize: 14,
@@ -51,6 +38,7 @@ export default function StreetSearch({
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const abortRef = useRef(null)
+  const fetchGenRef = useRef(0)
 
   const hasToken = Boolean(getMapboxAccessToken())
 
@@ -71,21 +59,31 @@ export default function StreetSearch({
       abortRef.current = controller
 
       setLoading(true)
+      const gen = (fetchGenRef.current += 1)
       try {
-        const rows = await searchSpainStreets(q, { signal: controller.signal })
-        const features = rows
-          .filter((r) => Array.isArray(r.center) && r.center.length >= 2)
-          .map((r) => ({
-            id: r.id,
-            place_name: r.label,
-            text: r.label,
-            geometry: { coordinates: r.center },
-          }))
+        const fast = getCurrentLocationFast()
+        const proximity =
+          fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)
+            ? { lng: fast.longitude, lat: fast.latitude }
+            : null
+        const rows = await searchSpainStreets(q, {
+          signal: controller.signal,
+          proximity,
+        })
+        if (gen !== fetchGenRef.current) return
+        const features = rows.map((r) => ({
+          id: r.id,
+          place_name: r.formattedSelect || r.label,
+          listLabel: r.label,
+          listSubtitle: r.subtitle,
+          geometry: { coordinates: r.center },
+        }))
         setSuggestions(features)
       } catch (err) {
+        if (gen !== fetchGenRef.current) return
         if (err?.name !== 'AbortError') setSuggestions([])
       } finally {
-        setLoading(false)
+        if (gen === fetchGenRef.current) setLoading(false)
         abortRef.current = null
       }
     },
@@ -96,10 +94,11 @@ export default function StreetSearch({
     const q = (query || '').trim()
     if (q.length < 2) {
       setSuggestions([])
+      setLoading(false)
       return
     }
-
-    const t = setTimeout(() => fetchSuggestions(q), 250)
+    setLoading(true)
+    const t = setTimeout(() => fetchSuggestions(q), 200)
     return () => clearTimeout(t)
   }, [query, fetchSuggestions])
 
@@ -121,7 +120,10 @@ export default function StreetSearch({
     const center = feature?.geometry?.coordinates
     if (Array.isArray(center) && center.length >= 2) {
       const [lng, lat] = center
-      const formatted = formatStreetName(feature.place_name || feature.text || '')
+      const formatted =
+        typeof feature.place_name === 'string' && feature.place_name.trim()
+          ? feature.place_name.trim()
+          : String(feature.listLabel || '').trim()
       setQuery(formatted)
       setSuggestions([])
       setOpen(false)
@@ -140,15 +142,22 @@ export default function StreetSearch({
   if (!hasToken) return null
 
   return (
-    <div ref={containerRef} className={className} style={{ position: 'relative', marginTop: 10 }}>
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ position: 'relative', zIndex: 10, marginTop: 10 }}
+    >
       <style>{`
         .${streetSearchInputClass}::placeholder {
-          color: #6b7280;
-          opacity: 1;
+          color: #FFFFFF;
+          opacity: 0.82;
+          -webkit-text-fill-color: #FFFFFF;
           text-align: center;
         }
       `}</style>
       <div
+        data-waitme-parking-search-morado
+        data-waitme-parking-gap-search-bottom
         style={{
           backgroundColor: 'rgba(17, 24, 39, 0.8)',
           backdropFilter: 'blur(4px)',
@@ -204,7 +213,7 @@ export default function StreetSearch({
         </div>
       </div>
 
-      {open && (suggestions.length > 0 || loading) && (
+      {open && (query || '').trim().length >= 2 && (
         <ul
           style={{
             position: 'absolute',
@@ -218,7 +227,7 @@ export default function StreetSearch({
             border: '2px solid rgba(168, 85, 247, 0.5)',
             borderRadius: 12,
             overflow: 'hidden',
-            zIndex: 1000,
+            zIndex: 11,
             maxHeight: 220,
             overflowY: 'auto',
             listStyle: 'none',
@@ -228,6 +237,11 @@ export default function StreetSearch({
         >
           {loading && suggestions.length === 0 && (
             <li style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 14 }}>Buscando...</li>
+          )}
+          {!loading && suggestions.length === 0 && (
+            <li style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 14 }}>
+              No se encontraron resultados
+            </li>
           )}
           {suggestions.map((f) => (
             <li
@@ -245,7 +259,7 @@ export default function StreetSearch({
               onClick={() => handleSelect(f)}
               onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
             >
-              {formatStreetName(f.place_name || f.text || '')}
+              {f.place_name}
             </li>
           ))}
         </ul>
