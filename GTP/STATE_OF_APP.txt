@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-03T18:50:56.700Z
-Git HEAD: 47cbc088ab83175640756e007945b33b1dd7ed71
+Generated: 2026-04-03T20:08:06.701Z
+Git HEAD: 0119afeca4e6b8261f65e67b98ac83c4368eaca0
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -18,6 +18,9 @@ node_modules/  [omitido]
 package-lock.json
 package.json
 playwright.config.ts
+public/
+  logo.png
+  manifest.json
 README.md
 scripts/
   auto-clean.mjs
@@ -30,6 +33,7 @@ scripts/
     pre-push
   quality-gate.mjs
   supabase-setup.mjs
+  tunnel-dev.mjs
 src/
   app/
     App.jsx
