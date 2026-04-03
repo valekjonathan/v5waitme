@@ -2,8 +2,6 @@
  * Copia de WaitMe: src/components/StreetSearch.jsx (Input → input nativo, mismos estilos).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getMapboxAccessToken } from '../../map/constants/mapbox.js'
-import { getCurrentLocationFast } from '../../../services/location.js'
 import { formatAddress, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
 
@@ -27,6 +25,8 @@ const inputStyle = {
 
 const streetSearchInputClass = 'waitme-street-search-input'
 
+const DEBOUNCE_MS = 185
+
 export default function StreetSearch({
   onSelect,
   placeholder = '¿Dónde quieres aparcar?',
@@ -34,59 +34,53 @@ export default function StreetSearch({
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
-  const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const abortRef = useRef(null)
   const requestIdRef = useRef(0)
-
-  const hasToken = Boolean(getMapboxAccessToken())
 
   const clearSearchField = useCallback(() => {
     setOpen(false)
     setQuery('')
   }, [])
 
-  const fetchResults = useCallback(
-    async (q) => {
-      if (!hasToken || !q || q.trim().length < 2) return
+  const fetchResults = useCallback(async (q) => {
+    const trimmed = typeof q === 'string' ? q.trim() : ''
 
-      if (abortRef.current) abortRef.current.abort()
-      const controller = new AbortController()
-      abortRef.current = controller
+    if (!trimmed || trimmed.length < 2) {
+      setResults([])
+      return
+    }
 
-      const id = ++requestIdRef.current
-      setLoading(true)
-      try {
-        const fast = getCurrentLocationFast()
-        const proximity =
-          fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)
-            ? { lng: fast.longitude, lat: fast.latitude }
-            : null
-        const res = await searchSpainStreets(q.trim(), {
-          signal: controller.signal,
-          proximity,
-        })
-        if (id !== requestIdRef.current) return
-        setResults(Array.isArray(res) ? res : [])
-      } catch (err) {
-        if (id !== requestIdRef.current) return
-        if (err?.name !== 'AbortError') {
-          /* mantener lista anterior; no vaciar antes de respuesta */
-        }
-      } finally {
-        if (id === requestIdRef.current) setLoading(false)
+    if (abortRef.current) abortRef.current.abort()
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    const id = ++requestIdRef.current
+
+    try {
+      const res = await searchSpainStreets(trimmed, {
+        signal: controller.signal,
+      })
+
+      if (id !== requestIdRef.current) return
+
+      setResults(Array.isArray(res) ? res : [])
+    } catch (e) {
+      if (id !== requestIdRef.current) return
+    } finally {
+      if (id === requestIdRef.current) {
         abortRef.current = null
       }
-    },
-    [hasToken]
-  )
+    }
+  }, [])
 
   useEffect(() => {
     if (import.meta.env.DEV) {
       console.log('RESULTS_UI:', results.length)
     }
-  }, [results])
+  }, [query, results])
 
   useEffect(() => {
     const q = (query || '').trim()
@@ -98,11 +92,10 @@ export default function StreetSearch({
       }
       const t = window.setTimeout(() => {
         setResults([])
-        setLoading(false)
       }, 200)
       return () => window.clearTimeout(t)
     }
-    const t = window.setTimeout(() => fetchResults(q), 150)
+    const t = window.setTimeout(() => fetchResults(q), DEBOUNCE_MS)
     return () => window.clearTimeout(t)
   }, [query, fetchResults])
 
@@ -126,8 +119,8 @@ export default function StreetSearch({
     const [lng, lat] = center
     const formatted =
       formatAddress(feature) ||
-      (typeof feature.place_name === 'string' && feature.place_name.trim()) ||
-      (typeof feature.text === 'string' && feature.text.trim()) ||
+      (typeof feature.place_name === 'string' ? feature.place_name : '') ||
+      (typeof feature.text === 'string' ? feature.text : '') ||
       ''
     setQuery(formatted)
     setResults([])
@@ -142,8 +135,6 @@ export default function StreetSearch({
       }
     }, 0)
   }
-
-  if (!hasToken) return null
 
   return (
     <div
@@ -240,17 +231,9 @@ export default function StreetSearch({
             padding: 0,
           }}
         >
-          {loading && results.length === 0 && (
-            <li style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 14 }}>Buscando...</li>
-          )}
-          {!loading && results.length === 0 && (
-            <li style={{ padding: '12px 16px', color: '#9ca3af', fontSize: 14 }}>
-              No se encontraron resultados
-            </li>
-          )}
-          {results.map((f, i) => (
+          {results.map((f) => (
             <li
-              key={String(f.id ?? f.place_name ?? i)}
+              key={f.id}
               role="button"
               tabIndex={0}
               style={{
@@ -264,9 +247,7 @@ export default function StreetSearch({
               onClick={() => handleSelect(f)}
               onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
             >
-              {formatAddress(f) ||
-                (typeof f.place_name === 'string' ? f.place_name : '') ||
-                (typeof f.text === 'string' ? f.text : '')}
+              {formatAddress(f) || f.place_name || f.text || '—'}
             </li>
           ))}
         </ul>
