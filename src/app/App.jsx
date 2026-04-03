@@ -27,7 +27,15 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
-const fade200Style = { transition: 'opacity 200ms ease-out' }
+/** Debe llenar el `div` de 100vh del padre; si no, `height:100%` en IphoneFrame/ScreenShell colapsa a 0 (centro negro con header/nav fijos). */
+const fade200Style = {
+  transition: 'opacity 200ms ease-out',
+  height: '100%',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box',
+}
 const homeGateStyle = { height: '100%', width: '100%' }
 
 const modalOverlayStyle = {
