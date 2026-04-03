@@ -323,7 +323,9 @@ export default function CreateAlertCard({
               top: 4,
             }}
           >
-            <IconEuro size={24} strokeWidth={2} />
+            <div style={{ transform: 'scaleX(1.15)' }}>
+              <IconEuro size={24} strokeWidth={2} />
+            </div>
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
