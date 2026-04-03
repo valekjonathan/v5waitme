@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-03T16:42:02.512Z
-Git HEAD: b5083ee6852d3aec56810aef4cec61edd40f4299
+Generated: 2026-04-03T18:05:40.024Z
+Git HEAD: 799a50f55280ae800f8df7e661d2c3dc2249960b
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]

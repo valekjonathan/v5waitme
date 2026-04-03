@@ -247,19 +247,13 @@ export default function Map({
       const applyCoords = (lng, lat) => {
         if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
         if (parkingPinMode === 'search') {
-          jumpMapToLngLatAndAlignToGap(
-            map,
-            lng,
-            lat,
-            {
-              zoom: typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM,
-              pitch: typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH,
-              bearing: typeof map.getBearing === 'function' ? map.getBearing() : 0,
-            },
-            { mode: 'search' }
-          )
+          jumpMapToLngLatAndAlignToGap(map, lng, lat, {
+            zoom: typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM,
+            pitch: typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH,
+            bearing: typeof map.getBearing === 'function' ? map.getBearing() : 0,
+          })
         } else {
-          alignParkedGpsMarkerToGap(map, { lng, lat }, { mode: 'parked' })
+          alignParkedGpsMarkerToGap(map, { lng, lat })
         }
       }
       if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
@@ -312,13 +306,7 @@ export default function Map({
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          alignParkedGpsMarkerToGap(
-            globalMap,
-            { lng: loc.longitude, lat: loc.latitude },
-            {
-              mode: 'parked',
-            }
-          )
+          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) centerMapOnUser(globalMap, loc)

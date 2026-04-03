@@ -103,6 +103,10 @@ export function formatAddress(result) {
   }
   if (ctxParts.length) return ctxParts.join(', ')
 
+  if (result.id != null && String(result.id).trim()) {
+    return String(result.id).trim()
+  }
+
   return ''
 }
 
