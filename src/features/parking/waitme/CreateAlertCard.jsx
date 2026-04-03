@@ -9,13 +9,6 @@ import { getCurrentLocationFast, getCurrentPosition } from '../../../services/lo
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { IconClock, IconEuro, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
-/** Un solo estilo compartido: un `<span>` por icono (reloj / €), sin wrappers anidados. */
-const WAITME_PARKED_ICON_WRAPPER = {
-  ...WAITME_ROW_ICON_SLOT,
-  position: 'relative',
-  top: 3,
-}
-
 const rangeClass = 'waitme-create-alert-range'
 
 const MINUTES_MIN = 5
@@ -285,7 +278,13 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={WAITME_PARKED_ICON_WRAPPER}>
+          <span
+            style={{
+              ...WAITME_ROW_ICON_SLOT,
+              position: 'relative',
+              top: 4,
+            }}
+          >
             <IconClock size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
@@ -317,8 +316,14 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={WAITME_PARKED_ICON_WRAPPER}>
-            <IconEuro size={22} strokeWidth={2} />
+          <span
+            style={{
+              ...WAITME_ROW_ICON_SLOT,
+              position: 'relative',
+              top: 4,
+            }}
+          >
+            <IconEuro size={24} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
