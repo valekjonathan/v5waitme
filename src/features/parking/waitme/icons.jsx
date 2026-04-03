@@ -198,7 +198,7 @@ export function IconX({ className = '', size = 20 }) {
   )
 }
 
-export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
+function IconStroke24({ className, size, strokeWidth, children }) {
   return (
     <svg
       className={className}
@@ -212,29 +212,25 @@ export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
       strokeLinejoin="round"
       aria-hidden
     >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 6v6l4 2" />
+      {children}
     </svg>
   )
 }
 
-/** Mismo criterio que `IconClock` (filtros: tamaño / grosor). */
+export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
+  return (
+    <IconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </IconStroke24>
+  )
+}
+
 export function IconEuro({ className = '', size = 16, strokeWidth = 2 }) {
   return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <IconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
       <path d="M14.25 7.756a4.5 4.5 0 1 0 0 8.488M7.5 10.5h5.25m-5.25 3h5.25" />
-    </svg>
+    </IconStroke24>
   )
 }
 

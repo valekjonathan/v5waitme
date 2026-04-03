@@ -52,21 +52,21 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   const lat = lngLat.lat
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
 
-  const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
-  const cardEl = document.querySelector(GAP_CARD_TOP)
-  if (!searchEl || !cardEl) return
+  const search = document.querySelector(GAP_SEARCH_BOTTOM)
+  const card = document.querySelector(GAP_CARD_TOP)
+  if (!search || !card) return
 
-  const cr = map.getContainer().getBoundingClientRect()
-  const searchBottom = searchEl.getBoundingClientRect().bottom
-  const cardTop = cardEl.getBoundingClientRect().top
+  const mapRect = map.getContainer().getBoundingClientRect()
+  const searchBottom = search.getBoundingClientRect().bottom - mapRect.top
+  const cardTop = card.getBoundingClientRect().top - mapRect.top
   if (!(cardTop > searchBottom)) return
 
-  const targetX = cr.width / 2
-  const targetY = (searchBottom + cardTop) / 2 - cr.top
+  const targetY = (searchBottom + cardTop) / 2
+  const targetX = mapRect.width / 2
 
-  const p = map.project([lng, lat])
-  const dx = targetX - p.x
-  const dy = targetY - p.y
+  const projected = map.project([lng, lat])
+  const dx = targetX - projected.x
+  const dy = targetY - projected.y
   if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) return
 
   const centerPx = map.project(map.getCenter())
@@ -119,10 +119,20 @@ export function globalMapZoomBy(delta) {
   const map = getGlobalMapInstance()
   if (!map || typeof map.getZoom !== 'function' || typeof map.easeTo !== 'function') return
   try {
-    const c = map.getCenter()
     const z = map.getZoom() + delta
+    let centerLngLat
+    if (getUserGpsMarker()) {
+      const fast = getCurrentLocationFast()
+      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
+        centerLngLat = [fast.longitude, fast.latitude]
+      }
+    }
+    if (!centerLngLat) {
+      const c = map.getCenter()
+      centerLngLat = [c.lng, c.lat]
+    }
     map.easeTo({
-      center: [c.lng, c.lat],
+      center: centerLngLat,
       zoom: Math.min(20, Math.max(3, z)),
       bearing: map.getBearing(),
       pitch: map.getPitch(),
