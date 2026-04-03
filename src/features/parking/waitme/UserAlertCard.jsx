@@ -7,6 +7,7 @@ import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
 import { renderHeaderStarSlots } from '../../../lib/ratingStars'
 import Plate from '../../profile/components/Plate.jsx'
+import { VehicleIcon } from '../../profile/components/VehicleIcons.jsx'
 import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
@@ -161,6 +162,7 @@ function UserAlertCard({
   if (isEmpty || !alert) {
     return (
       <div
+        data-waitme-parking-gap-card-top
         style={{
           backgroundColor: 'rgba(17, 24, 39, 0.8)',
           backdropFilter: 'blur(4px)',
@@ -263,33 +265,12 @@ function UserAlertCard({
   }
 
   const vehicleIconNode = (
-    <svg
-      viewBox="0 0 48 24"
-      style={{ width: 64, height: 40, display: 'block' }}
-      fill="none"
-      aria-hidden
-    >
-      <path
-        d="M8 16 L10 10 L16 8 L32 8 L38 10 L42 14 L42 18 L8 18 Z"
-        fill={getCarFill(alert?.color)}
-        stroke="white"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M16 9 L18 12 L30 12 L32 9 Z"
-        fill="rgba(255,255,255,0.3)"
-        stroke="white"
-        strokeWidth="0.5"
-      />
-      <circle cx="14" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
-      <circle cx="14" cy="18" r="2" fill="#666" />
-      <circle cx="36" cy="18" r="4" fill="#333" stroke="white" strokeWidth="1" />
-      <circle cx="36" cy="18" r="2" fill="#666" />
-    </svg>
+    <VehicleIcon type={alert?.vehicleType} color={getCarFill(alert?.color)} size="header" />
   )
 
   return (
     <div
+      data-waitme-parking-gap-card-top
       style={{
         backgroundColor: '#111827',
         borderRadius: 12,
@@ -310,15 +291,17 @@ function UserAlertCard({
           {distanceLabel ? (
             <div
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(4px)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                borderRadius: 9999,
+                background: 'rgba(15, 23, 42, 0.9)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(168, 85, 247, 0.5)',
+                borderRadius: 12,
                 padding: '2px 8px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
                 height: 28,
+                boxSizing: 'border-box',
               }}
             >
               <span style={{ color: '#c084fc', display: 'flex' }}>
@@ -383,9 +366,9 @@ function UserAlertCard({
           <img
             src={
               alert?.user_photo ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent((alert?.user_name || 'U').charAt(0))}&background=8b5cf6&color=fff&size=128`
+              `https://ui-avatars.com/api/?name=${encodeURIComponent((alert?.user_name || 'U').split(' ')[0].charAt(0))}&background=8b5cf6&color=fff&size=128`
             }
-            alt={alert?.user_name || 'Usuario'}
+            alt={(alert?.user_name || 'Usuario').split(' ')[0]}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         </div>
@@ -402,8 +385,9 @@ function UserAlertCard({
         >
           <div style={{ display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={nameStyle}>{alert?.user_name || 'Usuario'}</span>
+              <span style={nameStyle}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
+
             <div
               style={{
                 width: 64,
@@ -412,6 +396,7 @@ function UserAlertCard({
                 justifyContent: 'center',
                 alignItems: 'center',
                 flexShrink: 0,
+                transform: 'translateX(-12px)',
               }}
             >
               {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
@@ -421,21 +406,15 @@ function UserAlertCard({
               ))}
             </div>
           </div>
+
           <p
             style={{
               fontSize: 14,
               fontWeight: 500,
               color: '#e5e7eb',
               lineHeight: 1,
-              flex: '0 0 auto',
-              display: 'flex',
-              alignItems: 'center',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              position: 'relative',
-              top: 6,
               margin: 0,
+              marginTop: 4,
             }}
           >
             {carLabel}
@@ -443,6 +422,7 @@ function UserAlertCard({
 
           <div style={{ position: 'relative', marginTop: 4 }}>
             <Plate value={alert?.plate} width={140} />
+
             <div
               style={{
                 position: 'absolute',

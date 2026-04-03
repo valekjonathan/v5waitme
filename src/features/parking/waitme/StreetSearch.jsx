@@ -2,6 +2,7 @@
  * Copia de WaitMe: src/components/StreetSearch.jsx (Input → input nativo, mismos estilos).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getCurrentLocationFast } from '../../../services/location.js'
 import { formatAddress, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
 
@@ -60,8 +61,15 @@ export default function StreetSearch({
     const id = ++requestIdRef.current
 
     try {
+      const fast = getCurrentLocationFast()
+      const proximity =
+        fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)
+          ? { lng: fast.longitude, lat: fast.latitude }
+          : null
+
       const res = await searchSpainStreets(trimmed, {
         signal: controller.signal,
+        proximity,
       })
 
       if (id !== requestIdRef.current) return
@@ -78,7 +86,16 @@ export default function StreetSearch({
 
   useEffect(() => {
     if (import.meta.env.DEV) {
-      console.log('RESULTS_UI:', results.length)
+      const q = (query || '').trim()
+      console.log('RESULTS_UI:', {
+        q,
+        resultsLength: results.length,
+        first3: results.slice(0, 3).map((r) => ({
+          id: r.id,
+          place_name: r.place_name,
+          text: r.text,
+        })),
+      })
     }
   }, [query, results])
 

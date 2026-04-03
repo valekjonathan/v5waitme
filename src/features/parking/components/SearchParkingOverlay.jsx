@@ -1,9 +1,9 @@
 import SearchParkingOverlayImpl from '../waitme/SearchParkingOverlayImpl.jsx'
 
 /**
- * Overlay búsqueda parking — misma estructura que WaitMe SearchMapOverlay (vía waitme/).
- * @param {{ highlightUser?: object, allUsers?: object[] }} props
+ * Overlay mapa búsqueda / aparcado — misma cromática; `mode` solo cambia la tarjeta inferior.
+ * @param {{ mode?: 'search' | 'parked', allUsers?: object[] }} props
  */
-export default function SearchParkingOverlay({ highlightUser, allUsers }) {
-  return <SearchParkingOverlayImpl highlightUser={highlightUser} allUsers={allUsers} />
+export default function SearchParkingOverlay({ mode = 'search', allUsers }) {
+  return <SearchParkingOverlayImpl mode={mode} allUsers={allUsers} />
 }

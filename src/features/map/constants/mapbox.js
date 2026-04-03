@@ -34,7 +34,6 @@ export function reapplyMapVisualLayers(map, mapReadOnly) {
 
 export const DEFAULT_ZOOM = 16.5
 export const DEFAULT_PITCH = 30
-export const ACCURACY_RECENTER_THRESHOLD = 80
 
 export function getMapboxAccessToken(env = import.meta.env) {
   const t = env?.VITE_MAPBOX_ACCESS_TOKEN

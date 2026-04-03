@@ -1,31 +1,27 @@
 /**
- * Equivalente a WaitMe SearchMapOverlay: buscador, filtros, MapScreenPanel, pin, zoom.
+ * Equivalente a WaitMe SearchMapOverlay: buscador, filtros, tarjeta inferior, zoom.
+ * `mode`: 'search' | 'parked' — mismo layout; solo cambia la tarjeta inferior.
+ * Tarjeta: por defecto usuario más cercano; si hay selección en mapa, esa tiene prioridad.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { getCurrentLocationFast, subscribeToLocation } from '../../../services/location.js'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  distanceMeters,
+  getCurrentLocationFast,
+  subscribeToLocation,
+} from '../../../services/location.js'
+import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
 import { flyGlobalMapTo } from '../../map/mapControls.js'
-import MapFilters from './MapFilters.jsx'
-import MapScreenPanel from './MapScreenPanel.jsx'
+import CreateAlertCard from './CreateAlertCard.jsx'
+import MapFilters, { WAITME_DEFAULT_SEARCH_FILTERS } from './MapFilters.jsx'
 import MapZoomControls from './MapZoomControls.jsx'
-import WaitMeCenterPin from './CenterPin.jsx'
 import StreetSearch from './StreetSearch.jsx'
 import UserAlertCard from './UserAlertCard.jsx'
-import { IconSlidersHorizontal } from './icons.jsx'
+import {
+  HideParkingCardToggle,
+  IconSlidersHorizontal,
+  WAITME_GLASS_MAP_CONTROL_36,
+} from './icons.jsx'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
-
-const PIN_HEIGHT = 54
-const HEADER_FALLBACK_PX = 69
-
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLon = ((lon2 - lon1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -35,42 +31,33 @@ function countFiltered(users, filters, userLoc) {
   return users.filter((u) => {
     if (u.priceEUR > filters.maxPrice) return false
     if (hasUser) {
-      const d = haversineKm(ulat, ulng, u.lat, u.lng)
+      const d = distanceMeters(ulat, ulng, u.lat, u.lng) / 1000
       if (d > filters.maxDistance) return false
     }
     return true
   }).length
 }
 
-/** Mismo aspecto que el contenedor del buscador (`StreetSearch.jsx`): panel oscuro + borde morado + blur. */
 const filterBtnStyle = {
-  boxSizing: 'border-box',
-  width: 36,
-  height: 36,
-  borderRadius: 12,
-  border: '1px solid rgba(168, 85, 247, 0.5)',
-  color: '#fff',
-  background: 'rgba(15, 23, 42, 0.9)',
-  backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  padding: 0,
+  ...WAITME_GLASS_MAP_CONTROL_36,
   position: 'absolute',
   top: 140,
   right: 16,
-  zIndex: 999,
+  zIndex: 18,
   pointerEvents: 'auto',
 }
 
-export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] }) {
-  const cardRef = useRef(null)
-  const [pinTop, setPinTop] = useState(null)
+export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [] }) {
+  const isSearch = mode === 'search'
+  const [address, setAddress] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [cardCollapsed, setCardCollapsed] = useState(false)
-  const [filters, setFilters] = useState({ maxPrice: 7, maxMinutes: 25, maxDistance: 1 })
+  const [filters, setFilters] = useState(WAITME_DEFAULT_SEARCH_FILTERS)
+  const [isCardVisible, setIsCardVisible] = useState(true)
+
+  useEffect(() => {
+    setIsCardVisible(true)
+  }, [isSearch])
+  const [selectedUserId, setSelectedUserId] = useState(null)
   const [userLocation, setUserLocation] = useState(() => {
     const fast = getCurrentLocationFast()
     if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
@@ -78,6 +65,10 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
     }
     return null
   })
+
+  useEffect(() => {
+    if (!isSearch) setShowFilters(false)
+  }, [isSearch])
 
   useEffect(() => {
     const fast = getCurrentLocationFast()
@@ -90,45 +81,57 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
     })
   }, [])
 
+  const usersSortedByDistance = useMemo(() => {
+    if (!allUsers?.length) return []
+    const ulat = userLocation?.latitude
+    const ulng = userLocation?.longitude
+    const hasLoc = Number.isFinite(ulat) && Number.isFinite(ulng)
+    if (!hasLoc) {
+      return [...allUsers].sort((a, b) => a.id.localeCompare(b.id))
+    }
+    return [...allUsers]
+      .map((u) => ({
+        ...u,
+        _distanceM: distanceMeters(ulat, ulng, u.lat, u.lng),
+      }))
+      .sort((a, b) => a._distanceM - b._distanceM)
+  }, [allUsers, userLocation])
+
+  const closestUser = usersSortedByDistance[0] ?? null
+
+  const displayUser = useMemo(() => {
+    if (selectedUserId) {
+      const picked = allUsers.find((u) => u.id === selectedUserId)
+      if (picked) return picked
+    }
+    return closestUser
+  }, [selectedUserId, allUsers, closestUser])
+
+  useEffect(() => {
+    if (selectedUserId && !allUsers.some((u) => u.id === selectedUserId)) {
+      setSelectedUserId(null)
+    }
+  }, [allUsers, selectedUserId])
+
+  const onSelectUser = useCallback((userId) => {
+    setSelectedUserId(userId)
+  }, [])
+
   const alert = useMemo(() => {
-    const a = simulatedUserToAlert(highlightUser)
-    if (!a || !highlightUser) return a
-    return { ...a, rating: highlightUser.stars ?? a.rating }
-  }, [highlightUser])
+    const a = simulatedUserToAlert(displayUser)
+    if (!a || !displayUser) return a
+    return { ...a, rating: displayUser.stars ?? a.rating }
+  }, [displayUser])
   const alertsCount = useMemo(
     () => countFiltered(allUsers, filters, userLocation),
     [allUsers, filters, userLocation]
   )
 
-  useEffect(() => {
-    const card = cardRef.current
-    if (!card) return
-
-    const updatePinPosition = () => {
-      const headerEl = document.querySelector('[data-waitme-header]')
-      const panelInner = document.querySelector('[data-map-screen-panel-inner]')
-      const headerBottom = headerEl?.getBoundingClientRect()?.bottom ?? HEADER_FALLBACK_PX
-      const cardRect = (panelInner ?? card)?.getBoundingClientRect?.()
-      if (!cardRect) return
-      const midPoint = (headerBottom + cardRect.top) / 2
-      const pinTopViewport = midPoint - PIN_HEIGHT
-      const pinTopInOverlay = pinTopViewport - headerBottom
-      setPinTop(Math.max(0, pinTopInOverlay))
-    }
-
-    updatePinPosition()
-    const ro = new ResizeObserver(updatePinPosition)
-    ro.observe(card)
-    window.addEventListener('resize', updatePinPosition)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', updatePinPosition)
-    }
-  }, [])
-
   const onStreetSelect = ({ lng, lat }) => {
     flyGlobalMapTo(lng, lat)
   }
+
+  const streetPlaceholder = isSearch ? '¿Dónde quieres aparcar?' : '¿Donde estas aparcado?'
 
   return (
     <div
@@ -154,15 +157,15 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
           alignItems: 'flex-start',
           gap: 8,
           pointerEvents: 'auto',
-          zIndex: 1000,
+          zIndex: 10050,
         }}
       >
         <div style={{ flex: 1, minWidth: 0 }} role="search">
-          <StreetSearch onSelect={onStreetSelect} placeholder="¿Dónde quieres aparcar?" />
+          <StreetSearch onSelect={onStreetSelect} placeholder={streetPlaceholder} />
         </div>
       </div>
 
-      {!showFilters ? (
+      {isSearch && !showFilters ? (
         <button
           type="button"
           aria-label="Filtros"
@@ -173,7 +176,7 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
         </button>
       ) : null}
 
-      {showFilters ? (
+      {isSearch && showFilters ? (
         <>
           <div
             role="presentation"
@@ -181,7 +184,7 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
             style={{
               position: 'fixed',
               inset: 0,
-              zIndex: 999,
+              zIndex: 199999,
               backgroundColor: 'rgba(0, 0, 0, 0.4)',
               pointerEvents: 'auto',
             }}
@@ -195,78 +198,68 @@ export default function SearchParkingOverlayImpl({ highlightUser, allUsers = [] 
         </>
       ) : null}
 
+      {isSearch ? (
+        <SimulatedCarsOnMap
+          enabled
+          users={allUsers}
+          onSelectUser={onSelectUser}
+          highlightUserId={selectedUserId ?? displayUser?.id}
+        />
+      ) : null}
+
       <div
-        ref={cardRef}
         style={{
-          pointerEvents: 'none',
           position: 'relative',
           overflow: 'visible',
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
         }}
       >
-        <button
-          type="button"
-          aria-label={cardCollapsed ? 'Mostrar tarjeta' : 'Ocultar tarjeta'}
-          aria-expanded={!cardCollapsed}
-          onClick={() => setCardCollapsed((v) => !v)}
-          style={{
-            position: 'absolute',
-            top: -22,
-            right: 14,
-            width: 36,
-            height: 36,
-            borderRadius: 10,
-            background: '#111827',
-            border: '1.5px solid #8B5CF6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 80,
-            cursor: 'pointer',
-            pointerEvents: 'auto',
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.22)',
-            padding: 0,
-            fontFamily: 'inherit',
-          }}
-        >
-          <span
-            style={{
-              color: '#fff',
-              fontSize: 14,
-              lineHeight: '14px',
-              fontWeight: 700,
-            }}
-          >
-            {cardCollapsed ? '↑' : '↓'}
-          </span>
-        </button>
-        <MapScreenPanel measureLabel="navigate" cardShiftUp={7}>
-          <div style={{ pointerEvents: 'auto' }}>
-            <UserAlertCard
-              alert={alert}
-              isEmpty={!highlightUser}
-              userLocation={userLocation}
-              collapsed={cardCollapsed}
-            />
-          </div>
-        </MapScreenPanel>
-      </div>
-
-      {pinTop != null && (
         <div
           style={{
             position: 'absolute',
-            left: 0,
-            right: 0,
-            zIndex: 10,
+            bottom: isSearch ? 88 : 80,
+            left: 16,
+            right: 16,
+            zIndex: 9999,
             pointerEvents: 'none',
-            top: 0,
           }}
         >
-          <WaitMeCenterPin top={pinTop} />
+          <div
+            style={{
+              transform: isCardVisible ? 'translateY(0)' : 'translateY(calc(100% - 44px))',
+              transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+              pointerEvents: 'auto',
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <HideParkingCardToggle
+                expanded={isCardVisible}
+                onToggle={() => setIsCardVisible((v) => !v)}
+              />
+              {isSearch ? (
+                <UserAlertCard
+                  alert={alert}
+                  isEmpty={!displayUser}
+                  userLocation={userLocation}
+                  collapsed={false}
+                />
+              ) : (
+                <CreateAlertCard
+                  address={address}
+                  onAddressChange={setAddress}
+                  onRecenter={() => {}}
+                  onCreateAlert={() => {}}
+                  isLoading={false}
+                />
+              )}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      <MapZoomControls measureLabel="navigate" />
+      <MapZoomControls measureLabel={isSearch ? 'navigate' : 'create'} />
     </div>
   )
 }

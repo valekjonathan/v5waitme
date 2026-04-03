@@ -54,13 +54,18 @@ export async function searchSpainStreets(query, opts = {}) {
     return []
   }
 
+  const featureCount = Array.isArray(data.features) ? data.features.length : 0
+  const sample = Array.isArray(data.features) ? data.features.slice(0, 3) : []
+
   if (import.meta.env.DEV) {
     const safeUrl = url.replace(/access_token=[^&]+/i, 'access_token=***')
     console.log('MAPBOX:', {
       query: q,
       url: safeUrl,
-      count: data.features?.length,
-      sample: data.features?.slice(0, 3),
+      status: res.status,
+      ok: res.ok,
+      featureCount,
+      sample,
     })
   }
 
@@ -70,6 +75,7 @@ export async function searchSpainStreets(query, opts = {}) {
 
 /**
  * Formato único: `C/ Muérdago, 9, Oviedo` (nombre de vía sin prefijo duplicado).
+ * No devuelve vacío si el feature trae `place_name`, `text` o contexto útil.
  */
 export function formatAddress(result) {
   if (!result || typeof result !== 'object') return ''
@@ -77,10 +83,24 @@ export function formatAddress(result) {
   const street = coreStreetName(raw)
   const number = extractStreetNumber(result)
   const city = extractCityFromContext(result)
+
   if (street && number && city) return `C/ ${street}, ${number}, ${city}`
+  if (street && number) return `C/ ${street}, ${number}`
   if (street && city) return `C/ ${street}, ${city}`
-  if (typeof result.place_name === 'string' && result.place_name.trim())
-    return result.place_name.trim()
+  if (street) return `C/ ${street}`
+
+  const pn = typeof result.place_name === 'string' ? result.place_name.trim() : ''
+  if (pn) return pn
+
+  if (raw && city) return `${raw}, ${city}`
+  if (raw) return raw
+
+  const ctx = Array.isArray(result.context) ? result.context : []
+  const ctxParts = ctx
+    .map((c) => (c && typeof c.text === 'string' ? c.text.trim() : ''))
+    .filter(Boolean)
+  if (ctxParts.length) return ctxParts.join(', ')
+
   return ''
 }
 
@@ -100,9 +120,18 @@ export function formatSelectedAddressFromMapboxFeature(f) {
 }
 
 function extractStreetNumber(f) {
+  const props = f && typeof f.properties === 'object' && f.properties !== null ? f.properties : {}
+  const numStr = (v) =>
+    typeof v === 'number' && Number.isFinite(v) ? String(v) : typeof v === 'string' ? v.trim() : ''
   const a =
     (typeof f.address === 'string' && f.address.trim()) ||
-    (f.properties && typeof f.properties.address === 'string' && f.properties.address.trim()) ||
+    numStr(f.address) ||
+    (typeof props.address === 'string' && props.address.trim()) ||
+    numStr(props.address) ||
+    (typeof props.address_number === 'string' && props.address_number.trim()) ||
+    numStr(props.address_number) ||
+    (typeof props.housenumber === 'string' && props.housenumber.trim()) ||
+    (typeof props.house_number === 'string' && props.house_number.trim()) ||
     ''
   return a || ''
 }
@@ -111,7 +140,8 @@ function extractCityFromContext(f) {
   const ctx = Array.isArray(f.context) ? f.context : []
   const place = ctx.find((c) => (c.id || '').startsWith('place.'))
   const locality = ctx.find((c) => (c.id || '').startsWith('locality.'))
-  return (place?.text || locality?.text || '').trim() || 'Oviedo'
+  const region = ctx.find((c) => (c.id || '').startsWith('region.'))
+  return (place?.text || locality?.text || '').trim() || (region?.text || '').trim() || ''
 }
 
 /**

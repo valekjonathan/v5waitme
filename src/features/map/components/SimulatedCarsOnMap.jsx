@@ -1,43 +1,81 @@
 import mapboxgl from 'mapbox-gl'
 import { useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
+import { VehicleIcon } from '../../profile/components/VehicleIcons.jsx'
+import { getCarFill, normalizeVehicleTypeForMapIcon } from '../../parking/waitme/carUtils.js'
 import { getGlobalMapInstance } from '../mapInstance.js'
-import CarIconHome from '../../../ui/icons/CarIconHome'
 
-function CarMarkerContent({ priceEUR }) {
+function CarMarkerContent({ priceEUR, vehicleType, colorName, selected, onPick }) {
+  const fill = getCarFill(colorName)
   return (
-    <div
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onPick?.()
+      }}
       style={{
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        pointerEvents: 'none',
+        justifyContent: 'flex-start',
+        boxSizing: 'border-box',
+        padding: 4,
+        margin: 0,
+        border: '2px solid',
+        borderColor: selected ? 'rgba(168, 85, 247, 0.6)' : 'transparent',
+        background: selected ? 'rgba(17, 24, 39, 0.85)' : 'transparent',
+        cursor: 'pointer',
         userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        borderRadius: 12,
+        transition: 'background 180ms ease, border-color 180ms ease, border-width 180ms ease',
       }}
+      aria-label="Ver plaza en tarjeta"
     >
       <div
         style={{
-          fontSize: 10,
-          fontWeight: 800,
-          color: '#fff',
-          textShadow: '0 1px 3px rgba(0,0,0,0.85)',
-          marginBottom: 1,
-          letterSpacing: 0.2,
+          position: 'relative',
+          width: 64,
+          height: 40,
+          overflow: 'hidden',
+          pointerEvents: 'none',
         }}
       >
-        {priceEUR}€
+        <VehicleIcon
+          type={normalizeVehicleTypeForMapIcon(vehicleType)}
+          color={fill}
+          size="header"
+        />
+        <span
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '56%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: 8,
+            fontWeight: 800,
+            color: '#f5f3ff',
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            textShadow: '0 0 2px rgba(0, 0, 0, 1), 0 1px 3px rgba(0, 0, 0, 0.95)',
+            pointerEvents: 'none',
+            maxWidth: 52,
+            textAlign: 'center',
+          }}
+        >
+          {priceEUR} €
+        </span>
       </div>
-      <div style={{ transform: 'scale(0.45)', transformOrigin: 'center bottom' }}>
-        <CarIconHome />
-      </div>
-    </div>
+    </button>
   )
 }
 
 /**
- * Coches simulados como HTML Markers (mismo icono visual que Home/CTA, escalado).
+ * Coches simulados como HTML Markers (`VehicleIcon` como tarjeta; precio entre ruedas, dentro del icono).
  */
-export default function SimulatedCarsOnMap({ enabled, users }) {
+export default function SimulatedCarsOnMap({ enabled, users, onSelectUser, highlightUserId }) {
   useEffect(() => {
     if (!enabled || !users?.length) {
       return undefined
@@ -72,9 +110,18 @@ export default function SimulatedCarsOnMap({ enabled, users }) {
         const el = document.createElement('div')
         el.setAttribute('data-sim-car', u.id)
         const root = createRoot(el)
-        root.render(<CarMarkerContent priceEUR={u.priceEUR} />)
+        const selected = highlightUserId != null && u.id === highlightUserId
+        root.render(
+          <CarMarkerContent
+            priceEUR={u.priceEUR}
+            vehicleType={u.vehicleType}
+            colorName={u.colorName}
+            selected={selected}
+            onPick={() => onSelectUser?.(u.id)}
+          />
+        )
         try {
-          const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+          const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([u.lng, u.lat])
             .addTo(map)
           entries.push({ marker, root })
@@ -90,7 +137,8 @@ export default function SimulatedCarsOnMap({ enabled, users }) {
 
     const onStyle = () => rebuild()
 
-    const poll = window.setInterval(() => {
+    let poll = null
+    const tryAttach = () => {
       const map = getGlobalMapInstance()
       if (map?.isStyleLoaded?.()) {
         if (styleMap !== map) {
@@ -105,13 +153,27 @@ export default function SimulatedCarsOnMap({ enabled, users }) {
           map.on('style.load', onStyle)
         }
         rebuild()
-        window.clearInterval(poll)
+        if (poll != null) {
+          window.clearInterval(poll)
+          poll = null
+        }
+        return true
       }
-    }, 80)
+      return false
+    }
+
+    if (!tryAttach()) {
+      poll = window.setInterval(() => {
+        if (tryAttach() && poll != null) {
+          window.clearInterval(poll)
+          poll = null
+        }
+      }, 80)
+    }
 
     return () => {
       cleared = true
-      window.clearInterval(poll)
+      if (poll != null) window.clearInterval(poll)
       if (styleMap) {
         try {
           styleMap.off('style.load', onStyle)
@@ -121,7 +183,7 @@ export default function SimulatedCarsOnMap({ enabled, users }) {
       }
       destroyAll()
     }
-  }, [enabled, users])
+  }, [enabled, users, onSelectUser, highlightUserId])
 
   return null
 }

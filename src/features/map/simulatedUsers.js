@@ -1,4 +1,8 @@
+import { vehicleTypeForSimulatedIndex } from '../parking/waitme/carUtils.js'
 import { OVIEDO_LAT, OVIEDO_LNG } from './constants/mapbox.js'
+
+/** Nombres de color coherentes con `getCarFill` / tarjetas. */
+const SIM_COLOR_NAMES = ['rojo', 'azul', 'negro', 'blanco', 'gris', 'verde', 'naranja']
 
 function mulberry32(seed) {
   return function next() {
@@ -250,6 +254,10 @@ function buildOne(index, lat, lng, rng) {
     stars,
     lat,
     lng,
+    vehicleType: vehicleTypeForSimulatedIndex(index),
+    colorName: SIM_COLOR_NAMES[index % SIM_COLOR_NAMES.length],
+    /** Mix para UI: teléfono disponible o no (tarjeta). */
+    hasPhoneActive: index % 3 !== 1,
   }
 }
 

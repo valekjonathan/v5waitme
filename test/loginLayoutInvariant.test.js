@@ -52,9 +52,10 @@ test('ButtonBase: icono y texto comparten el mismo contenedor directo', () => {
   )
 })
 
-test('MainLayout: hero WaitMe!->subtítulo + pin; HomePage delega en MainLayout', () => {
+test('MainLayout: hero WaitMe!->subtítulo; pin único vía Map (MapViewportCenterPin); HomePage delega en MainLayout', () => {
   const main = read('src/features/shared/components/MainLayout.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
+  const map = read('src/features/map/components/Map.jsx')
 
   assert.match(home, /import\s+MainLayout\s+from\s+'.*MainLayout'/i)
   assert.match(home, /<MainLayout\b/)
@@ -67,9 +68,10 @@ test('MainLayout: hero WaitMe!->subtítulo + pin; HomePage delega en MainLayout'
   )
   assert.match(
     main,
-    /<p\s+style=\{heroSubtitleStyle\}>[\s\S]*Aparca[\s\S]*donde\s+te[\s\S]*<span\s+style=\{meTextStyle\}>avisen!<\/span>[\s\S]*<\/p>/
+    /<p\s+data-home-subtitle\s+style=\{heroSubtitleStyle\}>[\s\S]*Aparca[\s\S]*donde\s+te[\s\S]*<span\s+style=\{meTextStyle\}>avisen!<\/span>[\s\S]*<\/p>/
   )
-  assert.match(main, /<CenterPin\s*\/>/)
+  assert.match(map, /MapViewportCenterPin/)
+  assert.equal(/<CenterPin\b/.test(main), false, 'MainLayout no debe renderizar pin fuera del mapa')
   assert.match(main, /\{hasCta \?/)
 })
 

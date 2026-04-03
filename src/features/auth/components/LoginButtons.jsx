@@ -187,7 +187,7 @@ function oauthPointerHandlers(setHover, setPressed, clearPress) {
   }
 }
 
-function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label }) {
+function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label, ...rest }) {
   return (
     <Button
       type="button"
@@ -196,6 +196,7 @@ function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label 
       onClick={onClick}
       {...handlers}
       style={style}
+      {...rest}
     >
       <ButtonBase icon={icon} label={<span style={oauthLabel}>{label}</span>} />
     </Button>
@@ -297,6 +298,7 @@ export default function LoginButtons() {
         disabled={isLoading}
         onClick={onGoogle}
         handlers={googleHandlers}
+        data-home-google-button=""
         style={googleStyle}
         icon={
           <IconSlot {...googleIconStyle}>

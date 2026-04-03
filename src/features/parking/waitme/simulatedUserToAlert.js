@@ -15,13 +15,14 @@ export function simulatedUserToAlert(u) {
     latitude: u.lat,
     longitude: u.lng,
     user_photo: u.avatarUrl,
-    color: 'gris',
+    color: u.colorName || 'gris',
+    vehicleType: u.vehicleType,
     address: u.address || 'C/ Uría, 1',
     available_in_minutes: avail,
     wait_until: new Date(now + avail * 60 * 1000).toISOString(),
     created_date: now,
-    phone: null,
-    allow_phone_calls: false,
+    phone: u.hasPhoneActive ? '+34600000000' : null,
+    allow_phone_calls: Boolean(u.hasPhoneActive),
     isIncomingRequest: false,
   }
 }

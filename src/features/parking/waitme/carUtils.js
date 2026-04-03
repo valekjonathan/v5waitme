@@ -42,3 +42,21 @@ export function formatPlate(plate) {
   if (!p) return '0000 XXX'
   return `${p.slice(0, 4)} ${p.slice(4)}`.trim()
 }
+
+/**
+ * Solo `normal` | `suv` | `van` para `VehicleIcon` en mapas (perfil usa `car` → normal).
+ */
+export function normalizeVehicleTypeForMapIcon(t) {
+  if (t === 'suv') return 'suv'
+  if (t === 'van' || t === 'furgoneta') return 'van'
+  if (t === 'car' || t === 'normal' || t === 'sedan') return 'normal'
+  return 'normal'
+}
+
+/**
+ * Tipos simulados en mapa: solo coche normal, SUV o furgoneta (reproducible).
+ */
+export function vehicleTypeForSimulatedIndex(index) {
+  const cycle = ['normal', 'suv', 'van', 'suv', 'normal', 'van', 'suv', 'normal', 'van', 'suv']
+  return cycle[((index % cycle.length) + cycle.length) % cycle.length]
+}

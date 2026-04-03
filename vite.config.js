@@ -20,12 +20,13 @@ export default defineConfig(({ mode, command }) => {
   }
 
   const sentryAuth = String(process.env.SENTRY_AUTH_TOKEN || '').trim()
-  const sentryOrg = String(process.env.VITE_SENTRY_ORG || process.env.SENTRY_ORG || '').trim()
+  const sentryOrg = String(process.env.SENTRY_ORG || process.env.VITE_SENTRY_ORG || '').trim()
   const sentryProject = String(
-    process.env.VITE_SENTRY_PROJECT || process.env.SENTRY_PROJECT || ''
+    process.env.SENTRY_PROJECT || process.env.VITE_SENTRY_PROJECT || ''
   ).trim()
+  const sentryUploadReady = Boolean(sentryAuth && sentryOrg && sentryProject)
   const sentryPlugins =
-    command === 'build' && sentryAuth && sentryOrg && sentryProject
+    command === 'build' && sentryUploadReady
       ? [
           sentryVitePlugin({
             org: sentryOrg,
@@ -34,6 +35,11 @@ export default defineConfig(({ mode, command }) => {
           }),
         ]
       : []
+  if (command === 'build' && !sentryUploadReady) {
+    console.warn(
+      '[vite] Build sin @sentry/vite-plugin: definen SENTRY_AUTH_TOKEN, SENTRY_ORG|VITE_SENTRY_ORG, SENTRY_PROJECT|VITE_SENTRY_PROJECT para subir sourcemaps.'
+    )
+  }
 
   return {
     plugins: [react(), ...sentryPlugins],

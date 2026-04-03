@@ -4,8 +4,8 @@ import {
   MAP_STYLE_CYCLE,
   reapplyMapVisualLayers,
 } from './constants/mapbox.js'
-import { getMapReadOnlySession } from './mapSession.js'
-import { getGlobalMapInstance, getUserGpsMarker } from './mapInstance.js'
+import { getMapFollowUserGps, getMapReadOnlySession } from './mapSession.js'
+import { getGlobalMapInstance } from './mapInstance.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
 
 let mapStyleCycleIndex = 0
@@ -23,14 +23,7 @@ export function isWaitmeParkingLayoutReady() {
   return cardTop > searchBottom
 }
 
-/**
- * Punto geográfico (lng/lat) → project/unproject → centro del hueco buscador–tarjeta.
- * Salto de cámara + alineación (viewport SEARCH o marcador PARKED).
- * @param {import('mapbox-gl').Map} map
- * @param {number} lng
- * @param {number} lat
- * @param {{ zoom?: number, pitch?: number, bearing?: number }} [camera]
- */
+/** Salto de cámara + misma alineación que `alignParkedGpsMarkerToGap` (un solo núcleo). */
 export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
   if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
   try {
@@ -46,6 +39,7 @@ export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
   }
 }
 
+/** Única API de alineación al hueco: (lng,lat) bajo el pin fijo (contenedor Mapbox). */
 export function alignParkedGpsMarkerToGap(map, lngLat) {
   if (!map?.project || !map?.unproject || !lngLat) return
   const lng = lngLat.lng
@@ -64,18 +58,17 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   const targetY = (searchBottom + cardTop) / 2
   const targetX = mapRect.width / 2
 
-  const projected = map.project([lng, lat])
-  const dx = targetX - projected.x
-  const dy = targetY - projected.y
+  const point = map.project([lng, lat])
+  const centerPx = map.project(map.getCenter())
+  const dx = targetX - point.x
+  const dy = targetY - point.y
   if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) return
 
-  const centerPx = map.project(map.getCenter())
-  const newCenter = map.unproject([centerPx.x - dx, centerPx.y - dy])
+  const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
+  const newCenter = map.unproject(newCenterPx)
+
   map.easeTo({
     center: newCenter,
-    zoom: map.getZoom(),
-    bearing: map.getBearing(),
-    pitch: map.getPitch(),
     duration: 0,
     essential: true,
   })
@@ -121,7 +114,9 @@ export function globalMapZoomBy(delta) {
   try {
     const z = map.getZoom() + delta
     let centerLngLat
-    if (getUserGpsMarker()) {
+    const layout = isWaitmeParkingLayoutReady()
+    const follow = getMapFollowUserGps()
+    if (layout && follow) {
       const fast = getCurrentLocationFast()
       if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
         centerLngLat = [fast.longitude, fast.latitude]
@@ -137,9 +132,9 @@ export function globalMapZoomBy(delta) {
       bearing: map.getBearing(),
       pitch: map.getPitch(),
       duration: 180,
-      ...(isWaitmeParkingLayoutReady() ? {} : getWaitmeMapCameraOptions()),
+      ...(layout ? {} : getWaitmeMapCameraOptions()),
     })
-    if (isWaitmeParkingLayoutReady() && getUserGpsMarker()) {
+    if (layout && follow) {
       const fast = getCurrentLocationFast()
       if (fast) {
         map.once('moveend', () =>
@@ -181,7 +176,8 @@ export function flyGlobalMapTo(lng, lat) {
         essential: true,
       })
       map.once('moveend', () => {
-        if (getUserGpsMarker()) {
+        const follow = getMapFollowUserGps()
+        if (follow) {
           const fast = getCurrentLocationFast()
           if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
             alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })

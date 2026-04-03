@@ -3,8 +3,8 @@ import { useAppScreen } from '../../lib/AppScreenContext'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
-import SimulatedCarsOnMap from '../map/components/SimulatedCarsOnMap'
-import { useClosestSimulatedUser, useSimulatedParkingUsers } from '../map/useSimulatedParkingUsers'
+import { APP_SCREEN_PARK_HERE } from '../../lib/appScreenState.js'
+import { useSimulatedParkingUsers } from '../map/useSimulatedParkingUsers'
 import SearchParkingOverlay from './components/SearchParkingOverlay.jsx'
 
 const Map = lazy(() => import('../map/components/Map.jsx'))
@@ -15,10 +15,13 @@ const fallback = {
   backgroundColor: colors.background,
 }
 
-export default function SearchParkingPage() {
-  const { mapFocusGeneration } = useAppScreen()
+/**
+ * Una sola pantalla de mapa para búsqueda y “aparcado”: el <Map /> no se desmonta al cambiar de modo.
+ */
+export default function MapParkingPage() {
+  const { screen, mapFocusGeneration } = useAppScreen()
+  const mode = screen === APP_SCREEN_PARK_HERE ? 'parked' : 'search'
   const users = useSimulatedParkingUsers()
-  const closestUser = useClosestSimulatedUser(users)
 
   return (
     <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED} mainOverflow="hidden">
@@ -31,10 +34,15 @@ export default function SearchParkingPage() {
         }}
       >
         <Suspense fallback={<div style={fallback} />}>
-          <Map readOnly={false} mapFocusGeneration={mapFocusGeneration} />
+          <Map
+            readOnly={false}
+            mapFocusGeneration={mapFocusGeneration}
+            parkingBandPinAdjust
+            parkingPinMode={mode}
+            followUserGps={mode === 'parked'}
+          />
         </Suspense>
-        <SimulatedCarsOnMap enabled users={users} />
-        <SearchParkingOverlay highlightUser={closestUser} allUsers={users} />
+        <SearchParkingOverlay mode={mode} allUsers={users} />
       </div>
     </ScreenShell>
   )

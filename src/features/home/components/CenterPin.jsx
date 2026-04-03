@@ -120,7 +120,10 @@ export default function CenterPin() {
           }}
         />
       </div>
-      <div style={{ height: 36, width: 2, background: colors.primary, ...stemShadow }} />
+      <div
+        data-waitme-pin-tip
+        style={{ height: 36, width: 2, background: colors.primary, ...stemShadow }}
+      />
     </div>
   )
 }

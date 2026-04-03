@@ -1,7 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import CenterPin from '../../home/components/CenterPin'
-import MapViewportCenterPin from '../../map/components/MapViewportCenterPin'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import logo from '../../../assets/logo.png'
@@ -68,7 +66,9 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
+/** Reserva el mismo hueco vertical que el pin decorativo del hero (padding lg + 18+36 en flujo). */
 const heroPinWrapStyle = { display: 'flex', justifyContent: 'center', padding: `${s.lg}px 0` }
+const heroPinSpacerStyle = { width: 18, height: 54, flexShrink: 0 }
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {
   margin: 0,
@@ -99,6 +99,8 @@ const heroLogoBoxStyle = {
   justifyContent: 'center',
   borderRadius: radius.logo,
 }
+/** No altera el gap del Section; permite medir `[data-home-cta-region] button` en Home. */
+const homeCtaRegionWrapStyle = { display: 'contents' }
 
 function withLoginEntrance(baseStyle, isLoginLayout, visible) {
   if (!isLoginLayout) return baseStyle
@@ -115,7 +117,7 @@ function overlayLayerStyle(background) {
 }
 
 /**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, pin).
+ * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título). Pin en Map.jsx.
  * `loginEntrance`: solo Login; Home puede tener children (botones) sin animación escalonada.
  * @param {object} props
  * @param {import('react').ReactNode} [props.children]
@@ -160,7 +162,6 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
           <Map readOnly onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
         </Suspense>
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
-        <MapViewportCenterPin />
       </div>
 
       <div style={overlayLayerStyle(overlayBackground)} />
@@ -187,11 +188,11 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
               <h1 style={heroTitleStyle}>
                 Wait<span style={meTextStyle}>Me!</span>
               </h1>
-              <p style={heroSubtitleStyle}>
+              <p data-home-subtitle style={heroSubtitleStyle}>
                 Aparca donde te <span style={meTextStyle}>avisen!</span>
               </p>
-              <div style={heroPinWrapStyle}>
-                <CenterPin />
+              <div style={heroPinWrapStyle} aria-hidden>
+                <div style={heroPinSpacerStyle} />
               </div>
             </Section>
             {hasCta ? (
@@ -199,7 +200,9 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
                 gap={s.md}
                 style={withLoginEntrance(ctaSectionBaseStyle, loginEntrance, loginCtaIn)}
               >
-                {children}
+                <div data-home-cta-region style={homeCtaRegionWrapStyle}>
+                  {children}
+                </div>
               </Section>
             ) : null}
           </div>

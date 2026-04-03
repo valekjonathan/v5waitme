@@ -7,7 +7,7 @@ import { radius } from '../../../design/radius'
 import { reverseGeocodeMapbox } from '../../../services/geocodingSpain.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../../services/location.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
-import { IconClock, IconEuro, IconMapPin } from './icons.jsx'
+import { IconClock, IconEuro, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 const rangeClass = 'waitme-create-alert-range'
 
@@ -106,9 +106,9 @@ export default function CreateAlertCard({
       if (!map?.on || moveEndHandlerRef.current) return
       const handler = () => {
         try {
-          const fast = getCurrentLocationFast()
-          if (!fast || !Number.isFinite(fast.latitude) || !Number.isFinite(fast.longitude)) return
-          scheduleReverse(fast.latitude, fast.longitude)
+          const c = map.getCenter?.()
+          if (!c || !Number.isFinite(c.lat) || !Number.isFinite(c.lng)) return
+          scheduleReverse(c.lat, c.lng)
         } catch {
           /* */
         }
@@ -278,17 +278,7 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              color: '#c084fc',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 22,
-              height: 22,
-            }}
-          >
+          <span style={WAITME_ROW_ICON_SLOT}>
             <IconClock size={16} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
@@ -320,17 +310,7 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              color: '#c084fc',
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 22,
-              height: 22,
-            }}
-          >
+          <span style={WAITME_ROW_ICON_SLOT}>
             <IconEuro size={16} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>

@@ -198,7 +198,22 @@ export function IconX({ className = '', size = 20 }) {
   )
 }
 
-function IconStroke24({ className, size, strokeWidth, children }) {
+/** Mismo slot que reloj y € en CreateAlertCard / MapFilters (22×22, alineado). */
+export const WAITME_ROW_ICON_SLOT = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 22,
+  height: 22,
+  color: '#c084fc',
+  flexShrink: 0,
+}
+
+/**
+ * Shell SVG único compartido por IconClock e IconEuro: viewBox 24×24, stroke 2, caps redondos.
+ * El slot de fila es WAITME_ROW_ICON_SLOT (22×22); el trazo va a size 16 dentro del viewBox.
+ */
+function WaitmeIconStroke24({ className, size = 16, strokeWidth = 2, children }) {
   return (
     <svg
       className={className}
@@ -219,18 +234,18 @@ function IconStroke24({ className, size, strokeWidth, children }) {
 
 export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
   return (
-    <IconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
+    <WaitmeIconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
-    </IconStroke24>
+    </WaitmeIconStroke24>
   )
 }
 
 export function IconEuro({ className = '', size = 16, strokeWidth = 2 }) {
   return (
-    <IconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
+    <WaitmeIconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
       <path d="M14.25 7.756a4.5 4.5 0 1 0 0 8.488M7.5 10.5h5.25m-5.25 3h5.25" />
-    </IconStroke24>
+    </WaitmeIconStroke24>
   )
 }
 

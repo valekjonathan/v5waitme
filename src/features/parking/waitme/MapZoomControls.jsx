@@ -16,21 +16,27 @@ const locationIcon = (
 )
 
 function zoomIn(map) {
-  if (!map) return
-  if (typeof map.zoomIn === 'function') {
-    map.zoomIn()
-  } else if (typeof map.easeTo === 'function' && typeof map.getZoom === 'function') {
-    map.easeTo({ zoom: map.getZoom() + 1 })
-  }
+  if (!map || typeof map.easeTo !== 'function' || typeof map.getZoom !== 'function') return
+  const c = map.getCenter()
+  map.easeTo({
+    center: [c.lng, c.lat],
+    zoom: Math.min(20, map.getZoom() + 1),
+    bearing: map.getBearing(),
+    pitch: map.getPitch(),
+    duration: 180,
+  })
 }
 
 function zoomOut(map) {
-  if (!map) return
-  if (typeof map.zoomOut === 'function') {
-    map.zoomOut()
-  } else if (typeof map.easeTo === 'function' && typeof map.getZoom === 'function') {
-    map.easeTo({ zoom: map.getZoom() - 1 })
-  }
+  if (!map || typeof map.easeTo !== 'function' || typeof map.getZoom !== 'function') return
+  const c = map.getCenter()
+  map.easeTo({
+    center: [c.lng, c.lat],
+    zoom: Math.max(3, map.getZoom() - 1),
+    bearing: map.getBearing(),
+    pitch: map.getPitch(),
+    duration: 180,
+  })
 }
 
 const STYLE_URL = {
@@ -64,7 +70,7 @@ const zoomControlsWrapStyle = {
   display: 'flex',
   flexDirection: 'column',
   gap: 10,
-  zIndex: 20,
+  zIndex: 15,
   pointerEvents: 'auto',
 }
 

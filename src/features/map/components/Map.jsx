@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createRoot } from 'react-dom/client'
-import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
   createMap,
@@ -12,19 +10,18 @@ import {
   reapplyMapVisualLayers,
 } from '../constants/mapbox.js'
 import { setMapFollowUserGps, setMapReadOnlySession } from '../mapSession.js'
-import {
-  getGlobalMapInstance,
-  getUserGpsMarker,
-  setGlobalMapInstance,
-  setUserGpsMarker,
-} from '../mapInstance.js'
+import { getGlobalMapInstance, setGlobalMapInstance } from '../mapInstance.js'
 import {
   getCurrentLocationFast,
   getCurrentPosition,
   subscribeToLocation,
 } from '../../../services/location.js'
-import { alignParkedGpsMarkerToGap, applyWaitmeCameraJumpOrEase } from '../mapControls.js'
-import CenterPin from '../../home/components/CenterPin.jsx'
+import {
+  alignParkedGpsMarkerToGap,
+  applyWaitmeCameraJumpOrEase,
+  isWaitmeParkingLayoutReady,
+  jumpMapToLngLatAndAlignToGap,
+} from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 
 /** Mismos selectores que `mapControls.js` (hueco buscador–tarjeta). */
@@ -157,12 +154,6 @@ export default function Map({
       }
     }
 
-    if (parkingPinMode !== 'search') {
-      setParkingPinTopPx(null)
-      delete window.__WAITME_PIN_OFFSET_Y__
-      return undefined
-    }
-
     const observedParking = new globalThis.Map()
 
     const pruneParkingObservers = () => {
@@ -179,16 +170,25 @@ export default function Map({
         applyWaitmePinAndParkingCamera(pinRef.current, mapShellRef.current, true)
 
         let nextPinTop = null
-        if (mapShellRef.current) {
-          const shellRect = mapShellRef.current.getBoundingClientRect()
-          const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
-          const cardEl = document.querySelector(GAP_CARD_TOP)
-          if (searchEl && cardEl) {
-            const searchBottom = searchEl.getBoundingClientRect().bottom
-            const cardTop = cardEl.getBoundingClientRect().top
-            if (cardTop > searchBottom) {
-              nextPinTop = (searchBottom + cardTop) / 2 - shellRect.top
-            }
+        const shellEl = mapShellRef.current
+        const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
+        const cardEl = document.querySelector(GAP_CARD_TOP)
+        const mapInst = getGlobalMapInstance()
+        const mapRect = mapInst?.getContainer?.()?.getBoundingClientRect()
+        if (shellEl && mapRect && searchEl && cardEl) {
+          const sb = searchEl.getBoundingClientRect().bottom - mapRect.top
+          const ct = cardEl.getBoundingClientRect().top - mapRect.top
+          if (ct > sb) {
+            const shellRect = shellEl.getBoundingClientRect()
+            const targetY = (sb + ct) / 2
+            nextPinTop = mapRect.top - shellRect.top + targetY
+          }
+        } else if (shellEl && searchEl && cardEl) {
+          const shellRect = shellEl.getBoundingClientRect()
+          const searchBottom = searchEl.getBoundingClientRect().bottom
+          const cardTop = cardEl.getBoundingClientRect().top
+          if (cardTop > searchBottom) {
+            nextPinTop = (searchBottom + cardTop) / 2 - shellRect.top
           }
         }
         setParkingPinTopPx((prev) => {
@@ -225,115 +225,56 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode])
 
-  /** Parking parked: marcador GPS (coordenadas reales). */
+  /**
+   * Search: snap inicial GPS → hueco; luego verdad = map.getCenter().
+   * Parked: alinear cámara a GPS bajo el pin fijo (mismo hueco).
+   */
   useEffect(() => {
-    if (
-      !parkingBandPinAdjust ||
-      parkingPinMode !== 'parked' ||
-      unavailable ||
-      import.meta.env?.MODE === 'test'
-    ) {
-      setUserGpsMarker(null)
-      return undefined
-    }
-
+    if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
+    if (parkingPinMode !== 'search' && parkingPinMode !== 'parked') return
     let cancelled = false
-    let marker = null
-    let root = null
-    let pollId = null
+    let attempts = 0
+    const maxAttempts = 100
 
-    const cleanup = () => {
-      setUserGpsMarker(null)
-      if (marker) {
-        try {
-          marker.remove()
-        } catch {
-          /* */
-        }
-        marker = null
-      }
-      if (root) {
-        try {
-          root.unmount()
-        } catch {
-          /* */
-        }
-        root = null
-      }
-    }
-
-    const attach = () => {
-      if (cancelled) return false
+    const run = () => {
+      if (cancelled) return
       const map = getGlobalMapInstance()
-      if (!map?.isStyleLoaded?.()) return false
-      if (getUserGpsMarker()) return true
-
-      const el = document.createElement('div')
-      el.setAttribute('data-waitme-user-gps-marker', 'true')
-      root = createRoot(el)
-      root.render(<CenterPin />)
-      marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+      if (!map?.isStyleLoaded?.() || !isWaitmeParkingLayoutReady()) {
+        if (attempts++ < maxAttempts) requestAnimationFrame(run)
+        return
+      }
       const fast = getCurrentLocationFast()
-      if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
-        marker.setLngLat([fast.longitude, fast.latitude])
-        marker.addTo(map)
-      } else {
-        getCurrentPosition(
-          (v) => {
-            if (cancelled || !v || !marker) return
-            marker.setLngLat([v.lng, v.lat])
-            marker.addTo(map)
-          },
-          () => {
-            let off = null
-            off = subscribeToLocation((loc) => {
-              if (cancelled || !loc || !marker) return
-              if (!Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude)) return
-              marker.setLngLat([loc.longitude, loc.latitude])
-              marker.addTo(map)
-              if (typeof off === 'function') off()
-            })
-          }
-        )
-      }
-      setUserGpsMarker(marker)
-      requestAnimationFrame(() => {
-        const m = getGlobalMapInstance()
-        const fast = getCurrentLocationFast()
-        if (m?.isStyleLoaded?.() && fast && getUserGpsMarker()) {
-          alignParkedGpsMarkerToGap(m, { lng: fast.longitude, lat: fast.latitude })
+      const applyCoords = (lng, lat) => {
+        if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+        if (parkingPinMode === 'search') {
+          jumpMapToLngLatAndAlignToGap(map, lng, lat, {
+            zoom: typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM,
+            pitch: typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH,
+            bearing: typeof map.getBearing === 'function' ? map.getBearing() : 0,
+          })
+        } else {
+          alignParkedGpsMarkerToGap(map, { lng, lat })
         }
-      })
-      return true
+      }
+      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
+        applyCoords(fast.longitude, fast.latitude)
+        return
+      }
+      getCurrentPosition(
+        (v) => {
+          if (cancelled || !v) return
+          applyCoords(v.lng, v.lat)
+        },
+        () => {}
+      )
     }
 
-    if (!attach()) {
-      const map = getGlobalMapInstance()
-      if (map && !map.isStyleLoaded?.()) {
-        map.once('load', attach)
-      }
-      pollId = window.setInterval(() => {
-        if (attach() && pollId != null) {
-          window.clearInterval(pollId)
-          pollId = null
-        }
-      }, 100)
-    }
-
+    const t = window.setTimeout(run, 0)
     return () => {
       cancelled = true
-      if (pollId != null) window.clearInterval(pollId)
-      const map = getGlobalMapInstance()
-      if (map && typeof map.off === 'function') {
-        try {
-          map.off('load', attach)
-        } catch {
-          /* */
-        }
-      }
-      cleanup()
+      window.clearTimeout(t)
     }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable, mapFocusGeneration])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -364,9 +305,8 @@ export default function Map({
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           return
         }
-        const userPin = getUserGpsMarker()
-        if (userPin && typeof userPin.setLngLat === 'function') {
-          userPin.setLngLat([loc.longitude, loc.latitude])
+        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
+          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) centerMapOnUser(globalMap, loc)
@@ -493,15 +433,11 @@ export default function Map({
         ref={containerRef}
         style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }}
       />
-      {unavailable ? null : !parkingBandPinAdjust ||
-        (parkingBandPinAdjust && parkingPinMode === 'search') ? (
-        <MapViewportCenterPin
-          ref={pinRef}
-          parkingPinTopPx={
-            parkingBandPinAdjust && parkingPinMode === 'search' ? parkingPinTopPx : undefined
-          }
-        />
-      ) : null}
+      {unavailable ? null : !parkingBandPinAdjust ? (
+        <MapViewportCenterPin ref={pinRef} />
+      ) : (
+        <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
+      )}
       {unavailable ? (
         <div
           aria-hidden

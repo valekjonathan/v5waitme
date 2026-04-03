@@ -2,9 +2,9 @@
  * Copia de WaitMe: src/components/map/MapFilters.jsx (sin framer-motion; mismo layout).
  */
 import React, { useEffect, useState } from 'react'
-import { IconClock, IconEuro, IconNavigation, IconX } from './icons.jsx'
+import { IconClock, IconEuro, IconNavigation, IconX, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
-/** Estado inicial Search (precio 10 €, 30 min, 800 m). Exportado para el padre sin duplicar. */
+/** Estado inicial Search (precio 10 euros, 30 min, 800 m). Exportado para el padre sin duplicar. */
 export const WAITME_DEFAULT_SEARCH_FILTERS = {
   maxPrice: 10,
   maxMinutes: 30,
@@ -51,11 +51,9 @@ const labelBase = {
 }
 
 const iconWrap = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  verticalAlign: 'middle',
-  color: '#c084fc',
+  ...WAITME_ROW_ICON_SLOT,
   marginRight: 4,
+  verticalAlign: 'middle',
 }
 
 function FilterRangeBlock({ icon, title, valueEl, min, max, step, value, onChange }) {
@@ -233,7 +231,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
               title="Precio máximo:"
               valueEl={
                 <span style={{ color: '#c084fc', fontWeight: 700 }}>
-                  {Math.round(filters.maxPrice)} €
+                  {Math.round(filters.maxPrice)} euros
                 </span>
               }
               min={3}
