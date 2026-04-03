@@ -4,7 +4,12 @@ import {
   MAP_STYLE_CYCLE,
   reapplyMapVisualLayers,
 } from './constants/mapbox.js'
-import { getMapFollowUserGps, getMapReadOnlySession } from './mapSession.js'
+import {
+  getMapFollowUserGps,
+  getMapReadOnlySession,
+  getParkingMapPinMode,
+  setSearchFollowUserGps,
+} from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
 
@@ -202,9 +207,42 @@ export function flyGlobalMapTo(lng, lat) {
   }
 }
 
+/** Búsqueda parking: centrar en GPS sin alinear al hueco del pin fijo (ese pin es solo en parked). */
+export function jumpMapToGpsSearch(map, lng, lat) {
+  if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+  try {
+    map.jumpTo({
+      center: [lng, lat],
+      zoom: DEFAULT_ZOOM,
+      pitch: DEFAULT_PITCH,
+    })
+  } catch {
+    /* */
+  }
+}
+
 export function recenterGlobalMapOnUser() {
   const map = getGlobalMapInstance()
   if (!map?.isStyleLoaded?.()) return
+
+  if (getParkingMapPinMode() === 'search') {
+    setSearchFollowUserGps(true)
+    const fast = getCurrentLocationFast()
+    if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
+      jumpMapToGpsSearch(map, fast.longitude, fast.latitude)
+      return
+    }
+    getCurrentPosition(
+      (v) => {
+        if (!v || !map) return
+        setSearchFollowUserGps(true)
+        jumpMapToGpsSearch(map, v.lng, v.lat)
+      },
+      () => {}
+    )
+    return
+  }
+
   const fast = getCurrentLocationFast()
   if (fast) {
     applyWaitmeCameraJumpOrEase(map, {

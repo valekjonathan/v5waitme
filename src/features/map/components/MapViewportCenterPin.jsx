@@ -2,9 +2,9 @@ import { forwardRef } from 'react'
 import CenterPin from '../../home/components/CenterPin'
 
 /**
- * Pin con palito/bola centrado en el viewport del mapa; el borde inferior del palito marca el punto GPS.
- * Overlay React (no Marker Mapbox).
- * Search/Parked: `parkingPinTopPx` coloca la punta en la vertical del hueco buscador–tarjeta (map shell).
+ * Pin con palito/bola: overlay React (no Marker Mapbox).
+ * Parked / Home: `parkingPinTopPx` = hueco buscador–tarjeta.
+ * Búsqueda parking: `pinPixel` = `map.project` del GPS real (mapa libre; el pin puede salir de pantalla).
  */
 /** Mismo criterio que `MapZoomControls.jsx` `btnStyle`: borde morado, radio 12, blur. */
 const tuLabelStyle = {
@@ -28,18 +28,32 @@ const tuLabelStyle = {
   justifyContent: 'center',
 }
 
-const MapViewportCenterPin = forwardRef(function MapViewportCenterPin({ parkingPinTopPx }, ref) {
+const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
+  { parkingPinTopPx, pinPixel },
+  ref
+) {
   const gap = typeof parkingPinTopPx === 'number' && Number.isFinite(parkingPinTopPx)
+  const useProjected =
+    pinPixel != null && Number.isFinite(pinPixel.x) && Number.isFinite(pinPixel.y)
   return (
     <div
       ref={ref}
       data-map-viewport-pin
       data-waitme-parking-pin-gap={gap ? 'true' : undefined}
+      data-waitme-parking-pin-projected={useProjected ? 'true' : undefined}
       style={{
         position: 'absolute',
-        left: '50%',
-        top: gap ? `${parkingPinTopPx}px` : 'calc(50% + 50px)',
-        transform: 'translate(-50%, -100%)',
+        ...(useProjected
+          ? {
+              left: pinPixel.x,
+              top: pinPixel.y,
+              transform: 'translate(-50%, -100%)',
+            }
+          : {
+              left: '50%',
+              top: gap ? `${parkingPinTopPx}px` : 'calc(50% + 50px)',
+              transform: 'translate(-50%, -100%)',
+            }),
         zIndex: 5,
         pointerEvents: 'none',
         display: 'flex',
@@ -47,7 +61,7 @@ const MapViewportCenterPin = forwardRef(function MapViewportCenterPin({ parkingP
         alignItems: 'center',
       }}
     >
-      {gap ? (
+      {gap || useProjected ? (
         <span style={tuLabelStyle} aria-hidden>
           Tú
         </span>

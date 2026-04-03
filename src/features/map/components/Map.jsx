@@ -9,7 +9,13 @@ import {
   OVIEDO_LNG,
   reapplyMapVisualLayers,
 } from '../constants/mapbox.js'
-import { setMapFollowUserGps, setMapReadOnlySession } from '../mapSession.js'
+import {
+  getSearchFollowUserGps,
+  setMapFollowUserGps,
+  setMapReadOnlySession,
+  setParkingMapPinMode,
+  setSearchFollowUserGps,
+} from '../mapSession.js'
 import { getGlobalMapInstance, setGlobalMapInstance } from '../mapInstance.js'
 import {
   getCurrentLocationFast,
@@ -20,6 +26,7 @@ import {
   alignParkedGpsMarkerToGap,
   applyWaitmeCameraJumpOrEase,
   isWaitmeParkingLayoutReady,
+  jumpMapToGpsSearch,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 
@@ -99,8 +106,11 @@ export default function Map({
   const mapShellRef = useRef(null)
   const pinRef = useRef(null)
   const [unavailable, setUnavailable] = useState(false)
-  /** Parking search: punta del pin en el hueco buscador–tarjeta. */
+  /** Parking parked: punta del pin en el hueco buscador–tarjeta. */
   const [parkingPinTopPx, setParkingPinTopPx] = useState(null)
+  /** Parking search: pin = `map.project(GPS)` en px (relativo al shell del mapa). */
+  const [searchPinPixel, setSearchPinPixel] = useState(null)
+  const searchGpsRef = useRef(null)
   const settledRef = useRef(false)
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
@@ -119,6 +129,33 @@ export default function Map({
   useEffect(() => {
     setMapFollowUserGps(followUserGps)
   }, [followUserGps])
+
+  useEffect(() => {
+    if (!parkingBandPinAdjust) {
+      setParkingMapPinMode(null)
+      return
+    }
+    setParkingMapPinMode(parkingPinMode)
+    if (parkingPinMode === 'search') {
+      setSearchFollowUserGps(true)
+    } else {
+      setSearchFollowUserGps(false)
+      searchGpsRef.current = null
+      setSearchPinPixel(null)
+    }
+  }, [parkingBandPinAdjust, parkingPinMode])
+
+  const projectSearchPinFromGps = useCallback(() => {
+    const map = getGlobalMapInstance()
+    const g = searchGpsRef.current
+    if (!map?.project || !g || !Number.isFinite(g.lng) || !Number.isFinite(g.lat)) return
+    try {
+      const p = map.project([g.lng, g.lat])
+      setSearchPinPixel({ x: p.x, y: p.y })
+    } catch {
+      /* */
+    }
+  }, [])
 
   useEffect(() => {
     setMapReadOnlySession(readOnly)
@@ -151,6 +188,10 @@ export default function Map({
         cancelAnimationFrame(raf)
         delete window.__WAITME_PIN_OFFSET_Y__
       }
+    }
+
+    if (parkingPinMode === 'search') {
+      return () => {}
     }
 
     const observedParking = new globalThis.Map()
@@ -293,6 +334,14 @@ export default function Map({
       locationSubscribed = true
       subscribeToLocation((loc) => {
         if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
+        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
+          projectSearchPinFromGps()
+          if (getSearchFollowUserGps()) {
+            jumpMapToGpsSearch(globalMap, loc.longitude, loc.latitude)
+          }
+          return
+        }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
           alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
@@ -383,7 +432,7 @@ export default function Map({
     } else {
       globalMap.once('load', onFirstLoad)
     }
-  }, [fireSettled, readOnly, followUserGps])
+  }, [fireSettled, readOnly, followUserGps, projectSearchPinFromGps])
 
   useEffect(() => {
     if (mapFocusGeneration === 0) return
@@ -406,6 +455,48 @@ export default function Map({
     )
   }, [mapFocusGeneration, followUserGps])
 
+  useEffect(() => {
+    if (unavailable || import.meta.env?.MODE === 'test') return
+    if (!parkingBandPinAdjust || parkingPinMode !== 'search') return
+
+    let cancelled = false
+    let rafId = 0
+    let detach = () => {}
+
+    const tryAttach = () => {
+      const map = getGlobalMapInstance()
+      if (!map?.on) {
+        rafId = requestAnimationFrame(() => {
+          if (!cancelled) tryAttach()
+        })
+        return
+      }
+      const onDragStart = () => {
+        setSearchFollowUserGps(false)
+      }
+      const onMove = () => {
+        projectSearchPinFromGps()
+      }
+      const onResize = () => {
+        projectSearchPinFromGps()
+      }
+      map.on('dragstart', onDragStart)
+      map.on('move', onMove)
+      window.addEventListener('resize', onResize)
+      detach = () => {
+        map.off('dragstart', onDragStart)
+        map.off('move', onMove)
+        window.removeEventListener('resize', onResize)
+      }
+    }
+    tryAttach()
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafId)
+      detach()
+    }
+  }, [unavailable, parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
+
   return (
     <div
       ref={mapShellRef}
@@ -423,6 +514,10 @@ export default function Map({
       />
       {unavailable ? null : !parkingBandPinAdjust ? (
         <MapViewportCenterPin ref={pinRef} />
+      ) : parkingPinMode === 'search' ? (
+        searchPinPixel ? (
+          <MapViewportCenterPin ref={pinRef} pinPixel={searchPinPixel} />
+        ) : null
       ) : (
         <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
       )}
