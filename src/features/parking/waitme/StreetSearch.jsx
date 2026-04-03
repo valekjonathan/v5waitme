@@ -102,6 +102,20 @@ export default function StreetSearch({
   }, [query, fetchResults])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const q = (query || '').trim()
+    console.log('RESULTS_UI_RUNTIME', {
+      q,
+      resultsLength: results.length,
+      first3: results.slice(0, 3).map((r) => ({
+        id: r.id,
+        place_name: r.place_name,
+        text: r.text,
+      })),
+    })
+  }, [query, results])
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         clearSearchField()

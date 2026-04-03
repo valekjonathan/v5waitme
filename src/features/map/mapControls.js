@@ -26,21 +26,23 @@ export function isWaitmeParkingLayoutReady() {
 /** Salto de cámara + misma alineación que `alignParkedGpsMarkerToGap` (un solo núcleo). */
 export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
   if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+  const { alignMode, ...jumpRest } = camera
   try {
     map.jumpTo({
       center: [lng, lat],
-      zoom: camera.zoom ?? (typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM),
-      pitch: camera.pitch ?? (typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH),
-      bearing: camera.bearing ?? (typeof map.getBearing === 'function' ? map.getBearing() : 0),
+      zoom: jumpRest.zoom ?? (typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM),
+      pitch:
+        jumpRest.pitch ?? (typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH),
+      bearing: jumpRest.bearing ?? (typeof map.getBearing === 'function' ? map.getBearing() : 0),
     })
-    alignParkedGpsMarkerToGap(map, { lng, lat })
+    alignParkedGpsMarkerToGap(map, { lng, lat }, { mode: alignMode ?? 'jump' })
   } catch {
     /* */
   }
 }
 
 /** Única API de alineación al hueco: (lng,lat) bajo el pin fijo (contenedor Mapbox). */
-export function alignParkedGpsMarkerToGap(map, lngLat) {
+export function alignParkedGpsMarkerToGap(map, lngLat, opts = {}) {
   if (!map?.project || !map?.unproject || !lngLat) return
   const lng = lngLat.lng
   const lat = lngLat.lat
@@ -62,9 +64,24 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   const centerPx = map.project(map.getCenter())
   const dx = targetX - point.x
   const dy = targetY - point.y
-  if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) return
 
   const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
+
+  if (import.meta.env.DEV) {
+    const mode = typeof opts.mode === 'string' ? opts.mode : 'default'
+    console.log('PIN_ALIGN_RUNTIME', {
+      mode,
+      searchBottom,
+      cardTop,
+      targetY,
+      point: { x: point.x, y: point.y },
+      centerPx: { x: centerPx.x, y: centerPx.y },
+      newCenterPx,
+    })
+  }
+
+  if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) return
+
   const newCenter = map.unproject(newCenterPx)
 
   map.easeTo({
@@ -98,6 +115,7 @@ export function applyWaitmeCameraJumpOrEase(map, camera) {
         zoom: camera.zoom ?? map.getZoom(),
         pitch: camera.pitch ?? map.getPitch(),
         bearing: camera.bearing ?? map.getBearing(),
+        alignMode: 'apply-waitme-camera',
       })
     } else {
       map.jumpTo({ ...camera, ...getWaitmeMapCameraOptions() })
@@ -138,7 +156,11 @@ export function globalMapZoomBy(delta) {
       const fast = getCurrentLocationFast()
       if (fast) {
         map.once('moveend', () =>
-          alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
+          alignParkedGpsMarkerToGap(
+            map,
+            { lng: fast.longitude, lat: fast.latitude },
+            { mode: 'zoom-follow' }
+          )
         )
       }
     }
@@ -180,10 +202,14 @@ export function flyGlobalMapTo(lng, lat) {
         if (follow) {
           const fast = getCurrentLocationFast()
           if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-            alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
+            alignParkedGpsMarkerToGap(
+              map,
+              { lng: fast.longitude, lat: fast.latitude },
+              { mode: 'fly-parked-follow' }
+            )
           }
         } else {
-          alignParkedGpsMarkerToGap(map, { lng, lat })
+          alignParkedGpsMarkerToGap(map, { lng, lat }, { mode: 'fly-search-center' })
         }
       })
     } else {

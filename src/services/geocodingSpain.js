@@ -37,7 +37,8 @@ export async function searchSpainStreets(query, opts = {}) {
   params.set('access_token', token)
   params.set('country', 'es')
   params.set('language', 'es')
-  params.set('types', 'address,street')
+  // Mapbox Geocoding v5 solo admite: country, region, place, district, locality, postcode, neighborhood, address (no "street"; 422 si se incluye).
+  params.set('types', 'address')
   params.set('autocomplete', 'true')
   params.set('limit', '10')
   if (proximity && Number.isFinite(proximity.lng) && Number.isFinite(proximity.lat)) {
@@ -59,7 +60,7 @@ export async function searchSpainStreets(query, opts = {}) {
 
   if (import.meta.env.DEV) {
     const safeUrl = url.replace(/access_token=[^&]+/i, 'access_token=***')
-    console.log('MAPBOX:', {
+    console.log('MAPBOX_RUNTIME', {
       query: q,
       url: safeUrl,
       status: res.status,
