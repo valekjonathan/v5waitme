@@ -101,8 +101,6 @@ export default function Map({
   const [unavailable, setUnavailable] = useState(false)
   /** Parking search: punta del pin en el hueco buscador–tarjeta. */
   const [parkingPinTopPx, setParkingPinTopPx] = useState(null)
-  /** Solo búsqueda «donde quieres aparcar»: posición del centro del mapa en px (map.project). */
-  const [searchPinPixel, setSearchPinPixel] = useState(null)
   const settledRef = useRef(false)
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
@@ -228,7 +226,7 @@ export default function Map({
 
   /**
    * Solo PARKED: alinear cámara inicial a GPS bajo el pin (hueco buscador–tarjeta).
-   * SEARCH: verdad = map.getCenter(); sin snap GPS aquí (evita competir con el usuario / fly).
+   * SEARCH: pin fijo en UI; GPS vía `subscribeToLocation` + alignParkedGpsMarkerToGap (no getCenter).
    */
   useEffect(() => {
     if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
@@ -296,6 +294,7 @@ export default function Map({
       subscribeToLocation((loc) => {
         if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
@@ -411,41 +410,6 @@ export default function Map({
     )
   }, [mapFocusGeneration, followUserGps])
 
-  useEffect(() => {
-    if (unavailable || import.meta.env?.MODE === 'test') return
-    if (!parkingBandPinAdjust || parkingPinMode !== 'search') {
-      setSearchPinPixel(null)
-      return
-    }
-    let cancelled = false
-    let rafId = 0
-    let detach = () => {}
-
-    const attach = () => {
-      const map = getGlobalMapInstance()
-      if (!map?.project) {
-        rafId = requestAnimationFrame(() => {
-          if (!cancelled) attach()
-        })
-        return
-      }
-      const sync = () => {
-        const c = map.getCenter()
-        const p = map.project([c.lng, c.lat])
-        setSearchPinPixel({ x: p.x, y: p.y })
-      }
-      sync()
-      map.on('move', sync)
-      detach = () => map.off('move', sync)
-    }
-    attach()
-    return () => {
-      cancelled = true
-      cancelAnimationFrame(rafId)
-      detach()
-    }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
-
   return (
     <div
       ref={mapShellRef}
@@ -464,11 +428,7 @@ export default function Map({
       {unavailable ? null : !parkingBandPinAdjust ? (
         <MapViewportCenterPin ref={pinRef} />
       ) : (
-        <MapViewportCenterPin
-          ref={pinRef}
-          parkingPinTopPx={parkingPinTopPx ?? undefined}
-          pinPixel={parkingPinMode === 'search' ? searchPinPixel : undefined}
-        />
+        <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
       )}
       {unavailable ? (
         <div
