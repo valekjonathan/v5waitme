@@ -293,9 +293,6 @@ export default function Map({
       locationSubscribed = true
       subscribeToLocation((loc) => {
         if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
-        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          return
-        }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
           alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
@@ -365,7 +362,7 @@ export default function Map({
             () => {}
           )
         }
-      } else {
+      } else if (!(parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search')) {
         try {
           globalMap.jumpTo({
             center: [OVIEDO_LNG, OVIEDO_LAT],
