@@ -38,7 +38,9 @@ export async function searchSpainStreets(query, opts = {}) {
   params.set('language', 'es')
   params.set('types', 'address,street')
   params.set('autocomplete', 'true')
-  params.set('limit', '8')
+  params.set('limit', '10')
+  /** Península + Baleares aprox.; refuerza España sin sustituir `country`. */
+  params.set('bbox', '-9.5,35.0,4.5,44.0')
   if (proximity && Number.isFinite(proximity.lng) && Number.isFinite(proximity.lat)) {
     params.set('proximity', `${proximity.lng},${proximity.lat}`)
   }

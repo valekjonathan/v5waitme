@@ -23,7 +23,12 @@ import {
   getCurrentPosition,
   subscribeToLocation,
 } from '../../../services/location.js'
-import { alignParkedGpsMarkerToGap, applyWaitmeCameraJumpOrEase } from '../mapControls.js'
+import {
+  alignParkedGpsMarkerToGap,
+  applyWaitmeCameraJumpOrEase,
+  isWaitmeParkingLayoutReady,
+  jumpMapToLngLatAndAlignToGap,
+} from '../mapControls.js'
 import CenterPin from '../../home/components/CenterPin.jsx'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 
@@ -330,6 +335,45 @@ export default function Map({
       cleanup()
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+
+  /**
+   * SEARCH: una vez al entrar (o al reenfocar mapa), situar el mapa para que la ubicación inicial
+   * (GPS si existe) quede bajo el pin del hueco; después la verdad es map.getCenter() al panear.
+   */
+  useEffect(() => {
+    if (!parkingBandPinAdjust || parkingPinMode !== 'search' || unavailable) return
+    let cancelled = false
+    let attempts = 0
+    const tick = () => {
+      if (cancelled) return
+      attempts += 1
+      const map = getGlobalMapInstance()
+      if (map?.isStyleLoaded?.() && isWaitmeParkingLayoutReady()) {
+        const fast = getCurrentLocationFast()
+        const apply = (lng, lat) => {
+          if (cancelled) return
+          jumpMapToLngLatAndAlignToGap(map, lng, lat)
+        }
+        if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
+          apply(fast.longitude, fast.latitude)
+          return
+        }
+        getCurrentPosition(
+          (v) => {
+            if (!cancelled && v) apply(v.lng, v.lat)
+          },
+          () => {}
+        )
+        return
+      }
+      if (attempts < 100) requestAnimationFrame(tick)
+    }
+    const t = window.setTimeout(tick, 80)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable, mapFocusGeneration])
 
   useEffect(() => {
     if (!containerRef.current) return

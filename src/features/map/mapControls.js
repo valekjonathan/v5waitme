@@ -24,9 +24,28 @@ export function isWaitmeParkingLayoutReady() {
 }
 
 /**
- * Pin GPS: misma lng/lat; la cámara se mueve con project/unproject para que el punto caiga
- * en el centro horizontal del mapa y en el centro vertical del hueco buscador–tarjeta (DOM real).
+ * Punto geográfico (lng/lat) → project/unproject → centro del hueco buscador–tarjeta.
+ * Salto de cámara + alineación (viewport SEARCH o marcador PARKED).
+ * @param {import('mapbox-gl').Map} map
+ * @param {number} lng
+ * @param {number} lat
+ * @param {{ zoom?: number, pitch?: number, bearing?: number }} [camera]
  */
+export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
+  if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+  try {
+    map.jumpTo({
+      center: [lng, lat],
+      zoom: camera.zoom ?? (typeof map.getZoom === 'function' ? map.getZoom() : DEFAULT_ZOOM),
+      pitch: camera.pitch ?? (typeof map.getPitch === 'function' ? map.getPitch() : DEFAULT_PITCH),
+      bearing: camera.bearing ?? (typeof map.getBearing === 'function' ? map.getBearing() : 0),
+    })
+    alignParkedGpsMarkerToGap(map, { lng, lat })
+  } catch {
+    /* */
+  }
+}
+
 export function alignParkedGpsMarkerToGap(map, lngLat) {
   if (!map?.project || !map?.unproject || !lngLat) return
   const lng = lngLat.lng
@@ -82,15 +101,11 @@ export function applyWaitmeCameraJumpOrEase(map, camera) {
   const [lng, lat] = c
   try {
     if (isWaitmeParkingLayoutReady()) {
-      map.jumpTo({
-        center: [lng, lat],
+      jumpMapToLngLatAndAlignToGap(map, lng, lat, {
         zoom: camera.zoom ?? map.getZoom(),
         pitch: camera.pitch ?? map.getPitch(),
         bearing: camera.bearing ?? map.getBearing(),
       })
-      if (getUserGpsMarker()) {
-        alignParkedGpsMarkerToGap(map, { lng, lat })
-      }
     } else {
       map.jumpTo({ ...camera, ...getWaitmeMapCameraOptions() })
     }

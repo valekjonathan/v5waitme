@@ -367,6 +367,7 @@ function main() {
   runStateOfApp()
 
   runNpm('lint')
+  runNpm('knip')
   runNpm('test')
   runNpm('test:ui')
 

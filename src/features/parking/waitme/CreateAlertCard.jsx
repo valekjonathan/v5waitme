@@ -281,12 +281,14 @@ export default function CreateAlertCard({
             style={{
               color: '#c084fc',
               flexShrink: 0,
-              alignSelf: 'center',
-              transform: 'translateY(4px)',
-              display: 'flex',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 22,
+              height: 22,
             }}
           >
-            <IconClock size={22} strokeWidth={2} />
+            <IconClock size={16} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
@@ -321,12 +323,14 @@ export default function CreateAlertCard({
             style={{
               color: '#c084fc',
               flexShrink: 0,
-              alignSelf: 'center',
-              transform: 'translateY(4px)',
-              display: 'flex',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 22,
+              height: 22,
             }}
           >
-            <IconEuro size={22} strokeWidth={2} />
+            <IconEuro size={16} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>

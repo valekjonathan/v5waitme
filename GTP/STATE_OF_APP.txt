@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-03T15:20:29.202Z
-Git HEAD: 6c401696593538c4293d7f6bf14db68fe8795f56
+Generated: 2026-04-03T15:33:00.092Z
+Git HEAD: 3ddd23ada202199c48dfaf925197fc4be78bdb8f
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -13,6 +13,7 @@ eslint.config.js
 GTP/
   STATE_OF_APP.txt
 index.html
+knip.json
 node_modules/  [omitido]
 package-lock.json
 package.json
@@ -175,8 +176,8 @@ vite.config.js
 vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
-runtime: @supabase/supabase-js, mapbox-gl, react, react-dom
-dev: @babel/eslint-parser, @babel/preset-react, @eslint/js, @playwright/test, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, prettier, supabase, typescript, vite, vitest
+runtime: @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom
+dev: @babel/eslint-parser, @babel/preset-react, @eslint/js, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
 auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js

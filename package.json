@@ -19,10 +19,12 @@
     "quality": "node scripts/quality-gate.mjs",
     "state:app": "node scripts/generate-state-of-app.mjs",
     "clean": "node scripts/auto-clean.mjs",
+    "knip": "knip --include files,dependencies,unlisted --no-config-hints",
     "supabase:setup": "node scripts/supabase-setup.mjs",
     "supabase:types": "supabase gen types typescript --linked"
   },
   "dependencies": {
+    "@sentry/react": "^10.47.0",
     "@supabase/supabase-js": "^2.100.0",
     "mapbox-gl": "^3.20.0",
     "react": "^19.2.4",
@@ -33,6 +35,7 @@
     "@babel/preset-react": "^7.26.0",
     "@eslint/js": "^9.18.0",
     "@playwright/test": "^1.51.0",
+    "@sentry/vite-plugin": "^5.1.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -44,6 +47,7 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
     "jsdom": "^29.0.0",
+    "knip": "^6.3.0",
     "prettier": "^3.4.2",
     "supabase": "^2.84.4",
     "typescript": "^5.8.0",
