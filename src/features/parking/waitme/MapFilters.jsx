@@ -18,12 +18,73 @@ const MINUTES_MAX = 60
 const DIST_MIN = 0
 const DIST_MAX = 1
 
-/** Mismo `className` y reglas CSS que CreateAlertCard.jsx (`waitme-create-alert-range`). */
+/** Mismo `className` que CreateAlertCard.jsx (`waitme-create-alert-range`). */
 const rangeClass = 'waitme-create-alert-range'
 
 function rangeGradientPercent(value, min, max) {
   if (max <= min) return 0
   return ((value - min) / (max - min)) * 100
+}
+
+/** Una fila = mismo layout y estilo de slider que CreateAlertCard (un solo lugar). */
+function FilterRangeBlock({
+  icon,
+  title,
+  valueEl,
+  valueMarginLeft = 8,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+}) {
+  const pct = useMemo(() => rangeGradientPercent(value, min, max), [value, min, max])
+  const trackStyle = useMemo(
+    () => ({
+      marginTop: 4,
+      background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${pct}%, rgba(255,255,255,0.2) ${pct}%, rgba(255,255,255,0.2) 100%)`,
+    }),
+    [pct]
+  )
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span
+        style={{
+          ...WAITME_ROW_ICON_SLOT,
+          position: 'relative',
+          top: 2,
+        }}
+      >
+        {icon}
+      </span>
+      <div style={{ flex: 1, marginTop: 8 }}>
+        <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
+          {title}
+          <span
+            style={{
+              color: '#c084fc',
+              fontWeight: 700,
+              fontSize: 22,
+              lineHeight: 1,
+              marginLeft: valueMarginLeft,
+            }}
+          >
+            {valueEl}
+          </span>
+        </label>
+        <input
+          type="range"
+          className={rangeClass}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={onChange}
+          style={trackStyle}
+        />
+      </div>
+    </div>
+  )
 }
 
 /** `fixed` + capa alta: por encima del pin y del canvas/markers del mapa (stacking global). */
@@ -65,41 +126,6 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
     filters.maxDistance < 1
       ? `${Math.round(filters.maxDistance * 1000)} m`
       : `${filters.maxDistance} km`
-
-  const pricePct = useMemo(
-    () => rangeGradientPercent(filters.maxPrice, PRICE_MIN, PRICE_MAX),
-    [filters.maxPrice]
-  )
-  const minutesPct = useMemo(
-    () => rangeGradientPercent(filters.maxMinutes, MINUTES_MIN, MINUTES_MAX),
-    [filters.maxMinutes]
-  )
-  const distancePct = useMemo(
-    () => rangeGradientPercent(filters.maxDistance, DIST_MIN, DIST_MAX),
-    [filters.maxDistance]
-  )
-
-  const priceTrackStyle = useMemo(
-    () => ({
-      marginTop: 4,
-      background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${pricePct}%, rgba(255,255,255,0.2) ${pricePct}%, rgba(255,255,255,0.2) 100%)`,
-    }),
-    [pricePct]
-  )
-  const minutesTrackStyle = useMemo(
-    () => ({
-      marginTop: 4,
-      background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${minutesPct}%, rgba(255,255,255,0.2) ${minutesPct}%, rgba(255,255,255,0.2) 100%)`,
-    }),
-    [minutesPct]
-  )
-  const distanceTrackStyle = useMemo(
-    () => ({
-      marginTop: 4,
-      background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${distancePct}%, rgba(255,255,255,0.2) ${distancePct}%, rgba(255,255,255,0.2) 100%)`,
-    }),
-    [distancePct]
-  )
 
   return (
     <>
@@ -205,121 +231,39 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
               width: '100%',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  ...WAITME_ROW_ICON_SLOT,
-                  position: 'relative',
-                  top: 2,
-                }}
-              >
-                <IconEuro size={22} strokeWidth={2} />
-              </span>
-              <div style={{ flex: 1, marginTop: 8 }}>
-                <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
-                  Precio máximo:
-                  <span
-                    style={{
-                      color: '#c084fc',
-                      fontWeight: 700,
-                      fontSize: 22,
-                      lineHeight: 1,
-                      marginLeft: 42,
-                    }}
-                  >
-                    {Math.round(filters.maxPrice)} euros
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  className={rangeClass}
-                  min={PRICE_MIN}
-                  max={PRICE_MAX}
-                  step={1}
-                  value={filters.maxPrice}
-                  onChange={(e) => onFilterChange({ ...filters, maxPrice: Number(e.target.value) })}
-                  style={priceTrackStyle}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  ...WAITME_ROW_ICON_SLOT,
-                  position: 'relative',
-                  top: 2,
-                }}
-              >
-                <IconClock size={22} strokeWidth={2} />
-              </span>
-              <div style={{ flex: 1, marginTop: 8 }}>
-                <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
-                  Disponible en:
-                  <span
-                    style={{
-                      color: '#c084fc',
-                      fontWeight: 700,
-                      fontSize: 22,
-                      lineHeight: 1,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {filters.maxMinutes} min
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  className={rangeClass}
-                  min={MINUTES_MIN}
-                  max={MINUTES_MAX}
-                  step={5}
-                  value={filters.maxMinutes}
-                  onChange={(e) => onFilterChange({ ...filters, maxMinutes: Number(e.target.value) })}
-                  style={minutesTrackStyle}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span
-                style={{
-                  ...WAITME_ROW_ICON_SLOT,
-                  position: 'relative',
-                  top: 2,
-                }}
-              >
-                <IconNavigation size={22} strokeWidth={2} />
-              </span>
-              <div style={{ flex: 1, marginTop: 8 }}>
-                <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
-                  Distancia máxima:
-                  <span
-                    style={{
-                      color: '#c084fc',
-                      fontWeight: 700,
-                      fontSize: 22,
-                      lineHeight: 1,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {distLabel}
-                  </span>
-                </label>
-                <input
-                  type="range"
-                  className={rangeClass}
-                  min={DIST_MIN}
-                  max={DIST_MAX}
-                  step={0.1}
-                  value={filters.maxDistance}
-                  onChange={(e) =>
-                    onFilterChange({ ...filters, maxDistance: Number(e.target.value) })
-                  }
-                  style={distanceTrackStyle}
-                />
-              </div>
-            </div>
+            <FilterRangeBlock
+              icon={<IconEuro size={22} strokeWidth={2} />}
+              title="Precio máximo:"
+              valueEl={<>{Math.round(filters.maxPrice)} euros</>}
+              valueMarginLeft={42}
+              min={PRICE_MIN}
+              max={PRICE_MAX}
+              step={1}
+              value={filters.maxPrice}
+              onChange={(e) => onFilterChange({ ...filters, maxPrice: Number(e.target.value) })}
+            />
+            <FilterRangeBlock
+              icon={<IconClock size={22} strokeWidth={2} />}
+              title="Disponible en:"
+              valueEl={<>{filters.maxMinutes} min</>}
+              valueMarginLeft={8}
+              min={MINUTES_MIN}
+              max={MINUTES_MAX}
+              step={5}
+              value={filters.maxMinutes}
+              onChange={(e) => onFilterChange({ ...filters, maxMinutes: Number(e.target.value) })}
+            />
+            <FilterRangeBlock
+              icon={<IconNavigation size={22} strokeWidth={2} />}
+              title="Distancia máxima:"
+              valueEl={<>{distLabel}</>}
+              valueMarginLeft={8}
+              min={DIST_MIN}
+              max={DIST_MAX}
+              step={0.1}
+              value={filters.maxDistance}
+              onChange={(e) => onFilterChange({ ...filters, maxDistance: Number(e.target.value) })}
+            />
 
             <div style={{ paddingTop: 12, borderTop: '1px solid #374151' }}>
               <p style={{ textAlign: 'center', fontSize: 14, color: '#9ca3af', margin: 0 }}>

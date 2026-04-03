@@ -226,7 +226,7 @@ export default function Map({
 
   /**
    * Solo PARKED: alinear cámara inicial a GPS bajo el pin (hueco buscador–tarjeta).
-   * SEARCH: pin fijo en UI; GPS vía `subscribeToLocation` + alignParkedGpsMarkerToGap (no getCenter).
+   * SEARCH: mapa libre; sin alinear cámara al GPS (`subscribeToLocation` no mueve el mapa).
    */
   useEffect(() => {
     if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
@@ -294,7 +294,6 @@ export default function Map({
       subscribeToLocation((loc) => {
         if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
