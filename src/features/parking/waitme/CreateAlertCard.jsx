@@ -278,7 +278,13 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={WAITME_ROW_ICON_SLOT}>
+          <span
+            style={{
+              ...WAITME_ROW_ICON_SLOT,
+              position: 'relative',
+              top: 3,
+            }}
+          >
             <IconClock size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
@@ -310,7 +316,13 @@ export default function CreateAlertCard({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={WAITME_ROW_ICON_SLOT}>
+          <span
+            style={{
+              ...WAITME_ROW_ICON_SLOT,
+              position: 'relative',
+              top: 3,
+            }}
+          >
             <IconEuro size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
