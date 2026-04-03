@@ -16,7 +16,8 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `npm run dev -- --port ${E2E_PORT} --strictPort`,
+    // Sin Supabase en el proceso del dev server: `waitme.dev.*` + perfil draft activan mapa parking en e2e.
+    command: `env VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npm run dev -- --port ${E2E_PORT} --strictPort`,
     url: E2E_ORIGIN,
     reuseExistingServer: false,
     timeout: 120_000,

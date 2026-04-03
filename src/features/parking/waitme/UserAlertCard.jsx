@@ -270,6 +270,7 @@ function UserAlertCard({
 
   return (
     <div
+      data-alert-card
       data-waitme-parking-gap-card-top
       style={{
         backgroundColor: '#111827',

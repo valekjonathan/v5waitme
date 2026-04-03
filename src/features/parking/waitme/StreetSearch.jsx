@@ -232,6 +232,7 @@ export default function StreetSearch({
 
       {open && (query || '').trim().length >= 2 && (
         <ul
+          data-waitme-street-results
           style={{
             position: 'absolute',
             top: '100%',

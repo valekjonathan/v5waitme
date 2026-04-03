@@ -71,7 +71,7 @@ export async function searchSpainStreets(query, opts = {}) {
   }
 
   if (!res.ok) return []
-  return data.features || []
+  return Array.isArray(data.features) ? data.features : []
 }
 
 /**

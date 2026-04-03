@@ -245,7 +245,7 @@ export default function Map({
       const fast = getCurrentLocationFast()
       const applyCoords = (lng, lat) => {
         if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-        alignParkedGpsMarkerToGap(map, { lng, lat }, { mode: 'parked-initial' })
+        alignParkedGpsMarkerToGap(map, { lng, lat })
       }
       if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
         applyCoords(fast.longitude, fast.latitude)
@@ -297,11 +297,7 @@ export default function Map({
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          alignParkedGpsMarkerToGap(
-            globalMap,
-            { lng: loc.longitude, lat: loc.latitude },
-            { mode: 'parked-gps' }
-          )
+          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) centerMapOnUser(globalMap, loc)
