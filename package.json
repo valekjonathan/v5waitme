@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "tunnel:dev": "node scripts/tunnel-dev.mjs",
     "tunnel": "ngrok http 5173",
     "start": "vite",
     "dev:clean": "rm -rf node_modules/.vite && vite",
