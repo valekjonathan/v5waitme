@@ -116,9 +116,7 @@ export default function ScreenShell({
             : shellInsetMainPaddingStyle(LAYOUT.screen.paddingX, chromePx.header, chromePx.nav)),
         }}
       >
-        <div style={{ ...shellMainColumnStyle, ...contentStyle }}>
-          {children}
-        </div>
+        <div style={{ ...shellMainColumnStyle, ...contentStyle }}>{children}</div>
       </main>
       <BottomNav ref={navRef} interactive={interactive} />
     </div>
