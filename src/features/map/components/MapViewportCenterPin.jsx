@@ -28,8 +28,12 @@ const tuLabelStyle = {
   justifyContent: 'center',
 }
 
-const MapViewportCenterPin = forwardRef(function MapViewportCenterPin({ parkingPinTopPx }, ref) {
+const MapViewportCenterPin = forwardRef(function MapViewportCenterPin({ parkingPinTopPx, pinPixel }, ref) {
   const gap = typeof parkingPinTopPx === 'number' && Number.isFinite(parkingPinTopPx)
+  const useMapPixels =
+    pinPixel != null &&
+    Number.isFinite(pinPixel.x) &&
+    Number.isFinite(pinPixel.y)
   return (
     <div
       ref={ref}
@@ -37,9 +41,17 @@ const MapViewportCenterPin = forwardRef(function MapViewportCenterPin({ parkingP
       data-waitme-parking-pin-gap={gap ? 'true' : undefined}
       style={{
         position: 'absolute',
-        left: '50%',
-        top: gap ? `${parkingPinTopPx}px` : 'calc(50% + 50px)',
-        transform: 'translate(-50%, -100%)',
+        ...(useMapPixels
+          ? {
+              left: pinPixel.x,
+              top: pinPixel.y,
+              transform: 'translate(-50%, -100%)',
+            }
+          : {
+              left: '50%',
+              top: gap ? `${parkingPinTopPx}px` : 'calc(50% + 50px)',
+              transform: 'translate(-50%, -100%)',
+            }),
         zIndex: 5,
         pointerEvents: 'none',
         display: 'flex',

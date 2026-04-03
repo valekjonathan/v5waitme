@@ -282,7 +282,7 @@ export default function CreateAlertCard({
             style={{
               ...WAITME_ROW_ICON_SLOT,
               position: 'relative',
-              top: 4,
+              top: 2,
             }}
           >
             <IconClock size={22} strokeWidth={2} />
@@ -320,12 +320,10 @@ export default function CreateAlertCard({
             style={{
               ...WAITME_ROW_ICON_SLOT,
               position: 'relative',
-              top: 4,
+              top: 2,
             }}
           >
-            <div style={{ transform: 'scale(1.15)' }}>
-              <IconEuro size={22} strokeWidth={2} />
-            </div>
+            <IconEuro size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
