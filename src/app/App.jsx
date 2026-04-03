@@ -263,12 +263,21 @@ function AppGate() {
   )
 }
 
+const appRootWrapperStyle = {
+  width: '100%',
+  height: '100vh',
+  overflow: 'hidden',
+  boxSizing: 'border-box',
+}
+
 export default function App() {
   return (
-    <ErrorBoundary name="root">
-      <AppAuthRoot>
-        <AppGate />
-      </AppAuthRoot>
-    </ErrorBoundary>
+    <div style={appRootWrapperStyle}>
+      <ErrorBoundary name="root">
+        <AppAuthRoot>
+          <AppGate />
+        </AppAuthRoot>
+      </ErrorBoundary>
+    </div>
   )
 }

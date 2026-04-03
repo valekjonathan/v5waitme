@@ -40,13 +40,13 @@ export type ScreenShellMainMode =
  * (`getBoundingClientRect().height` o `offsetHeight`), que ya incluyen safe-area en sus cajas.
  */
 export function shellInsetMainPaddingStyle(
-  paddingX: number,
+  _paddingX: number,
   headerHeightPx: number,
   bottomNavHeightPx: number
 ): CSSProperties {
   return {
-    paddingLeft: paddingX,
-    paddingRight: paddingX,
+    paddingLeft: 0,
+    paddingRight: 0,
     paddingTop: `${headerHeightPx}px`,
     paddingBottom: `${bottomNavHeightPx}px`,
   }

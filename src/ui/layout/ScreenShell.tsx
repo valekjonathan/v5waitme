@@ -9,10 +9,25 @@ import {
 } from './layout'
 
 const shellRootStyle: CSSProperties = {
+  width: '100%',
   height: '100%',
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+}
+
+const shellMainColumnStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  maxWidth: 'none',
+  margin: 0,
+  padding: 0,
+  minHeight: 0,
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box',
+  alignSelf: 'stretch',
 }
 
 /**
@@ -101,24 +116,7 @@ export default function ScreenShell({
             : shellInsetMainPaddingStyle(LAYOUT.screen.paddingX, chromePx.header, chromePx.nav)),
         }}
       >
-        <div
-          style={{
-            width: '100%',
-            minHeight: 0,
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            boxSizing: 'border-box',
-            ...(fullBleed
-              ? { alignSelf: 'stretch' }
-              : {
-                  maxWidth: LAYOUT.screen.maxWidth,
-                  marginLeft: 'auto',
-                  marginRight: 'auto',
-                }),
-            ...contentStyle,
-          }}
-        >
+        <div style={{ ...shellMainColumnStyle, ...contentStyle }}>
           {children}
         </div>
       </main>

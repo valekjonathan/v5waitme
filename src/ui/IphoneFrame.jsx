@@ -1,6 +1,6 @@
 /**
  * Marco del dispositivo: define el viewport lógico (390×844) escalado.
- * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
+ * En viewport estrecho o PWA standalone, el contenido va edge-to-edge (sin marco ni padding).
  */
 import { useLayoutEffect, useState } from 'react'
 import { radius } from '../design/radius'
@@ -9,6 +9,8 @@ import { shadows } from '../design/shadows'
 const FRAME_W = 390
 const FRAME_H = 844
 const VIEW_PAD = 24
+/** Por debajo de esto (p. ej. iPhone real o ventana estrecha): sin marco simulado. */
+const FULL_BLEED_MAX_WIDTH_PX = 480
 
 function readScale() {
   const vv = window.visualViewport
@@ -17,19 +19,59 @@ function readScale() {
   return Math.min(1, vh / FRAME_H, vw / FRAME_W)
 }
 
+function readUseFullBleed() {
+  if (typeof window === 'undefined') return false
+  const standalone =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(display-mode: standalone)').matches === true
+  const narrow = window.innerWidth <= FULL_BLEED_MAX_WIDTH_PX
+  return standalone || narrow
+}
+
+const fullBleedRootStyle = {
+  width: '100%',
+  height: '100%',
+  minHeight: 0,
+  flex: 1,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  boxSizing: 'border-box',
+}
+
 export default function IphoneFrame({ children }) {
   const [scale, setScale] = useState(1)
+  const [fullBleed, setFullBleed] = useState(false)
 
   useLayoutEffect(() => {
-    const update = () => setScale(readScale())
+    const update = () => {
+      setFullBleed(readUseFullBleed())
+      setScale(readScale())
+    }
     update()
     window.addEventListener('resize', update)
     window.visualViewport?.addEventListener('resize', update)
+    let mqUnsub = () => {}
+    if (typeof window.matchMedia === 'function') {
+      const mq = window.matchMedia('(display-mode: standalone)')
+      if (typeof mq.addEventListener === 'function') {
+        mq.addEventListener('change', update)
+        mqUnsub = () => mq.removeEventListener('change', update)
+      } else if (typeof mq.addListener === 'function') {
+        mq.addListener(update)
+        mqUnsub = () => mq.removeListener(update)
+      }
+    }
     return () => {
       window.removeEventListener('resize', update)
       window.visualViewport?.removeEventListener('resize', update)
+      mqUnsub()
     }
   }, [])
+
+  if (fullBleed) {
+    return <div style={fullBleedRootStyle}>{children}</div>
+  }
 
   const s = scale
 

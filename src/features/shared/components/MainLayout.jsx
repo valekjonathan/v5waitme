@@ -48,7 +48,7 @@ const contentViewportStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   overflow: 'visible',
-  padding: `0 ${LAYOUT.spacing.xl}px`,
+  padding: 0,
 }
 const contentColumnStyle = {
   pointerEvents: 'auto',
