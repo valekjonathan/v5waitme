@@ -45,6 +45,7 @@ export default function IphoneFrame({ children }) {
     }
     update()
     window.addEventListener('resize', update)
+    window.addEventListener('orientationchange', update)
     window.visualViewport?.addEventListener('resize', update)
     let mqUnsub = () => {}
     if (typeof window.matchMedia === 'function') {
@@ -59,6 +60,7 @@ export default function IphoneFrame({ children }) {
     }
     return () => {
       window.removeEventListener('resize', update)
+      window.removeEventListener('orientationchange', update)
       window.visualViewport?.removeEventListener('resize', update)
       mqUnsub()
     }

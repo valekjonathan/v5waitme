@@ -1,8 +1,7 @@
 /**
  * Shell: columna Header → `<main>` (referencia vertical útil) → BottomNav.
- * Hijos viven en `data-waitme-content-slot`; mapa usa `data-waitme-map-slot` para overlays.
- * iOS edge-to-edge (PWA + Capacitor native): BottomNav `position:fixed` al borde útil; `<main>` lleva `padding-bottom`
- * = altura real del nav (`--waitme-bottom-nav-h`) para no tapar contenido ni dejar hueco en flex.
+ * El alto útil global lo fija `App.jsx` en `html` (`--app-height` desde visualViewport); esta columna lo hereda por flex.
+ * BottomNav fijo usa `--vv-offset-top` + `--waitme-bottom-nav-h` solo en modo standalone (ver `readStandaloneDisplayMode`).
  */
 import {
   useLayoutEffect,

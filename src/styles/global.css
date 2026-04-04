@@ -59,9 +59,8 @@ body {
 }
 
 /**
- * iOS edge-to-edge: `App.jsx` añade `waitme-standalone-height` en PWA instalada y en Capacitor nativo
- * (`Capacitor.isNativePlatform()`); fija `--app-height` en px. Sin duplicar height fijo en body/#root:
- * la cadena flex (html→body→#root→.waitme-app-root) reparte el alto útil real del WKWebView.
+ * `App.jsx` añade siempre `waitme-standalone-height` y fija `--app-height` desde `visualViewport.height`
+ * (fallback `innerHeight`). Misma cadena flex en todos los entornos; sin depender de standalone/PWA.
  */
 html.waitme-standalone-height body {
   height: auto;
@@ -94,11 +93,11 @@ html.waitme-standalone-height #root {
  * (App, visualViewport). BottomNav fijo: `bottom: var(--vv-offset-top)`; safe-area solo en su paddingBottom.
  */
 /**
- * Full bleed: crece dentro del padre flex (flex:1 min-height:0); no min-height dvh aquí.
- * Scroll vertical solo en ScreenShell `<main>`, no aquí.
+ * Full bleed: alto alineado con `--app-height` (visual viewport); scroll en ScreenShell `<main>`.
  */
 .waitme-iphone-frame-fullbleed {
   width: 100%;
+  height: var(--app-height, 100%);
   flex: 1 1 0%;
   min-height: 0;
   display: flex;

@@ -4,7 +4,6 @@ import {
   ProfileIncompleteNoticeProvider,
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
-import { Capacitor } from '@capacitor/core'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
@@ -40,51 +39,25 @@ const appRootLayoutStyle = {
   boxSizing: 'border-box',
 }
 
-/** PWA instalada + app Capacitor iOS: mismo tratamiento de alto útil (WKWebView no suele marcar display-mode standalone). */
-function readStandaloneDisplayMode() {
-  if (typeof window === 'undefined') return false
-  const mq =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(display-mode: standalone)').matches
-  const iosStandalone =
-    typeof navigator !== 'undefined' &&
-    'standalone' in navigator &&
-    /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
-  const capacitorNative = Capacitor.isNativePlatform() === true
-  return Boolean(mq || iosStandalone || capacitorNative)
+/**
+ * Fuente única de alto visible: `VisualViewport` (Safari barra URL, teclado, PWA, WKWebView).
+ * `--vv-offset-top` sale del mismo objeto: anclaje de `position:fixed` (p. ej. BottomNav) al layout viewport.
+ */
+const WAITME_VV_HEIGHT_CLASS = 'waitme-standalone-height'
+
+function setAppHeight() {
+  const vv = window.visualViewport
+  const height = vv ? vv.height : window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${height}px`)
+  document.documentElement.style.setProperty('--vv-offset-top', `${vv ? vv.offsetTop : 0}px`)
 }
 
-const WAITME_STANDALONE_HEIGHT_CLASS = 'waitme-standalone-height'
-
-/** iOS edge-to-edge (PWA + Capacitor): `--app-height` = max(inner, vv.height+vv.offsetTop); `--vv-offset-top` para anclar chrome al visualViewport. */
-function useStandaloneAppHeightCssVar() {
+function useAppHeightCssVar() {
   useLayoutEffect(() => {
     const rootEl = document.documentElement
-    if (!readStandaloneDisplayMode()) {
-      rootEl.style.removeProperty('--app-height')
-      rootEl.style.removeProperty('--vv-offset-top')
-      rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
-      return undefined
-    }
+    rootEl.classList.add(WAITME_VV_HEIGHT_CLASS)
 
-    rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
-
-    const getRealHeight = () => {
-      const inner = window.innerHeight
-      const vv = window.visualViewport
-
-      if (!vv) return inner
-
-      const real = vv.height + vv.offsetTop
-      return Math.max(inner, real)
-    }
-
-    const sync = () => {
-      const height = getRealHeight()
-      const vv = window.visualViewport
-      rootEl.style.setProperty('--app-height', `${height}px`)
-      rootEl.style.setProperty('--vv-offset-top', `${vv?.offsetTop ?? 0}px`)
-    }
+    const sync = () => setAppHeight()
 
     sync()
     const onOrient = () => {
@@ -105,7 +78,7 @@ function useStandaloneAppHeightCssVar() {
     return () => {
       rootEl.style.removeProperty('--app-height')
       rootEl.style.removeProperty('--vv-offset-top')
-      rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
+      rootEl.classList.remove(WAITME_VV_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)
       window.removeEventListener('load', sync)
@@ -368,7 +341,7 @@ function AppGate() {
 }
 
 export default function App() {
-  useStandaloneAppHeightCssVar()
+  useAppHeightCssVar()
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>
       <ErrorBoundary name="root">
