@@ -111,7 +111,7 @@ export default function ScreenShell({
     overflowY: 'auto',
     overflowX: 'hidden',
     WebkitOverflowScrolling: 'touch',
-    ...(standalone ? { paddingBottom: 'var(--waitme-bottom-nav-h, 80px)' } : {}),
+    paddingBottom: 'var(--waitme-bottom-nav-h, 80px)',
   }
 
   return (
