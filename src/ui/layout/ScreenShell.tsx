@@ -31,7 +31,7 @@ function readStandaloneDisplayMode(): boolean {
 const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  flex: '1 1 0%',
+  flex: 1,
   minHeight: 0,
   maxHeight: '100%',
   overflowX: 'hidden',
