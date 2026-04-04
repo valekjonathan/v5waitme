@@ -35,7 +35,7 @@ const appRootLayoutStyle = {
   height: 'var(--app-height, 100%)',
   minHeight: 'var(--app-height, 100%)',
   overflowX: 'hidden',
-  overflowY: 'auto',
+  overflowY: 'hidden',
   boxSizing: 'border-box',
 }
 

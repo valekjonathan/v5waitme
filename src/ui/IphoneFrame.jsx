@@ -81,7 +81,7 @@ export default function IphoneFrame({ children }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflowX: 'hidden',
-        overflowY: 'auto',
+        overflowY: 'hidden',
       }}
     >
       <div

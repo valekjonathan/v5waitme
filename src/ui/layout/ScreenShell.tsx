@@ -15,7 +15,7 @@ const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   overflowX: 'hidden',
-  overflowY: 'auto',
+  overflowY: 'hidden',
   boxSizing: 'border-box',
 }
 

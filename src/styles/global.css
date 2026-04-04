@@ -7,6 +7,8 @@ html {
   margin: 0;
   padding: 0;
   background: #000;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 body {
@@ -17,7 +19,7 @@ body {
   min-height: 100%;
   min-height: -webkit-fill-available;
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-y: hidden !important;
   display: block;
   background: black;
   font-family:
@@ -43,7 +45,7 @@ body {
   min-height: -webkit-fill-available;
   display: block;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   background: #000;
 }
 
@@ -72,12 +74,13 @@ html.waitme-standalone-height #root {
   height: var(--app-height, 100%);
   min-height: var(--app-height, 100%);
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 
 /**
  * Full bleed: crece dentro del padre flex (flex:1 min-height:0); no min-height dvh aquí.
+ * Scroll vertical solo en ScreenShell `<main>`, no aquí.
  */
 .waitme-iphone-frame-fullbleed {
   width: 100%;
@@ -87,7 +90,7 @@ html.waitme-standalone-height #root {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 
