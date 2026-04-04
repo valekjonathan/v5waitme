@@ -33,6 +33,7 @@ const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   flex: 1,
+  height: '100%',
   overflowX: 'hidden',
 }
 
