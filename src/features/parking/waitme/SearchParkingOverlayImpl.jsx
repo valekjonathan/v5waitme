@@ -22,7 +22,11 @@ import {
   WAITME_GLASS_MAP_CONTROL_36,
 } from './icons.jsx'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
-import { MAP_SHELL_OVERLAY } from '../../../ui/layout/layout'
+import {
+  MAP_SHELL_OVERLAY,
+  cssMapOverlayBottomFromLegacy,
+  cssMapOverlayTopFromLegacy,
+} from '../../../ui/layout/layout'
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -42,7 +46,7 @@ function countFiltered(users, filters, userLoc) {
 const filterBtnStyle = {
   ...WAITME_GLASS_MAP_CONTROL_36,
   position: 'absolute',
-  top: MAP_SHELL_OVERLAY.controlsColumnTopPx,
+  top: cssMapOverlayTopFromLegacy(MAP_SHELL_OVERLAY.legacyControlsTopPx),
   right: MAP_SHELL_OVERLAY.filterButtonRightPx,
   zIndex: 18,
   pointerEvents: 'auto',
@@ -155,7 +159,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         <div
           style={{
             position: 'absolute',
-            top: MAP_SHELL_OVERLAY.searchRowTopPx,
+            top: cssMapOverlayTopFromLegacy(MAP_SHELL_OVERLAY.legacySearchTopPx),
             left: 0,
             right: 0,
             paddingLeft: 16,
@@ -229,7 +233,12 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         <div
           style={{
             position: 'absolute',
-            bottom: MAP_SHELL_OVERLAY.cardStackBottomPx,
+            bottom: cssMapOverlayBottomFromLegacy(
+              isSearch
+                ? MAP_SHELL_OVERLAY.legacyCardBottomSearchPx
+                : MAP_SHELL_OVERLAY.legacyCardBottomParkedPx,
+              MAP_SHELL_OVERLAY.cardBottomMinPx
+            ),
             left: 16,
             right: 16,
             zIndex: 9999,

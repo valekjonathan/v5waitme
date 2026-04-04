@@ -1,8 +1,8 @@
 /**
- * Shell: columna Header → `<main>` (área útil flex) → BottomNav. Overlays de mapa dentro del slot del
- * Map deben usar `MAP_SHELL_OVERLAY` en layout.ts (referencia al área útil, no al viewport).
+ * Shell: columna Header → `<main>` → BottomNav. Inyecta --waitme-shell-header-h / --waitme-shell-nav-h
+ * para que MAP_SHELL_OVERLAY en layout.ts alinee overlays del mapa con el viewport histórico.
  */
-import { type CSSProperties, type ReactNode } from 'react'
+import { useCallback, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
 import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
@@ -55,10 +55,44 @@ export default function ScreenShell({
   fullBleedMainOverflow = 'hidden',
 }: ScreenShellProps) {
   const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
+  const shellRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+
+  const syncChromeCssVars = useCallback(() => {
+    const root = shellRef.current
+    const head = headerRef.current
+    const nav = navRef.current
+    if (!root || !head || !nav) return
+    const h = Math.round(head.getBoundingClientRect().height)
+    const n = Math.round(nav.getBoundingClientRect().height)
+    root.style.setProperty('--waitme-shell-header-h', `${h}px`)
+    root.style.setProperty('--waitme-shell-nav-h', `${n}px`)
+  }, [])
+
+  useLayoutEffect(() => {
+    const root = shellRef.current
+    const head = headerRef.current
+    const nav = navRef.current
+    if (!root || !head || !nav) return undefined
+
+    syncChromeCssVars()
+    const ro = new ResizeObserver(syncChromeCssVars)
+    ro.observe(head)
+    ro.observe(nav)
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', syncChromeCssVars)
+    window.addEventListener('resize', syncChromeCssVars)
+    return () => {
+      ro.disconnect()
+      vv?.removeEventListener('resize', syncChromeCssVars)
+      window.removeEventListener('resize', syncChromeCssVars)
+    }
+  }, [syncChromeCssVars])
 
   return (
-    <div data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
-      <Header interactive={interactive} />
+    <div ref={shellRef} data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
+      <Header ref={headerRef} interactive={interactive} />
       <main
         data-waitme-main={mainMode}
         style={{
@@ -75,7 +109,7 @@ export default function ScreenShell({
       >
         <div style={{ ...shellMainColumnStyle, ...contentStyle }}>{children}</div>
       </main>
-      <BottomNav interactive={interactive} />
+      <BottomNav ref={navRef} interactive={interactive} />
     </div>
   )
 }

@@ -1,22 +1,33 @@
 /**
  * Contrato maestro de layout (v5waitme).
  * Jerarquía: IphoneFrame → ScreenShell (Header + `<main>` + BottomNav en flujo flex).
+ * ScreenShell expone --waitme-shell-header-h y --waitme-shell-nav-h (px reales) para overlays.
  * Modo inset/fullBleed solo cambia overflow del `<main>`, no padding compensatorio.
  */
 
 /**
- * Overlays de mapa (SearchParking / ParkHere): coordenadas relativas al slot del Map
- * (`position: relative` que envuelve Mapbox). Con Header y BottomNav en flujo flex, ese slot
- * ya es el área útil central; no duplicar aquí huecos de chrome fijo sobre el viewport.
+ * Anclas del overlay de mapa del modelo viewport original (chrome fijo sobre mapa a pantalla completa).
+ * ScreenShell mide Header/BottomNav y define --waitme-shell-header-h / --waitme-shell-nav-h.
+ * El map slot empieza bajo el header en flujo: estas fórmulas devuelven la misma Y en pantalla
+ * que antes sin duplicar compensación fija dentro del slot.
  */
 export const MAP_SHELL_OVERLAY = {
-  searchRowTopPx: 0,
-  /** Columna zoom / botón filtros: mismo ritmo vertical que antes (≈140 − 70 respecto al slot). */
-  controlsColumnTopPx: 70,
+  legacySearchTopPx: 70,
+  legacyControlsTopPx: 140,
+  legacyCardBottomSearchPx: 88,
+  legacyCardBottomParkedPx: 80,
   filterButtonRightPx: 16,
-  /** Tarjeta inferior: el nav global está fuera de `<main>`; solo respiro sobre el borde útil. */
-  cardStackBottomPx: 16,
+  cardBottomMinPx: 12,
 } as const
+
+/** `top` / `bottom` en CSS para hijos del shell (heredan las CSS vars). */
+export function cssMapOverlayTopFromLegacy(legacyPx: number): string {
+  return `max(0px, calc(${legacyPx}px - var(--waitme-shell-header-h, 0px)))`
+}
+
+export function cssMapOverlayBottomFromLegacy(legacyPx: number, minPx: number): string {
+  return `max(${minPx}px, calc(${legacyPx}px - var(--waitme-shell-nav-h, 0px)))`
+}
 
 export const LAYOUT = {
   screen: {

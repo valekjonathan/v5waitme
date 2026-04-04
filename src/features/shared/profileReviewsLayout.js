@@ -57,8 +57,11 @@ export const profileFormVerticalGapPx = 10
 export const profileActionsFooterMarginTopPx = 8
 export const profileCenteredClusterGapPx = 12
 
-/** Con Header/BottomNav de ScreenShell en flujo: sin margen extra bajo chrome fijo global. */
-export const profileReviewsInnerHeaderTopMarginPx = 0
+/**
+ * Hueco bajo el header global del shell (paridad con layout perfil/reseñas antes del cambio de chrome).
+ * No duplica el flujo del Header: es separación del bloque ProfileHeader respecto al borde superior de `<main>`.
+ */
+export const profileReviewsInnerHeaderTopMarginPx = 25
 
 export const layoutActionsStyle = {
   display: 'flex',
