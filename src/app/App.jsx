@@ -53,12 +53,13 @@ function readStandaloneDisplayMode() {
 
 const WAITME_STANDALONE_HEIGHT_CLASS = 'waitme-standalone-height'
 
-/** iOS PWA: altura útil preferir visualViewport; fallback innerHeight. */
+/** iOS PWA: `--app-height` = max(inner, vv.height+vv.offsetTop); `--vv-offset-top` para anclar chrome al visualViewport. */
 function useStandaloneAppHeightCssVar() {
   useLayoutEffect(() => {
     const rootEl = document.documentElement
     if (!readStandaloneDisplayMode()) {
       rootEl.style.removeProperty('--app-height')
+      rootEl.style.removeProperty('--vv-offset-top')
       rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
       return undefined
     }
@@ -66,20 +67,20 @@ function useStandaloneAppHeightCssVar() {
     rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
 
     const getRealHeight = () => {
-      const doc = document.documentElement
       const inner = window.innerHeight
       const vv = window.visualViewport
-      const vvH = vv && vv.height > 0 ? vv.height : 0
-      const clientH = doc && doc.clientHeight > 0 ? doc.clientHeight : 0
-      const offsetTop = vv && Number.isFinite(vv.offsetTop) ? Math.max(0, vv.offsetTop) : 0
-      const fromVv = vvH > 0 ? vvH + offsetTop : 0
-      // Standalone iOS: unificar layout vs visual (Math.max(inner, visualViewport.height) + clientHeight).
-      return Math.max(inner, vvH, fromVv, clientH)
+
+      if (!vv) return inner
+
+      const real = vv.height + vv.offsetTop
+      return Math.max(inner, real)
     }
 
     const sync = () => {
       const height = getRealHeight()
+      const vv = window.visualViewport
       rootEl.style.setProperty('--app-height', `${height}px`)
+      rootEl.style.setProperty('--vv-offset-top', `${vv?.offsetTop ?? 0}px`)
     }
 
     sync()
@@ -100,6 +101,7 @@ function useStandaloneAppHeightCssVar() {
 
     return () => {
       rootEl.style.removeProperty('--app-height')
+      rootEl.style.removeProperty('--vv-offset-top')
       rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)
