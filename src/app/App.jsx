@@ -46,7 +46,14 @@ const fade200Style = {
   flexDirection: 'column',
   boxSizing: 'border-box',
 }
-const homeGateStyle = { height: '100%', width: '100%' }
+const homeGateStyle = {
+  flex: 1,
+  minHeight: 0,
+  height: '100%',
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -197,7 +204,9 @@ function AuthBootScreen() {
       data-waitme-auth-boot
       style={{
         display: 'flex',
-        minHeight: '100%',
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.background,

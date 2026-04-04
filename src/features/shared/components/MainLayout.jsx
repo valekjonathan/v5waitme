@@ -24,6 +24,8 @@ const rootStyle = {
   minHeight: 0,
   height: '100%',
   width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
   overflow: 'hidden',
 }
 const mapLayerStyle = {
