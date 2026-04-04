@@ -57,6 +57,9 @@ export const profileFormVerticalGapPx = 10
 export const profileActionsFooterMarginTopPx = 8
 export const profileCenteredClusterGapPx = 12
 
+/** Con Header/BottomNav de ScreenShell en flujo: sin margen extra bajo chrome fijo global. */
+export const profileReviewsInnerHeaderTopMarginPx = 0
+
 export const layoutActionsStyle = {
   display: 'flex',
   flexDirection: 'column',

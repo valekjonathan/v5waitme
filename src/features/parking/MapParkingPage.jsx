@@ -49,8 +49,8 @@ export default function MapParkingPage() {
       fullBleedMainOverflow="visible"
     >
       <div style={mapPageShellStyle}>
-        <Suspense fallback={<div style={fallback} />}>
-          <div style={mapPageMapSlotStyle}>
+        <div style={mapPageMapSlotStyle}>
+          <Suspense fallback={<div style={fallback} />}>
             <Map
               readOnly={false}
               mapFocusGeneration={mapFocusGeneration}
@@ -58,9 +58,9 @@ export default function MapParkingPage() {
               parkingPinMode={mode}
               followUserGps={mode === 'parked'}
             />
-          </div>
-        </Suspense>
-        <SearchParkingOverlay mode={mode} allUsers={users} />
+          </Suspense>
+          <SearchParkingOverlay mode={mode} allUsers={users} />
+        </div>
       </div>
     </ScreenShell>
   )

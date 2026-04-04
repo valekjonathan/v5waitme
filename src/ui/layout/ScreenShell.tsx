@@ -1,3 +1,7 @@
+/**
+ * Shell: columna Header → `<main>` (área útil flex) → BottomNav. Overlays de mapa dentro del slot del
+ * Map deben usar `MAP_SHELL_OVERLAY` en layout.ts (referencia al área útil, no al viewport).
+ */
 import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'

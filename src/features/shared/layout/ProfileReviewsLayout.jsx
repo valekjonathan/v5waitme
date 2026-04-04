@@ -2,10 +2,11 @@ import {
   PROFILE_REVIEWS_MAX_WIDTH,
   profileCenteredClusterGapPx,
   profileReviewsHeaderContainerStyle,
+  profileReviewsInnerHeaderTopMarginPx,
 } from '../profileReviewsLayout'
 
 /**
- * Columna bajo ScreenShell inset: header fijo arriba, cuerpo con scroll independiente.
+ * Columna bajo ScreenShell inset: cluster superior + cuerpo con scroll independiente.
  * Una sola estructura para perfil y reseñas (sin centered / spacers / cluster).
  */
 const viewportStyle = {
@@ -22,7 +23,7 @@ const viewportStyle = {
 /** Header: no crece con el scroll; misma caja que token compartido. */
 const headerFixedStyle = {
   flexShrink: 0,
-  marginTop: 25,
+  marginTop: profileReviewsInnerHeaderTopMarginPx,
   width: '100%',
 }
 

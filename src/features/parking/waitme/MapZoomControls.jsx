@@ -7,6 +7,7 @@ import { recenterGlobalMapOnUser } from '../../map/mapControls.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { getMapReadOnlySession } from '../../map/mapSession.js'
 import { IconLayers, IconMinus, IconPlus } from './icons.jsx'
+import { MAP_SHELL_OVERLAY } from '../../../ui/layout/layout'
 
 const locationIcon = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -65,7 +66,7 @@ const btnStyle = {
 
 const zoomControlsWrapStyle = {
   position: 'absolute',
-  top: 140,
+  top: MAP_SHELL_OVERLAY.controlsColumnTopPx,
   left: 16,
   display: 'flex',
   flexDirection: 'column',
