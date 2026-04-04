@@ -93,11 +93,11 @@ html.waitme-standalone-height #root {
  * (App, visualViewport). BottomNav fijo: `bottom: var(--vv-offset-top)`; safe-area solo en su paddingBottom.
  */
 /**
- * Full bleed: alto alineado con `--app-height` (visual viewport); scroll en ScreenShell `<main>`.
+ * Full bleed: un solo reparto de alto vía flex (html ya limita con `--app-height`). Evitar `height` + `flex:1`
+ * en el mismo nodo: en iOS WebKit puede desbordar 1px el padre y recortar con `overflow:hidden`.
  */
 .waitme-iphone-frame-fullbleed {
   width: 100%;
-  height: var(--app-height, 100%);
   flex: 1 1 0%;
   min-height: 0;
   display: flex;
