@@ -50,16 +50,22 @@ function readStandaloneDisplayMode() {
   return Boolean(mq || iosStandalone)
 }
 
+const WAITME_STANDALONE_HEIGHT_CLASS = 'waitme-standalone-height'
+
 /** iOS PWA: dvh/vh suelen fallar; altura útil = innerHeight en <html>. */
 function useStandaloneAppHeightCssVar() {
   useLayoutEffect(() => {
+    const rootEl = document.documentElement
     if (!readStandaloneDisplayMode()) {
-      document.documentElement.style.removeProperty('--app-height')
+      rootEl.style.removeProperty('--app-height')
+      rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
       return undefined
     }
 
+    rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
+
     const sync = () => {
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+      rootEl.style.setProperty('--app-height', `${window.innerHeight}px`)
     }
 
     sync()
@@ -69,15 +75,19 @@ function useStandaloneAppHeightCssVar() {
       })
     }
 
+    const vv = window.visualViewport
     window.addEventListener('resize', sync)
     window.addEventListener('orientationchange', onOrient)
     window.addEventListener('load', sync)
+    vv?.addEventListener('resize', sync)
 
     return () => {
-      document.documentElement.style.removeProperty('--app-height')
+      rootEl.style.removeProperty('--app-height')
+      rootEl.classList.remove(WAITME_STANDALONE_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)
       window.removeEventListener('load', sync)
+      vv?.removeEventListener('resize', sync)
     }
   }, [])
 }

@@ -21,11 +21,15 @@ function readScale() {
 
 function readUseFullBleed() {
   if (typeof window === 'undefined') return false
-  const standalone =
+  const mq =
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(display-mode: standalone)').matches === true
+  const iosStandalone =
+    typeof navigator !== 'undefined' &&
+    'standalone' in navigator &&
+    /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
   const narrow = window.innerWidth <= FULL_BLEED_MAX_WIDTH_PX
-  return standalone || narrow
+  return Boolean(mq || iosStandalone || narrow)
 }
 
 export default function IphoneFrame({ children }) {

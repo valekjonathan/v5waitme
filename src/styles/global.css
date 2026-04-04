@@ -46,6 +46,18 @@ body {
 }
 
 /**
+ * iOS PWA standalone: body/#root con min-height -webkit-fill-available pueden quedar
+ * más altos que window.innerHeight y romper la cadena fijada con --app-height.
+ */
+html.waitme-standalone-height body {
+  min-height: 100%;
+}
+
+html.waitme-standalone-height #root {
+  min-height: 100%;
+}
+
+/**
  * Raíz React: % por defecto; en PWA iOS `App.jsx` define --app-height = innerHeight (px).
  */
 .waitme-app-root {
