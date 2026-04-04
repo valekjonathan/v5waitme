@@ -106,19 +106,27 @@ export function AuthProvider({ children }) {
     if (clearAuthError) setAuthError(null)
   }, [])
 
-  /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
-  const applyDevAuthenticatedCore = useCallback((devUser, { logDevLoginSuccess }) => {
-    setUser(devUser)
-    setSession({ user: devUser })
-    setStatus('authenticated')
-    setIsNewUser(false)
+  /** Perfil dev-local tras `user` ya fijado (Supabase desactivado o rama sin API). */
+  const commitDevLocalProfileBoot = useCallback((devUser) => {
     const { merged, isComplete } = buildDevLocalProfileState(devUser)
     setProfile(merged)
+    setIsNewUser(false)
     setIsProfileComplete(isComplete)
     setProfileBootstrapReady(true)
-    if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
     if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
   }, [])
+
+  /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
+  const applyDevAuthenticatedCore = useCallback(
+    (devUser, { logDevLoginSuccess }) => {
+      setUser(devUser)
+      setSession({ user: devUser })
+      setStatus('authenticated')
+      commitDevLocalProfileBoot(devUser)
+      if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
+    },
+    [commitDevLocalProfileBoot]
+  )
 
   useEffect(() => {
     startLocationTracking()
@@ -180,13 +188,8 @@ export function AuthProvider({ children }) {
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })
 
       if (!isSupabaseConfigured() || !supabase) {
-        const { merged, isComplete } = buildDevLocalProfileState(nextUser)
         lastProfileBootUserId = nextUser.id
-        setProfile(merged)
-        setIsNewUser(false)
-        setIsProfileComplete(isComplete)
-        setProfileBootstrapReady(true)
-        if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
+        commitDevLocalProfileBoot(nextUser)
         return
       }
 
@@ -332,7 +335,7 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = null
       subscription.unsubscribe()
     }
-  }, [toUnauthenticated, applyDevAuthenticatedCore])
+  }, [toUnauthenticated, applyDevAuthenticatedCore, commitDevLocalProfileBoot])
 
   const signInWithGoogle = useCallback(async () => {
     logFlow('LOGIN_CLICK')

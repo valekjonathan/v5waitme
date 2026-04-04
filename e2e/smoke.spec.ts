@@ -80,3 +80,29 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
 
   expect(mapboxForwardUrls.length).toBeGreaterThanOrEqual(3)
 })
+
+test('park here: placeholder modo aparcado y shell fullBleed (dev auth)', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('waitme.dev.authenticated', '1')
+    window.localStorage.setItem(
+      'waitme.dev.profileDraft',
+      JSON.stringify({
+        full_name: 'E2E User',
+        phone: '600000000',
+        brand: 'Toyota',
+        model: 'Yaris',
+        plate: '1234ABC',
+        allow_phone_calls: false,
+        color: 'negro',
+        vehicle_type: 'car',
+        email: 'e2e@test.com',
+        avatar_url: '',
+      })
+    )
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: /Estoy aparcado aquí/i }).click()
+  await expect(page.getByPlaceholder(/Donde estas aparcado/i)).toBeVisible({ timeout: 20000 })
+  await expect(page.locator('[data-waitme-main="fullBleed"]')).toBeVisible()
+})

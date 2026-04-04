@@ -1,7 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:36:16.027Z
-Git revision: de66fe01f0d35dd4597c1ff7fa9303438c169a18
-Git source: local HEAD (working tree clean al generar).
+Generated: 2026-04-04T05:38:39.695Z
+Git revision: c52ce1fdde513b360ab941ed04029b8c4bfae78b
+Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -203,7 +203,7 @@ Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5
 ninguno
 
 === RIESGOS / NOTAS ===
-- Cabecera Git: «Git revision» puede ser el commit vigente al ejecutar el script; si el archivo se commitea después, el hash del commit tip puede diferir (contrastar con `git rev-parse HEAD`). En CI, GITHUB_SHA es el commit bajo prueba.
+- Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.
 - Cambios en ScreenShell/layout afectan todas las pantallas con shell.
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
 - Map bundle es pesado (lazy load en App).

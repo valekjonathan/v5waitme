@@ -8,6 +8,14 @@ import {
   OVIEDO_LNG,
   reapplyMapVisualLayers,
 } from '../src/features/map/constants/mapbox.js'
+import { isWaitmeParkingLayoutReady } from '../src/features/map/mapControls.js'
+import { getGlobalMapInstance, setGlobalMapInstance } from '../src/features/map/mapInstance.js'
+import {
+  getMapFollowUserGps,
+  getMapReadOnlySession,
+  setMapFollowUserGps,
+  setMapReadOnlySession,
+} from '../src/features/map/mapSession.js'
 
 test('map defaults: fallback GPS y zoom usables', () => {
   assert.ok(Number.isFinite(OVIEDO_LAT) && Math.abs(OVIEDO_LAT) <= 90)
@@ -18,6 +26,35 @@ test('map defaults: fallback GPS y zoom usables', () => {
 
 test('reapplyMapVisualLayers: map null es no-op', () => {
   assert.doesNotThrow(() => reapplyMapVisualLayers(null, true))
+})
+
+test('isWaitmeParkingLayoutReady: sin DOM suficiente es false', () => {
+  assert.equal(isWaitmeParkingLayoutReady(), false)
+})
+
+test('mapInstance: set/get singleton', () => {
+  const prev = getGlobalMapInstance()
+  setGlobalMapInstance(null)
+  assert.equal(getGlobalMapInstance(), null)
+  const stub = { isStyleLoaded: () => true }
+  setGlobalMapInstance(stub)
+  assert.equal(getGlobalMapInstance(), stub)
+  setGlobalMapInstance(prev)
+})
+
+test('mapSession: readOnly y followUserGps conservan valores tras roundtrip', () => {
+  const prevRead = getMapReadOnlySession()
+  const prevFollow = getMapFollowUserGps()
+  setMapReadOnlySession(false)
+  assert.equal(getMapReadOnlySession(), false)
+  setMapReadOnlySession(true)
+  assert.equal(getMapReadOnlySession(), true)
+  setMapFollowUserGps(false)
+  assert.equal(getMapFollowUserGps(), false)
+  setMapFollowUserGps(true)
+  assert.equal(getMapFollowUserGps(), true)
+  setMapReadOnlySession(prevRead)
+  setMapFollowUserGps(prevFollow)
 })
 
 test('getMapboxAccessToken: returns token from env object', () => {

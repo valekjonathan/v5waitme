@@ -17,3 +17,8 @@ test('shell login: #root y main tienen área visible (no layout colapsado)', asy
   const mainBox = await main.boundingBox()
   expect(mainBox && mainBox.height).toBeGreaterThan(48)
 })
+
+test('shell login: #root monta React (no árbol vacío / pantalla en blanco)', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('#root > *').first()).toBeVisible({ timeout: 15000 })
+})
