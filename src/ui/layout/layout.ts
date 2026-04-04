@@ -1,33 +1,25 @@
 /**
  * Contrato maestro de layout (v5waitme).
  * Jerarquía: IphoneFrame → ScreenShell (Header + `<main>` + BottomNav en flujo flex).
- * ScreenShell expone --waitme-shell-header-h y --waitme-shell-nav-h (px reales) para overlays.
+ * Única referencia vertical del contenido: `<main>` → `data-waitme-content-slot` (100 % del main).
+ * Overlays de mapa: offsets sólo respecto a `[data-waitme-map-slot]`, sin viewport ni restas de chrome.
  * Modo inset/fullBleed solo cambia overflow del `<main>`, no padding compensatorio.
  */
 
 /**
- * Anclas del overlay de mapa del modelo viewport original (chrome fijo sobre mapa a pantalla completa).
- * ScreenShell mide Header/BottomNav y define --waitme-shell-header-h / --waitme-shell-nav-h.
- * El map slot empieza bajo el header en flujo: estas fórmulas devuelven la misma Y en pantalla
- * que antes sin duplicar compensación fija dentro del slot.
+ * Posiciones dentro del nodo `[data-waitme-map-slot]` (hijo directo del content slot en mapa).
+ * Paridad con el producto histórico: 70→140 entre fila buscador y columna zoom/filtros; 88/80 al borde inferior de pantalla con nav ya fuera del slot ⇒ inset inferior en el slot.
  */
-export const MAP_SHELL_OVERLAY = {
-  legacySearchTopPx: 70,
-  legacyControlsTopPx: 140,
-  legacyCardBottomSearchPx: 88,
-  legacyCardBottomParkedPx: 80,
+export const MAP_SLOT_OVERLAY = {
+  searchRowTopPx: 12,
+  /** Misma separación vertical histórica entre top buscador (70) y top controles (140). */
+  searchToControlsTopGapPx: 70,
+  /** = searchRowTopPx + searchToControlsTopGapPx */
+  zoomColumnTopPx: 82,
   filterButtonRightPx: 16,
-  cardBottomMinPx: 12,
+  cardBottomSearchPx: 24,
+  cardBottomParkedPx: 16,
 } as const
-
-/** `top` / `bottom` en CSS para hijos del shell (heredan las CSS vars). */
-export function cssMapOverlayTopFromLegacy(legacyPx: number): string {
-  return `max(0px, calc(${legacyPx}px - var(--waitme-shell-header-h, 0px)))`
-}
-
-export function cssMapOverlayBottomFromLegacy(legacyPx: number, minPx: number): string {
-  return `max(${minPx}px, calc(${legacyPx}px - var(--waitme-shell-nav-h, 0px)))`
-}
 
 export const LAYOUT = {
   screen: {

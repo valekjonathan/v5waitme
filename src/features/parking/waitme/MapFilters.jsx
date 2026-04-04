@@ -87,9 +87,9 @@ function FilterRangeBlock({
   )
 }
 
-/** `fixed` + capa alta: por encima del pin y del canvas/markers del mapa (stacking global). */
+/** Panel anclado al slot mapa (`SearchParkingOverlayImpl`); no stacking respecto al viewport. */
 const panelOuterStyle = {
-  position: 'fixed',
+  position: 'absolute',
   right: 0,
   top: '50%',
   height: 'auto',
@@ -107,7 +107,7 @@ const panelStyle = {
   border: '2px solid #a855f7',
   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
   width: 288,
-  maxHeight: '85vh',
+  maxHeight: '85%',
   overflow: 'visible',
   display: 'flex',
   flexDirection: 'column',

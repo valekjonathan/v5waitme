@@ -49,7 +49,7 @@ export default function MapParkingPage() {
       fullBleedMainOverflow="visible"
     >
       <div style={mapPageShellStyle}>
-        <div style={mapPageMapSlotStyle}>
+        <div style={mapPageMapSlotStyle} data-waitme-map-slot>
           <Suspense fallback={<div style={fallback} />}>
             <Map
               readOnly={false}

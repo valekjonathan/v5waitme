@@ -58,8 +58,7 @@ export const profileActionsFooterMarginTopPx = 8
 export const profileCenteredClusterGapPx = 12
 
 /**
- * Hueco bajo el header global del shell (paridad con layout perfil/reseñas antes del cambio de chrome).
- * No duplica el flujo del Header: es separación del bloque ProfileHeader respecto al borde superior de `<main>`.
+ * Separación dentro del content slot (`data-waitme-content-slot`), bajo el borde superior de `<main>`.
  */
 export const profileReviewsInnerHeaderTopMarginPx = 25
 

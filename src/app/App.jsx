@@ -41,6 +41,7 @@ const fade200Style = {
   transition: 'opacity 200ms ease-out',
   height: '100%',
   minHeight: 0,
+  flex: 1,
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',
