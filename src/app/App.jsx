@@ -41,7 +41,7 @@ const appRootLayoutStyle = {
 
 /**
  * Fuente única de alto visible: `VisualViewport` (Safari barra URL, teclado, PWA, WKWebView).
- * `--vv-offset-top` sale del mismo objeto: anclaje de `position:fixed` (p. ej. BottomNav) al layout viewport.
+ * No usar `visualViewport.offsetTop` como `bottom` en nav fijo: es offset superior, no distancia al borde inferior.
  */
 const WAITME_VV_HEIGHT_CLASS = 'waitme-standalone-height'
 
@@ -49,7 +49,6 @@ function setAppHeight() {
   const vv = window.visualViewport
   const height = vv ? vv.height : window.innerHeight
   document.documentElement.style.setProperty('--app-height', `${height}px`)
-  document.documentElement.style.setProperty('--vv-offset-top', `${vv ? vv.offsetTop : 0}px`)
 }
 
 function useAppHeightCssVar() {
@@ -77,7 +76,6 @@ function useAppHeightCssVar() {
 
     return () => {
       rootEl.style.removeProperty('--app-height')
-      rootEl.style.removeProperty('--vv-offset-top')
       rootEl.classList.remove(WAITME_VV_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)

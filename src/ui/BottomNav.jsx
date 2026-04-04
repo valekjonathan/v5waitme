@@ -67,7 +67,7 @@ const BottomNav = forwardRef(function BottomNav(
               position: 'fixed',
               left: 0,
               right: 0,
-              bottom: 'var(--vv-offset-top, 0px)',
+              bottom: 0,
               width: '100%',
             }
           : {

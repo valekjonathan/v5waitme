@@ -89,8 +89,8 @@ html.waitme-standalone-height #root {
 }
 
 /**
- * PWA + Capacitor: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--vv-offset-top` / `--app-height`
- * (App, visualViewport). BottomNav fijo: `bottom: var(--vv-offset-top)`; safe-area solo en su paddingBottom.
+ * PWA + Capacitor: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--app-height` (App, visualViewport).
+ * BottomNav fijo: `bottom: 0`; safe-area en `paddingBottom` del nav.
  */
 /**
  * Full bleed: un solo reparto de alto vía flex (html ya limita con `--app-height`). Evitar `height` + `flex:1`

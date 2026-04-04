@@ -1,7 +1,7 @@
 /**
  * Shell: columna Header → `<main>` (referencia vertical útil) → BottomNav.
  * El alto útil global lo fija `App.jsx` en `html` (`--app-height` desde visualViewport); esta columna lo hereda por flex.
- * BottomNav fijo usa `--vv-offset-top` + `--waitme-bottom-nav-h` solo en modo standalone (ver `readStandaloneDisplayMode`).
+ * BottomNav fijo: `bottom: 0` + `--waitme-bottom-nav-h` solo en modo standalone (ver `readStandaloneDisplayMode`).
  */
 import {
   useLayoutEffect,
