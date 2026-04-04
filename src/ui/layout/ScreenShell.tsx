@@ -1,25 +1,20 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
-import {
-  LAYOUT,
-  SCREEN_SHELL_MAIN_MODE,
-  shellInsetMainPaddingStyle,
-  type ScreenShellMainMode,
-} from './layout'
+import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 
 const shellRootStyle: CSSProperties = {
   width: '100%',
   flex: 1,
-  minHeight: 0,
+  minHeight: '100dvh',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
+  boxSizing: 'border-box',
 }
 
 const shellMainColumnStyle: CSSProperties = {
   width: '100%',
-  height: '100%',
   maxWidth: 'none',
   margin: 0,
   padding: 0,
@@ -30,13 +25,6 @@ const shellMainColumnStyle: CSSProperties = {
   boxSizing: 'border-box',
   alignSelf: 'stretch',
 }
-
-/**
- * Valores previos a la primera medición (solo evitan 0px un frame). Deben ser sustituidos
- * al instante por ResizeObserver; no son el contrato de layout (eso son las medidas reales).
- */
-const CHROME_MEASURE_FALLBACK_HEADER_PX = 64
-const CHROME_MEASURE_FALLBACK_NAV_PX = 88
 
 export type ScreenShellProps = {
   children: ReactNode
@@ -63,43 +51,10 @@ export default function ScreenShell({
   fullBleedMainOverflow = 'hidden',
 }: ScreenShellProps) {
   const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
-  const headerRef = useRef<HTMLElement>(null)
-  const navRef = useRef<HTMLElement>(null)
-  const [chromePx, setChromePx] = useState<{ header: number; nav: number }>({
-    header: CHROME_MEASURE_FALLBACK_HEADER_PX,
-    nav: CHROME_MEASURE_FALLBACK_NAV_PX,
-  })
-
-  useLayoutEffect(() => {
-    if (fullBleed) return undefined
-
-    const headerEl = headerRef.current
-    const navEl = navRef.current
-    if (!headerEl || !navEl) return undefined
-
-    const measure = () => {
-      setChromePx({
-        header: Math.round(headerEl.getBoundingClientRect().height),
-        nav: Math.round(navEl.getBoundingClientRect().height),
-      })
-    }
-
-    measure()
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
-    if (ro) {
-      ro.observe(headerEl)
-      ro.observe(navEl)
-    }
-    window.addEventListener('resize', measure)
-    return () => {
-      ro?.disconnect()
-      window.removeEventListener('resize', measure)
-    }
-  }, [fullBleed])
 
   return (
     <div data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
-      <Header ref={headerRef} interactive={interactive} />
+      <Header interactive={interactive} />
       <main
         data-waitme-main={mainMode}
         style={{
@@ -112,14 +67,11 @@ export default function ScreenShell({
           overflowY: fullBleed ? fullBleedMainOverflow : mainOverflow,
           overflowX: 'hidden',
           boxSizing: 'border-box',
-          ...(fullBleed
-            ? {}
-            : shellInsetMainPaddingStyle(LAYOUT.screen.paddingX, chromePx.header, chromePx.nav)),
         }}
       >
         <div style={{ ...shellMainColumnStyle, ...contentStyle }}>{children}</div>
       </main>
-      <BottomNav ref={navRef} interactive={interactive} />
+      <BottomNav interactive={interactive} />
     </div>
   )
 }

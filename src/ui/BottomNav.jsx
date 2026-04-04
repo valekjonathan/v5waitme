@@ -59,10 +59,9 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       data-waitme-nav
       style={{
         pointerEvents: 'auto',
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
+        position: 'relative',
+        width: '100%',
+        flexShrink: 0,
         zIndex: 2147483647,
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',

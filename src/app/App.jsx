@@ -27,7 +27,16 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
-/** Debe llenar el alto del padre (cadena % + dvh en global.css / .waitme-app-root); si no, IphoneFrame/ScreenShell colapsan a 0. */
+/** Raíz: columna flex + cadena %/dvh hacia abajo; sin esto IphoneFrame/ScreenShell colapsan a 0. */
+const appRootLayoutStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: '100dvh',
+  height: '100%',
+  width: '100%',
+  overflow: 'hidden',
+  boxSizing: 'border-box',
+}
 const fade200Style = {
   transition: 'opacity 200ms ease-out',
   height: '100%',
@@ -274,7 +283,7 @@ function AppGate() {
 
 export default function App() {
   return (
-    <div className="waitme-app-root">
+    <div className="waitme-app-root" style={appRootLayoutStyle}>
       <ErrorBoundary name="root">
         <AppAuthRoot>
           <AppGate />

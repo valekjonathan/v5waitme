@@ -23,11 +23,10 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
       data-waitme-header
       style={{
         pointerEvents: 'auto',
-        position: 'fixed',
-        left: 0,
-        right: 0,
+        position: 'relative',
+        width: '100%',
+        flexShrink: 0,
         zIndex: 60,
-        top: 0,
         paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: colors.background,
         // Un poco más de contraste que 0.08: en Safari + scale(IphoneFrame) el pelo de 1px a veces casi no se percibe

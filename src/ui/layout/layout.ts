@@ -1,9 +1,8 @@
 /**
  * Contrato maestro de layout (v5waitme).
- * Jerarquía: IphoneFrame → ScreenShell (Header + main + BottomNav).
- * En modo inset, el padding del `<main>` usa las alturas **medidas** de Header/BottomNav (ver ScreenShell).
+ * Jerarquía: IphoneFrame → ScreenShell (Header + `<main>` + BottomNav en flujo flex).
+ * Modo inset/fullBleed solo cambia overflow del `<main>`, no padding compensatorio.
  */
-import type { CSSProperties } from 'react'
 
 export const LAYOUT = {
   screen: {
@@ -33,21 +32,3 @@ export const SCREEN_SHELL_MAIN_MODE = {
 
 export type ScreenShellMainMode =
   (typeof SCREEN_SHELL_MAIN_MODE)[keyof typeof SCREEN_SHELL_MAIN_MODE]
-
-/**
- * Padding del `<main>` en modo inset.
- * `headerHeightPx` / `bottomNavHeightPx` deben ser las alturas reales de los nodos fijos
- * (`getBoundingClientRect().height` o `offsetHeight`), que ya incluyen safe-area en sus cajas.
- */
-export function shellInsetMainPaddingStyle(
-  _paddingX: number,
-  headerHeightPx: number,
-  bottomNavHeightPx: number
-): CSSProperties {
-  return {
-    paddingLeft: 0,
-    paddingRight: 0,
-    paddingTop: `${headerHeightPx}px`,
-    paddingBottom: `${bottomNavHeightPx}px`,
-  }
-}

@@ -59,7 +59,14 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   if (fullBleed) {
-    return <div className="waitme-iphone-frame-fullbleed">{children}</div>
+    return (
+      <div
+        className="waitme-iphone-frame-fullbleed"
+        style={{ height: '100%', minHeight: '100dvh' }}
+      >
+        {children}
+      </div>
+    )
   }
 
   const s = scale
