@@ -11,6 +11,7 @@ export default [
   {
     ignores: [
       'dist/**',
+      'ios/**',
       'node_modules/**',
       'GTP/**',
       'playwright-report/**',

@@ -46,6 +46,8 @@ export default defineConfig(({ mode, command }) => {
   }
 
   return {
+    /** Producción: rutas relativas para empaquetar `dist/` en Capacitor iOS; dev y Vercel en raíz siguen bien. */
+    base: command === 'build' ? './' : '/',
     plugins: [react(), ...sentryPlugins],
     optimizeDeps: {
       include: ['mapbox-gl'],

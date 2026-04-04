@@ -23,9 +23,13 @@
     "clean": "node scripts/auto-clean.mjs",
     "knip": "knip --include files,dependencies,unlisted --no-config-hints",
     "supabase:setup": "node scripts/supabase-setup.mjs",
-    "supabase:types": "supabase gen types typescript --linked"
+    "supabase:types": "supabase gen types typescript --linked",
+    "cap:sync": "npm run build && npx cap sync ios",
+    "cap:open:ios": "npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0",
     "@sentry/react": "^10.47.0",
     "@supabase/supabase-js": "^2.100.0",
     "mapbox-gl": "^3.20.0",
@@ -35,6 +39,7 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.26.0",
     "@babel/preset-react": "^7.26.0",
+    "@capacitor/cli": "^8.3.0",
     "@eslint/js": "^9.18.0",
     "@playwright/test": "^1.51.0",
     "@sentry/vite-plugin": "^5.1.1",

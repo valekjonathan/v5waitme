@@ -3,5 +3,11 @@
   "entry": ["src/main.jsx"],
   "project": ["src/**/*.{js,jsx,ts,tsx}"],
   "ignore": ["src/vite-env.d.ts"],
-  "ignoreDependencies": ["@vitest/coverage-v8", "@babel/preset-react"]
+  "ignoreDependencies": [
+    "@vitest/coverage-v8",
+    "@babel/preset-react",
+    "@capacitor/cli",
+    "@capacitor/core",
+    "@capacitor/ios"
+  ]
 }

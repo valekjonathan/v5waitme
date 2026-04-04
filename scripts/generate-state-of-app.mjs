@@ -313,7 +313,8 @@ function buildDocument(orphans, reachable) {
     '- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` (Math.max(innerHeight, visualViewport.height, clientHeight, vv+offsetTop); listeners resize/orientation/load + visualViewport resize/scroll). `src/styles/global.css`: columna flex `html → body → #root → .waitme-app-root` con `flex: 1 1 0%` + `min-height: 0`; en standalone, body/#root sin height fijo duplicado; scroll vertical en `ScreenShell` `<main>` (`overflow-y: auto`).',
     '- Shell: `ScreenShell.tsx` raíz `overflow-y: hidden`; `<main>` con `flex: 1`, `min-height: 0`, `overflow-y: auto` por defecto (full bleed) o según props. Gates flex en App (fade200Style / homeGateStyle).',
     '- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.',
-    '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.'
+    '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.',
+    '- Capacitor iOS: `capacitor.config.json` (webDir `dist`); proyecto Xcode en `ios/`; `npm run cap:sync` = build + `cap sync ios`. Artefactos copiados (`ios/App/App/public`, config generados en App) están en `.gitignore` del template — tras clonar hay que sincronizar. `appId` actual es placeholder (`es.waitme.v5waitme`); cambiar antes de publicar en App Store. La web en Vercel sigue siendo el mismo frontend compilado; Vercel no depende de Capacitor.'
   )
   lines.push('')
   lines.push('=== FIN ===')
