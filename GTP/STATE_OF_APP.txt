@@ -1,7 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:20:22.380Z
-Git revision: 9b4f18825e6fdba23f4964d896c712f49ca7d15f
-Git source: local HEAD (working tree clean al generar).
+Generated: 2026-04-04T05:31:38.634Z
+Git revision: c6f9cbaaa2bbf6266361648d38019c565c24d577
+Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -187,8 +187,8 @@ auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
-Pantallas internas (appScreenState): home | profile | reviews — ver reduceAppScreen en src/lib/appScreenState.js
-Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage (mapa: Map lazy).
+Pantallas lógicas (reduceAppScreen / src/lib/appScreenState.js): home, profile, reviews, searchParking, parkHere, alerts, chats
+Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage, AlertsPage, ChatsPage (mapa: Map lazy donde aplica).
 
 === ARCHIVOS CRÍTICOS (arranque y shell) ===
 src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext.jsx, src/ui/layout/ScreenShell.tsx, src/ui/layout/layout.ts
@@ -203,7 +203,7 @@ Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5
 ninguno
 
 === RIESGOS / NOTAS ===
-- Cabecera Git: «Git revision» + «Git source» — en GitHub Actions es GITHUB_SHA del checkout; en local, árbol dirty implica divergencia hasta el próximo commit.
+- Cabecera Git: «Git revision» puede ser el commit vigente al ejecutar el script; si el archivo se commitea después, el hash del commit tip puede diferir (contrastar con `git rev-parse HEAD`). En CI, GITHUB_SHA es el commit bajo prueba.
 - Cambios en ScreenShell/layout afectan todas las pantallas con shell.
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
 - Map bundle es pesado (lazy load en App).
@@ -215,6 +215,5 @@ ninguno
 - Shell: header + bottom nav OK en layout; fix de altura aplicado en src/app/App.jsx (fade200Style: height 100% + flex column) y src/ui/layout/ScreenShell.tsx (shellRootStyle: flex 1).
 - Problema previo resuelto: centro negro / área central por altura 0 en cadena flex (header/nav fixed no daban altura al flujo).
 - Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.
-- Retomar mañana: «continúa donde lo dejamos en WaitMe v5 producción iPhone (mapa ya renderiza, revisar UX y ajustes finales)».
 
 === FIN ===

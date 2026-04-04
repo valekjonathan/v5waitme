@@ -120,6 +120,18 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
+  it('arranque: ScreenShell montado con contenido (jsdom no usa #root de main.jsx)', async () => {
+    render(<App />)
+    await waitFor(
+      () => {
+        const shell = document.querySelector('[data-waitme-screen-shell]')
+        expect(shell).not.toBeNull()
+        expect((shell.textContent || '').trim().length).toBeGreaterThan(5)
+      },
+      { timeout: 15_000 }
+    )
+  })
+
   it('Login completo: click Google -> authenticated -> Home si perfil completo (fallback mapa)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     render(<App />)

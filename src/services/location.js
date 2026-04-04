@@ -185,7 +185,10 @@ export function getCurrentLocation() {
 
 export const getCurrentLocationFast = getCurrentLocation
 
-/** Solo tests (`test/location.test.js`); el mapa usa `subscribeToLocation` sin este filtro. */
+/**
+ * Decisión producto: no integrado en `startLocationTracking` / `subscribeToLocation`.
+ * Se mantiene para `test/location.test.js` y para integración futura explícita (cambiaría filtrado GPS).
+ */
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 

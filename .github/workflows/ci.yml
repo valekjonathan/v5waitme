@@ -37,8 +37,8 @@ jobs:
       - name: Quality gate
         run: npm run quality
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium + WebKit
+        run: npx playwright install --with-deps chromium webkit
 
-      - name: E2E tests
+      - name: E2E tests (Chromium + WebKit)
         run: npm run test:e2e

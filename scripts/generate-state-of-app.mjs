@@ -6,6 +6,15 @@ import fs from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
+import {
+  APP_SCREEN_ALERTS,
+  APP_SCREEN_CHATS,
+  APP_SCREEN_HOME,
+  APP_SCREEN_PARK_HERE,
+  APP_SCREEN_PROFILE,
+  APP_SCREEN_REVIEWS,
+  APP_SCREEN_SEARCH_PARKING,
+} from '../src/lib/appScreenState.js'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const srcDir = join(root, 'src')
@@ -253,11 +262,18 @@ function buildDocument(orphans, reachable) {
   lines.push(
     'Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).'
   )
+  const appScreens = [
+    APP_SCREEN_HOME,
+    APP_SCREEN_PROFILE,
+    APP_SCREEN_REVIEWS,
+    APP_SCREEN_SEARCH_PARKING,
+    APP_SCREEN_PARK_HERE,
+    APP_SCREEN_ALERTS,
+    APP_SCREEN_CHATS,
+  ].join(', ')
+  lines.push(`Pantallas lógicas (reduceAppScreen / src/lib/appScreenState.js): ${appScreens}`)
   lines.push(
-    'Pantallas internas (appScreenState): home | profile | reviews — ver reduceAppScreen en src/lib/appScreenState.js'
-  )
-  lines.push(
-    'Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage (mapa: Map lazy).'
+    'Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage, AlertsPage, ChatsPage (mapa: Map lazy donde aplica).'
   )
   lines.push('')
   lines.push('=== ARCHIVOS CRÍTICOS (arranque y shell) ===')
@@ -274,7 +290,7 @@ function buildDocument(orphans, reachable) {
   lines.push('')
   lines.push('=== RIESGOS / NOTAS ===')
   lines.push(
-    '- Cabecera Git: «Git revision» + «Git source» — en GitHub Actions es GITHUB_SHA del checkout; en local, árbol dirty implica divergencia hasta el próximo commit.',
+    '- Cabecera Git: «Git revision» puede ser el commit vigente al ejecutar el script; si el archivo se commitea después, el hash del commit tip puede diferir (contrastar con `git rev-parse HEAD`). En CI, GITHUB_SHA es el commit bajo prueba.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
     '- Map bundle es pesado (lazy load en App).',
@@ -289,8 +305,7 @@ function buildDocument(orphans, reachable) {
     '- APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.',
     '- Shell: header + bottom nav OK en layout; fix de altura aplicado en src/app/App.jsx (fade200Style: height 100% + flex column) y src/ui/layout/ScreenShell.tsx (shellRootStyle: flex 1).',
     '- Problema previo resuelto: centro negro / área central por altura 0 en cadena flex (header/nav fixed no daban altura al flujo).',
-    '- Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.',
-    '- Retomar mañana: «continúa donde lo dejamos en WaitMe v5 producción iPhone (mapa ya renderiza, revisar UX y ajustes finales)».'
+    '- Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.'
   )
   lines.push('')
   lines.push('=== FIN ===')

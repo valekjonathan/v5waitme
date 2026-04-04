@@ -1,4 +1,4 @@
-/** Pantallas de la shell autenticada (home / perfil / reseñas). */
+/** Estados lógicos de pantalla (AppScreenContext + reduceAppScreen). */
 export const APP_SCREEN_HOME = 'home'
 export const APP_SCREEN_PROFILE = 'profile'
 export const APP_SCREEN_REVIEWS = 'reviews'

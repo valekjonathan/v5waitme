@@ -106,6 +106,20 @@ export function AuthProvider({ children }) {
     if (clearAuthError) setAuthError(null)
   }, [])
 
+  /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
+  const applyDevAuthenticatedCore = useCallback((devUser, { logDevLoginSuccess }) => {
+    setUser(devUser)
+    setSession({ user: devUser })
+    setStatus('authenticated')
+    setIsNewUser(false)
+    const { merged, isComplete } = buildDevLocalProfileState(devUser)
+    setProfile(merged)
+    setIsProfileComplete(isComplete)
+    setProfileBootstrapReady(true)
+    if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
+    if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
+  }, [])
+
   useEffect(() => {
     startLocationTracking()
   }, [])
@@ -202,16 +216,7 @@ export function AuthProvider({ children }) {
       if (!isSupabaseConfigured() || !supabase) {
         if (!cancelled) {
           if (readLocalFlag(DEV_AUTH_KEY)) {
-            const devUser = buildDevUser()
-            setUser(devUser)
-            setSession({ user: devUser })
-            setStatus('authenticated')
-            const { merged, isComplete } = buildDevLocalProfileState(devUser)
-            setProfile(merged)
-            setIsNewUser(false)
-            setIsProfileComplete(isComplete)
-            setProfileBootstrapReady(true)
-            if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
+            applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: false })
             return
           }
           toUnauthenticated(true)
@@ -325,24 +330,14 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = null
       subscription.unsubscribe()
     }
-  }, [toUnauthenticated])
+  }, [toUnauthenticated, applyDevAuthenticatedCore])
 
   const signInWithGoogle = useCallback(async () => {
     logFlow('LOGIN_CLICK')
     setAuthError(null)
     if (!isSupabaseConfigured()) {
-      const devUser = buildDevUser()
       writeLocalFlag(DEV_AUTH_KEY, true)
-      setUser(devUser)
-      setSession({ user: devUser })
-      setStatus('authenticated')
-      setIsNewUser(false)
-      const { merged, isComplete } = buildDevLocalProfileState(devUser)
-      setProfile(merged)
-      setIsProfileComplete(isComplete)
-      setProfileBootstrapReady(true)
-      logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
-      if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
+      applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: true })
       return
     }
     try {
@@ -356,7 +351,7 @@ export function AuthProvider({ children }) {
       console.error('[WaitMe][Auth] signInWithGoogle excepción no prevista', e)
       setAuthError(e instanceof Error ? e.message : String(e))
     }
-  }, [])
+  }, [applyDevAuthenticatedCore])
 
   const signOut = useCallback(async () => {
     setAuthError(null)
