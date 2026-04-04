@@ -20,12 +20,6 @@ const shellRootStyle: CSSProperties = {
   boxSizing: 'border-box',
 }
 
-const bottomNavSlotStyle: CSSProperties = {
-  flexShrink: 0,
-  width: '100%',
-  paddingBottom: 'env(safe-area-inset-bottom)',
-}
-
 const shellMainColumnStyle: CSSProperties = {
   width: '100%',
   maxWidth: 'none',
@@ -87,9 +81,7 @@ export default function ScreenShell({
           {children}
         </div>
       </main>
-      <div style={bottomNavSlotStyle}>
-        <BottomNav interactive={interactive} />
-      </div>
+      <BottomNav interactive={interactive} />
     </div>
   )
 }
