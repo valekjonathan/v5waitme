@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T09:25:35.422Z
-Git revision: d3d41bb47f75f16ccb67a1d52dd1568755f0f38c
+Generated: 2026-04-04T09:33:16.944Z
+Git revision: 60528ea25cf2dcbb3bdf30b77774ae3ab861249b
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -217,8 +217,9 @@ ninguno
 === CHECKPOINT PRODUCCIÓN (2026-04) ===
 - Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.
 - APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.
-- Shell: header + bottom nav OK en layout; fix de altura aplicado en src/app/App.jsx (fade200Style: height 100% + flex column) y src/ui/layout/ScreenShell.tsx (shellRootStyle: flex 1).
-- Problema previo resuelto: centro negro / área central por altura 0 en cadena flex (header/nav fixed no daban altura al flujo).
-- Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.
+- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` en documentElement (visualViewport / innerHeight). `src/styles/global.css`: html + `.waitme-app-root` + fullbleed con `var(--app-height)`; en standalone, `body` y `#root` con `height`/`min-height` en `var(--app-height)`; overflow estructural `overflow-x: hidden` + `overflow-y: auto` en esa cadena.
+- Shell: `ScreenShell.tsx` raíz con `flex: 1`, `min-height: 0`, `height: 100%`, overflow-y auto; `<main>` según modo (full bleed por defecto overflow-y auto). Gates flex en App (fade200Style / homeGateStyle).
+- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
+- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
 
 === FIN ===
