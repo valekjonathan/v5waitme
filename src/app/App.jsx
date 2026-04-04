@@ -52,7 +52,7 @@ function readStandaloneDisplayMode() {
 
 const WAITME_STANDALONE_HEIGHT_CLASS = 'waitme-standalone-height'
 
-/** iOS PWA: dvh/vh suelen fallar; altura útil = innerHeight en <html>. */
+/** iOS PWA: altura útil preferir visualViewport; fallback innerHeight. */
 function useStandaloneAppHeightCssVar() {
   useLayoutEffect(() => {
     const rootEl = document.documentElement
@@ -64,8 +64,16 @@ function useStandaloneAppHeightCssVar() {
 
     rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
 
+    const getRealHeight = () => {
+      if (window.visualViewport && window.visualViewport.height) {
+        return window.visualViewport.height
+      }
+      return window.innerHeight
+    }
+
     const sync = () => {
-      rootEl.style.setProperty('--app-height', `${window.innerHeight}px`)
+      const height = getRealHeight()
+      rootEl.style.setProperty('--app-height', `${height}px`)
     }
 
     sync()
@@ -79,7 +87,9 @@ function useStandaloneAppHeightCssVar() {
     window.addEventListener('resize', sync)
     window.addEventListener('orientationchange', onOrient)
     window.addEventListener('load', sync)
-    vv?.addEventListener('resize', sync)
+    if (vv) {
+      vv.addEventListener('resize', sync)
+    }
 
     return () => {
       rootEl.style.removeProperty('--app-height')
@@ -87,7 +97,9 @@ function useStandaloneAppHeightCssVar() {
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)
       window.removeEventListener('load', sync)
-      vv?.removeEventListener('resize', sync)
+      if (vv) {
+        vv.removeEventListener('resize', sync)
+      }
     }
   }, [])
 }
