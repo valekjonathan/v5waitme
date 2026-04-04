@@ -120,7 +120,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   /** Único camino a identidad Supabase/dev autenticada (user + session + status); no toca perfil bootstrap. */
-  const setAuthenticatedSession = useCallback((nextUser, nextSession) => {
+  const setAuthenticatedState = useCallback((nextUser, nextSession) => {
     setUser(nextUser)
     setSession(nextSession ?? null)
     setStatus('authenticated')
@@ -139,11 +139,11 @@ export function AuthProvider({ children }) {
   /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
   const applyDevAuthenticatedCore = useCallback(
     (devUser, { logDevLoginSuccess }) => {
-      setAuthenticatedSession(devUser, { user: devUser })
+      setAuthenticatedState(devUser, { user: devUser })
       commitDevLocalProfileBoot(devUser)
       if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
     },
-    [commitDevLocalProfileBoot, setAuthenticatedSession]
+    [commitDevLocalProfileBoot, setAuthenticatedState]
   )
 
   useEffect(() => {
@@ -190,11 +190,11 @@ export function AuthProvider({ children }) {
        * en false para siempre → AppGate en loading perpetuo / sensación de “pantalla negra”.
        */
       if (isSupabaseConfigured() && supabase && lastProfileBootUserId === nextUser.id) {
-        setAuthenticatedSession(nextUser, session)
+        setAuthenticatedState(nextUser, session)
         return
       }
 
-      setAuthenticatedSession(nextUser, session)
+      setAuthenticatedState(nextUser, session)
       setAuthError(null)
       setProfileBootstrapReady(false)
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })
@@ -340,7 +340,7 @@ export function AuthProvider({ children }) {
     }
   }, [
     setUnauthenticatedState,
-    setAuthenticatedSession,
+    setAuthenticatedState,
     applyDevAuthenticatedCore,
     commitDevLocalProfileBoot,
   ])

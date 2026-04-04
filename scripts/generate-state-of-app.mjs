@@ -241,6 +241,9 @@ function buildDocument(orphans, reachable) {
   lines.push(`Generated: ${new Date().toISOString()}`)
   lines.push(`Git revision: ${gitMeta.revision}`)
   lines.push(
+    'Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.'
+  )
+  lines.push(
     gitMeta.source === 'GITHUB_SHA'
       ? 'Git source: GITHUB_SHA (CI checkout; inventario coincide con el commit bajo prueba; working tree asumido clean post-checkout).'
       : gitMeta.dirty
@@ -271,9 +274,8 @@ function buildDocument(orphans, reachable) {
     APP_SCREEN_ALERTS,
     APP_SCREEN_CHATS,
   ].join(', ')
-  lines.push(
-    `Pantallas lógicas (orden funcional: home → profile → reviews → searchParking → parkHere → alerts → chats): ${appScreens}`
-  )
+  lines.push('Pantallas:')
+  lines.push(appScreens)
   lines.push(
     'Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map lazy vía MapParkingPage/MainLayout.'
   )

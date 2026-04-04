@@ -67,8 +67,6 @@ function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust)
 }
 
 let globalContainer = null
-/** Una sola suscripción al stream GPS para el mapa singleton. */
-let locationSubscribed = false
 
 function applyPostLoadStyle(map, readOnly) {
   try {
@@ -144,8 +142,9 @@ export default function Map({
 
   const projectSearchPinFromGps = useCallback(() => {
     const map = getGlobalMapInstance()
+    if (!map?.project) return
     const g = searchGpsRef.current
-    if (!map?.project || !g || !Number.isFinite(g.lng) || !Number.isFinite(g.lat)) return
+    if (!g || !Number.isFinite(g.lng) || !Number.isFinite(g.lat)) return
     try {
       const p = map.project([g.lng, g.lat])
       setSearchPinPixel({ x: p.x, y: p.y })
@@ -329,31 +328,31 @@ export default function Map({
       containerRef.current.appendChild(globalContainer)
     }
 
+    let unsubscribeLocation = null
     const ensureLocationPipe = () => {
-      if (locationSubscribed) return
-      locationSubscribed = true
-      subscribeToLocation((loc) => {
+      if (unsubscribeLocation) return
+      unsubscribeLocation = subscribeToLocation((loc) => {
         if (!loc) return
         const map = getGlobalMapInstance()
         if (!map?.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
           projectSearchPinFromGps()
-          if (getSearchFollowUserGps()) {
-            const m = getGlobalMapInstance()
-            if (!m) return
-            jumpMapToGpsSearch(m, loc.longitude, loc.latitude)
-          }
+          if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          const m = getGlobalMapInstance()
-          if (!m) return
-          alignParkedGpsMarkerToGap(m, { lng: loc.longitude, lat: loc.latitude })
+          alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) centerMapOnUser(map, loc)
       })
+    }
+    const clearLocationPipe = () => {
+      if (unsubscribeLocation) {
+        unsubscribeLocation()
+        unsubscribeLocation = null
+      }
     }
 
     const existingMap = getGlobalMapInstance()
@@ -372,7 +371,7 @@ export default function Map({
           fireSettled()
         })
       }
-      return
+      return clearLocationPipe
     }
 
     const token = getMapboxAccessToken()
@@ -408,8 +407,10 @@ export default function Map({
         } else {
           getCurrentPosition(
             (validated) => {
-              if (!validated || !map || !followUserGpsRef.current) return
-              centerMapOnUser(map, {
+              if (!validated || !followUserGpsRef.current) return
+              const m = getGlobalMapInstance()
+              if (!m) return
+              centerMapOnUser(m, {
                 latitude: validated.lat,
                 longitude: validated.lng,
               })
@@ -438,6 +439,8 @@ export default function Map({
     } else {
       map.once('load', onFirstLoad)
     }
+
+    return clearLocationPipe
   }, [fireSettled, readOnly, followUserGps, projectSearchPinFromGps])
 
   useEffect(() => {
@@ -452,8 +455,10 @@ export default function Map({
     }
     getCurrentPosition(
       (validated) => {
-        if (!validated || !map) return
-        centerMapOnUser(map, {
+        if (!validated) return
+        const m = getGlobalMapInstance()
+        if (!m) return
+        centerMapOnUser(m, {
           latitude: validated.lat,
           longitude: validated.lng,
         })

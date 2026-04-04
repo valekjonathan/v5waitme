@@ -3,7 +3,13 @@ import { test, expect } from '@playwright/test'
 test('arranque: documento y #root', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveTitle(/WaitMe/i)
+  await expect(page.locator('body')).toBeVisible()
   await expect(page.locator('#root')).toBeVisible()
+  expect(await page.locator('#root > *').count()).toBeGreaterThan(0)
+  await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible()
+  await expect(
+    page.getByText('Continuar con Google').or(page.locator('[data-waitme-auth-boot]'))
+  ).toBeVisible({ timeout: 20_000 })
 })
 
 test('arranque: boot auth o login visible (sin #root colgado)', async ({ page }) => {

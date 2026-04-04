@@ -235,9 +235,11 @@ export function recenterGlobalMapOnUser() {
     }
     getCurrentPosition(
       (v) => {
-        if (!v || !map) return
+        if (!v) return
+        const m = getGlobalMapInstance()
+        if (!m) return
         setSearchFollowUserGps(true)
-        jumpMapToGpsSearch(map, v.lng, v.lat)
+        jumpMapToGpsSearch(m, v.lng, v.lat)
       },
       () => {}
     )
@@ -255,8 +257,10 @@ export function recenterGlobalMapOnUser() {
   }
   getCurrentPosition(
     (v) => {
-      if (!v || !map) return
-      applyWaitmeCameraJumpOrEase(map, {
+      if (!v) return
+      const m = getGlobalMapInstance()
+      if (!m) return
+      applyWaitmeCameraJumpOrEase(m, {
         center: [v.lng, v.lat],
         zoom: DEFAULT_ZOOM,
         pitch: DEFAULT_PITCH,

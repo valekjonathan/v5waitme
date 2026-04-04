@@ -1,6 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:49:50.922Z
-Git revision: 3cee119bcdc393921c73eb621ebdf4e7984ef9a9
+Generated: 2026-04-04T06:01:52.481Z
+Git revision: e576a8c3f1359962750f0903685ab183a0d7b23f
+Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree clean al generar; `git status` vacío).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
@@ -187,7 +188,8 @@ auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
-Pantallas lógicas (orden funcional: home → profile → reviews → searchParking → parkHere → alerts → chats): home, profile, reviews, searchParking, parkHere, alerts, chats
+Pantallas:
+home, profile, reviews, searchParking, parkHere, alerts, chats
 Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map lazy vía MapParkingPage/MainLayout.
 
 === ARCHIVOS CRÍTICOS (arranque y shell) ===
