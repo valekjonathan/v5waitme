@@ -1,8 +1,8 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T11:38:48.172Z
-Git revision: 3269cd5375cd8c8ccc7c4d40194ad6a8f2032b9a
+Generated: 2026-04-04T11:42:02.436Z
+Git revision: f3ad7e828e1b6586de01756685647630089a1c06
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
-Git source: local HEAD (working tree clean al generar; `git status` vacío).
+Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 capacitor.config.json
@@ -257,6 +257,6 @@ ninguno
 - Shell: `ScreenShell.tsx` raíz `overflow-y: hidden`; `<main>` con `flex: 1`, `min-height: 0`, `overflow-y: auto` por defecto (full bleed) o según props. Gates flex en App (fade200Style / homeGateStyle).
 - Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
 - PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
-- Capacitor iOS: `capacitor.config.json` (webDir `dist`); proyecto Xcode en `ios/`; `npm run cap:sync` = build + `cap sync ios`. Artefactos copiados (`ios/App/App/public`, config generados en App) están en `.gitignore` del template — tras clonar hay que sincronizar. `appId` actual es placeholder (`es.waitme.v5waitme`); cambiar antes de publicar en App Store. La web en Vercel sigue siendo el mismo frontend compilado; Vercel no depende de Capacitor.
+- Capacitor iOS: `capacitor.config.json` — webDir `dist` (obligatorio para `cap sync`); `server.url` = producción `https://v5waitme.vercel.app` (WKWebView carga la misma web que Vercel; cambios desplegados se ven al abrir la app sin rebuild de frontend). `cleartext: false`. `Info.plist`: ATS con `NSAllowsArbitraryLoads` = false (solo HTTPS estándar). `npm run cap:sync` = build + sync: el build sigue siendo requisito del CLI para copiar `webDir`; el runtime nativo usa la URL remota.
 
 === FIN ===
