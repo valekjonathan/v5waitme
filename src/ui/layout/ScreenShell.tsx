@@ -35,7 +35,6 @@ const shellRootStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   overflowX: 'hidden',
-  overflowY: 'hidden',
 }
 
 const shellMainColumnStyle: CSSProperties = {
