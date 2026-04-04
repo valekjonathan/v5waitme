@@ -2,7 +2,6 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
-import logo from '../../../assets/logo.png'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { LAYOUT } from '../../../ui/layout/layout'
@@ -177,7 +176,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
               <div style={heroLogoOuterStyle}>
                 <div style={heroLogoBoxStyle}>
                   <img
-                    src={logo}
+                    src="/logo.png"
                     alt="WaitMe"
                     style={logoImageStyle}
                     loading="eager"

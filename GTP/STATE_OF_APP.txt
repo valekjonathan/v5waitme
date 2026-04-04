@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-03T20:42:52.956Z
-Git HEAD: 49fb9a9320a6db406c98ef1e262dc6f61ef47369
+Generated: 2026-04-04T05:03:23.115Z
+Git HEAD: 2ae6fc9b1447534549d0ab903d677c7b558ed174
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -37,8 +37,6 @@ scripts/
 src/
   app/
     App.jsx
-  assets/
-    logo.png
   design/
     colors.js
     radius.js
