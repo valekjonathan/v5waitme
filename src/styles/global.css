@@ -8,6 +8,7 @@ html {
   padding: 0;
   background: #000;
   overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -26,6 +27,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden !important;
+  overflow-y: auto;
   box-sizing: border-box;
   background: black;
   font-family:
@@ -51,6 +53,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  overflow-y: auto;
   background: #000;
   box-sizing: border-box;
 }
@@ -81,6 +84,7 @@ html.waitme-standalone-height #root {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
