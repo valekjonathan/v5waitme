@@ -28,17 +28,6 @@ function readUseFullBleed() {
   return standalone || narrow
 }
 
-const fullBleedRootStyle = {
-  width: '100%',
-  height: '100%',
-  minHeight: 0,
-  flex: 1,
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-  boxSizing: 'border-box',
-}
-
 export default function IphoneFrame({ children }) {
   const [scale, setScale] = useState(1)
   const [fullBleed, setFullBleed] = useState(false)
@@ -70,7 +59,7 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   if (fullBleed) {
-    return <div style={fullBleedRootStyle}>{children}</div>
+    return <div className="waitme-iphone-frame-fullbleed">{children}</div>
   }
 
   const s = scale

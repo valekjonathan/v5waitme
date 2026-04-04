@@ -1,22 +1,21 @@
-html,
-body,
-#root {
+html {
+  width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
   background: #000;
 }
 
-html,
-body {
-  overflow: hidden !important;
-}
-
 body {
   margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden !important;
+  display: block;
   background: black;
   font-family:
     'Inter',
@@ -34,13 +33,45 @@ body {
 
 #root {
   margin: 0;
-  display: flex;
-  min-height: 100vh;
+  padding: 0;
   width: 100%;
   height: 100%;
-  align-items: center;
-  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: block;
   overflow: hidden;
+  background: #000;
+}
+
+/**
+ * Raíz de React (App): ocupa el alto útil real en móvil (dvh / fill-available), no 100vh suelto.
+ */
+.waitme-app-root {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100svh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/**
+ * iPhone / viewport estrecho / PWA: sin marco simulado; llenar el viewport dinámico.
+ */
+.waitme-iphone-frame-fullbleed {
+  width: 100%;
+  min-height: 100%;
+  min-height: 100svh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 *,
