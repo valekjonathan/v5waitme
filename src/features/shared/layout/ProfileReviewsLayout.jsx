@@ -16,7 +16,8 @@ const contentColumnStyle = {
   flexDirection: 'column',
   flex: 1,
   minHeight: 0,
-  overflow: 'hidden',
+  overflowX: 'hidden',
+  overflowY: 'auto',
   gap: profileCenteredClusterGapPx,
 }
 

@@ -16,7 +16,8 @@ body {
   height: 100%;
   min-height: 100%;
   min-height: -webkit-fill-available;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   display: block;
   background: black;
   font-family:
@@ -41,7 +42,8 @@ body {
   min-height: 100%;
   min-height: -webkit-fill-available;
   display: block;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #000;
 }
 

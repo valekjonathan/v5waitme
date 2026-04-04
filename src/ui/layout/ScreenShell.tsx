@@ -14,6 +14,8 @@ const shellRootStyle: CSSProperties = {
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
+  overflowX: 'hidden',
+  overflowY: 'auto',
   boxSizing: 'border-box',
 }
 
@@ -39,10 +41,10 @@ export type ScreenShellProps = {
   /** Solo modo inset: `hidden` evita scroll en `<main>` (p. ej. pantalla perfil). */
   mainOverflow?: 'auto' | 'hidden'
   /**
-   * Full bleed: por defecto `main` usa overflow hidden; `visible` evita recortar overlays
+   * Full bleed: por defecto `main` usa overflow-y auto; `visible` evita recortar overlays
    * que desbordan (p. ej. lista desplegable StreetSearch).
    */
-  fullBleedMainOverflow?: 'hidden' | 'visible'
+  fullBleedMainOverflow?: 'auto' | 'hidden' | 'visible'
 }
 
 export default function ScreenShell({
@@ -52,7 +54,7 @@ export default function ScreenShell({
   contentStyle = {},
   mainMode = SCREEN_SHELL_MAIN_MODE.INSET,
   mainOverflow = 'auto',
-  fullBleedMainOverflow = 'hidden',
+  fullBleedMainOverflow = 'auto',
 }: ScreenShellProps) {
   const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
 
