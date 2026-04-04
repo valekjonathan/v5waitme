@@ -162,12 +162,22 @@ function readPackageJson() {
   }
 }
 
-function gitHead() {
+function gitRevisionMetadata() {
+  const ciSha = (process.env.GITHUB_SHA || '').trim()
+  if (ciSha.length >= 7) {
+    return { revision: ciSha, source: 'GITHUB_SHA', dirty: false }
+  }
   const r = spawnSync('git', ['rev-parse', 'HEAD'], {
     cwd: root,
     encoding: 'utf8',
   })
-  return (r.stdout || '').trim() || '(no git)'
+  const head = (r.stdout || '').trim() || '(no git)'
+  const st = spawnSync('git', ['status', '--porcelain'], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  const dirty = Boolean((st.stdout || '').trim())
+  return { revision: head, source: 'git', dirty }
 }
 
 function listDir(rel) {
@@ -216,10 +226,18 @@ function buildDocument(orphans, reachable) {
   const deps = Object.keys(pkg.dependencies || {}).sort()
   const devDeps = Object.keys(pkg.devDependencies || {}).sort()
 
+  const gitMeta = gitRevisionMetadata()
   const lines = []
   lines.push('=== STATE_OF_APP v1 ===')
   lines.push(`Generated: ${new Date().toISOString()}`)
-  lines.push(`Git HEAD: ${gitHead()}`)
+  lines.push(`Git revision: ${gitMeta.revision}`)
+  lines.push(
+    gitMeta.source === 'GITHUB_SHA'
+      ? 'Git source: GITHUB_SHA (CI checkout; inventario coincide con el commit bajo prueba).'
+      : gitMeta.dirty
+        ? 'Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).'
+        : 'Git source: local HEAD (working tree clean al generar).'
+  )
   lines.push('')
   lines.push('=== ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===')
   lines.push(...treeLines(root, '', 4, 0).slice(0, 400))
@@ -256,6 +274,7 @@ function buildDocument(orphans, reachable) {
   lines.push('')
   lines.push('=== RIESGOS / NOTAS ===')
   lines.push(
+    '- Cabecera Git: «Git revision» + «Git source» — en GitHub Actions es GITHUB_SHA del checkout; en local, árbol dirty implica divergencia hasta el próximo commit.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
     '- Map bundle es pesado (lazy load en App).',

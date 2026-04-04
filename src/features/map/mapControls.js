@@ -15,8 +15,9 @@ import { getCurrentLocationFast, getCurrentPosition } from '../../services/locat
 
 let mapStyleCycleIndex = 0
 
-const GAP_SEARCH_BOTTOM = '[data-search-box]'
-const GAP_CARD_TOP = '[data-alert-card]'
+/** Selectores compartidos con `Map.jsx` (hueco buscador–tarjeta). */
+export const GAP_SEARCH_BOTTOM = '[data-search-box]'
+export const GAP_CARD_TOP = '[data-alert-card]'
 
 export function isWaitmeParkingLayoutReady() {
   if (typeof document === 'undefined') return false

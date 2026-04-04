@@ -25,14 +25,12 @@ import {
 import {
   alignParkedGpsMarkerToGap,
   applyWaitmeCameraJumpOrEase,
+  GAP_CARD_TOP,
+  GAP_SEARCH_BOTTOM,
   isWaitmeParkingLayoutReady,
   jumpMapToGpsSearch,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
-
-/** Mismos selectores que `mapControls.js` (hueco buscador–tarjeta). */
-const GAP_SEARCH_BOTTOM = '[data-search-box]'
-const GAP_CARD_TOP = '[data-alert-card]'
 
 /**
  * Home/Login: `__WAITME_PIN_OFFSET_Y__` = punta del pin vs centro vertical del mapa.

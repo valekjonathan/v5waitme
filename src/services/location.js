@@ -185,7 +185,7 @@ export function getCurrentLocation() {
 
 export const getCurrentLocationFast = getCurrentLocation
 
-/** Cubierto por tests; el stream GPS del mapa no pasa por aquí (sin efecto en runtime actual). */
+/** Solo tests (`test/location.test.js`); el mapa usa `subscribeToLocation` sin este filtro. */
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 

@@ -1,6 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:16:02.332Z
-Git HEAD: d15c90834856e7951c60e294cf1d6e80483a572b
+Generated: 2026-04-04T05:20:07.502Z
+Git revision: dbf7e47b5b86a464e2498a70781bdd5b7fbcaff8
+Git source: local HEAD (working tree clean al generar).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -202,6 +203,7 @@ Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5
 ninguno
 
 === RIESGOS / NOTAS ===
+- Cabecera Git: «Git revision» + «Git source» — en GitHub Actions es GITHUB_SHA del checkout; en local, árbol dirty implica divergencia hasta el próximo commit.
 - Cambios en ScreenShell/layout afectan todas las pantallas con shell.
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
 - Map bundle es pesado (lazy load en App).
