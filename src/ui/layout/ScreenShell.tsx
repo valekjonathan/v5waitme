@@ -8,15 +8,15 @@ import BottomNav from '../BottomNav'
 import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 
 const shellRootStyle: CSSProperties = {
-  width: '100%',
-  flex: 1,
-  minHeight: 0,
-  height: '100%',
-  maxHeight: '100%',
   display: 'flex',
   flexDirection: 'column',
-  overflowX: 'hidden',
+  height: '100%',
+  maxHeight: '100%',
+  minHeight: 0,
+  flex: 1,
   overflowY: 'hidden',
+  width: '100%',
+  overflowX: 'hidden',
   boxSizing: 'border-box',
 }
 
@@ -67,7 +67,7 @@ export default function ScreenShell({
         style={{
           flex: 1,
           minHeight: 0,
-          height: '100%',
+          height: 'auto',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-start',
