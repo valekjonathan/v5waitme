@@ -48,15 +48,18 @@ body {
 }
 
 /**
- * iOS PWA standalone: body/#root con min-height -webkit-fill-available pueden quedar
- * más altos que window.innerHeight y romper la cadena fijada con --app-height.
+ * iOS PWA standalone: alinear body/#root con el mismo pixel height que `html`
+ * (`--app-height` en documentElement vía App). Evita que -webkit-fill-available o
+ * la cadena 100% desincronicen el rect respecto a visualViewport.
  */
 html.waitme-standalone-height body {
-  min-height: 100%;
+  height: var(--app-height, 100%);
+  min-height: var(--app-height, 100%);
 }
 
 html.waitme-standalone-height #root {
-  min-height: 100%;
+  height: var(--app-height, 100%);
+  min-height: var(--app-height, 100%);
 }
 
 /**
