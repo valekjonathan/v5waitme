@@ -294,6 +294,7 @@ function buildDocument(orphans, reachable) {
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
     '- Map bundle es pesado (lazy load en App).',
+    '- E2E: Playwright proyectos chromium + webkit; CI instala ambos tras `npm run quality`.',
     orphans.length > 0
       ? `- HUÉRFANOS detectados: ${orphans.length} archivo(s); revisar o enlazar desde main.jsx.`
       : '- Sin huérfanos detectados en el grafo actual.'

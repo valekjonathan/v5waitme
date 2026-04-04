@@ -147,6 +147,12 @@ export function AuthProvider({ children }) {
     /** Evita repetir SELECT/INSERT en cada TOKEN_REFRESHED del mismo usuario. */
     let lastProfileBootUserId = null
 
+    const setAuthenticatedIdentity = (nextUser, session) => {
+      setUser(nextUser)
+      setSession(session ?? null)
+      setStatus('authenticated')
+    }
+
     const syncFromSession = async (session) => {
       const nextUser = session?.user ?? null
       const wasAuthenticated = authStatusRef.current === 'authenticated'
@@ -164,15 +170,11 @@ export function AuthProvider({ children }) {
        * en false para siempre → AppGate en loading perpetuo / sensación de “pantalla negra”.
        */
       if (isSupabaseConfigured() && supabase && lastProfileBootUserId === nextUser.id) {
-        setUser(nextUser)
-        setSession(session ?? null)
-        setStatus('authenticated')
+        setAuthenticatedIdentity(nextUser, session)
         return
       }
 
-      setUser(nextUser)
-      setSession(session ?? null)
-      setStatus('authenticated')
+      setAuthenticatedIdentity(nextUser, session)
       setAuthError(null)
       setProfileBootstrapReady(false)
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })

@@ -1,7 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:31:53.971Z
-Git revision: 977d498f49f26216891e5eec22566d2ed2e2c5e1
-Git source: local HEAD (working tree clean al generar).
+Generated: 2026-04-04T05:35:44.303Z
+Git revision: 910ef265fb17ac5a0ef1fb24e8b9ce12cf88825e
+Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -207,6 +207,7 @@ ninguno
 - Cambios en ScreenShell/layout afectan todas las pantallas con shell.
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
 - Map bundle es pesado (lazy load en App).
+- E2E: Playwright proyectos chromium + webKit (Desktop Safari); CI instala ambos tras `npm run quality`.
 - Sin huérfanos detectados en el grafo actual.
 
 === CHECKPOINT PRODUCCIÓN (2026-04) ===
