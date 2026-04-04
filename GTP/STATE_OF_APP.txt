@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:49:21.666Z
-Git revision: cc4818cae436287781130bfcb84e2bb9110139f2
+Generated: 2026-04-04T05:49:29.759Z
+Git revision: f22c0fc2aef20ba5c3fb1e7f6fa2a8c51b1e1a94
 Git source: local HEAD (working tree clean al generar; `git status` vacío).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
