@@ -66,7 +66,6 @@ function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust)
   delete window.__WAITME_PIN_OFFSET_Y__
 }
 
-let globalMap = null
 let globalContainer = null
 /** Una sola suscripción al stream GPS para el mapa singleton. */
 let locationSubscribed = false
@@ -157,9 +156,10 @@ export default function Map({
 
   useEffect(() => {
     setMapReadOnlySession(readOnly)
-    if (!globalMap?.isStyleLoaded?.()) return
+    const map = getGlobalMapInstance()
+    if (!map?.isStyleLoaded?.()) return
     try {
-      reapplyMapVisualLayers(globalMap, readOnly)
+      reapplyMapVisualLayers(map, readOnly)
     } catch {
       /* */
     }
@@ -331,36 +331,37 @@ export default function Map({
       if (locationSubscribed) return
       locationSubscribed = true
       subscribeToLocation((loc) => {
-        if (!loc || !globalMap || !globalMap.isStyleLoaded?.()) return
+        const map = getGlobalMapInstance()
+        if (!loc || !map?.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
           projectSearchPinFromGps()
           if (getSearchFollowUserGps()) {
-            jumpMapToGpsSearch(globalMap, loc.longitude, loc.latitude)
+            jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
           }
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          alignParkedGpsMarkerToGap(globalMap, { lng: loc.longitude, lat: loc.latitude })
+          alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
           return
         }
-        if (followUserGpsRef.current) centerMapOnUser(globalMap, loc)
+        if (followUserGpsRef.current) centerMapOnUser(map, loc)
       })
     }
 
-    if (globalMap) {
-      setGlobalMapInstance(globalMap)
+    const existingMap = getGlobalMapInstance()
+    if (existingMap) {
       ensureLocationPipe()
-      if (globalMap.isStyleLoaded?.()) {
-        applyPostLoadStyle(globalMap, readOnly)
+      if (existingMap.isStyleLoaded?.()) {
+        applyPostLoadStyle(existingMap, readOnly)
         const fast = getCurrentLocationFast()
-        if (followUserGps && fast) centerMapOnUser(globalMap, fast)
+        if (followUserGps && fast) centerMapOnUser(existingMap, fast)
         fireSettled()
       } else {
-        globalMap.once('load', () => {
-          applyPostLoadStyle(globalMap, readOnly)
+        existingMap.once('load', () => {
+          applyPostLoadStyle(existingMap, readOnly)
           const fast = getCurrentLocationFast()
-          if (followUserGps && fast) centerMapOnUser(globalMap, fast)
+          if (followUserGps && fast) centerMapOnUser(existingMap, fast)
           fireSettled()
         })
       }
@@ -375,33 +376,33 @@ export default function Map({
       return
     }
 
-    globalMap = createMap(globalContainer, { token, interactive: true })
-    if (!globalMap || typeof globalMap.jumpTo !== 'function') {
+    const map = createMap(globalContainer, { token, interactive: true })
+    if (!map || typeof map.jumpTo !== 'function') {
       setUnavailable(true)
       setGlobalMapInstance(null)
       fireSettled()
       return
     }
 
-    setGlobalMapInstance(globalMap)
+    setGlobalMapInstance(map)
 
     try {
-      globalMap.setFadeDuration?.(0)
+      map.setFadeDuration?.(0)
     } catch {
       /* */
     }
 
     const onFirstLoad = () => {
-      applyPostLoadStyle(globalMap, readOnly)
+      applyPostLoadStyle(map, readOnly)
       if (followUserGps) {
         const fast = getCurrentLocationFast()
         if (fast) {
-          centerMapOnUser(globalMap, fast)
+          centerMapOnUser(map, fast)
         } else {
           getCurrentPosition(
             (validated) => {
-              if (!validated || !globalMap || !followUserGpsRef.current) return
-              centerMapOnUser(globalMap, {
+              if (!validated || !map || !followUserGpsRef.current) return
+              centerMapOnUser(map, {
                 latitude: validated.lat,
                 longitude: validated.lng,
               })
@@ -411,7 +412,7 @@ export default function Map({
         }
       } else if (!(parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search')) {
         try {
-          globalMap.jumpTo({
+          map.jumpTo({
             center: [OVIEDO_LNG, OVIEDO_LAT],
             zoom: DEFAULT_ZOOM,
             pitch: DEFAULT_PITCH,
@@ -425,26 +426,27 @@ export default function Map({
 
     ensureLocationPipe()
 
-    if (globalMap.isStyleLoaded?.()) {
+    if (map.isStyleLoaded?.()) {
       onFirstLoad()
     } else {
-      globalMap.once('load', onFirstLoad)
+      map.once('load', onFirstLoad)
     }
   }, [fireSettled, readOnly, followUserGps, projectSearchPinFromGps])
 
   useEffect(() => {
     if (mapFocusGeneration === 0) return
-    if (!globalMap?.isStyleLoaded?.() || !followUserGps) return
+    const map = getGlobalMapInstance()
+    if (!map?.isStyleLoaded?.() || !followUserGps) return
 
     const fast = getCurrentLocationFast()
     if (fast) {
-      centerMapOnUser(globalMap, fast)
+      centerMapOnUser(map, fast)
       return
     }
     getCurrentPosition(
       (validated) => {
-        if (!validated || !globalMap) return
-        centerMapOnUser(globalMap, {
+        if (!validated || !map) return
+        centerMapOnUser(map, {
           latitude: validated.lat,
           longitude: validated.lng,
         })

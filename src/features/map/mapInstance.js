@@ -1,8 +1,11 @@
-/** Instancia única del mapa Mapbox (registrada desde Map.jsx). Solo para controles UI. */
+/**
+ * Única fuente de verdad del mapa Mapbox (singleton). Map.jsx registra aquí; UI y mapControls leen.
+ * @returns {import('mapbox-gl').Map | null}
+ */
 let mapInstance = null
 
 export function setGlobalMapInstance(map) {
-  mapInstance = map
+  mapInstance = map ?? null
 }
 
 export function getGlobalMapInstance() {
