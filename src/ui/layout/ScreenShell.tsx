@@ -10,8 +10,8 @@ import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 const shellRootStyle: CSSProperties = {
   width: '100%',
   flex: 1,
-  minHeight: 0,
-  height: '100%',
+  height: 'var(--app-height, 100%)',
+  minHeight: 'var(--app-height, 100%)',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',

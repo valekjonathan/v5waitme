@@ -5,7 +5,7 @@ import {
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReviewsPage from '../features/reviews/pages/ReviewsPage'
@@ -27,15 +27,59 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
-/** Raíz: columna flex + cadena %/dvh hacia abajo; sin esto IphoneFrame/ScreenShell colapsan a 0. */
+/** Raíz: columna flex; alto vía % o --app-height (solo PWA standalone, ver sync). */
 const appRootLayoutStyle = {
   display: 'flex',
   flexDirection: 'column',
-  minHeight: '100dvh',
-  height: '100%',
   width: '100%',
+  height: 'var(--app-height, 100%)',
+  minHeight: 'var(--app-height, 100%)',
   overflow: 'hidden',
   boxSizing: 'border-box',
+}
+
+function readStandaloneDisplayMode() {
+  if (typeof window === 'undefined') return false
+  const mq =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(display-mode: standalone)').matches
+  const iosStandalone =
+    typeof navigator !== 'undefined' &&
+    'standalone' in navigator &&
+    /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
+  return Boolean(mq || iosStandalone)
+}
+
+/** iOS PWA: dvh/vh suelen fallar; altura útil = innerHeight en <html>. */
+function useStandaloneAppHeightCssVar() {
+  useLayoutEffect(() => {
+    if (!readStandaloneDisplayMode()) {
+      document.documentElement.style.removeProperty('--app-height')
+      return undefined
+    }
+
+    const sync = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+    }
+
+    sync()
+    const onOrient = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(sync)
+      })
+    }
+
+    window.addEventListener('resize', sync)
+    window.addEventListener('orientationchange', onOrient)
+    window.addEventListener('load', sync)
+
+    return () => {
+      document.documentElement.style.removeProperty('--app-height')
+      window.removeEventListener('resize', sync)
+      window.removeEventListener('orientationchange', onOrient)
+      window.removeEventListener('load', sync)
+    }
+  }, [])
 }
 const fade200Style = {
   transition: 'opacity 200ms ease-out',
@@ -292,6 +336,7 @@ function AppGate() {
 }
 
 export default function App() {
+  useStandaloneAppHeightCssVar()
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>
       <ErrorBoundary name="root">

@@ -44,13 +44,14 @@ body {
 }
 
 /**
- * Raíz React: min-height dinámico + altura porcentual; el flex interno llena sin 100vh en html/body.
+ * Raíz React: % por defecto; en PWA iOS `App.jsx` define --app-height = innerHeight (px).
  */
 .waitme-app-root {
   width: 100%;
   height: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  min-height: 100%;
+  height: var(--app-height, 100%);
+  min-height: var(--app-height, 100%);
   overflow: hidden;
   box-sizing: border-box;
 }
