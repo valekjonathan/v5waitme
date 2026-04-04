@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test'
 
 test('shell login: main fullBleed cuando no hay sesión', async ({ page }) => {
   await page.goto('/')
+  const bodyKids = await page.evaluate(() => document.body.childElementCount)
+  expect(bodyKids).toBeGreaterThan(0)
   await expect(page.locator('[data-waitme-screen-shell="fullBleed"]')).toBeVisible()
   await expect(page.locator('[data-waitme-main="fullBleed"]')).toBeVisible()
 })
@@ -20,5 +22,11 @@ test('shell login: #root y main tienen área visible (no layout colapsado)', asy
 
 test('shell login: #root monta React (no árbol vacío / pantalla en blanco)', async ({ page }) => {
   await page.goto('/')
+  const bodyKids = await page.evaluate(() => document.body.childElementCount)
+  expect(bodyKids).toBeGreaterThan(0)
   await expect(page.locator('#root > *').first()).toBeVisible({ timeout: 15000 })
+  const rootHasKids = await page.evaluate(
+    () => document.querySelector('#root')?.childElementCount ?? 0
+  )
+  expect(rootHasKids).toBeGreaterThan(0)
 })

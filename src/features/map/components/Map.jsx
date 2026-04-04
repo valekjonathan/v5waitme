@@ -284,7 +284,9 @@ export default function Map({
       const fast = getCurrentLocationFast()
       const applyCoords = (lng, lat) => {
         if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-        alignParkedGpsMarkerToGap(map, { lng, lat })
+        const m = getGlobalMapInstance()
+        if (!m) return
+        alignParkedGpsMarkerToGap(m, { lng, lat })
       }
       if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
         applyCoords(fast.longitude, fast.latitude)
@@ -331,18 +333,23 @@ export default function Map({
       if (locationSubscribed) return
       locationSubscribed = true
       subscribeToLocation((loc) => {
+        if (!loc) return
         const map = getGlobalMapInstance()
-        if (!loc || !map?.isStyleLoaded?.()) return
+        if (!map?.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
           projectSearchPinFromGps()
           if (getSearchFollowUserGps()) {
-            jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
+            const m = getGlobalMapInstance()
+            if (!m) return
+            jumpMapToGpsSearch(m, loc.longitude, loc.latitude)
           }
           return
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
+          const m = getGlobalMapInstance()
+          if (!m) return
+          alignParkedGpsMarkerToGap(m, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) centerMapOnUser(map, loc)

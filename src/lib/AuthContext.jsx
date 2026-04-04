@@ -107,7 +107,8 @@ export function AuthProvider({ children }) {
     authStatusRef.current = status
   }, [status])
 
-  const toUnauthenticated = useCallback((clearAuthError) => {
+  /** Único camino a sesión vacía + flags de arranque (tokens, perfil, errores opcionales). */
+  const setUnauthenticatedState = useCallback((clearAuthError) => {
     setUser(null)
     setSession(null)
     setProfile(null)
@@ -116,6 +117,13 @@ export function AuthProvider({ children }) {
     setIsNewUser(false)
     setIsProfileComplete(false)
     if (clearAuthError) setAuthError(null)
+  }, [])
+
+  /** Único camino a identidad Supabase/dev autenticada (user + session + status); no toca perfil bootstrap. */
+  const setAuthenticatedSession = useCallback((nextUser, nextSession) => {
+    setUser(nextUser)
+    setSession(nextSession ?? null)
+    setStatus('authenticated')
   }, [])
 
   /** Perfil dev-local tras `user` ya fijado (Supabase desactivado o rama sin API). */
@@ -131,13 +139,11 @@ export function AuthProvider({ children }) {
   /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
   const applyDevAuthenticatedCore = useCallback(
     (devUser, { logDevLoginSuccess }) => {
-      setUser(devUser)
-      setSession({ user: devUser })
-      setStatus('authenticated')
+      setAuthenticatedSession(devUser, { user: devUser })
       commitDevLocalProfileBoot(devUser)
       if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
     },
-    [commitDevLocalProfileBoot]
+    [commitDevLocalProfileBoot, setAuthenticatedSession]
   )
 
   useEffect(() => {
@@ -154,11 +160,11 @@ export function AuthProvider({ children }) {
     const bootTimer = window.setTimeout(() => {
       // Evitar ruido: si la sesión ya se resolvió antes del timeout, no hacemos log/dispatch.
       if (authStatusRef.current !== 'loading') return
-      toUnauthenticated(false)
+      setUnauthenticatedState(false)
       console.error('[WaitMe][Auth] Arranque de sesión superó el tiempo; se continúa sin sesión.')
     }, AUTH_BOOTSTRAP_MAX_MS)
     return () => window.clearTimeout(bootTimer)
-  }, [toUnauthenticated])
+  }, [setUnauthenticatedState])
 
   useEffect(() => {
     let cancelled = false
@@ -167,12 +173,6 @@ export function AuthProvider({ children }) {
     /** Evita repetir SELECT/INSERT en cada TOKEN_REFRESHED del mismo usuario. */
     let lastProfileBootUserId = null
 
-    const setAuthenticatedIdentity = (nextUser, session) => {
-      setUser(nextUser)
-      setSession(session ?? null)
-      setStatus('authenticated')
-    }
-
     const syncFromSession = async (session) => {
       const nextUser = session?.user ?? null
       const wasAuthenticated = authStatusRef.current === 'authenticated'
@@ -180,7 +180,7 @@ export function AuthProvider({ children }) {
 
       if (!nextUser) {
         lastProfileBootUserId = null
-        toUnauthenticated(false)
+        setUnauthenticatedState(false)
         return
       }
 
@@ -190,11 +190,11 @@ export function AuthProvider({ children }) {
        * en false para siempre → AppGate en loading perpetuo / sensación de “pantalla negra”.
        */
       if (isSupabaseConfigured() && supabase && lastProfileBootUserId === nextUser.id) {
-        setAuthenticatedIdentity(nextUser, session)
+        setAuthenticatedSession(nextUser, session)
         return
       }
 
-      setAuthenticatedIdentity(nextUser, session)
+      setAuthenticatedSession(nextUser, session)
       setAuthError(null)
       setProfileBootstrapReady(false)
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })
@@ -227,7 +227,7 @@ export function AuthProvider({ children }) {
             applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: false })
             return
           }
-          toUnauthenticated(true)
+          setUnauthenticatedState(true)
         }
         return
       }
@@ -248,7 +248,7 @@ export function AuthProvider({ children }) {
             sessionError.message ?? sessionError
           )
           if (!cancelled) {
-            toUnauthenticated(false)
+            setUnauthenticatedState(false)
           }
           return
         }
@@ -306,7 +306,7 @@ export function AuthProvider({ children }) {
           } catch {
             /* */
           }
-          toUnauthenticated(true)
+          setUnauthenticatedState(true)
         }
       }
     }
@@ -338,7 +338,12 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = null
       subscription.unsubscribe()
     }
-  }, [toUnauthenticated, applyDevAuthenticatedCore, commitDevLocalProfileBoot])
+  }, [
+    setUnauthenticatedState,
+    setAuthenticatedSession,
+    applyDevAuthenticatedCore,
+    commitDevLocalProfileBoot,
+  ])
 
   const signInWithGoogle = useCallback(async () => {
     logFlow('LOGIN_CLICK')
@@ -369,8 +374,8 @@ export function AuthProvider({ children }) {
     } catch (e) {
       console.error('[WaitMe][Auth] signOut falló; estado local se limpia igual.', e)
     }
-    toUnauthenticated(false)
-  }, [toUnauthenticated])
+    setUnauthenticatedState(false)
+  }, [setUnauthenticatedState])
 
   const headerProfile = useMemo(() => {
     return buildResolvedHeaderProfile(profile, user)

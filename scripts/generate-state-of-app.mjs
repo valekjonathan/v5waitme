@@ -242,10 +242,10 @@ function buildDocument(orphans, reachable) {
   lines.push(`Git revision: ${gitMeta.revision}`)
   lines.push(
     gitMeta.source === 'GITHUB_SHA'
-      ? 'Git source: GITHUB_SHA (CI checkout; inventario coincide con el commit bajo prueba).'
+      ? 'Git source: GITHUB_SHA (CI checkout; inventario coincide con el commit bajo prueba; working tree asumido clean post-checkout).'
       : gitMeta.dirty
-        ? 'Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).'
-        : 'Git source: local HEAD (working tree clean al generar).'
+        ? 'Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).'
+        : 'Git source: local HEAD (working tree clean al generar; `git status` vacío).'
   )
   lines.push('')
   lines.push('=== ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===')
@@ -271,9 +271,11 @@ function buildDocument(orphans, reachable) {
     APP_SCREEN_ALERTS,
     APP_SCREEN_CHATS,
   ].join(', ')
-  lines.push(`Pantallas lógicas (reduceAppScreen / src/lib/appScreenState.js): ${appScreens}`)
   lines.push(
-    'Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage, AlertsPage, ChatsPage (mapa: Map lazy donde aplica).'
+    `Pantallas lógicas (orden funcional: home → profile → reviews → searchParking → parkHere → alerts → chats): ${appScreens}`
+  )
+  lines.push(
+    'Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map lazy vía MapParkingPage/MainLayout.'
   )
   lines.push('')
   lines.push('=== ARCHIVOS CRÍTICOS (arranque y shell) ===')
@@ -295,7 +297,8 @@ function buildDocument(orphans, reachable) {
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
     '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; chunk vendor `mapbox-gl` separado en build Vite.',
     '- Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).',
-    '- E2E: Playwright proyectos chromium + webkit; CI instala ambos tras `npm run quality`.',
+    '- E2E: Playwright chromium + webkit (motor tipo Safari); no sustituye Safari real en dispositivo — permisos y builds pueden diferir.',
+    '- E2E: CI instala solo chromium + webkit tras `npm run quality`.',
     orphans.length > 0
       ? `- HUÉRFANOS detectados: ${orphans.length} archivo(s); revisar o enlazar desde main.jsx.`
       : '- Sin huérfanos detectados en el grafo actual.'

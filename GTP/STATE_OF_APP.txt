@@ -1,7 +1,7 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:44:41.486Z
-Git revision: 075dd6f3b8e5e2c5095445c351f11bb11379eab3
-Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).
+Generated: 2026-04-04T05:47:23.049Z
+Git revision: bee89c8e47d0bad1c0ccae79a00d03ad57411e93
+Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 dist/  [omitido]
@@ -187,8 +187,8 @@ auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
-Pantallas lógicas (reduceAppScreen / src/lib/appScreenState.js): home, profile, reviews, searchParking, parkHere, alerts, chats
-Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage, AlertsPage, ChatsPage (mapa: Map lazy donde aplica).
+Pantallas lógicas (orden funcional: home → profile → reviews → searchParking → parkHere → alerts → chats): home, profile, reviews, searchParking, parkHere, alerts, chats
+Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map lazy vía MapParkingPage/MainLayout.
 
 === ARCHIVOS CRÍTICOS (arranque y shell) ===
 src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext.jsx, src/ui/layout/ScreenShell.tsx, src/ui/layout/layout.ts
@@ -208,7 +208,8 @@ ninguno
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
 - Mapa Mapbox: instancia única en src/features/map/mapInstance.js; chunk vendor `mapbox-gl` separado en build Vite.
 - Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).
-- E2E: Playwright proyectos chromium + webkit; CI instala ambos tras `npm run quality`.
+- E2E: Playwright chromium + webkit (motor tipo Safari); no sustituye Safari real en dispositivo — permisos y builds pueden diferir.
+- E2E: CI instala solo chromium + webkit tras `npm run quality`.
 - Sin huérfanos detectados en el grafo actual.
 
 === CHECKPOINT PRODUCCIÓN (2026-04) ===
