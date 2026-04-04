@@ -3,6 +3,7 @@
  * En viewport estrecho o PWA standalone, el contenido va edge-to-edge (sin marco ni padding).
  */
 import { useLayoutEffect, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { radius } from '../design/radius'
 import { shadows } from '../design/shadows'
 
@@ -28,8 +29,9 @@ function readUseFullBleed() {
     typeof navigator !== 'undefined' &&
     'standalone' in navigator &&
     /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
+  const capacitorNative = Capacitor.isNativePlatform() === true
   const narrow = window.innerWidth <= FULL_BLEED_MAX_WIDTH_PX
-  return Boolean(mq || iosStandalone || narrow)
+  return Boolean(mq || iosStandalone || capacitorNative || narrow)
 }
 
 export default function IphoneFrame({ children }) {

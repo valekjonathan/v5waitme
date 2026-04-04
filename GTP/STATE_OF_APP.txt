@@ -1,8 +1,8 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T11:45:39.672Z
-Git revision: d171ab9e058e02c038d67bb6a39b80b16ebe157e
+Generated: 2026-04-04T12:07:59.136Z
+Git revision: c2ecbe868eb4f6ac73be08abec61fe480f238cb0
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
-Git source: local HEAD (working tree clean al generar; `git status` vacío).
+Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 capacitor.config.json
@@ -41,6 +41,9 @@ ios/
       project.pbxproj
       project.xcworkspace/
         xcshareddata/
+        xcuserdata/
+      xcuserdata/
+        jonathanalvarez.xcuserdatad/
     CapApp-SPM/
       Package.swift
       README.md
@@ -253,8 +256,8 @@ ninguno
 === CHECKPOINT PRODUCCIÓN (2026-04) ===
 - Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.
 - APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.
-- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` (Math.max(innerHeight, visualViewport.height, clientHeight, vv+offsetTop); listeners resize/orientation/load + visualViewport resize/scroll). `src/styles/global.css`: columna flex `html → body → #root → .waitme-app-root` con `flex: 1 1 0%` + `min-height: 0`; en standalone, body/#root sin height fijo duplicado; scroll vertical en `ScreenShell` `<main>` (`overflow-y: auto`).
-- Shell: `ScreenShell.tsx` raíz `overflow-y: hidden`; `<main>` con `flex: 1`, `min-height: 0`, `overflow-y: auto` por defecto (full bleed) o según props. Gates flex en App (fade200Style / homeGateStyle).
+- Altura útil iOS nativo (Capacitor/WKWebView, fix 2026-04): `readStandaloneDisplayMode()` en `App.jsx`, `ScreenShell.tsx` e `IphoneFrame.jsx` incluye `Capacitor.isNativePlatform()` porque la app nativa no activa `(display-mode: standalone)` ni `navigator.standalone`. Sin ello no corrían `useStandaloneAppHeightCssVar` (sin `--app-height` / clase `waitme-standalone-height`), `ScreenShell` trataba el shell como “browser” (nav en flujo, sin reserva de nav) y el mapa/login no ocupaban el alto real. `ScreenShell` raíz sin `max-height: 100%` (evita techo mal resuelto en % sobre WKWebView). Scroll vertical solo en `<main>`.
+- Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).
 - Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
 - PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
 - Capacitor iOS: `capacitor.config.json` — webDir `dist` (obligatorio para `cap sync`); `server.url` = producción `https://v5waitme.vercel.app` (WKWebView carga la misma web que Vercel; cambios desplegados se ven al abrir la app sin rebuild de frontend). `cleartext: false`. `Info.plist`: ATS con `NSAllowsArbitraryLoads` = false (solo HTTPS estándar). `npm run cap:sync` = build + sync: el build sigue siendo requisito del CLI para copiar `webDir`; el runtime nativo usa la URL remota.

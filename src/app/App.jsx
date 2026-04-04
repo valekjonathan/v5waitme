@@ -4,6 +4,7 @@ import {
   ProfileIncompleteNoticeProvider,
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
+import { Capacitor } from '@capacitor/core'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
@@ -39,6 +40,7 @@ const appRootLayoutStyle = {
   boxSizing: 'border-box',
 }
 
+/** PWA instalada + app Capacitor iOS: mismo tratamiento de alto útil (WKWebView no suele marcar display-mode standalone). */
 function readStandaloneDisplayMode() {
   if (typeof window === 'undefined') return false
   const mq =
@@ -48,12 +50,13 @@ function readStandaloneDisplayMode() {
     typeof navigator !== 'undefined' &&
     'standalone' in navigator &&
     /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
-  return Boolean(mq || iosStandalone)
+  const capacitorNative = Capacitor.isNativePlatform() === true
+  return Boolean(mq || iosStandalone || capacitorNative)
 }
 
 const WAITME_STANDALONE_HEIGHT_CLASS = 'waitme-standalone-height'
 
-/** iOS PWA: `--app-height` = max(inner, vv.height+vv.offsetTop); `--vv-offset-top` para anclar chrome al visualViewport. */
+/** iOS edge-to-edge (PWA + Capacitor): `--app-height` = max(inner, vv.height+vv.offsetTop); `--vv-offset-top` para anclar chrome al visualViewport. */
 function useStandaloneAppHeightCssVar() {
   useLayoutEffect(() => {
     const rootEl = document.documentElement

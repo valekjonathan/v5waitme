@@ -59,8 +59,9 @@ body {
 }
 
 /**
- * iOS PWA standalone: `App.jsx` fija `--app-height` en px; sin duplicar height fijo en body/#root:
- * la cadena flex (html→body→#root→.waitme-app-root) reparte el alto y evita banda negra por % sueltos.
+ * iOS edge-to-edge: `App.jsx` añade `waitme-standalone-height` en PWA instalada y en Capacitor nativo
+ * (`Capacitor.isNativePlatform()`); fija `--app-height` en px. Sin duplicar height fijo en body/#root:
+ * la cadena flex (html→body→#root→.waitme-app-root) reparte el alto útil real del WKWebView.
  */
 html.waitme-standalone-height body {
   height: auto;
@@ -89,7 +90,7 @@ html.waitme-standalone-height #root {
 }
 
 /**
- * PWA standalone: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--vv-offset-top` / `--app-height`
+ * PWA + Capacitor: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--vv-offset-top` / `--app-height`
  * (App, visualViewport). BottomNav fijo: `bottom: var(--vv-offset-top)`; safe-area solo en su paddingBottom.
  */
 /**

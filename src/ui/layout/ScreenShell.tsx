@@ -1,7 +1,7 @@
 /**
  * Shell: columna Header → `<main>` (referencia vertical útil) → BottomNav.
  * Hijos viven en `data-waitme-content-slot`; mapa usa `data-waitme-map-slot` para overlays.
- * PWA standalone (iOS): BottomNav `position:fixed` al borde útil; `<main>` lleva `padding-bottom`
+ * iOS edge-to-edge (PWA + Capacitor native): BottomNav `position:fixed` al borde útil; `<main>` lleva `padding-bottom`
  * = altura real del nav (`--waitme-bottom-nav-h`) para no tapar contenido ni dejar hueco en flex.
  */
 import {
@@ -12,6 +12,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
+import { Capacitor } from '@capacitor/core'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
 import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
@@ -25,7 +26,8 @@ function readStandaloneDisplayMode(): boolean {
     typeof navigator !== 'undefined' &&
     'standalone' in navigator &&
     (navigator as Navigator & { standalone?: boolean }).standalone === true
-  return Boolean(mq || iosStandalone)
+  const capacitorNative = Capacitor.isNativePlatform() === true
+  return Boolean(mq || iosStandalone || capacitorNative)
 }
 
 const shellRootStyle: CSSProperties = {
@@ -33,7 +35,6 @@ const shellRootStyle: CSSProperties = {
   flexDirection: 'column',
   flex: 1,
   minHeight: 0,
-  maxHeight: '100%',
   overflowX: 'hidden',
   overflowY: 'hidden',
 }
