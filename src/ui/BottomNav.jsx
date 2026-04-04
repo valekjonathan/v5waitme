@@ -18,7 +18,7 @@ import MessageCircleIcon from './icons/MessageCircleIcon'
 
 const s = LAYOUT.spacing
 const navPaddingTop = s.sm - 2
-const navPaddingBottomCalc = `calc(${s.xs}px + env(safe-area-inset-bottom, 0px))`
+const navPaddingBottomCalc = `${s.xs}px`
 const labelStyle = {
   marginTop: 2,
   fontSize: 10,
