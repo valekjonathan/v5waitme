@@ -24,7 +24,7 @@ function readStandaloneDisplayMode(): boolean {
   const iosStandalone =
     typeof navigator !== 'undefined' &&
     'standalone' in navigator &&
-    /** @type {{ standalone?: boolean }} */ navigator.standalone === true
+    /** @type {{ standalone?: boolean }} */ (navigator).standalone === true
   return Boolean(mq || iosStandalone)
 }
 
