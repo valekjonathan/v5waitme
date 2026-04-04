@@ -178,20 +178,14 @@ export function subscribeToLocation(callback) {
   }
 }
 
+/** Última posición en caché (misma lectura síncrona para ambos nombres de API). */
 export function getCurrentLocation() {
   return currentLocation
 }
 
-/** Lectura síncrona inmediata de la caché en memoria (sin esperar al GPS). */
-export function getCurrentLocationFast() {
-  return currentLocation
-}
+export const getCurrentLocationFast = getCurrentLocation
 
-// API remains backward compatible: createPositionGuard() still works.
-// Optional hooks:
-// - onEvent(event): lightweight local observability
-// - persistEvent(event): external persistence override
-// - trajectoryValidator(sample): future trust integration
+/** Cubierto por tests; el stream GPS del mapa no pasa por aquí (sin efecto en runtime actual). */
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 
