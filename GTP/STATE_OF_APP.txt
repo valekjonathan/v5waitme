@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-04T05:41:01.302Z
-Git revision: 4150303f85b9da4ea5178697d61d820d09297261
+Generated: 2026-04-04T05:44:41.486Z
+Git revision: 075dd6f3b8e5e2c5095445c351f11bb11379eab3
 Git source: local HEAD (working tree dirty: contenido puede incluir cambios sin commit).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
@@ -206,7 +206,8 @@ ninguno
 - Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.
 - Cambios en ScreenShell/layout afectan todas las pantallas con shell.
 - AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.
-- Map bundle es pesado (lazy load en App).
+- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; chunk vendor `mapbox-gl` separado en build Vite.
+- Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).
 - E2E: Playwright proyectos chromium + webkit; CI instala ambos tras `npm run quality`.
 - Sin huérfanos detectados en el grafo actual.
 

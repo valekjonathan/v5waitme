@@ -186,9 +186,9 @@ export function getCurrentLocation() {
 export const getCurrentLocationFast = getCurrentLocation
 
 /*
- * --- Trayectoria filtrada (tests / API opcional) ---
+ * --- Trayectoria filtrada (tests / API opcional) — opción B del proyecto ---
  * Pipeline real: startLocationTracking → watchPosition → persistAndNotifyLocation → subscribeToLocation (Map).
- * createPositionGuard NO participa en ese pipeline; integrarlo cambiaría qué puntos recibe el mapa.
+ * createPositionGuard NO está en ese pipeline; integrarlo en runtime cambiaría qué puntos ve el mapa (requiere decisión explícita de producto).
  */
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options

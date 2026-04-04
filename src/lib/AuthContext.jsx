@@ -80,6 +80,18 @@ function buildDevLocalProfileState(user) {
   return { merged, isComplete: checkProfileComplete(merged) }
 }
 
+/** Fila Supabase ya normalizada sobre `buildResolvedHeaderProfile` (sin duplicar reglas de merge). */
+function mergeOAuthProfileRow(base, row) {
+  if (!row) return base
+  return {
+    ...base,
+    ...row,
+    full_name: row.full_name || base.full_name,
+    email: row.email || base.email,
+    avatar_url: row.avatar_url || base.avatar_url,
+  }
+}
+
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading')
   const [user, setUser] = useState(null)
@@ -201,16 +213,7 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = nextUser.id
       setProfile(() => {
         const base = buildResolvedHeaderProfile(null, nextUser)
-
-        return result.data
-          ? {
-              ...base,
-              ...result.data,
-              full_name: result.data.full_name || base.full_name,
-              email: result.data.email || base.email,
-              avatar_url: result.data.avatar_url || base.avatar_url,
-            }
-          : base
+        return mergeOAuthProfileRow(base, result.data)
       })
       setIsNewUser(result.isNewUser)
       setIsProfileComplete(result.isProfileComplete)

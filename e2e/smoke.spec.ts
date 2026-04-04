@@ -6,6 +6,13 @@ test('arranque: documento y #root', async ({ page }) => {
   await expect(page.locator('#root')).toBeVisible()
 })
 
+test('arranque: boot auth o login visible (sin #root colgado)', async ({ page }) => {
+  await page.goto('/')
+  const boot = page.locator('[data-waitme-auth-boot]')
+  const google = page.getByRole('button', { name: /Continuar con Google/i })
+  await expect(boot.or(google)).toBeVisible({ timeout: 20_000 })
+})
+
 test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)', async ({
   page,
 }) => {

@@ -47,7 +47,16 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     plugins: [react(), ...sentryPlugins],
-    build: { chunkSizeWarningLimit: 2500 },
+    build: {
+      chunkSizeWarningLimit: 2500,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/mapbox-gl')) return 'mapbox-gl'
+          },
+        },
+      },
+    },
     server: {
       host: 'localhost',
       port: 5173,

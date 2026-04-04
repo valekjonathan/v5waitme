@@ -184,6 +184,7 @@ function AuthenticatedMainChrome() {
 function AuthBootScreen() {
   return (
     <div
+      data-waitme-auth-boot
       style={{
         display: 'flex',
         minHeight: '100%',

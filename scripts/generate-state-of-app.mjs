@@ -293,7 +293,8 @@ function buildDocument(orphans, reachable) {
     '- Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
-    '- Map bundle es pesado (lazy load en App).',
+    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; chunk vendor `mapbox-gl` separado en build Vite.',
+    '- Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).',
     '- E2E: Playwright proyectos chromium + webkit; CI instala ambos tras `npm run quality`.',
     orphans.length > 0
       ? `- HUÉRFANOS detectados: ${orphans.length} archivo(s); revisar o enlazar desde main.jsx.`
