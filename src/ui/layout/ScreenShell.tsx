@@ -14,10 +14,8 @@ const shellRootStyle: CSSProperties = {
   maxHeight: '100%',
   minHeight: 0,
   flex: 1,
-  overflowY: 'hidden',
-  width: '100%',
   overflowX: 'hidden',
-  boxSizing: 'border-box',
+  overflowY: 'hidden',
 }
 
 const shellMainColumnStyle: CSSProperties = {
@@ -39,12 +37,9 @@ export type ScreenShellProps = {
   style?: CSSProperties
   contentStyle?: CSSProperties
   mainMode?: ScreenShellMainMode
-  /** Solo modo inset: `hidden` evita scroll en `<main>` (p. ej. pantalla perfil). */
+  /** Reservado (API estable); overflow del `<main>` fijado para iOS PWA. */
   mainOverflow?: 'auto' | 'hidden'
-  /**
-   * Full bleed: por defecto `main` usa overflow-y auto; `visible` evita recortar overlays
-   * que desbordan (p. ej. lista desplegable StreetSearch).
-   */
+  /** Reservado (API estable); overflow del `<main>` fijado para iOS PWA. */
   fullBleedMainOverflow?: 'auto' | 'hidden' | 'visible'
 }
 
@@ -54,11 +49,9 @@ export default function ScreenShell({
   style = {},
   contentStyle = {},
   mainMode = SCREEN_SHELL_MAIN_MODE.INSET,
-  mainOverflow = 'auto',
-  fullBleedMainOverflow = 'auto',
+  mainOverflow: _mainOverflow = 'auto',
+  fullBleedMainOverflow: _fullBleedMainOverflow = 'auto',
 }: ScreenShellProps) {
-  const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
-
   return (
     <div data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
       <Header interactive={interactive} />
@@ -70,11 +63,9 @@ export default function ScreenShell({
           height: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'flex-start',
-          alignItems: 'stretch',
-          overflowY: fullBleed ? fullBleedMainOverflow : mainOverflow,
+          overflowY: 'auto',
           overflowX: 'hidden',
-          boxSizing: 'border-box',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <div data-waitme-content-slot style={{ ...shellMainColumnStyle, ...contentStyle }}>

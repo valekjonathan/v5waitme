@@ -1,20 +1,12 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import { loadMapModule } from '../../map/mapInstance.js'
+import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
-
-const Map = lazy(loadMapModule)
-
-const mapSuspenseFallbackStyle = {
-  width: '100%',
-  height: '100%',
-  backgroundColor: colors.background,
-}
 
 const s = LAYOUT.spacing
 const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
@@ -168,9 +160,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
-        <Suspense fallback={<div style={mapSuspenseFallbackStyle} />}>
-          <Map readOnly onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
-        </Suspense>
+        <Map readOnly onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 

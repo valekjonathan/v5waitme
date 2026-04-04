@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import mapboxgl from 'mapbox-gl'
 import {
   createMap,
   DEFAULT_PITCH,
@@ -27,6 +28,7 @@ import {
   applyWaitmeCameraJumpOrEase,
   GAP_CARD_TOP,
   GAP_SEARCH_BOTTOM,
+  getWaitmeMapCameraOptions,
   isWaitmeParkingLayoutReady,
   jumpMapToGpsSearch,
 } from '../mapControls.js'
@@ -68,6 +70,8 @@ function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust)
 
 let globalContainer = null
 
+void mapboxgl.Map
+
 function applyPostLoadStyle(map, readOnly) {
   try {
     reapplyMapVisualLayers(map, readOnly)
@@ -85,6 +89,23 @@ function centerMapOnUser(map, loc) {
     zoom: DEFAULT_ZOOM,
     pitch: DEFAULT_PITCH,
   })
+}
+
+/** Primera pintura: solo `jumpTo` (sin ease) para evitar parpadeo / montaje a trozos. */
+function centerMapOnUserImmediate(map, loc) {
+  if (!map || !loc) return
+  const { latitude: lat, longitude: lng } = loc
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+  try {
+    map.jumpTo({
+      center: [lng, lat],
+      zoom: DEFAULT_ZOOM,
+      pitch: DEFAULT_PITCH,
+      ...getWaitmeMapCameraOptions(),
+    })
+  } catch {
+    /* */
+  }
 }
 
 export default function Map({
@@ -107,6 +128,10 @@ export default function Map({
   const [searchPinPixel, setSearchPinPixel] = useState(null)
   const searchGpsRef = useRef(null)
   const settledRef = useRef(false)
+  const onSettledRef = useRef(onSettled)
+  onSettledRef.current = onSettled
+  const readOnlyRef = useRef(readOnly)
+  readOnlyRef.current = readOnly
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
   followUserGpsRef.current = followUserGps
@@ -118,8 +143,8 @@ export default function Map({
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
     settledRef.current = true
-    onSettled?.()
-  }, [onSettled])
+    onSettledRef.current?.()
+  }, [])
 
   useEffect(() => {
     setMapFollowUserGps(followUserGps)
@@ -360,9 +385,9 @@ export default function Map({
       let existingLoadCancelled = false
       const onExistingLoad = () => {
         if (existingLoadCancelled) return
-        applyPostLoadStyle(existingMap, readOnly)
+        applyPostLoadStyle(existingMap, readOnlyRef.current)
         const fast = getCurrentLocationFast()
-        if (followUserGps && fast) centerMapOnUser(existingMap, fast)
+        if (followUserGpsRef.current && fast) centerMapOnUserImmediate(existingMap, fast)
         fireSettled()
       }
       ensureLocationPipe()
@@ -403,18 +428,18 @@ export default function Map({
     }
 
     const onFirstLoad = () => {
-      applyPostLoadStyle(map, readOnly)
-      if (followUserGps) {
+      applyPostLoadStyle(map, readOnlyRef.current)
+      if (followUserGpsRef.current) {
         const fast = getCurrentLocationFast()
         if (fast) {
-          centerMapOnUser(map, fast)
+          centerMapOnUserImmediate(map, fast)
         } else {
           getCurrentPosition(
             (validated) => {
               if (!validated || !followUserGpsRef.current) return
               const m = getGlobalMapInstance()
               if (!m) return
-              centerMapOnUser(m, {
+              centerMapOnUserImmediate(m, {
                 latitude: validated.lat,
                 longitude: validated.lng,
               })
@@ -448,7 +473,7 @@ export default function Map({
       map.off('load', onFirstLoad)
       clearLocationPipe()
     }
-  }, [fireSettled, readOnly, followUserGps, projectSearchPinFromGps])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- init singleton; props vía refs.
 
   useEffect(() => {
     if (mapFocusGeneration === 0) return
