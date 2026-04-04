@@ -62,7 +62,8 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     server: {
-      host: 'localhost',
+      /** true = escuchar en LAN (iPhone misma Wi‑Fi). `npm run dev` sigue siendo el comando. */
+      host: true,
       port: 5173,
       strictPort: true,
       headers: {
