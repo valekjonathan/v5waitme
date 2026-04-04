@@ -70,7 +70,7 @@ html.waitme-standalone-height #root {
 }
 
 /**
- * Raíz React: % por defecto; en PWA iOS `App.jsx` define --app-height = innerHeight (px).
+ * Raíz React: % por defecto; en PWA iOS standalone `App.jsx` define --app-height en px (max(innerHeight, visualViewport.height)).
  */
 .waitme-app-root {
   width: 100%;

@@ -66,10 +66,11 @@ function useStandaloneAppHeightCssVar() {
     rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
 
     const getRealHeight = () => {
-      if (window.visualViewport && window.visualViewport.height) {
-        return window.visualViewport.height
-      }
-      return window.innerHeight
+      const inner = window.innerHeight
+      const vv = window.visualViewport
+      const vvH = vv && vv.height > 0 ? vv.height : 0
+      // Standalone iOS: a veces vv.height < innerHeight; --app-height corto → banda negra bajo chrome / nav “despegado”.
+      return vvH > 0 ? Math.max(inner, vvH) : inner
     }
 
     const sync = () => {
