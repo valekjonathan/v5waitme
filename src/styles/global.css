@@ -89,6 +89,10 @@ html.waitme-standalone-height #root {
 }
 
 /**
+ * PWA standalone: `--waitme-bottom-nav-h` la fija `ScreenShell.tsx` (ResizeObserver sobre BottomNav
+ * fijo al viewport); solo `<main>` usa ese padding inferior. Safe-area inferior sigue en BottomNav.
+ */
+/**
  * Full bleed: crece dentro del padre flex (flex:1 min-height:0); no min-height dvh aquí.
  * Scroll vertical solo en ScreenShell `<main>`, no aquí.
  */

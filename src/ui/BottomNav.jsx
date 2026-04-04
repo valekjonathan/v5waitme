@@ -29,7 +29,10 @@ const labelStyle = {
 
 const divider = <div style={{ height: 32, width: 1, background: colors.border }} aria-hidden />
 
-const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
+const BottomNav = forwardRef(function BottomNav(
+  { interactive = true, fixedToViewport = false },
+  ref
+) {
   const nav = useAppScreen()
   const { screen } = nav
   const { status, isProfileComplete } = useAuth()
@@ -59,9 +62,18 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       data-waitme-nav
       style={{
         pointerEvents: 'auto',
-        position: 'relative',
-        width: '100%',
-        flexShrink: 0,
+        ...(fixedToViewport
+          ? {
+              position: 'fixed',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+            }
+          : {
+              position: 'relative',
+              flexShrink: 0,
+            }),
         zIndex: 2147483647,
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
