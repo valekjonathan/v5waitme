@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
+import { loadMapModule } from '../../map/mapInstance.js'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
@@ -7,7 +8,7 @@ import { radius } from '../../../design/radius'
 import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
-const Map = lazy(() => import('../../map/components/Map'))
+const Map = lazy(loadMapModule)
 
 const mapSuspenseFallbackStyle = {
   width: '100%',

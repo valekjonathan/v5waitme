@@ -47,6 +47,9 @@ export default defineConfig(({ mode, command }) => {
 
   return {
     plugins: [react(), ...sentryPlugins],
+    optimizeDeps: {
+      include: ['mapbox-gl'],
+    },
     build: {
       chunkSizeWarningLimit: 2500,
       rollupOptions: {

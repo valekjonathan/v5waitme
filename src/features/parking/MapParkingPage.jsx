@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { useAppScreen } from '../../lib/AppScreenContext'
+import { loadMapModule } from '../map/mapInstance.js'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
@@ -7,7 +8,7 @@ import { APP_SCREEN_PARK_HERE } from '../../lib/appScreenState.js'
 import { useSimulatedParkingUsers } from '../map/useSimulatedParkingUsers'
 import SearchParkingOverlay from './components/SearchParkingOverlay.jsx'
 
-const Map = lazy(() => import('../map/components/Map.jsx'))
+const Map = lazy(loadMapModule)
 
 const fallback = {
   width: '100%',
