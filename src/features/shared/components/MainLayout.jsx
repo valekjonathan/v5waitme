@@ -18,7 +18,14 @@ const mapSuspenseFallbackStyle = {
 
 const s = LAYOUT.spacing
 const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
-const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'hidden' }
+const rootStyle = {
+  position: 'relative',
+  flex: 1,
+  minHeight: 0,
+  height: '100%',
+  width: '100%',
+  overflow: 'hidden',
+}
 const mapLayerStyle = {
   position: 'absolute',
   inset: 0,

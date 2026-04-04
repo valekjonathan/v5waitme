@@ -10,9 +10,26 @@ import SearchParkingOverlay from './components/SearchParkingOverlay.jsx'
 
 const Map = lazy(loadMapModule)
 
+const mapPageShellStyle = {
+  position: 'relative',
+  flex: 1,
+  minHeight: 0,
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}
+const mapPageMapSlotStyle = {
+  flex: 1,
+  minHeight: 0,
+  height: '100%',
+  width: '100%',
+  position: 'relative',
+}
 const fallback = {
   width: '100%',
   height: '100%',
+  flex: 1,
+  minHeight: 0,
   backgroundColor: colors.background,
 }
 
@@ -31,22 +48,17 @@ export default function MapParkingPage() {
       mainOverflow="hidden"
       fullBleedMainOverflow="visible"
     >
-      <div
-        style={{
-          position: 'relative',
-          flex: 1,
-          minHeight: 0,
-          width: '100%',
-        }}
-      >
+      <div style={mapPageShellStyle}>
         <Suspense fallback={<div style={fallback} />}>
-          <Map
-            readOnly={false}
-            mapFocusGeneration={mapFocusGeneration}
-            parkingBandPinAdjust
-            parkingPinMode={mode}
-            followUserGps={mode === 'parked'}
-          />
+          <div style={mapPageMapSlotStyle}>
+            <Map
+              readOnly={false}
+              mapFocusGeneration={mapFocusGeneration}
+              parkingBandPinAdjust
+              parkingPinMode={mode}
+              followUserGps={mode === 'parked'}
+            />
+          </div>
         </Suspense>
         <SearchParkingOverlay mode={mode} allUsers={users} />
       </div>
