@@ -64,7 +64,7 @@ export default function IphoneFrame({ children }) {
 
   if (fullBleed) {
     return (
-      <div className="waitme-iphone-frame-fullbleed" style={{ height: '100%', width: '100%' }}>
+      <div className="waitme-iphone-frame-fullbleed" style={{ width: '100%' }}>
         {children}
       </div>
     )

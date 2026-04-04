@@ -25,7 +25,6 @@ import {
 } from '../../../services/location.js'
 import {
   alignParkedGpsMarkerToGap,
-  applyWaitmeCameraJumpOrEase,
   GAP_CARD_TOP,
   GAP_SEARCH_BOTTOM,
   getWaitmeMapCameraOptions,
@@ -81,14 +80,7 @@ function applyPostLoadStyle(map, readOnly) {
 }
 
 function centerMapOnUser(map, loc) {
-  if (!map || !loc) return
-  const { latitude: lat, longitude: lng } = loc
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
-  applyWaitmeCameraJumpOrEase(map, {
-    center: [lng, lat],
-    zoom: DEFAULT_ZOOM,
-    pitch: DEFAULT_PITCH,
-  })
+  centerMapOnUserImmediate(map, loc)
 }
 
 /** Primera pintura: solo `jumpTo` (sin ease) para evitar parpadeo / montaje a trozos. */
@@ -121,6 +113,8 @@ export default function Map({
   const containerRef = useRef(null)
   const mapShellRef = useRef(null)
   const pinRef = useRef(null)
+  /** Espejo del singleton para lecturas locales sin reinit. */
+  const mapInstanceRef = useRef(null)
   const [unavailable, setUnavailable] = useState(false)
   /** Parking parked: punta del pin en el hueco buscador–tarjeta. */
   const [parkingPinTopPx, setParkingPinTopPx] = useState(null)
@@ -148,22 +142,30 @@ export default function Map({
 
   useEffect(() => {
     setMapFollowUserGps(followUserGps)
-  }, [followUserGps])
-
-  useEffect(() => {
     if (!parkingBandPinAdjust) {
       setParkingMapPinMode(null)
-      return
-    }
-    setParkingMapPinMode(parkingPinMode)
-    if (parkingPinMode === 'search') {
-      setSearchFollowUserGps(true)
-    } else {
-      setSearchFollowUserGps(false)
       searchGpsRef.current = null
       setSearchPinPixel(null)
+    } else {
+      setParkingMapPinMode(parkingPinMode)
+      if (parkingPinMode === 'search') {
+        setSearchFollowUserGps(true)
+      } else {
+        setSearchFollowUserGps(false)
+        searchGpsRef.current = null
+        setSearchPinPixel(null)
+      }
     }
-  }, [parkingBandPinAdjust, parkingPinMode])
+    setMapReadOnlySession(readOnly)
+    const map = getGlobalMapInstance()
+    if (map?.isStyleLoaded?.()) {
+      try {
+        reapplyMapVisualLayers(map, readOnly)
+      } catch {
+        /* */
+      }
+    }
+  }, [readOnly, followUserGps, parkingBandPinAdjust, parkingPinMode])
 
   const projectSearchPinFromGps = useCallback(() => {
     const map = getGlobalMapInstance()
@@ -177,17 +179,6 @@ export default function Map({
       /* */
     }
   }, [])
-
-  useEffect(() => {
-    setMapReadOnlySession(readOnly)
-    const map = getGlobalMapInstance()
-    if (!map?.isStyleLoaded?.()) return
-    try {
-      reapplyMapVisualLayers(map, readOnly)
-    } catch {
-      /* */
-    }
-  }, [readOnly])
 
   /** Home: pin en viewport + offset. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
@@ -382,6 +373,7 @@ export default function Map({
 
     const existingMap = getGlobalMapInstance()
     if (existingMap) {
+      mapInstanceRef.current = existingMap
       let existingLoadCancelled = false
       const onExistingLoad = () => {
         if (existingLoadCancelled) return
@@ -420,6 +412,7 @@ export default function Map({
     }
 
     setGlobalMapInstance(map)
+    mapInstanceRef.current = map
 
     try {
       map.setFadeDuration?.(0)
@@ -482,7 +475,7 @@ export default function Map({
 
     const fast = getCurrentLocationFast()
     if (fast) {
-      centerMapOnUser(map, fast)
+      centerMapOnUserImmediate(map, fast)
       return
     }
     getCurrentPosition(
@@ -490,7 +483,7 @@ export default function Map({
         if (!validated) return
         const m = getGlobalMapInstance()
         if (!m) return
-        centerMapOnUser(m, {
+        centerMapOnUserImmediate(m, {
           latitude: validated.lat,
           longitude: validated.lng,
         })

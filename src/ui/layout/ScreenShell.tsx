@@ -10,10 +10,9 @@ import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  height: '100%',
-  maxHeight: '100%',
+  flex: '1 1 0%',
   minHeight: 0,
-  flex: 1,
+  maxHeight: '100%',
   overflowX: 'hidden',
   overflowY: 'hidden',
 }

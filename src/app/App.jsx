@@ -27,13 +27,13 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
-/** Raíz: columna flex; alto vía % o --app-height (solo PWA standalone, ver sync). */
+/** Raíz React: llena #root (flex); alto lo fija la cadena html/body/#root, no duplicar 100% aquí. */
 const appRootLayoutStyle = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
-  height: 'var(--app-height, 100%)',
-  minHeight: 'var(--app-height, 100%)',
+  flex: '1 1 0%',
+  minHeight: 0,
   overflowX: 'hidden',
   overflowY: 'hidden',
   boxSizing: 'border-box',
@@ -66,11 +66,15 @@ function useStandaloneAppHeightCssVar() {
     rootEl.classList.add(WAITME_STANDALONE_HEIGHT_CLASS)
 
     const getRealHeight = () => {
+      const doc = document.documentElement
       const inner = window.innerHeight
       const vv = window.visualViewport
       const vvH = vv && vv.height > 0 ? vv.height : 0
-      // Standalone iOS: a veces vv.height < innerHeight; --app-height corto → banda negra bajo chrome / nav “despegado”.
-      return vvH > 0 ? Math.max(inner, vvH) : inner
+      const clientH = doc && doc.clientHeight > 0 ? doc.clientHeight : 0
+      const offsetTop = vv && Number.isFinite(vv.offsetTop) ? Math.max(0, vv.offsetTop) : 0
+      const fromVv = vvH > 0 ? vvH + offsetTop : 0
+      // Standalone iOS: unificar layout vs visual (Math.max(inner, visualViewport.height) + clientHeight).
+      return Math.max(inner, vvH, fromVv, clientH)
     }
 
     const sync = () => {
@@ -91,6 +95,7 @@ function useStandaloneAppHeightCssVar() {
     window.addEventListener('load', sync)
     if (vv) {
       vv.addEventListener('resize', sync)
+      vv.addEventListener('scroll', sync)
     }
 
     return () => {
@@ -101,23 +106,22 @@ function useStandaloneAppHeightCssVar() {
       window.removeEventListener('load', sync)
       if (vv) {
         vv.removeEventListener('resize', sync)
+        vv.removeEventListener('scroll', sync)
       }
     }
   }, [])
 }
 const fade200Style = {
   transition: 'opacity 200ms ease-out',
-  height: '100%',
   minHeight: 0,
-  flex: 1,
+  flex: '1 1 0%',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',
 }
 const homeGateStyle = {
-  flex: 1,
+  flex: '1 1 0%',
   minHeight: 0,
-  height: '100%',
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
@@ -272,9 +276,8 @@ function AuthBootScreen() {
       data-waitme-auth-boot
       style={{
         display: 'flex',
-        flex: 1,
+        flex: '1 1 0%',
         minHeight: 0,
-        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: colors.background,

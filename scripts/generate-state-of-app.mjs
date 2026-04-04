@@ -277,7 +277,7 @@ function buildDocument(orphans, reachable) {
   lines.push('Pantallas:')
   lines.push(appScreens)
   lines.push(
-    'Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map lazy vía MapParkingPage/MainLayout.'
+    'Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map import estático en MapParkingPage/MainLayout (sin React.lazy/Suspense).'
   )
   lines.push('')
   lines.push('=== ARCHIVOS CRÍTICOS (arranque y shell) ===')
@@ -297,8 +297,8 @@ function buildDocument(orphans, reachable) {
     '- Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
-    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; build Vite: chunks `mapbox-gl` y `@supabase` separados del bundle principal.',
-    '- Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).',
+    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; build Vite: chunk separado típico solo `@supabase` (mapbox suele ir en el bundle principal salvo que el bundler parta por tamaño).',
+    '- Map bundle es pesado (mapbox-gl en el árbol desde main → App → Home/Login/Parking).',
     '- E2E: Playwright chromium + webkit (motor tipo Safari); no sustituye Safari real en dispositivo — permisos y builds pueden diferir.',
     '- E2E: CI instala solo chromium + webkit tras `npm run quality`.',
     orphans.length > 0
@@ -310,7 +310,7 @@ function buildDocument(orphans, reachable) {
   lines.push(
     '- Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.',
     '- APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.',
-    '- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` en documentElement (visualViewport / innerHeight). `src/styles/global.css`: html + `.waitme-app-root` + fullbleed con `var(--app-height)`; en standalone, `body` y `#root` con `height`/`min-height` en `var(--app-height)`; en la cadena hasta el shell, `overflow-x: hidden` + `overflow-y: hidden` (un solo scroll vertical en `ScreenShell` `<main>`, salvo props `mainOverflow` / `fullBleedMainOverflow`).',
+    '- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` (Math.max(innerHeight, visualViewport.height, clientHeight, vv+offsetTop); listeners resize/orientation/load + visualViewport resize/scroll). `src/styles/global.css`: columna flex `html → body → #root → .waitme-app-root` con `flex: 1 1 0%` + `min-height: 0`; en standalone, body/#root sin height fijo duplicado; scroll vertical en `ScreenShell` `<main>` (`overflow-y: auto`).',
     '- Shell: `ScreenShell.tsx` raíz `overflow-y: hidden`; `<main>` con `flex: 1`, `min-height: 0`, `overflow-y: auto` por defecto (full bleed) o según props. Gates flex en App (fade200Style / homeGateStyle).',
     '- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.',
     '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.'

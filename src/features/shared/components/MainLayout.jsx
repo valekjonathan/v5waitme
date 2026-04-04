@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
@@ -131,11 +131,6 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
-  const [mapLayerSettled, setMapLayerSettled] = useState(false)
-
-  const onMapSettled = useCallback(() => {
-    setMapLayerSettled(true)
-  }, [])
 
   useEffect(() => {
     if (!loginEntrance) {
@@ -159,8 +154,8 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
 
   return (
     <div style={rootStyle}>
-      <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
-        <Map readOnly onSettled={onMapSettled} mapFocusGeneration={mapFocusGeneration} />
+      <div style={mapLayerStyle} aria-label="Capa de mapa">
+        <Map readOnly mapFocusGeneration={mapFocusGeneration} />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 
