@@ -9,7 +9,7 @@ import {
  * Columna bajo ScreenShell inset: cluster superior + cuerpo con scroll independiente.
  * Una sola estructura para perfil y reseñas (sin centered / spacers / cluster).
  */
-const viewportStyle = {
+const contentColumnStyle = {
   width: '100%',
   height: '100%',
   display: 'flex',
@@ -53,7 +53,7 @@ export const profileReviewsShellContentStyle = {
 
 export default function ProfileReviewsLayout({ header, children }) {
   return (
-    <div style={viewportStyle}>
+    <div style={contentColumnStyle}>
       <div style={headerFixedStyle}>
         <div style={profileReviewsHeaderContainerStyle}>{header}</div>
       </div>

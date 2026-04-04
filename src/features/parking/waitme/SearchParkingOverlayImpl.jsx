@@ -3,7 +3,7 @@
  * `mode`: 'search' | 'parked' — mismo layout; solo cambia la tarjeta inferior.
  * Tarjeta: por defecto usuario más cercano; si hay selección en mapa, esa tiene prioridad.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   distanceMeters,
   getCurrentLocationFast,
@@ -22,7 +22,7 @@ import {
   WAITME_GLASS_MAP_CONTROL_36,
 } from './icons.jsx'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
-import { MAP_SLOT_OVERLAY } from '../../../ui/layout/layout'
+import { MAP_SLOT } from '../../../ui/layout/layout'
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -42,8 +42,8 @@ function countFiltered(users, filters, userLoc) {
 const filterBtnStyle = {
   ...WAITME_GLASS_MAP_CONTROL_36,
   position: 'absolute',
-  top: MAP_SLOT_OVERLAY.zoomColumnTopPx,
-  right: MAP_SLOT_OVERLAY.filterButtonRightPx,
+  top: MAP_SLOT.controlsTop,
+  right: MAP_SLOT.filterRight,
   zIndex: 18,
   pointerEvents: 'auto',
 }
@@ -54,6 +54,8 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(WAITME_DEFAULT_SEARCH_FILTERS)
   const [isCardVisible, setIsCardVisible] = useState(true)
+  const parkingCardStackRef = useRef(null)
+  const [parkingCardStackH, setParkingCardStackH] = useState(0)
 
   useEffect(() => {
     setIsCardVisible(true)
@@ -128,6 +130,18 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     [allUsers, filters, userLocation]
   )
 
+  useLayoutEffect(() => {
+    const el = parkingCardStackRef.current
+    if (!el) return undefined
+    const measure = () => setParkingCardStackH(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [isSearch, alert, address, isCardVisible, displayUser])
+
+  const parkingCardSlideY = isCardVisible ? 0 : Math.max(0, parkingCardStackH - MAP_SLOT.cardPeek)
+
   const onStreetSelect = ({ lng, lat }) => {
     flyGlobalMapTo(lng, lat)
   }
@@ -155,7 +169,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         <div
           style={{
             position: 'absolute',
-            top: MAP_SLOT_OVERLAY.searchRowTopPx,
+            top: MAP_SLOT.searchTop,
             left: 0,
             right: 0,
             paddingLeft: 16,
@@ -229,9 +243,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         <div
           style={{
             position: 'absolute',
-            bottom: isSearch
-              ? MAP_SLOT_OVERLAY.cardBottomSearchPx
-              : MAP_SLOT_OVERLAY.cardBottomParkedPx,
+            bottom: isSearch ? MAP_SLOT.cardBottomSearch : MAP_SLOT.cardBottomParked,
             left: 16,
             right: 16,
             zIndex: 9999,
@@ -240,12 +252,12 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         >
           <div
             style={{
-              transform: isCardVisible ? 'translateY(0)' : 'translateY(calc(100% - 44px))',
+              transform: `translateY(${parkingCardSlideY}px)`,
               transition: 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
               pointerEvents: 'auto',
             }}
           >
-            <div style={{ position: 'relative' }}>
+            <div ref={parkingCardStackRef} style={{ position: 'relative' }}>
               <HideParkingCardToggle
                 expanded={isCardVisible}
                 onToggle={() => setIsCardVisible((v) => !v)}

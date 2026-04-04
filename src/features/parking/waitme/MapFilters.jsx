@@ -87,7 +87,7 @@ function FilterRangeBlock({
   )
 }
 
-/** Panel anclado al slot mapa (`SearchParkingOverlayImpl`); no stacking respecto al viewport. */
+/** Panel posicionado respecto al ancestro posicionado (overlay dentro del map slot). */
 const panelOuterStyle = {
   position: 'absolute',
   right: 0,

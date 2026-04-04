@@ -1,24 +1,19 @@
 /**
  * Contrato maestro de layout (v5waitme).
  * Jerarquía: IphoneFrame → ScreenShell (Header + `<main>` + BottomNav en flujo flex).
- * Única referencia vertical del contenido: `<main>` → `data-waitme-content-slot` (100 % del main).
- * Overlays de mapa: offsets sólo respecto a `[data-waitme-map-slot]`, sin viewport ni restas de chrome.
- * Modo inset/fullBleed solo cambia overflow del `<main>`, no padding compensatorio.
+ * Contenido útil: `<main>` → `data-waitme-content-slot` → (mapa) `data-waitme-map-slot`.
+ * Coordenadas de overlays del mapa: sólo en px dentro del map slot, sin viewport ni chrome.
  */
 
-/**
- * Posiciones dentro del nodo `[data-waitme-map-slot]` (hijo directo del content slot en mapa).
- * Paridad con el producto histórico: 70→140 entre fila buscador y columna zoom/filtros; 88/80 al borde inferior de pantalla con nav ya fuera del slot ⇒ inset inferior en el slot.
- */
-export const MAP_SLOT_OVERLAY = {
-  searchRowTopPx: 12,
-  /** Misma separación vertical histórica entre top buscador (70) y top controles (140). */
-  searchToControlsTopGapPx: 70,
-  /** = searchRowTopPx + searchToControlsTopGapPx */
-  zoomColumnTopPx: 82,
-  filterButtonRightPx: 16,
-  cardBottomSearchPx: 24,
-  cardBottomParkedPx: 16,
+/** Coordenadas en px relativas únicamente a `[data-waitme-map-slot]`. */
+export const MAP_SLOT = {
+  searchTop: 12,
+  controlsTop: 82,
+  filterRight: 16,
+  cardBottomSearch: 24,
+  cardBottomParked: 16,
+  /** Alto visible al colapsar la tarjeta inferior (fila peek). */
+  cardPeek: 44,
 } as const
 
 export const LAYOUT = {

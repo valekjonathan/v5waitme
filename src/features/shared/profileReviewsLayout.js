@@ -57,10 +57,8 @@ export const profileFormVerticalGapPx = 10
 export const profileActionsFooterMarginTopPx = 8
 export const profileCenteredClusterGapPx = 12
 
-/**
- * Separación dentro del content slot (`data-waitme-content-slot`), bajo el borde superior de `<main>`.
- */
-export const profileReviewsInnerHeaderTopMarginPx = 25
+/** Sin margen extra respecto al content slot; el flujo empieza en `<main>`. */
+export const profileReviewsInnerHeaderTopMarginPx = 0
 
 export const layoutActionsStyle = {
   display: 'flex',
