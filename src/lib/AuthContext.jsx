@@ -440,5 +440,3 @@ export function useAuth() {
   }
   return value
 }
-
-export { checkProfileComplete } from '../services/profile.js'

@@ -1,5 +1,5 @@
 /** Copiado de WaitMe original: src/utils/carUtils.js (extracto). */
-export const CAR_COLOR_MAP = {
+const CAR_COLOR_MAP = {
   blanco: '#FFFFFF',
   blanca: '#FFFFFF',
   negro: '#1a1a1a',
@@ -33,14 +33,6 @@ export function getCarFill(colorName) {
   if (!colorName) return '#6b7280'
   const key = normalizeColorKey(colorName)
   return CAR_COLOR_MAP[key] ?? '#6b7280'
-}
-
-export function formatPlate(plate) {
-  const p = String(plate || '')
-    .replace(/\s+/g, '')
-    .toUpperCase()
-  if (!p) return '0000 XXX'
-  return `${p.slice(0, 4)} ${p.slice(4)}`.trim()
 }
 
 /**

@@ -7,15 +7,6 @@ const OVIEDO_CENTER = [OVIEDO_LNG, OVIEDO_LAT]
 const DARK_STYLE = 'mapbox://styles/mapbox/dark-v11'
 const ROAD_COLOR = '#8b5cf6'
 
-/** Ciclo: vista actual (dark) → mapa claro → satélite. */
-export const MAP_STYLE_CYCLE = [
-  DARK_STYLE,
-  'mapbox://styles/mapbox/light-v11',
-  'mapbox://styles/mapbox/satellite-streets-v12',
-]
-
-export { DARK_STYLE }
-
 /**
  * Tras `setStyle` o primera carga: capas de lectura, carretera, interacción.
  * @param {import('mapbox-gl').Map} map
@@ -41,7 +32,7 @@ export function getMapboxAccessToken(env = import.meta.env) {
   return null
 }
 
-export function setupMapStyleOnLoad(map) {
+function setupMapStyleOnLoad(map) {
   try {
     if (map.getTerrain()) map.setTerrain(null)
   } catch {
@@ -70,7 +61,7 @@ export function setupMapStyleOnLoad(map) {
   }
 }
 
-export function applyMapReadOnly(map, readOnly) {
+function applyMapReadOnly(map, readOnly) {
   if (!map) return
   const d = readOnly ? 'disable' : 'enable'
   try {
@@ -86,7 +77,7 @@ export function applyMapReadOnly(map, readOnly) {
   }
 }
 
-export function applyRoadStyleForCreate(map) {
+function applyRoadStyleForCreate(map) {
   if (!map) return
   const style = map.getStyle()
   if (!style?.layers) return

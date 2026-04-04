@@ -106,11 +106,6 @@ function coreStreetName(text) {
   return s
 }
 
-/** Alias de `formatAddress` para imports existentes. */
-export function formatSelectedAddressFromMapboxFeature(f) {
-  return formatAddress(f)
-}
-
 function extractStreetNumber(f) {
   const props = f && typeof f.properties === 'object' && f.properties !== null ? f.properties : {}
   const numStr = (v) =>
@@ -134,12 +129,4 @@ function extractCityFromContext(f) {
   const locality = ctx.find((c) => (c.id || '').startsWith('locality.'))
   const region = ctx.find((c) => (c.id || '').startsWith('region.'))
   return (place?.text || locality?.text || '').trim() || (region?.text || '').trim() || ''
-}
-
-/**
- * Centro Mapbox Feature → [lng, lat]
- */
-export function suggestionCenter(f) {
-  const c = f?.center
-  return Array.isArray(c) && c.length >= 2 ? c : null
 }

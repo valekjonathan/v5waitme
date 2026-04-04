@@ -1,19 +1,7 @@
-import {
-  DEFAULT_PITCH,
-  DEFAULT_ZOOM,
-  MAP_STYLE_CYCLE,
-  reapplyMapVisualLayers,
-} from './constants/mapbox.js'
-import {
-  getMapFollowUserGps,
-  getMapReadOnlySession,
-  getParkingMapPinMode,
-  setSearchFollowUserGps,
-} from './mapSession.js'
+import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapbox.js'
+import { getMapFollowUserGps, getParkingMapPinMode, setSearchFollowUserGps } from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
-
-let mapStyleCycleIndex = 0
 
 /** Selectores compartidos con `Map.jsx` (hueco buscador–tarjeta). */
 export const GAP_SEARCH_BOTTOM = '[data-search-box]'
@@ -30,7 +18,7 @@ export function isWaitmeParkingLayoutReady() {
 }
 
 /** Salto de cámara + misma alineación que `alignParkedGpsMarkerToGap` (un solo núcleo). */
-export function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
+function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
   if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return
   try {
     map.jumpTo({
@@ -95,7 +83,7 @@ export function getWaitmeMapCameraOptions() {
  * Home: `jumpTo` + offset. Search/Parked con layout: `jumpTo` sin offset y alineación project/unproject.
  * Search/Parked sin layout aún: mismo offset que Home hasta medir hueco.
  */
-export function applyWaitmeCameraJumpOrEase(map, camera) {
+function applyWaitmeCameraJumpOrEase(map, camera) {
   if (!map) return
   const c = camera.center
   if (!Array.isArray(c) || c.length < 2) return
@@ -110,62 +98,6 @@ export function applyWaitmeCameraJumpOrEase(map, camera) {
     } else {
       map.jumpTo({ ...camera, ...getWaitmeMapCameraOptions() })
     }
-  } catch {
-    /* */
-  }
-}
-
-/** Zoom in/out sobre la instancia global del mapa (usado solo desde overlays de pantalla). */
-export function globalMapZoomBy(delta) {
-  const map = getGlobalMapInstance()
-  if (!map || typeof map.getZoom !== 'function' || typeof map.easeTo !== 'function') return
-  try {
-    const z = map.getZoom() + delta
-    let centerLngLat
-    const layout = isWaitmeParkingLayoutReady()
-    const follow = getMapFollowUserGps()
-    if (layout && follow) {
-      const fast = getCurrentLocationFast()
-      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-        centerLngLat = [fast.longitude, fast.latitude]
-      }
-    }
-    if (!centerLngLat) {
-      const c = map.getCenter()
-      centerLngLat = [c.lng, c.lat]
-    }
-    map.easeTo({
-      center: centerLngLat,
-      zoom: Math.min(20, Math.max(3, z)),
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
-      duration: 180,
-      ...(layout ? {} : getWaitmeMapCameraOptions()),
-    })
-    if (layout && follow) {
-      const fast = getCurrentLocationFast()
-      if (fast) {
-        map.once('moveend', () =>
-          alignParkedGpsMarkerToGap(map, { lng: fast.longitude, lat: fast.latitude })
-        )
-      }
-    }
-  } catch {
-    /* */
-  }
-}
-
-/** Un solo botón: dark → light → satélite (sin modales). */
-export function cycleGlobalMapStyle() {
-  const map = getGlobalMapInstance()
-  if (!map) return
-  mapStyleCycleIndex = (mapStyleCycleIndex + 1) % MAP_STYLE_CYCLE.length
-  const next = MAP_STYLE_CYCLE[mapStyleCycleIndex]
-  try {
-    map.setStyle(next)
-    map.once('style.load', () => {
-      reapplyMapVisualLayers(map, getMapReadOnlySession())
-    })
   } catch {
     /* */
   }

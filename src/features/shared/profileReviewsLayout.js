@@ -28,9 +28,9 @@ export const profileReviewsHeaderContainerStyle = {
  */
 export const innerPurplePaddingX = 10
 
-export const reviewsBadgeTopInset = s.md
-export const reviewsBadgeBottomGap = 6
-export const reviewsBadgeReservedHeight = 30
+const reviewsBadgeTopInset = s.md
+const reviewsBadgeBottomGap = 6
+const reviewsBadgeReservedHeight = 30
 
 export const outerCardTopPadding =
   reviewsBadgeTopInset + reviewsBadgeReservedHeight + reviewsBadgeBottomGap
@@ -54,7 +54,7 @@ export const reviewsBadgeLayerStyle = {
 /** Espaciado vertical perfil (centrado fijo, sin scroll): ajuste mínimo para que todo quepa. */
 export const profileHeaderCardMarginBottomPx = 6
 export const profileFormVerticalGapPx = 10
-export const profileActionsFooterMarginTopPx = 8
+const profileActionsFooterMarginTopPx = 8
 export const profileCenteredClusterGapPx = 12
 
 /** Sin margen extra respecto al content slot; el flujo empieza en `<main>`. */

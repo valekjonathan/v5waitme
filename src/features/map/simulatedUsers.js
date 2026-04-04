@@ -1,5 +1,4 @@
 import { vehicleTypeForSimulatedIndex } from '../parking/waitme/carUtils.js'
-import { OVIEDO_LAT, OVIEDO_LNG } from './constants/mapbox.js'
 
 /** Nombres de color coherentes con `getCarFill` / tarjetas. */
 const SIM_COLOR_NAMES = ['rojo', 'azul', 'negro', 'blanco', 'gris', 'verde', 'naranja']
@@ -259,8 +258,4 @@ function buildOne(index, lat, lng, rng) {
     /** Mix para UI: teléfono disponible o no (tarjeta). */
     hasPhoneActive: index % 3 !== 1,
   }
-}
-
-export function defaultSimulatedUsers() {
-  return buildSimulatedUsers(OVIEDO_LAT, OVIEDO_LNG)
 }

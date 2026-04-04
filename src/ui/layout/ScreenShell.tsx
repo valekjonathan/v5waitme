@@ -52,7 +52,7 @@ const shellMainColumnStyle: CSSProperties = {
   alignSelf: 'stretch',
 }
 
-export type ScreenShellProps = {
+type ScreenShellProps = {
   children: ReactNode
   interactive?: boolean
   style?: CSSProperties

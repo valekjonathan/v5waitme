@@ -1,7 +1,7 @@
 /**
  * Capa de datos de reseñas (mock → API real sin cambiar la UI).
  */
-export type Review = {
+type Review = {
   id: string
   name: string
   date: string
@@ -9,7 +9,7 @@ export type Review = {
   comment: string
 }
 
-export type RatingBucket = { stars: number; count: number }
+type RatingBucket = { stars: number; count: number }
 
 /** Fila extra para lista + resumen (misma referencia lógica; evita duplicar en UI). */
 const REVIEWS_TEST_ROW: Review = {
@@ -52,12 +52,12 @@ const MOCK_REVIEWS: Review[] = [
   },
 ]
 
-export function getReviewsMock(): Review[] {
+function getReviewsMock(): Review[] {
   return MOCK_REVIEWS
 }
 
 /** Lista mostrada en reseñas: siempre la fila de prueba primero, luego el mock base (o API). */
-export function mergeReviewsWithTestRow(base: Review[]): Review[] {
+function mergeReviewsWithTestRow(base: Review[]): Review[] {
   return [REVIEWS_TEST_ROW, ...base]
 }
 

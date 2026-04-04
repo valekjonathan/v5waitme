@@ -120,7 +120,7 @@ function MotoVehicle({ size, body, windowFill, windowStroke, ariaLabel }) {
   )
 }
 
-export function VehicleIconProfile({ type, color, size = 'default' }) {
+function VehicleIconProfile({ type, color, size = 'default' }) {
   if (type === 'suv') {
     return (
       <SuvVehicle
@@ -180,14 +180,6 @@ export function VehicleIconProfile({ type, color, size = 'default' }) {
       ariaLabel="Coche"
     />
   )
-}
-
-export function vehicleLabel(t) {
-  if (t === 'suv') return 'Voluminoso'
-  if (t === 'van' || t === 'furgoneta') return 'Furgoneta'
-  if (t === 'moto') return 'Moto'
-  if (t === 'other') return 'Otro'
-  return 'Coche normal'
 }
 
 function isWhiteVehicleColor(color) {

@@ -1,5 +1,5 @@
 /** Escala de valoración en toda la app (estrellas visibles). */
-export const RATING_STAR_COUNT = 4
+const RATING_STAR_COUNT = 4
 
 /**
  * Solo estrellas rellenas (★) — listas de reseñas, ratings compactos.

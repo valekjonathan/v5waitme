@@ -186,7 +186,7 @@ export function subscribeToLocation(callback) {
 }
 
 /** Última posición en caché (misma lectura síncrona para ambos nombres de API). */
-export function getCurrentLocation() {
+function getCurrentLocation() {
   return currentLocation
 }
 

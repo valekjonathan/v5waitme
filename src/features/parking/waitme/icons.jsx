@@ -109,22 +109,6 @@ export function IconSearch({ className = '', size = 20 }) {
   )
 }
 
-/** Pin de mapa relleno (estilo apps de mapas). */
-export function IconMapPinFilled({ className = '', size = 20 }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
-    </svg>
-  )
-}
-
 /** Misma base que filtros / zoom (`MapZoomControls`, `SearchParkingOverlayImpl`). */
 export const WAITME_GLASS_MAP_CONTROL_36 = {
   boxSizing: 'border-box',
@@ -329,24 +313,6 @@ export function IconPhoneOff({ className = '', size = 16 }) {
     >
       <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
       <line x1="23" y1="1" x2="1" y2="23" />
-    </svg>
-  )
-}
-
-export function IconLocateFixed({ className = '', size = 20 }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-      <circle cx="12" cy="12" r="3" />
     </svg>
   )
 }
