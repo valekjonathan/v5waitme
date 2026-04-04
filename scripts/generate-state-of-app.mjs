@@ -297,7 +297,7 @@ function buildDocument(orphans, reachable) {
     '- Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
-    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; chunk vendor `mapbox-gl` separado en build Vite.',
+    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; build Vite: chunks `mapbox-gl` y `@supabase` separados del bundle principal.',
     '- Map bundle es pesado (Map lazy en MapParkingPage / MainLayout según pantalla).',
     '- E2E: Playwright chromium + webkit (motor tipo Safari); no sustituye Safari real en dispositivo — permisos y builds pueden diferir.',
     '- E2E: CI instala solo chromium + webkit tras `npm run quality`.',

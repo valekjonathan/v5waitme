@@ -357,6 +357,7 @@ export default function Map({
 
     const existingMap = getGlobalMapInstance()
     if (existingMap) {
+      let existingLoadCancelled = false
       ensureLocationPipe()
       if (existingMap.isStyleLoaded?.()) {
         applyPostLoadStyle(existingMap, readOnly)
@@ -364,14 +365,19 @@ export default function Map({
         if (followUserGps && fast) centerMapOnUser(existingMap, fast)
         fireSettled()
       } else {
-        existingMap.once('load', () => {
+        const onExistingLoad = () => {
+          if (existingLoadCancelled) return
           applyPostLoadStyle(existingMap, readOnly)
           const fast = getCurrentLocationFast()
           if (followUserGps && fast) centerMapOnUser(existingMap, fast)
           fireSettled()
-        })
+        }
+        existingMap.once('load', onExistingLoad)
       }
-      return clearLocationPipe
+      return () => {
+        existingLoadCancelled = true
+        clearLocationPipe()
+      }
     }
 
     const token = getMapboxAccessToken()

@@ -184,17 +184,16 @@ export function AuthProvider({ children }) {
         return
       }
 
+      setAuthenticatedState(nextUser, session)
       /**
-       * Mismo usuario ya arrancado: actualizar sesión/tokens sin resetear bootstrap.
+       * Mismo usuario ya arrancado: solo tokens/sesión; no resetear bootstrap ni perfil.
        * Antes: setProfileBootstrapReady(false) y return temprano dejaba profileBootstrapReady
        * en false para siempre → AppGate en loading perpetuo / sensación de “pantalla negra”.
        */
       if (isSupabaseConfigured() && supabase && lastProfileBootUserId === nextUser.id) {
-        setAuthenticatedState(nextUser, session)
         return
       }
 
-      setAuthenticatedState(nextUser, session)
       setAuthError(null)
       setProfileBootstrapReady(false)
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })

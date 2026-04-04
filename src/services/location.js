@@ -1,3 +1,10 @@
+/**
+ * GPS en producción (mapa, overlays):
+ *   startLocationTracking() → watchPosition → persistAndNotifyLocation() → callbacks de subscribeToLocation().
+ *
+ * createPositionGuard() no forma parte de ese pipeline. Solo tests u opciones futuras explícitas:
+ * enlazarlo a persistAndNotifyLocation cambiaría qué puntos ve el mapa (decisión de producto).
+ */
 const GEO_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
 const MAX_REASONABLE_ACCURACY_M = 1500
 const MAX_PLAUSIBLE_SPEED_MPS = 75
@@ -185,11 +192,6 @@ export function getCurrentLocation() {
 
 export const getCurrentLocationFast = getCurrentLocation
 
-/*
- * --- Trayectoria filtrada (tests / API opcional) — opción B del proyecto ---
- * Pipeline real: startLocationTracking → watchPosition → persistAndNotifyLocation → subscribeToLocation (Map).
- * createPositionGuard NO está en ese pipeline; integrarlo en runtime cambiaría qué puntos ve el mapa (requiere decisión explícita de producto).
- */
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 

@@ -53,6 +53,7 @@ export default defineConfig(({ mode, command }) => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules/mapbox-gl')) return 'mapbox-gl'
+            if (id.includes('node_modules/@supabase')) return 'supabase'
           },
         },
       },

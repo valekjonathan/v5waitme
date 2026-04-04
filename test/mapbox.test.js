@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  createMap,
   DEFAULT_PITCH,
   DEFAULT_ZOOM,
   getMapboxAccessToken,
@@ -26,6 +27,16 @@ test('map defaults: fallback GPS y zoom usables', () => {
 
 test('reapplyMapVisualLayers: map null es no-op', () => {
   assert.doesNotThrow(() => reapplyMapVisualLayers(null, true))
+})
+
+test('createMap: sin container válido o sin token no crea instancia', () => {
+  assert.equal(createMap(null, { token: 'x' }), null)
+  assert.equal(createMap(undefined, { token: 'x' }), null)
+  const el = globalThis.document?.createElement?.('div')
+  if (el && typeof globalThis.HTMLElement === 'function' && el instanceof globalThis.HTMLElement) {
+    assert.equal(createMap(el, { token: '' }), null)
+    assert.equal(createMap(el, { token: '   ' }), null)
+  }
 })
 
 test('isWaitmeParkingLayoutReady: sin DOM suficiente es false', () => {

@@ -255,6 +255,48 @@ function checkLikelyUnimportedJsxModules() {
   }
 }
 
+function checkE2EBrowserMatrix() {
+  const pw = join(root, 'playwright.config.ts')
+  if (!fs.existsSync(pw)) {
+    issues.push({
+      level: 'ERROR',
+      code: 'PLAYWRIGHT_CONFIG',
+      message: 'Falta playwright.config.ts',
+      files: ['playwright.config.ts'],
+    })
+    return
+  }
+  const pwText = fs.readFileSync(pw, 'utf8')
+  if (!/name:\s*'chromium'/.test(pwText) || !/name:\s*'webkit'/.test(pwText)) {
+    issues.push({
+      level: 'ERROR',
+      code: 'PLAYWRIGHT_PROJECTS',
+      message: 'playwright.config.ts debe declarar proyectos chromium y webkit',
+      files: ['playwright.config.ts'],
+    })
+  }
+  if (/name:\s*'firefox'/.test(pwText)) {
+    issues.push({
+      level: 'ERROR',
+      code: 'PLAYWRIGHT_FIREFOX',
+      message: 'No añadir firefox sin instalarlo en CI; el workflow sólo instala chromium + webkit',
+      files: ['playwright.config.ts', '.github/workflows/ci.yml'],
+    })
+  }
+
+  const ci = join(root, '.github', 'workflows', 'ci.yml')
+  if (!fs.existsSync(ci)) return
+  const ciText = fs.readFileSync(ci, 'utf8')
+  if (!ciText.includes('playwright install --with-deps chromium webkit')) {
+    issues.push({
+      level: 'ERROR',
+      code: 'CI_PLAYWRIGHT_BROWSERS',
+      message: 'ci.yml debe alinear `playwright install` con chromium + webkit únicamente',
+      files: ['.github/workflows/ci.yml'],
+    })
+  }
+}
+
 function printIconConsistencyReport() {
   const iconsDir = join(root, 'src/ui/icons')
   if (!fs.existsSync(iconsDir)) return
@@ -361,6 +403,7 @@ function main() {
   checkDuplicateDefaultExports()
   checkIntraFileDuplicateBlocks()
   checkLikelyUnimportedJsxModules()
+  checkE2EBrowserMatrix()
   printIconConsistencyReport()
   printReport()
 

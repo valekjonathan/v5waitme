@@ -105,6 +105,10 @@ export function applyRoadStyleForCreate(map) {
   }
 }
 
+/**
+ * Opciones tipo minZoom/maxZoom en el Map no deben añadirse aquí sin decisión explícita:
+ * limitan cámara y pueden cambiar lo que ve el usuario aunque el estilo ya filtre capas.
+ */
 export function createMap(container, { token, interactive = true }) {
   if (!container || !(container instanceof HTMLElement)) {
     return null
