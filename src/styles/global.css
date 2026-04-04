@@ -79,6 +79,7 @@ html.waitme-standalone-height #root {
  */
 .waitme-app-root {
   width: 100%;
+  height: var(--app-height);
   flex: 1 1 0%;
   min-height: 0;
   display: flex;
@@ -98,6 +99,7 @@ html.waitme-standalone-height #root {
  */
 .waitme-iphone-frame-fullbleed {
   width: 100%;
+  height: var(--app-height);
   flex: 1 1 0%;
   min-height: 0;
   display: flex;
