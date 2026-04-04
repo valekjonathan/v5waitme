@@ -310,9 +310,10 @@ function buildDocument(orphans, reachable) {
   lines.push(
     '- Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.',
     '- APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.',
-    '- Shell: header + bottom nav OK en layout; fix de altura aplicado en src/app/App.jsx (fade200Style: height 100% + flex column) y src/ui/layout/ScreenShell.tsx (shellRootStyle: flex 1).',
-    '- Problema previo resuelto: centro negro / área central por altura 0 en cadena flex (header/nav fixed no daban altura al flujo).',
-    '- Estado actual: funcional en móvil (mejorable pero usable). PWA: si el icono de inicio muestra versión vieja, quitar y volver a añadir.'
+    '- Cadena raíz de altura (código): `src/app/App.jsx` sincroniza `--app-height` y clase `waitme-standalone-height` en documentElement (visualViewport / innerHeight). `src/styles/global.css`: html + `.waitme-app-root` + fullbleed con `var(--app-height)`; en standalone, `body` y `#root` con `height`/`min-height` en `var(--app-height)`; overflow estructural `overflow-x: hidden` + `overflow-y: auto` en esa cadena.',
+    '- Shell: `ScreenShell.tsx` raíz con `flex: 1`, `min-height: 0`, `height: 100%`, overflow-y auto; `<main>` según modo (full bleed por defecto overflow-y auto). Gates flex en App (fade200Style / homeGateStyle).',
+    '- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.',
+    '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.'
   )
   lines.push('')
   lines.push('=== FIN ===')
