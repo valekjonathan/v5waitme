@@ -12,11 +12,18 @@ const shellRootStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   height: '100%',
+  maxHeight: '100%',
   display: 'flex',
   flexDirection: 'column',
   overflowX: 'hidden',
   overflowY: 'hidden',
   boxSizing: 'border-box',
+}
+
+const bottomNavSlotStyle: CSSProperties = {
+  flexShrink: 0,
+  width: '100%',
+  paddingBottom: 'env(safe-area-inset-bottom)',
 }
 
 const shellMainColumnStyle: CSSProperties = {
@@ -66,6 +73,7 @@ export default function ScreenShell({
         style={{
           flex: 1,
           minHeight: 0,
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-start',
@@ -79,7 +87,9 @@ export default function ScreenShell({
           {children}
         </div>
       </main>
-      <BottomNav interactive={interactive} />
+      <div style={bottomNavSlotStyle}>
+        <BottomNav interactive={interactive} />
+      </div>
     </div>
   )
 }
