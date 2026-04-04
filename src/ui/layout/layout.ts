@@ -34,6 +34,19 @@ export const LAYOUT = {
     overlay: 5,
     content: 10,
     nav: 20,
+    /** Controles flotantes en slot de mapa (zoom, etc.). */
+    mapZoomControls: 15,
+    /** Botón filtros parking (encima del buscador, bajo modales). */
+    mapFilterButton: 18,
+    /** Tarjeta inferior (alerta / crear) sobre capas base del overlay. */
+    parkingCardStack: 9999,
+    /** Scrim y panel de filtros (orden relativo preservado). */
+    mapFiltersBackdrop: 199999,
+    mapFiltersPanel: 200000,
+    /** Lista de resultados StreetSearch por encima del stack de parking. */
+    streetSearchResults: 300000,
+    /** Apilamiento local dentro del input (icono vs caja). */
+    streetSearchLayer: 1,
   },
 } as const
 

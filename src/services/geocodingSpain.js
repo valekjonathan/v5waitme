@@ -55,21 +55,6 @@ export async function searchSpainStreets(query, opts = {}) {
     return []
   }
 
-  const featureCount = Array.isArray(data.features) ? data.features.length : 0
-  const sample = Array.isArray(data.features) ? data.features.slice(0, 3) : []
-
-  if (import.meta.env.DEV) {
-    const safeUrl = url.replace(/access_token=[^&]+/i, 'access_token=***')
-    console.log('MAPBOX_RUNTIME', {
-      query: q,
-      url: safeUrl,
-      status: res.status,
-      ok: res.ok,
-      featureCount,
-      sample,
-    })
-  }
-
   if (!res.ok) return []
   return Array.isArray(data.features) ? data.features : []
 }

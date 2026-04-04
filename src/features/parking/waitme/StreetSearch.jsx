@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
 import { formatAddress, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
+import { LAYOUT } from '../../../ui/layout/layout'
 
 const inputStyle = {
   background: 'transparent',
@@ -102,20 +103,6 @@ export default function StreetSearch({
   }, [query, fetchResults])
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return
-    const q = (query || '').trim()
-    console.log('RESULTS_UI_RUNTIME', {
-      q,
-      resultsLength: results.length,
-      first3: results.slice(0, 3).map((r) => ({
-        id: r.id,
-        place_name: r.place_name,
-        text: r.text,
-      })),
-    })
-  }, [query, results])
-
-  useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         clearSearchField()
@@ -158,7 +145,7 @@ export default function StreetSearch({
       className={className}
       style={{
         position: 'relative',
-        zIndex: 1,
+        zIndex: LAYOUT.z.streetSearchLayer,
         marginTop: 10,
         overflow: 'visible',
       }}
@@ -205,7 +192,7 @@ export default function StreetSearch({
               color: '#c084fc',
               display: 'flex',
               pointerEvents: 'none',
-              zIndex: 1,
+              zIndex: LAYOUT.z.streetSearchLayer,
             }}
           >
             <IconSearch size={20} />
@@ -244,7 +231,7 @@ export default function StreetSearch({
             WebkitBackdropFilter: 'blur(12px)',
             border: '2px solid rgba(168, 85, 247, 0.5)',
             borderRadius: 12,
-            zIndex: 300000,
+            zIndex: LAYOUT.z.streetSearchResults,
             maxHeight: 220,
             overflowY: 'auto',
             overflowX: 'hidden',

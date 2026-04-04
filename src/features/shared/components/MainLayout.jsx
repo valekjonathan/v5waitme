@@ -27,7 +27,7 @@ const rootStyle = {
   display: 'flex',
   flexDirection: 'column',
   overflowX: 'hidden',
-  overflowY: 'auto',
+  overflowY: 'hidden',
 }
 const mapLayerStyle = {
   position: 'absolute',

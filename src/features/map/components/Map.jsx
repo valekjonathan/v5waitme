@@ -358,24 +358,22 @@ export default function Map({
     const existingMap = getGlobalMapInstance()
     if (existingMap) {
       let existingLoadCancelled = false
-      ensureLocationPipe()
-      if (existingMap.isStyleLoaded?.()) {
+      const onExistingLoad = () => {
+        if (existingLoadCancelled) return
         applyPostLoadStyle(existingMap, readOnly)
         const fast = getCurrentLocationFast()
         if (followUserGps && fast) centerMapOnUser(existingMap, fast)
         fireSettled()
+      }
+      ensureLocationPipe()
+      if (existingMap.isStyleLoaded?.()) {
+        onExistingLoad()
       } else {
-        const onExistingLoad = () => {
-          if (existingLoadCancelled) return
-          applyPostLoadStyle(existingMap, readOnly)
-          const fast = getCurrentLocationFast()
-          if (followUserGps && fast) centerMapOnUser(existingMap, fast)
-          fireSettled()
-        }
         existingMap.once('load', onExistingLoad)
       }
       return () => {
         existingLoadCancelled = true
+        existingMap.off('load', onExistingLoad)
         clearLocationPipe()
       }
     }
@@ -446,7 +444,10 @@ export default function Map({
       map.once('load', onFirstLoad)
     }
 
-    return clearLocationPipe
+    return () => {
+      map.off('load', onFirstLoad)
+      clearLocationPipe()
+    }
   }, [fireSettled, readOnly, followUserGps, projectSearchPinFromGps])
 
   useEffect(() => {

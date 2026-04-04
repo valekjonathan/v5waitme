@@ -2,6 +2,7 @@
  * Copia de WaitMe: src/components/map/MapFilters.jsx (sliders alineados con CreateAlertCard).
  */
 import React, { useEffect, useMemo, useState } from 'react'
+import { LAYOUT } from '../../../ui/layout/layout'
 import { IconClock, IconEuro, IconNavigation, IconX, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 /** Estado inicial Search (precio 10 euros, 30 min, 800 m). Exportado para el padre sin duplicar. */
@@ -93,7 +94,7 @@ const panelOuterStyle = {
   right: 0,
   top: '50%',
   height: 'auto',
-  zIndex: 200000,
+  zIndex: LAYOUT.z.mapFiltersPanel,
   pointerEvents: 'auto',
   maxHeight: '100%',
 }

@@ -7,7 +7,7 @@ import { recenterGlobalMapOnUser } from '../../map/mapControls.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { getMapReadOnlySession } from '../../map/mapSession.js'
 import { IconLayers, IconMinus, IconPlus } from './icons.jsx'
-import { MAP_SLOT } from '../../../ui/layout/layout'
+import { LAYOUT, MAP_SLOT } from '../../../ui/layout/layout'
 
 const locationIcon = (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -71,7 +71,7 @@ const zoomControlsWrapStyle = {
   display: 'flex',
   flexDirection: 'column',
   gap: 10,
-  zIndex: 15,
+  zIndex: LAYOUT.z.mapZoomControls,
   pointerEvents: 'auto',
 }
 

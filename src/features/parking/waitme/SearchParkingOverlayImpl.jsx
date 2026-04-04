@@ -22,7 +22,7 @@ import {
   WAITME_GLASS_MAP_CONTROL_36,
 } from './icons.jsx'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
-import { MAP_SLOT } from '../../../ui/layout/layout'
+import { LAYOUT, MAP_SLOT } from '../../../ui/layout/layout'
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -44,7 +44,7 @@ const filterBtnStyle = {
   position: 'absolute',
   top: MAP_SLOT.controlsTop,
   right: MAP_SLOT.filterRight,
-  zIndex: 18,
+  zIndex: LAYOUT.z.mapFilterButton,
   pointerEvents: 'auto',
 }
 
@@ -153,7 +153,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       style={{
         position: 'absolute',
         inset: 0,
-        zIndex: 10,
+        zIndex: LAYOUT.z.content,
         pointerEvents: 'none',
         overflow: 'visible',
       }}
@@ -161,7 +161,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       <div
         style={{
           position: 'relative',
-          zIndex: 200000,
+          zIndex: LAYOUT.z.mapFiltersPanel,
           isolation: 'isolate',
           overflow: 'visible',
         }}
@@ -208,7 +208,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
             style={{
               position: 'absolute',
               inset: 0,
-              zIndex: 199999,
+              zIndex: LAYOUT.z.mapFiltersBackdrop,
               backgroundColor: 'rgba(0, 0, 0, 0.4)',
               pointerEvents: 'auto',
             }}
@@ -246,7 +246,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
             bottom: isSearch ? MAP_SLOT.cardBottomSearch : MAP_SLOT.cardBottomParked,
             left: 16,
             right: 16,
-            zIndex: 9999,
+            zIndex: LAYOUT.z.parkingCardStack,
             pointerEvents: 'none',
           }}
         >
