@@ -469,6 +469,32 @@ export default function Map({
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- init singleton; props vía refs.
 
   useEffect(() => {
+    if (import.meta.env?.MODE === 'test') return
+
+    const resizeMap = () => {
+      try {
+        const map = getGlobalMapInstance()
+        map?.resize?.()
+      } catch {
+        /* */
+      }
+    }
+
+    window.addEventListener('resize', resizeMap)
+    window.addEventListener('orientationchange', resizeMap)
+
+    const t1 = window.setTimeout(resizeMap, 300)
+    const t2 = window.setTimeout(resizeMap, 800)
+
+    return () => {
+      window.removeEventListener('resize', resizeMap)
+      window.removeEventListener('orientationchange', resizeMap)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [])
+
+  useEffect(() => {
     if (mapFocusGeneration === 0) return
     const map = getGlobalMapInstance()
     if (!map?.isStyleLoaded?.() || !followUserGps) return
