@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './app/App.jsx'
 import { logFlow } from './lib/devFlowLog.js'
-import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink.js'
+import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink'
 import IphoneFrame from './ui/IphoneFrame.jsx'
 import './styles/global.css'
 
