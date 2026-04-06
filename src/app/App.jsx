@@ -35,7 +35,7 @@ const appRootLayoutStyle = {
   flex: '1 1 0%',
   minHeight: 0,
   overflowX: 'hidden',
-  overflowY: 'hidden',
+  overflowY: 'visible',
   boxSizing: 'border-box',
 }
 
