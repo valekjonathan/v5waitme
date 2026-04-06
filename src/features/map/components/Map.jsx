@@ -474,7 +474,13 @@ export default function Map({
     const resizeMap = () => {
       try {
         const map = getGlobalMapInstance()
-        map?.resize?.()
+        if (!map) return
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            map.resize()
+          })
+        })
       } catch {
         /* */
       }
@@ -482,13 +488,15 @@ export default function Map({
 
     window.addEventListener('resize', resizeMap)
     window.addEventListener('orientationchange', resizeMap)
+    window.addEventListener('load', resizeMap)
 
-    const t1 = window.setTimeout(resizeMap, 300)
-    const t2 = window.setTimeout(resizeMap, 800)
+    const t1 = window.setTimeout(resizeMap, 500)
+    const t2 = window.setTimeout(resizeMap, 1200)
 
     return () => {
       window.removeEventListener('resize', resizeMap)
       window.removeEventListener('orientationchange', resizeMap)
+      window.removeEventListener('load', resizeMap)
       window.clearTimeout(t1)
       window.clearTimeout(t2)
     }
