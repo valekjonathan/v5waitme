@@ -27,6 +27,11 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
+const isStandalone =
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
+
 /** Raíz React: llena #root (flex); alto lo fija la cadena html/body/#root, no duplicar 100% aquí. */
 const appRootLayoutStyle = {
   display: 'flex',
@@ -293,20 +298,23 @@ function AppGate() {
 export default function App() {
   useLayoutEffect(() => {
     const setHeight = () => {
-      const vh = window.visualViewport?.height || window.innerHeight
+      const vh = isStandalone
+        ? window.innerHeight
+        : window.visualViewport?.height || window.innerHeight
+
       document.documentElement.style.setProperty('--app-height', `${vh}px`)
     }
 
     setHeight()
 
-    window.visualViewport?.addEventListener('resize', setHeight)
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
+    window.visualViewport?.addEventListener('resize', setHeight)
 
     return () => {
-      window.visualViewport?.removeEventListener('resize', setHeight)
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
+      window.visualViewport?.removeEventListener('resize', setHeight)
     }
   }, [])
 
