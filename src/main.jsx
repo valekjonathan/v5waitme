@@ -2,7 +2,10 @@ import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './app/App.jsx'
 import { logFlow } from './lib/devFlowLog.js'
+import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink.js'
 import './styles/global.css'
+
+registerNativeOAuthDeepLink()
 
 const rawSentryDsn = import.meta.env.VITE_SENTRY_DSN
 const sentryDsn = typeof rawSentryDsn === 'string' ? rawSentryDsn.trim() : ''
