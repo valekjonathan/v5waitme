@@ -1,6 +1,6 @@
 /**
- * Shell: columna Header → `<main>` → BottomNav (fixed, fuera del flujo).
- * El alto lo fija `App.jsx` en `--app-height`; esta columna hereda por flex.
+ * Shell: Header → `<main>` (sin scroll; iOS) → BottomNav fixed.
+ * Scroll global: `body` (`global.css`).
  */
 import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
@@ -10,9 +10,16 @@ import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
+  height: 'var(--app-height)',
+  width: '100%',
+  overflow: 'hidden',
+}
+
+const mainStyle: CSSProperties = {
   flex: 1,
-  height: '100%',
-  overflowX: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: 0,
 }
 
 const shellMainColumnStyle: CSSProperties = {
@@ -34,9 +41,9 @@ type ScreenShellProps = {
   style?: CSSProperties
   contentStyle?: CSSProperties
   mainMode?: ScreenShellMainMode
-  /** Reservado (API estable); overflow del `<main>` fijado para iOS PWA. */
+  /** @deprecated Sin efecto: el scroll vive en `body`. */
   mainOverflow?: 'auto' | 'hidden'
-  /** Reservado (API estable); overflow del `<main>` fijado para iOS PWA. */
+  /** @deprecated Sin efecto. */
   fullBleedMainOverflow?: 'auto' | 'hidden' | 'visible'
 }
 
@@ -52,18 +59,6 @@ export default function ScreenShell({
   const rootStyleMerged: CSSProperties = {
     ...shellRootStyle,
     ...style,
-  }
-
-  const mainStyle: CSSProperties = {
-    flex: 1,
-    minHeight: 0,
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    WebkitOverflowScrolling: 'touch',
-    paddingBottom: 0,
   }
 
   return (

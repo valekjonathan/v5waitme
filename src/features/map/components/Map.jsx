@@ -585,14 +585,9 @@ export default function Map({
         ref={mapShellRef}
         data-waitme-map-shell
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          width: '100%',
           flex: 1,
-          position: 'relative',
-          zIndex: 0,
-          isolation: 'isolate',
+          width: '100%',
+          height: '100%',
         }}
       >
         <div
