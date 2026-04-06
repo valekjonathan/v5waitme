@@ -569,41 +569,63 @@ export default function Map({
   }, [unavailable, parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
 
   return (
-    <div
-      ref={mapShellRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        zIndex: 0,
-        isolation: 'isolate',
-      }}
-    >
+    <>
+      <style>
+        {`
+          [data-waitme-map-shell] .mapboxgl-canvas,
+          [data-waitme-map-shell] .mapboxgl-canvas-container {
+            width: 100% !important;
+            height: 100% !important;
+          }
+        `}
+      </style>
       <div
-        ref={containerRef}
-        style={{ width: '100%', height: '100%', position: 'relative', zIndex: 0 }}
-      />
-      {unavailable ? null : !parkingBandPinAdjust ? (
-        <MapViewportCenterPin ref={pinRef} />
-      ) : parkingPinMode === 'search' ? (
-        searchPinPixel ? (
-          <MapViewportCenterPin ref={pinRef} pinPixel={searchPinPixel} />
-        ) : null
-      ) : (
-        <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
-      )}
-      {unavailable ? (
+        ref={mapShellRef}
+        data-waitme-map-shell
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
+          height: '100%',
+          flex: 1,
+          position: 'relative',
+          zIndex: 0,
+          isolation: 'isolate',
+        }}
+      >
         <div
-          aria-hidden
-          data-waitme-map-unavailable="true"
+          ref={containerRef}
           style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: '#0B0B0F',
-            pointerEvents: 'none',
+            width: '100%',
+            height: '100%',
+            flex: 1,
+            minHeight: 0,
+            position: 'relative',
+            zIndex: 0,
           }}
         />
-      ) : null}
-    </div>
+        {unavailable ? null : !parkingBandPinAdjust ? (
+          <MapViewportCenterPin ref={pinRef} />
+        ) : parkingPinMode === 'search' ? (
+          searchPinPixel ? (
+            <MapViewportCenterPin ref={pinRef} pinPixel={searchPinPixel} />
+          ) : null
+        ) : (
+          <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
+        )}
+        {unavailable ? (
+          <div
+            aria-hidden
+            data-waitme-map-unavailable="true"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: '#0B0B0F',
+              pointerEvents: 'none',
+            }}
+          />
+        ) : null}
+      </div>
+    </>
   )
 }
