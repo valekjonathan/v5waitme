@@ -13,7 +13,7 @@ import MapParkingPage from '../features/parking/MapParkingPage'
 import AlertsPage from '../features/alerts/AlertsPage'
 import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
-import IphoneFrame, { isWaitmeDevDesktopLocalhostPreview } from '../ui/IphoneFrame'
+import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import Button from '../ui/Button'
@@ -39,60 +39,6 @@ const appRootLayoutStyle = {
   boxSizing: 'border-box',
 }
 
-/**
- * Una sola variable `--app-height` (px). En iOS el alto visible suele alinearse con
- * `visualViewport.height`; si no existe, `innerHeight`.
- * Preview dev (Safari Mac + localhost): lo mide `DevRootChrome` + ResizeObserver.
- */
-const WAITME_VV_HEIGHT_CLASS = 'waitme-standalone-height'
-
-function syncViewportHeightPx() {
-  const vv = window.visualViewport
-  let h = window.innerHeight
-  if (vv && typeof vv.height === 'number' && vv.height > 0) {
-    h = Math.round(vv.height)
-  }
-  document.documentElement.style.setProperty('--app-height', `${h}px`)
-}
-
-function useAppHeightCssVar() {
-  useLayoutEffect(() => {
-    if (isWaitmeDevDesktopLocalhostPreview()) {
-      return undefined
-    }
-
-    const rootEl = document.documentElement
-    rootEl.classList.add(WAITME_VV_HEIGHT_CLASS)
-
-    const sync = () => syncViewportHeightPx()
-
-    sync()
-    const onOrient = () => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(sync)
-      })
-    }
-
-    window.addEventListener('resize', sync)
-    window.addEventListener('orientationchange', onOrient)
-    const vv = window.visualViewport
-    if (vv) {
-      vv.addEventListener('resize', sync)
-      vv.addEventListener('scroll', sync)
-    }
-
-    return () => {
-      rootEl.style.removeProperty('--app-height')
-      rootEl.classList.remove(WAITME_VV_HEIGHT_CLASS)
-      window.removeEventListener('resize', sync)
-      window.removeEventListener('orientationchange', onOrient)
-      if (vv) {
-        vv.removeEventListener('resize', sync)
-        vv.removeEventListener('scroll', sync)
-      }
-    }
-  }, [])
-}
 const fade200Style = {
   transition: 'opacity 200ms ease-out',
   minHeight: 0,
@@ -345,7 +291,24 @@ function AppGate() {
 }
 
 export default function App() {
-  useAppHeightCssVar()
+  useLayoutEffect(() => {
+    const setHeight = () => {
+      const vh = window.visualViewport?.height || window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${vh}px`)
+    }
+
+    setHeight()
+
+    window.visualViewport?.addEventListener('resize', setHeight)
+    window.addEventListener('resize', setHeight)
+    window.addEventListener('orientationchange', setHeight)
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', setHeight)
+      window.removeEventListener('resize', setHeight)
+      window.removeEventListener('orientationchange', setHeight)
+    }
+  }, [])
 
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>

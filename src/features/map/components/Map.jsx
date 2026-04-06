@@ -482,32 +482,25 @@ export default function Map({
           })
         })
       } catch {
-        /* */
+        /* noop */
       }
     }
 
+    resizeMap()
+
     window.addEventListener('resize', resizeMap)
     window.addEventListener('orientationchange', resizeMap)
-    window.addEventListener('load', resizeMap)
-    const vv = window.visualViewport
-    if (vv) {
-      vv.addEventListener('resize', resizeMap)
-      vv.addEventListener('scroll', resizeMap)
-    }
+    window.visualViewport?.addEventListener('resize', resizeMap)
 
-    const t1 = window.setTimeout(resizeMap, 500)
-    const t2 = window.setTimeout(resizeMap, 1200)
+    const t1 = setTimeout(resizeMap, 500)
+    const t2 = setTimeout(resizeMap, 1200)
 
     return () => {
       window.removeEventListener('resize', resizeMap)
       window.removeEventListener('orientationchange', resizeMap)
-      window.removeEventListener('load', resizeMap)
-      if (vv) {
-        vv.removeEventListener('resize', resizeMap)
-        vv.removeEventListener('scroll', resizeMap)
-      }
-      window.clearTimeout(t1)
-      window.clearTimeout(t2)
+      window.visualViewport?.removeEventListener('resize', resizeMap)
+      clearTimeout(t1)
+      clearTimeout(t2)
     }
   }, [])
 
@@ -594,8 +587,8 @@ export default function Map({
         style={{
           display: 'flex',
           flexDirection: 'column',
-          width: '100%',
           height: '100%',
+          width: '100%',
           flex: 1,
           position: 'relative',
           zIndex: 0,
@@ -608,9 +601,6 @@ export default function Map({
             width: '100%',
             height: '100%',
             flex: 1,
-            minHeight: 0,
-            position: 'relative',
-            zIndex: 0,
           }}
         />
         {unavailable ? null : !parkingBandPinAdjust ? (

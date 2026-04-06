@@ -18,7 +18,6 @@ import MessageCircleIcon from './icons/MessageCircleIcon'
 
 const s = LAYOUT.spacing
 const navPaddingTop = s.sm - 2
-const navPaddingBottomCalc = `${s.xs}px`
 const labelStyle = {
   marginTop: 2,
   fontSize: 10,
@@ -73,7 +72,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
-        paddingBottom: `calc(${navPaddingBottomCalc} + env(safe-area-inset-bottom, 0px))`,
+        paddingBottom: 'calc(env(safe-area-inset-bottom))',
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
