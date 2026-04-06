@@ -1,25 +1,43 @@
-const devPhoneFrameStyle = {
-  width: 390,
-  height: 844,
-  margin: '40px auto',
-  borderRadius: 40,
-  overflow: 'hidden',
-  background: '#000',
-  boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-}
+const isDevDesktop =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  window.location.hostname === 'localhost' &&
+  window.innerWidth > 768
 
-/**
- * Solo Safari Mac + localhost + ventana ancha: marco fijo para orientar el layout.
- * No producción; iPhone real y PWA no cumplen estas condiciones.
- */
+/** Solo la primera instancia en el árbol pinta el marco (main.jsx); AppLayout sigue usando IphoneFrame sin doble marco. */
+let devIphoneFrameShellApplied = false
+
 export default function IphoneFrame({ children }) {
-  if (
-    typeof window !== 'undefined' &&
-    import.meta.env.DEV &&
-    window.location.hostname === 'localhost' &&
-    window.innerWidth > 768
-  ) {
-    return <div style={devPhoneFrameStyle}>{children}</div>
+  if (!isDevDesktop) return children
+
+  if (devIphoneFrameShellApplied) {
+    return children
   }
-  return children
+  devIphoneFrameShellApplied = true
+
+  return (
+    <div
+      style={{
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#111',
+      }}
+    >
+      <div
+        style={{
+          width: 390,
+          height: 844,
+          borderRadius: 40,
+          overflow: 'hidden',
+          background: '#000',
+          boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
 }

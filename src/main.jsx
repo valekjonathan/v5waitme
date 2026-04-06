@@ -1,8 +1,10 @@
+import React from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './app/App.jsx'
 import { logFlow } from './lib/devFlowLog.js'
 import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink.js'
+import IphoneFrame from './ui/IphoneFrame.jsx'
 import './styles/global.css'
 
 registerNativeOAuthDeepLink()
@@ -24,4 +26,10 @@ if (sentryDsn) {
 const root = createRoot(document.getElementById('root'))
 logFlow('APP_START')
 
-root.render(<App />)
+root.render(
+  <React.StrictMode>
+    <IphoneFrame>
+      <App />
+    </IphoneFrame>
+  </React.StrictMode>
+)
