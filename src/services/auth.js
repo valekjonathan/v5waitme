@@ -2,17 +2,7 @@
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
 import { Capacitor } from '@capacitor/core'
-import { NATIVE_OAUTH_REDIRECT_URL } from '../lib/oauthRedirect.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
-
-/**
- * redirectTo de OAuth: en nativo (Capacitor) deep link; en web, origen actual (localhost o producción).
- */
-export function getOAuthRedirectUrl() {
-  if (typeof window === 'undefined') return 'https://v5waitme.vercel.app'
-  if (Capacitor.isNativePlatform()) return NATIVE_OAUTH_REDIRECT_URL
-  return window.location.origin
-}
 
 /**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
@@ -90,11 +80,14 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
+    const isNative = Capacitor.isNativePlatform()
+    const redirectTo = isNative
+      ? 'es.waitme.v5waitme://auth-callback'
+      : window.location.origin
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: getOAuthRedirectUrl(),
-      },
+      options: { redirectTo },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
