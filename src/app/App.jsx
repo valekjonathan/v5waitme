@@ -13,7 +13,7 @@ import MapParkingPage from '../features/parking/MapParkingPage'
 import AlertsPage from '../features/alerts/AlertsPage'
 import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
-import IphoneFrame from '../ui/IphoneFrame'
+import IphoneFrame, { isWaitmeDevDesktopLocalhostPreview } from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import Button from '../ui/Button'
@@ -40,21 +40,28 @@ const appRootLayoutStyle = {
 }
 
 /**
- * `--app-height` desde `window.innerHeight` (evita desajustes de `visualViewport` en iOS).
+ * Una sola pareja `--app-height` / `--real-vh` (mismo px) desde `innerHeight`.
+ * `visualViewport` en iOS Safari: escuchar resize/scroll para cuando cambia la barra de URL.
+ * En preview dev (Safari Mac + localhost) el alto lo fija `DevRootChrome` + ResizeObserver.
  */
 const WAITME_VV_HEIGHT_CLASS = 'waitme-standalone-height'
 
-function setAppHeight() {
-  const height = window.innerHeight
-  document.documentElement.style.setProperty('--app-height', `${height}px`)
+function syncViewportHeightPx() {
+  const h = window.innerHeight
+  document.documentElement.style.setProperty('--app-height', `${h}px`)
+  document.documentElement.style.setProperty('--real-vh', `${h}px`)
 }
 
 function useAppHeightCssVar() {
   useLayoutEffect(() => {
+    if (isWaitmeDevDesktopLocalhostPreview()) {
+      return undefined
+    }
+
     const rootEl = document.documentElement
     rootEl.classList.add(WAITME_VV_HEIGHT_CLASS)
 
-    const sync = () => setAppHeight()
+    const sync = () => syncViewportHeightPx()
 
     sync()
     const onOrient = () => {
@@ -65,12 +72,22 @@ function useAppHeightCssVar() {
 
     window.addEventListener('resize', sync)
     window.addEventListener('orientationchange', onOrient)
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', sync)
+      vv.addEventListener('scroll', sync)
+    }
 
     return () => {
       rootEl.style.removeProperty('--app-height')
+      rootEl.style.removeProperty('--real-vh')
       rootEl.classList.remove(WAITME_VV_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)
+      if (vv) {
+        vv.removeEventListener('resize', sync)
+        vv.removeEventListener('scroll', sync)
+      }
     }
   }, [])
 }
@@ -327,6 +344,7 @@ function AppGate() {
 
 export default function App() {
   useAppHeightCssVar()
+
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>
       <ErrorBoundary name="root">

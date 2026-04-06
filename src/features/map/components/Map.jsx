@@ -489,6 +489,11 @@ export default function Map({
     window.addEventListener('resize', resizeMap)
     window.addEventListener('orientationchange', resizeMap)
     window.addEventListener('load', resizeMap)
+    const vv = window.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', resizeMap)
+      vv.addEventListener('scroll', resizeMap)
+    }
 
     const t1 = window.setTimeout(resizeMap, 500)
     const t2 = window.setTimeout(resizeMap, 1200)
@@ -497,6 +502,10 @@ export default function Map({
       window.removeEventListener('resize', resizeMap)
       window.removeEventListener('orientationchange', resizeMap)
       window.removeEventListener('load', resizeMap)
+      if (vv) {
+        vv.removeEventListener('resize', resizeMap)
+        vv.removeEventListener('scroll', resizeMap)
+      }
       window.clearTimeout(t1)
       window.clearTimeout(t2)
     }

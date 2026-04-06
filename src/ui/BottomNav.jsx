@@ -76,7 +76,7 @@ const BottomNav = forwardRef(function BottomNav(
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
-        paddingBottom: navPaddingBottomCalc,
+        paddingBottom: `calc(${navPaddingBottomCalc} + env(safe-area-inset-bottom, 0px))`,
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>

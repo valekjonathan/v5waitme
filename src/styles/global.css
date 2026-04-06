@@ -1,8 +1,8 @@
 html,
 body,
 #root {
-  height: var(--app-height);
-  min-height: var(--app-height);
+  height: var(--app-height, 100%);
+  min-height: var(--app-height, 100%);
 }
 
 html {
@@ -60,8 +60,7 @@ body {
 }
 
 /**
- * `App.jsx` añade siempre `waitme-standalone-height` y fija `--app-height` desde `visualViewport.height`
- * (fallback `innerHeight`). Misma cadena flex en todos los entornos; sin depender de standalone/PWA.
+ * `App.jsx` fija `--app-height` y `--real-vh` al mismo px (`innerHeight`; listeners + visualViewport en iOS).
  */
 html.waitme-standalone-height body {
   flex: 1 1 0%;
@@ -72,7 +71,7 @@ html.waitme-standalone-height #root {
 }
 
 /**
- * Raíz React: en standalone el alto lo limita html; aquí solo flex, sin height: 100% duplicado.
+ * Raíz React: alto = `--app-height`. Safe area solo en BottomNav (fixed), no aquí (evita doble banda).
  */
 .waitme-app-root {
   width: 100%;
@@ -85,7 +84,6 @@ html.waitme-standalone-height #root {
   overflow-y: auto;
   box-sizing: border-box;
   background: #000;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /**

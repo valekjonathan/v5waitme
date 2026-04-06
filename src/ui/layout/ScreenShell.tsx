@@ -1,6 +1,6 @@
 /**
- * Shell: columna Header → `<main>` (referencia vertical útil) → BottomNav.
- * El alto útil global lo fija `App.jsx` en `html` (`--app-height` desde visualViewport); esta columna lo hereda por flex.
+ * Shell: columna Header → `<main>` → BottomNav.
+ * El alto útil global lo fija `App.jsx` (`--app-height`); esta columna lo hereda por flex.
  * BottomNav fijo: `bottom: 0` + `--waitme-bottom-nav-h` solo en modo standalone (ver `readStandaloneDisplayMode`).
  */
 import {
