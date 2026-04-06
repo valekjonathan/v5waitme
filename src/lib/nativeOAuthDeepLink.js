@@ -1,53 +1,38 @@
-/**
- * Completa OAuth PKCE en Capacitor cuando el retorno llega por custom scheme (appUrlOpen).
- * No usar en web puro: allí el flujo sigue en window.location.
- */
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
-import { isNativeOAuthCallbackUrl } from './oauthRedirect.js'
-import { supabase, isSupabaseConfigured } from '../services/supabase.js'
-
-function readOAuthParamsFromUrl(url) {
-  const parsed = new URL(url)
-  const out = {}
-  parsed.searchParams.forEach((v, k) => {
-    out[k] = v
-  })
-  if (parsed.hash && parsed.hash[0] === '#') {
-    try {
-      const hp = new URLSearchParams(parsed.hash.slice(1))
-      hp.forEach((v, k) => {
-        if (out[k] === undefined) out[k] = v
-      })
-    } catch {
-      /* hash no es query */
-    }
-  }
-  return out
-}
+import { supabase } from '../services/supabase.js'
 
 export function registerNativeOAuthDeepLink() {
-  if (!Capacitor.isNativePlatform()) return
-  if (!isSupabaseConfigured() || !supabase) return
+  if (!Capacitor.isNativePlatform() || !supabase) return
 
-  void App.addListener('appUrlOpen', async ({ url }) => {
-    if (!url || !isNativeOAuthCallbackUrl(url)) return
+  App.addListener('appUrlOpen', async ({ url }) => {
+    try {
+      if (!url) return
 
-    const params = readOAuthParamsFromUrl(url)
-    if (params.error || params.error_description) {
-      console.error('[WaitMe][Auth] OAuth deep link error', params.error, params.error_description)
-      return
-    }
-    const code = params.code
-    if (!code) return
+      // SOLO manejar nuestro callback
+      if (!url.startsWith('es.waitme.v5waitme://auth-callback')) return
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) {
-      console.error('[WaitMe][Auth] exchangeCodeForSession (deep link)', error.message, error)
-      return
-    }
-    if (data?.session) {
-      console.info('[WaitMe][Auth] Sesión establecida vía deep link OAuth')
+      // Obtener el code (PKCE)
+      const parsed = new URL(url.replace('es.waitme.v5waitme://', 'http://localhost/'))
+
+      const code = parsed.searchParams.get('code')
+
+      if (!code) return
+
+      // INTERCAMBIO REAL DE SESIÓN
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+      if (error) {
+        console.error('OAuth exchange error:', error)
+        return
+      }
+
+      console.log('LOGIN COMPLETADO EN APP')
+
+      // Forzar refresco de estado
+      window.location.reload()
+    } catch (err) {
+      console.error('Deep link error:', err)
     }
   })
 }
