@@ -92,19 +92,10 @@ html.waitme-standalone-height #root {
  * PWA + Capacitor: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--app-height` (App, visualViewport).
  * BottomNav fijo: `bottom: 0`; safe-area en `paddingBottom` del nav.
  */
-/**
- * Full bleed: un solo reparto de alto vía flex (html ya limita con `--app-height`). Evitar `height` + `flex:1`
- * en el mismo nodo: en iOS WebKit puede desbordar 1px el padre y recortar con `overflow:hidden`.
- */
+/** Reservado por si algún nodo vuelve a usar la clase; sin limitar ancho ni recortes. */
 .waitme-iphone-frame-fullbleed {
   width: 100%;
   height: 100%;
-  min-height: 100%;
-  flex: 1 1 0%;
-  display: flex;
-  flex-direction: column;
-  overflow-x: hidden;
-  box-sizing: border-box;
 }
 
 *,
