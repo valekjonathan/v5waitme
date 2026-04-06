@@ -1,19 +1,34 @@
+import { useEffect } from 'react'
+
 const isDevDesktop =
   import.meta.env.DEV &&
   typeof window !== 'undefined' &&
   window.location.hostname === 'localhost' &&
   window.innerWidth > 768
 
-/** Solo la primera instancia en el árbol pinta el marco (main.jsx); AppLayout sigue usando IphoneFrame sin doble marco. */
-let devIphoneFrameShellApplied = false
+/** Primera instancia en el árbol = marco (main.jsx); la de AppLayout es passthrough sin segundo marco ni viewport duplicado. */
+let devIphoneFrameShellClaimed = false
 
 export default function IphoneFrame({ children }) {
-  if (!isDevDesktop) return children
-
-  if (devIphoneFrameShellApplied) {
-    return children
+  const isShell = isDevDesktop && !devIphoneFrameShellClaimed
+  if (isShell) {
+    devIphoneFrameShellClaimed = true
   }
-  devIphoneFrameShellApplied = true
+
+  useEffect(() => {
+    if (!isDevDesktop || !isShell) return
+
+    const meta = document.querySelector('meta[name=viewport]')
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        'width=390, initial-scale=1, maximum-scale=1, user-scalable=no'
+      )
+    }
+  }, [isShell])
+
+  if (!isDevDesktop) return children
+  if (!isShell) return children
 
   return (
     <div
@@ -33,10 +48,18 @@ export default function IphoneFrame({ children }) {
           borderRadius: 40,
           overflow: 'hidden',
           background: '#000',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
+          boxShadow: '0 40px 100px rgba(0,0,0,0.7)',
         }}
       >
-        {children}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )
