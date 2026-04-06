@@ -29,7 +29,7 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
         zIndex: 60,
         paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: colors.background,
-        // Un poco más de contraste que 0.08: en Safari + scale(IphoneFrame) el pelo de 1px a veces casi no se percibe
+        // Contraste suave con el mapa / fondo
         borderBottom: '1px solid rgba(255,255,255,0.28)',
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',

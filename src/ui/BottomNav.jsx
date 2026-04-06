@@ -29,10 +29,7 @@ const labelStyle = {
 
 const divider = <div style={{ height: 32, width: 1, background: colors.border }} aria-hidden />
 
-const BottomNav = forwardRef(function BottomNav(
-  { interactive = true, fixedToViewport: _fixedToViewport = false },
-  ref
-) {
+const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
   const { screen } = nav
   const { status, isProfileComplete } = useAuth()

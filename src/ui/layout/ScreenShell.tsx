@@ -1,33 +1,11 @@
 /**
- * Shell: columna Header → `<main>` → BottomNav.
- * El alto útil global lo fija `App.jsx` (`--app-height`); esta columna lo hereda por flex.
- * BottomNav fijo: `bottom: 0` + `--waitme-bottom-nav-h` solo en modo standalone (ver `readStandaloneDisplayMode`).
+ * Shell: columna Header → `<main>` → BottomNav (fixed, fuera del flujo).
+ * El alto lo fija `App.jsx` en `--app-height`; esta columna hereda por flex.
  */
-import {
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from 'react'
-import { Capacitor } from '@capacitor/core'
+import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
 import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
-
-function readStandaloneDisplayMode(): boolean {
-  if (typeof window === 'undefined') return false
-  const mq =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(display-mode: standalone)').matches
-  const iosStandalone =
-    typeof navigator !== 'undefined' &&
-    'standalone' in navigator &&
-    (navigator as Navigator & { standalone?: boolean }).standalone === true
-  const capacitorNative = Capacitor.isNativePlatform() === true
-  return Boolean(mq || iosStandalone || capacitorNative)
-}
 
 const shellRootStyle: CSSProperties = {
   display: 'flex',
@@ -71,35 +49,9 @@ export default function ScreenShell({
   mainOverflow: _mainOverflow = 'auto',
   fullBleedMainOverflow: _fullBleedMainOverflow = 'auto',
 }: ScreenShellProps) {
-  const standalone = useMemo(() => readStandaloneDisplayMode(), [])
-  const bottomNavRef = useRef<HTMLElement | null>(null)
-  const [navHeightPx, setNavHeightPx] = useState(0)
-
-  useLayoutEffect(() => {
-    if (!standalone) {
-      setNavHeightPx(0)
-      return undefined
-    }
-    const el = bottomNavRef.current
-    if (!el || typeof ResizeObserver === 'undefined') return undefined
-
-    const measure = () => {
-      const h = el.getBoundingClientRect().height
-      setNavHeightPx(Math.ceil(h))
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [standalone])
-
-  const navVar =
-    standalone && navHeightPx > 0 ? (`${navHeightPx}px` as const) : standalone ? '0px' : undefined
-
   const rootStyleMerged: CSSProperties = {
     ...shellRootStyle,
     ...style,
-    ...(navVar != null ? ({ ['--waitme-bottom-nav-h' as string]: navVar } as CSSProperties) : {}),
   }
 
   const mainStyle: CSSProperties = {
@@ -122,7 +74,7 @@ export default function ScreenShell({
           {children}
         </div>
       </main>
-      <BottomNav ref={bottomNavRef} interactive={interactive} fixedToViewport={standalone} />
+      <BottomNav interactive={interactive} />
     </div>
   )
 }

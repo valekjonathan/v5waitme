@@ -60,7 +60,7 @@ body {
 }
 
 /**
- * `App.jsx` fija `--app-height` y `--real-vh` al mismo px (`innerHeight`; listeners + visualViewport en iOS).
+ * `App.jsx` fija `--app-height` (visualViewport.height o innerHeight; listeners en iOS).
  */
 html.waitme-standalone-height body {
   flex: 1 1 0%;
@@ -87,8 +87,7 @@ html.waitme-standalone-height #root {
 }
 
 /**
- * PWA + Capacitor: `--waitme-bottom-nav-h` (ScreenShell, ResizeObserver); `--app-height` (App, visualViewport).
- * BottomNav fijo: `bottom: 0`; safe-area en `paddingBottom` del nav.
+ * BottomNav fijo (`bottom: 0`); safe-area en su padding inferior. Mapa en columna flex bajo el header.
  */
 /** Reservado por si algún nodo vuelve a usar la clase; sin limitar ancho ni recortes. */
 .waitme-iphone-frame-fullbleed {

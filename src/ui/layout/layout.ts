@@ -1,8 +1,7 @@
 /**
  * Contrato maestro de layout (v5waitme).
- * Jerarquía: IphoneFrame → ScreenShell (Header + `<main>` + BottomNav en flujo flex).
- * Contenido útil: `<main>` → `data-waitme-content-slot` → (mapa) `data-waitme-map-slot`.
- * Coordenadas de overlays del mapa: sólo en px dentro del map slot, sin viewport ni chrome.
+ * Jerarquía: `App` → ScreenShell (Header + `<main>` + BottomNav fixed).
+ * Contenido útil: `<main>` → `data-waitme-content-slot` → mapa / overlays.
  */
 
 /** Coordenadas en px relativas únicamente a `[data-waitme-map-slot]`. */

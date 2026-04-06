@@ -40,16 +40,19 @@ const appRootLayoutStyle = {
 }
 
 /**
- * Una sola pareja `--app-height` / `--real-vh` (mismo px) desde `innerHeight`.
- * `visualViewport` en iOS Safari: escuchar resize/scroll para cuando cambia la barra de URL.
- * En preview dev (Safari Mac + localhost) el alto lo fija `DevRootChrome` + ResizeObserver.
+ * Una sola variable `--app-height` (px). En iOS el alto visible suele alinearse con
+ * `visualViewport.height`; si no existe, `innerHeight`.
+ * Preview dev (Safari Mac + localhost): lo mide `DevRootChrome` + ResizeObserver.
  */
 const WAITME_VV_HEIGHT_CLASS = 'waitme-standalone-height'
 
 function syncViewportHeightPx() {
-  const h = window.innerHeight
+  const vv = window.visualViewport
+  let h = window.innerHeight
+  if (vv && typeof vv.height === 'number' && vv.height > 0) {
+    h = Math.round(vv.height)
+  }
   document.documentElement.style.setProperty('--app-height', `${h}px`)
-  document.documentElement.style.setProperty('--real-vh', `${h}px`)
 }
 
 function useAppHeightCssVar() {
@@ -80,7 +83,6 @@ function useAppHeightCssVar() {
 
     return () => {
       rootEl.style.removeProperty('--app-height')
-      rootEl.style.removeProperty('--real-vh')
       rootEl.classList.remove(WAITME_VV_HEIGHT_CLASS)
       window.removeEventListener('resize', sync)
       window.removeEventListener('orientationchange', onOrient)

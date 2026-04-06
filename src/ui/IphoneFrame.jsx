@@ -41,7 +41,6 @@ export function DevRootChrome({ children }) {
       const h = Math.round(r.height)
       if (h > 0) {
         el.style.setProperty('--app-height', `${h}px`)
-        el.style.setProperty('--real-vh', `${h}px`)
       }
       window.dispatchEvent(new Event('resize'))
     }
@@ -55,7 +54,6 @@ export function DevRootChrome({ children }) {
       window.removeEventListener('resize', sync)
       el.classList.remove('waitme-dev-root-frame')
       el.style.removeProperty('--app-height')
-      el.style.removeProperty('--real-vh')
     }
   }, [enabled])
 
