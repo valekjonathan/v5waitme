@@ -1,6 +1,7 @@
 /**
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
+import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
@@ -80,14 +81,29 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
-    const isNative = Capacitor.isNativePlatform()
-    const redirectTo = isNative
-      ? 'es.waitme.v5waitme://auth-callback'
-      : window.location.origin
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'es.waitme.v5waitme://auth-callback',
+          skipBrowserRedirect: true,
+        },
+      })
+      if (error) {
+        console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
+        return { data: null, error }
+      }
+      if (!data?.url) {
+        console.error('[WaitMe][Auth] signInWithGoogle nativo: respuesta OAuth sin url')
+        return { data: null, error: new Error('oauth_no_url') }
+      }
+      await Browser.open({ url: data.url })
+      return { data, error: null }
+    }
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: { redirectTo: window.location.origin },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
