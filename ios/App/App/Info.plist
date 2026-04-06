@@ -51,13 +51,11 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>es.waitme.v5waitme.oauth</string>
+			<string>v5waitme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>es.waitme.v5waitme</string>
 			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
 		</dict>
 	</array>
 	<key>NSAppTransportSecurity</key>
