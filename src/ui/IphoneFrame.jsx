@@ -1,12 +1,10 @@
-import { useEffect } from 'react'
-
 const isDevDesktop =
   import.meta.env.DEV &&
   typeof window !== 'undefined' &&
   window.location.hostname === 'localhost' &&
   window.innerWidth > 768
 
-/** Primera instancia en el árbol = marco (main.jsx); la de AppLayout es passthrough sin segundo marco ni viewport duplicado. */
+/** Primera instancia en el árbol = marco (main.jsx); la de AppLayout es passthrough sin segundo marco. */
 let devIphoneFrameShellClaimed = false
 
 export default function IphoneFrame({ children }) {
@@ -14,18 +12,6 @@ export default function IphoneFrame({ children }) {
   if (isShell) {
     devIphoneFrameShellClaimed = true
   }
-
-  useEffect(() => {
-    if (!isDevDesktop || !isShell) return
-
-    const meta = document.querySelector('meta[name=viewport]')
-    if (meta) {
-      meta.setAttribute(
-        'content',
-        'width=390, initial-scale=1, maximum-scale=1, user-scalable=no'
-      )
-    }
-  }, [isShell])
 
   if (!isDevDesktop) return children
   if (!isShell) return children
