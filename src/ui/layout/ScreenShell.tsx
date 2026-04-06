@@ -105,7 +105,7 @@ export default function ScreenShell({
   const mainStyle: CSSProperties = {
     flex: 1,
     minHeight: 0,
-    height: 'auto',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     overflowY: 'auto',
