@@ -1,9 +1,5 @@
 {
   "appId": "es.waitme.v5waitme",
   "appName": "WaitMe",
-  "webDir": "dist",
-  "server": {
-    "url": "https://v5waitme.vercel.app",
-    "cleartext": false
-  }
+  "webDir": "dist"
 }
