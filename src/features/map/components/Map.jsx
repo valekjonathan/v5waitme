@@ -39,6 +39,12 @@ import {
 
 let globalContainer = null
 
+/**
+ * Ajuste global Safari vs WKWebView (subpixel / padding interno del canvas Mapbox).
+ * Sin `if (ios)`; mismo valor en web y nativo. Si hace falta 1px más/menos, cambiar solo aquí.
+ */
+const VISUAL_CALIBRATION_OFFSET = 2
+
 /** Nodo al que Mapbox engancha el canvas (`getContainer()`), no el shell que también lleva el pin. */
 function resolveWaitmeMapDomContainer(containerRef) {
   const m = getGlobalMapInstance()
@@ -77,15 +83,18 @@ function applyWaitmeMapPinAndParkingCamera(pinEl, mapContainerEl, parkingBandPin
   const measured = measureWaitmeMapPinCameraOffsetY(pinEl, mapContainerEl)
   if (!measured) return
   const { offsetY } = measured
+  const finalOffsetY = offsetY + VISUAL_CALIBRATION_OFFSET
 
   if (!parkingBandPinAdjust) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    window.__WAITME_PIN_OFFSET_Y__ = finalOffsetY
     if (import.meta.env.DEV) {
+      console.info('[WaitMe][FINAL_OFFSET]', { offsetY, finalOffsetY })
       console.info('[WaitMe][MAP_PIN_CAMERA]', {
         mapContainer: { w: measured.mapRect.width, h: measured.mapRect.height },
         mapCenterLocalY_px: measured.mapCenterLocalY,
         pinTipLocalY_px: measured.pinTipLocalY,
         offsetY_px: offsetY,
+        finalOffsetY_px: finalOffsetY,
       })
     }
     logWaitmeViewportDebug({ mapPinCamera: 'mapbox-container' })
@@ -95,14 +104,20 @@ function applyWaitmeMapPinAndParkingCamera(pinEl, mapContainerEl, parkingBandPin
   const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
   const cardEl = document.querySelector(GAP_CARD_TOP)
   if (!searchEl || !cardEl) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    window.__WAITME_PIN_OFFSET_Y__ = finalOffsetY
+    if (import.meta.env.DEV) {
+      console.info('[WaitMe][FINAL_OFFSET]', { offsetY, finalOffsetY })
+    }
     logWaitmeViewportDebug({ mapPinCamera: 'parking-fallback-offset' })
     return
   }
   const searchBottom = searchEl.getBoundingClientRect().bottom
   const cardTop = cardEl.getBoundingClientRect().top
   if (!(cardTop > searchBottom)) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    window.__WAITME_PIN_OFFSET_Y__ = finalOffsetY
+    if (import.meta.env.DEV) {
+      console.info('[WaitMe][FINAL_OFFSET]', { offsetY, finalOffsetY })
+    }
     logWaitmeViewportDebug({ mapPinCamera: 'parking-fallback-offset' })
     return
   }
