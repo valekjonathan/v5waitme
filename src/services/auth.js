@@ -79,6 +79,9 @@ export async function getCurrentUser() {
  * Inicia login con Google (OAuth) mediante Supabase Auth.
  */
 export async function signInWithGoogle() {
+  console.log('[Auth] signInWithGoogle llamada')
+  console.log('[Auth] platform:', Capacitor.getPlatform())
+  console.log('[Auth] isNative:', Capacitor.isNativePlatform())
   if (!isSupabaseConfigured()) {
     return { data: null, error: new Error('supabase_not_configured') }
   }

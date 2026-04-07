@@ -296,7 +296,10 @@ export default function LoginButtons() {
       <OAuthButton
         variant="primary"
         disabled={isLoading}
-        onClick={onGoogle}
+        onClick={() => {
+          console.log('[UI] Botón Google pulsado')
+          void onGoogle()
+        }}
         handlers={googleHandlers}
         data-home-google-button=""
         style={googleStyle}
