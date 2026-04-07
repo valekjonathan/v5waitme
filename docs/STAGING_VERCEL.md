@@ -1,5 +1,9 @@
 # Staging remoto (Vercel): fuera de casa, sin Mac
 
+**Estado honesto:** el staging **no existe** hasta que haya un **Preview Deployment** de la rama **`staging`** visible en **tu** proyecto Vercel. El repo no incluye esa URL (depende de tu cuenta y del primer deploy).
+
+**Si aún no has hecho los pasos de abajo:** fuera de casa usa la **web de producción** (y TestFlight para nativo). La **IP LAN** no sirve fuera de tu Wi‑Fi.
+
 Esta guía cierra el modo **B** del [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md). No añade `server.url` al nativo: el iPhone fuera de casa usa **TestFlight** o la **web** en Safari.
 
 ## Qué obtienes

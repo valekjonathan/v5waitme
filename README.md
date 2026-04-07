@@ -9,11 +9,13 @@ npm install
 npm run dev:ios
 ```
 
-**En casa (Safari + iPhone live reload):** **`npm run dev:ios`** (o **`npm run dev`**). Sync iOS, `.env.local` con `VITE_DEV_LAN_ORIGIN`, Vite 5173; **solo Safari** en la URL LAN tras **`/`** OK. Logs: `RUNNING ON LAN`, `OPEN IN SAFARI`, `OPEN IN IPHONE`.
+**En casa:** un solo comando — **`npm run dev:ios`** (o **`npm run dev`**). Misma **URL LAN** en Safari e iPhone; se actualizan solos (HMR) mientras el proceso sigue corriendo. La URL exacta sale en consola (`OPEN IN SAFARI` = `OPEN IN IPHONE`). **No** uses `localhost` para ese flujo en el iPhone.
 
-**Fuera de casa (web staging):** rama **`staging`** + Vercel Preview; la URL exacta la copias del dashboard → **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**.
+**Fuera de casa:** la **IP LAN no sirve**. Si tienes **staging** en Vercel (rama `staging` + Preview), usa esa URL del dashboard → **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**. Si **no**, la referencia web es **producción** (tu dominio Vercel Production). Nativo: **TestFlight**.
 
-Resumen casa / fuera / producción: **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
+**Producción iOS sin `server.url`:** **`npm run cap:sync:prod`**.
+
+**Índice único:** **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
 
 Solo navegador sin sync iOS: `npm run dev:vite`. iOS listo para tienda (sin `server.url`): `npm run cap:sync:prod`.
 

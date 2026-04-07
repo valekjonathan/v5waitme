@@ -10,13 +10,13 @@
 | **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                    |
 | **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode.                |
 
-## 1. Un solo comando (casa)
+## 1. Un solo comando (casa) — forma correcta de iterar
 
 ```bash
 npm run dev:ios
 ```
 
-(`npm run dev` es el mismo flujo.)
+(`npm run dev` es el mismo flujo.) **Pantallas, botones y layout:** trabaja siempre así en casa; Safari e iPhone comparten la misma URL LAN y se actualizan solos con HMR.
 
 **Qué hace el script**
 
@@ -84,5 +84,5 @@ Si quieres que la nube acceda a tu **`http://localhost:5173`**, la vía habitual
 
 En `.vscode/tasks.json` la tarea **dev** ejecuta `npm run dev` (= `dev:ios`).
 
-**Guía casa / fuera / prod:** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).  
-**Staging Vercel:** [STAGING_VERCEL.md](./STAGING_VERCEL.md).
+**Verdad operativa (casa / fuera / prod):** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).  
+**Staging (solo si lo montaste en Vercel):** [STAGING_VERCEL.md](./STAGING_VERCEL.md).

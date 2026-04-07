@@ -1,127 +1,109 @@
 # Flujo de trabajo: en casa, fuera y producción
 
-Tres modos separados. Sin mezclar URLs ni `server.url` en builds finales.
-
-## Hoja de ruta (léelo primero)
-
-| Situación                         | Qué usar                                                                                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Casa — Safari Mac**             | Tras **`npm run dev:ios`**: misma URL en **`OPEN IN SAFARI`** / **`RUNNING ON LAN`** (Safari se abre solo en LAN; no Chrome).                         |
-| **Casa — iPhone**                 | Misma Wi‑Fi + **`npm run dev:ios`** (live reload al Mac). Primera vez: Run desde Xcode.                                                               |
-| **Fuera — web “casi producción”** | URL del deploy **Preview** de la rama **`staging`** en Vercel → [STAGING_VERCEL.md](./STAGING_VERCEL.md) (la copias del dashboard; no va en el repo). |
-| **Fuera — app nativa real**       | **TestFlight** (build sin `server.url`, ver modo C).                                                                                                  |
-| **Producción web**                | Dominio **Production** de Vercel (rama habitual `main`).                                                                                              |
-| **Producción iOS tienda**         | **`npm run cap:sync:prod`** + Xcode / TestFlight.                                                                                                     |
+**Documento maestro.** El resto amplía detalles: [DEV_IOS_LIVE_RELOAD.md](./DEV_IOS_LIVE_RELOAD.md) (casa técnico), [STAGING_VERCEL.md](./STAGING_VERCEL.md) (staging en Vercel).
 
 ---
 
-## A) Dev en casa (cambios al instante)
+## Verdad operativa (no mezclar)
 
-**Qué ejecutar (una vez por sesión de trabajo)**  
-En Cursor: tarea **dev** (`.vscode/tasks.json`) o en terminal: `npm run dev` / **`npm run dev:ios`**.
-
-**Qué hace solo el comando**
-
-1. Detecta IP LAN (10.x o 192.168.x), opcional `CAP_LAN_IP=…` si hace falta.
-2. Actualiza **`.env.local`** con `VITE_DEV_LAN_ORIGIN=http://<IP>:5173` (origen OAuth + Vite alineados).
-3. Exporta `WAITME_CAP_DEV_SERVER_URL` (misma URL) y `WAITME_LAN_IP`, y ejecuta `npx cap sync ios` → el iPhone nativo apunta al Mac.
-4. Arranca Vite (5173, HMR sin overlay agresivo, sin abrir navegador desde Vite).
-5. Cuando `/` responde, en macOS abre **solo Safari** en la URL LAN.
-
-**URL correcta Safari en casa:** **`OPEN IN SAFARI`** / **`RUNNING ON LAN`** / **`OPEN IN IPHONE`** (todas la misma). No uses `localhost` en el iPhone ni para Supabase redirect en ese modo.
-
-**Qué debes tener abierto**
-
-- Terminal / tarea con **`npm run dev:ios`** (Vite vivo).
-- iPhone con la app **ya instalada** desde Xcode al menos una vez; en la misma Wi‑Fi que el Mac.
-
-**Qué se actualiza solo**
-
-- Código web: HMR en Safari (LAN) y en el WKWebView del iPhone (live reload al mismo servidor).
-
-**Qué no es este modo**
-
-- No es Vercel. No uses `*.vercel.app` en `WAITME_CAP_DEV_SERVER_URL` (Capacitor lo rechaza).
-
-**Si algo falla el ping a la IP**  
-`SKIP_LAN_PING=1 npm run dev:ios`
-
-**Solo web, sin tocar iOS**  
-`npm run dev:vite`
+| Dónde estás       | Qué usar                                                                                                              | Qué **no** usar                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Casa**          | `npm run dev:ios` + URL **LAN** (`http://192.168.x.x:5173` o `10.x.x.x:5173`, la que imprime el script)               | `localhost` / `127.0.0.1` en iPhone ni en Supabase para OAuth en este modo |
+| **Fuera de casa** | **No** la IP LAN (no alcanza tu Mac). Web: **staging** (si lo montaste) **o** **producción**. Nativo: **TestFlight**. | Abrir la URL LAN del Wi‑Fi de casa desde fuera                             |
+| **Producción**    | `npm run cap:sync:prod` (iOS sin `server.url`) + deploy web habitual                                                  | `WAITME_CAP_DEV_SERVER_URL` en la misma shell que `cap sync` de tienda     |
 
 ---
 
-## B) Fuera de casa (staging remoto)
+## Hoja de ruta rápida
 
-**Objetivo**  
-Ver la **app web** como build de producción (`vite build`), **sin Mac ni Wi‑Fi de casa**.
-
-**Implementación en el repo**  
-No hace falta workflow extra en GitHub: con el proyecto **ya enlazado a Git**, cada push a la rama **`staging`** genera un **Preview Deployment** en Vercel.
-
-**Tu URL de staging**  
-La copias **una vez** del dashboard (Deployments → rama `staging` → Visit). Detalle paso a paso: **[STAGING_VERCEL.md](./STAGING_VERCEL.md)**.
-
-**OAuth**  
-Añade esa URL exacta en Supabase **Redirect URLs** (tabla en STAGING_VERCEL.md).
-
-**Nativo iOS fuera de casa**  
-**TestFlight** (modo C). No hay live reload del Mac.
+| Situación              | Qué hacer                                                                                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Casa — iterar UI**   | **`npm run dev:ios`** (único comando de trabajo). Safari e iPhone usan **la misma URL LAN**; se actualizan solos con HMR mientras Vite sigue en marcha.                                                                   |
+| **Casa — Safari**      | Se abre **solo** en la URL LAN (tras `200` en `/`). Mira **`OPEN IN SAFARI`** en consola.                                                                                                                                 |
+| **Casa — iPhone**      | Misma Wi‑Fi + app instalada desde Xcode al menos una vez. Misma URL que **`OPEN IN IPHONE`**.                                                                                                                             |
+| **Fuera — web**        | Si **staging** está montado en Vercel → URL del **Preview** de la rama `staging` (ver [STAGING_VERCEL.md](./STAGING_VERCEL.md)). Si **no** hay staging → usa la **URL web de producción** (dominio Production de Vercel). |
+| **Fuera — app nativa** | **TestFlight** (build sin live reload del Mac).                                                                                                                                                                           |
+| **Tienda iOS**         | **`npm run cap:sync:prod`** + Xcode / TestFlight.                                                                                                                                                                         |
 
 ---
 
-## C) Producción (limpio, sin `server.url`)
+## A) En casa (única forma correcta de iterar cambios)
 
-**Web**  
-Deploy **Production** en Vercel (normalmente rama `main`).
+**Comando único:** **`npm run dev:ios`** (equivalente a **`npm run dev`**).
 
-**iOS nativo final**  
-No uses `npm run dev:ios` / `npm run dev` para generar el binario de tienda.
+**Cursor / VS Code:** tarea **`dev:ios`** o **`dev`**.
 
-1. Asegúrate de no arrastrar live reload: **`npm run cap:live:off`** (o una terminal sin `WAITME_CAP_DEV_SERVER_URL`).
-2. Empaqueta web + sync **sin** variable de dev: **`npm run cap:sync:prod`**  
-   (equivale a `build` + `cap sync ios` con `WAITME_CAP_DEV_SERVER_URL` eliminada del entorno del proceso).
-3. Abre Xcode y archiva / sube a TestFlight como siempre.
+**Qué hace (resumen)**
 
-**Comprobar que no quedó `server.url`**  
-En `ios/App/App/capacitor.config.json` **no** debe existir el bloque `"server"` tras un sync de producción.
+1. Detecta IP LAN (10.x / 192.168.x); opcional `CAP_LAN_IP=…` o `SKIP_LAN_PING=1`.
+2. Actualiza **`.env.local`** → `VITE_DEV_LAN_ORIGIN=http://<IP>:5173`.
+3. `WAITME_CAP_DEV_SERVER_URL` = misma URL → **`npx cap sync ios`** (iPhone apunta al Mac).
+4. Arranca **Vite** (5173, HMR, sin abrir Chrome desde Vite).
+5. Cuando **`/`** responde, en **macOS** abre **solo Safari** en esa URL.
 
-**Limpieza profunda tras muchos experimentos iOS**  
-`npm run ios:fresh:dev` (dev otra vez) vs para prod usar `cap:sync:prod` tras `cap:live:off`.
+**URL exacta en Safari e iPhone en casa:** la de **`RUNNING ON LAN`**, **`OPEN IN SAFARI`** y **`OPEN IN IPHONE`** (las tres iguales). **No** uses `http://localhost:5173` para el flujo iPhone + OAuth en casa.
 
----
+**Autoactualización:** con **`npm run dev:ios`** activo, los cambios en código se reflejan solos en **Safari (LAN)** y en el **WKWebView del iPhone** (mismo servidor Vite).
 
-## OAuth / Supabase (cuatro entornos)
-
-| Entorno            | Código (resumen)                        | Redirect en Supabase                     |
-| ------------------ | --------------------------------------- | ---------------------------------------- |
-| iOS/Android nativo | `capacitor://localhost`                 | `capacitor://localhost`                  |
-| Web dev (casa)     | `VITE_DEV_LAN_ORIGIN` (IP LAN)          | `http://<IP_LAN>:5173`                   |
-| Web staging        | `window.location.origin` (build Vercel) | `https://<tu-url-staging-del-dashboard>` |
-| Web producción     | `window.location.origin`                | `https://<tu-dominio-production>`        |
-
-No mezclar: el nativo **nunca** usa Vercel en `server.url`; el web staging **nunca** debe depender de la IP de casa.
+**Solo web sin tocar Capacitor:** `npm run dev:vite` (sigue siendo IP LAN para OAuth; ver `.env.local`).
 
 ---
 
-## Cursor (sin repetir comandos a mano)
+## B) Fuera de casa
 
-- **Run Task → `dev`**: modo A completo.
-- **Run Task → `cap:live:off`**: quita live reload del proyecto iOS.
-- **Run Task → `cap:sync:prod`**: build + sync producción iOS seguro.
+**La IP LAN de tu Mac no sirve** fuera de tu red: no intentes abrirla en el iPhone en 4G ni en Wi‑Fi ajena.
 
-Más detalle técnico iOS/Safari: [DEV_IOS_LIVE_RELOAD.md](./DEV_IOS_LIVE_RELOAD.md).  
-Staging remoto paso a paso: [STAGING_VERCEL.md](./STAGING_VERCEL.md).
+**Staging (remoto “casi producción”)**
+
+- **No está “operativo” en el repo** por sí solo: hace falta que **tú** tengas en Vercel un **Preview** de la rama **`staging`** (Git conectado + push a `staging`).
+- Si **ya** lo tienes: la URL es la que muestra Vercel en **Deployments → rama staging → Visit** (no va fijada en el repo). Pasos: [STAGING_VERCEL.md](./STAGING_VERCEL.md).
+- Si **aún no** lo tienes: el **siguiente paso** es crear la rama `staging`, empujarla y comprobar en el dashboard que aparece un deploy Preview; luego copiar la URL y añadirla en Supabase **Redirect URLs**. Hasta entonces, **fuera de casa la referencia web es producción**.
+
+**Si no hay staging montado**
+
+- **Web:** abre tu **URL de producción** (Vercel Production / dominio real).
+- **Nativo:** **TestFlight**.
+
+**OAuth:** cada URL pública que uses (staging o prod) debe estar en Supabase; ver tabla más abajo.
 
 ---
 
-## Resumen rápido
+## C) Producción (protegida)
 
-| Situación        | Comando / acción principal                     |
-| ---------------- | ---------------------------------------------- |
-| Casa, iterar     | `npm run dev:ios` (o `npm run dev`)            |
-| Casa, iOS limpio | `npm run ios:fresh:dev`                        |
-| Quitar live iOS  | `npm run cap:live:off`                         |
-| iOS tienda-ready | `npm run cap:sync:prod`                        |
-| Fuera, web       | URL Preview rama `staging` en Vercel (ver doc) |
-| Fuera, app real  | TestFlight (build sin `server`)                |
+1. **`npm run cap:live:off`** (o terminal sin `WAITME_CAP_DEV_SERVER_URL`).
+2. **`npm run cap:sync:prod`** → `build` + `cap sync ios` **sin** arrastrar la variable de dev → **no** queda `server.url` en `ios/App/App/capacitor.config.json`.
+3. **No** uses `npm run dev:ios` para el binario de tienda.
+
+**Web:** deploy Production en Vercel como siempre.
+
+---
+
+## OAuth / Supabase (Redirect URLs)
+
+| Entorno                     | Redirect                                             |
+| --------------------------- | ---------------------------------------------------- |
+| Nativo                      | `capacitor://localhost`                              |
+| Web **casa**                | `http://<IP_LAN>:5173` (misma que imprime `dev:ios`) |
+| Web **staging** (si existe) | `https://<URL exacta del dashboard Vercel>`          |
+| Web **producción**          | `https://<tu dominio production>`                    |
+
+---
+
+## Cursor (tareas)
+
+- **`dev:ios`** / **`dev`** → modo casa.
+- **`cap:live:off`** → quita live reload del proyecto iOS.
+- **`cap:sync:prod`** → iOS listo para tienda sin `server.url`.
+
+---
+
+## Resumen de comandos
+
+| Situación        | Comando                                      |
+| ---------------- | -------------------------------------------- |
+| Casa, iterar     | **`npm run dev:ios`**                        |
+| Casa, iOS limpio | `npm run ios:fresh:dev`                      |
+| Quitar live iOS  | `npm run cap:live:off`                       |
+| iOS tienda-ready | **`npm run cap:sync:prod`**                  |
+| Fuera, web       | Staging (si existe) **o** URL **producción** |
+| Fuera, app real  | TestFlight                                   |
