@@ -2,12 +2,13 @@
 
 ## Resumen
 
-| Entorno                                | Uso                                                                                             |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Safari en Mac (`npm run dev`)**      | Espejo **rápido** de layout (marco tipo iPhone en escritorio). **No** sustituye al dispositivo. |
-| **iPhone + Capacitor + Vite**          | Ver cambios en tiempo casi real con **Live Reload** (`server.url` solo en dev).                 |
-| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                   |
-| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                        |
+| Entorno                                | Uso                                                                                                          |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Safari en Mac (`npm run dev`)**      | Espejo **rápido** de layout (marco tipo iPhone en escritorio). **No** sustituye al dispositivo.              |
+| **iPhone + Capacitor + Vite**          | Ver cambios en tiempo casi real con **Live Reload** (`server.url` solo en dev).                              |
+| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                |
+| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                     |
+| **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode. |
 
 ## 1. Espejo rápido en Mac (sin cambios)
 
@@ -66,6 +67,29 @@ Usa las funciones del sistema (p. ej. duplicación de pantalla / Continuidad seg
 - `capacitor.config.ts` **no** incluye `server` salvo que exista `WAITME_CAP_DEV_SERVER_URL` en el momento de `cap sync`.
 - No commitees `WAITME_CAP_DEV_SERVER_URL` en `.env` de producción.
 - Tras desarrollo con live reload, ejecuta **`npm run cap:live:off`** antes de entregar un build “real”.
+
+## 7. BrowserStack (opcional, secundario)
+
+**No forma parte del flujo principal** de este repo (iPhone físico + Live Reload + Web Inspector). No hay scripts ni dependencias npm de BrowserStack; el flujo de `npm run dev` / `cap:sync` **no cambia**.
+
+### Para qué sí puede servir
+
+- Probar la **app web** (mismo front en el navegador) en **otras versiones de Safari / iOS** o dispositivos que no tengas a mano.
+- Smoke tests de **layout responsive** o regresiones visuales **aproximadas** en la nube.
+
+### Para qué no sirve (no usarlo como sustituto del flujo principal)
+
+- **No** reemplaza un **iPhone con Capacitor** conectado por Xcode: no es el mismo binario nativo ni el mismo WKWebView con plugins y permisos reales.
+- **No** sustituye **Safari → Develop** sobre el dispositivo ni **Live Reload** en LAN.
+- **No** valida rendimiento real, GPS, cámara ni el comportamiento exacto del usuario final en App Store.
+
+### Localhost y BrowserStack Local (solo si lo necesitas)
+
+Si en algún momento quieres que la nube de BrowserStack acceda a tu **`http://localhost:5173`**, la vía habitual es **[BrowserStack Local](https://www.browserstack.com/docs/app-live/local-testing)** (binario o aplicación oficial con tus credenciales de cuenta). Es **opcional**, manual y **ajena** a `capacitor.config` y a producción: **no** añade `server.url` ni toca el build.
+
+### ¿Merece la pena en WaitMe?
+
+Solo si necesitas **matriz extra de Safari/iOS en navegador** sin más hardware. Para el producto **Capacitor**, la referencia sigue siendo **iPhone real**.
 
 ## Tareas en Cursor / VS Code
 
