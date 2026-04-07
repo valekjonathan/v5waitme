@@ -297,6 +297,20 @@ function AppGate() {
 }
 
 export default function App() {
+  /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
+  useEffect(() => {
+    const isSafariPreview = window.location.search.includes('iphone=true')
+    const rootEl = document.documentElement
+    if (isSafariPreview) {
+      rootEl.classList.add('iphone-preview')
+    } else {
+      rootEl.classList.remove('iphone-preview')
+    }
+    return () => {
+      rootEl.classList.remove('iphone-preview')
+    }
+  }, [])
+
   useLayoutEffect(() => {
     const updateDevLayoutClass = () => {
       const narrowChromeSim =
