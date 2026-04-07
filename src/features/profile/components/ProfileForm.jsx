@@ -22,7 +22,7 @@ const labelStyle = {
 }
 const inputWrapStyle = { flex: 1, minWidth: 0 }
 const phoneInputWrapStyle = { flex: 1, minWidth: 0, marginRight: 14 }
-const errorTextStyle = { margin: 0, marginTop: 4, color: '#fda4af', fontSize: 12 }
+const errorTextStyle = { margin: 0, marginTop: 2, color: '#fda4af', fontSize: 12 }
 const toggleWrapStyle = {
   display: 'flex',
   alignItems: 'center',

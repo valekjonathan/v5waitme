@@ -53,9 +53,9 @@ export const reviewsBadgeLayerStyle = {
 
 /** Espaciado vertical perfil (centrado fijo, sin scroll): ajuste mínimo para que todo quepa. */
 export const profileHeaderCardMarginBottomPx = 6
-export const profileFormVerticalGapPx = 10
-const profileActionsFooterMarginTopPx = 8
-export const profileCenteredClusterGapPx = 12
+export const profileFormVerticalGapPx = 8
+const profileActionsFooterMarginTopPx = 6
+export const profileCenteredClusterGapPx = 10
 
 /** Sin margen extra respecto al content slot; el flujo empieza en `<main>`. */
 export const profileReviewsInnerHeaderTopMarginPx = 0
