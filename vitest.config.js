@@ -8,6 +8,9 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   root,
   plugins: [react()],
+  define: {
+    'import.meta.env.VITE_DEV_LAN_ORIGIN': JSON.stringify('http://192.168.99.1:5173'),
+  },
   resolve: {
     alias: {
       '@': path.join(root, 'src'),

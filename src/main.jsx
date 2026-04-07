@@ -9,6 +9,13 @@ import './styles/global.css'
 
 registerNativeOAuthDeepLink()
 
+if (import.meta.env.DEV) {
+  const lan = String(import.meta.env.VITE_DEV_LAN_ORIGIN || '').trim()
+  if (lan) {
+    console.info(`RUNNING ON LAN: ${lan}`)
+  }
+}
+
 const rawSentryDsn = import.meta.env.VITE_SENTRY_DSN
 const sentryDsn = typeof rawSentryDsn === 'string' ? rawSentryDsn.trim() : ''
 if (sentryDsn) {

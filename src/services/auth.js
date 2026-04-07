@@ -14,6 +14,23 @@ import { supabase, isSupabaseConfigured } from './supabase.js'
 export const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
 
 /**
+ * Dev web: mismo origen que Capacitor live reload (IP LAN). Inyectado en `vite serve` o .env `VITE_DEV_LAN_ORIGIN`.
+ * Nunca localhost/127/Vercel aquí — Supabase redirect debe coincidir.
+ */
+function isValidUnifiedDevLanOrigin(url) {
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'http:') return false
+    const h = u.hostname.toLowerCase()
+    if (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0') return false
+    if (h.includes('vercel')) return false
+    return /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h) || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)
+  } catch {
+    return false
+  }
+}
+
+/**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
  * Limpia la URL para no re-procesar el error en cada recarga.
  * Llamar solo después de que el cliente haya podido leer el código/sesión (p. ej. tras getSession).
@@ -151,9 +168,29 @@ export async function signInWithGoogle() {
       return { data, error: null }
     }
 
+    if (import.meta.env.PROD) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: typeof window !== 'undefined' ? window.location.origin : '' },
+      })
+      if (error) {
+        console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
+        return { data: null, error }
+      }
+      return { data, error: null }
+    }
+
+    const devOrigin = String(import.meta.env.VITE_DEV_LAN_ORIGIN ?? '').trim()
+    if (!isValidUnifiedDevLanOrigin(devOrigin)) {
+      console.error(
+        '[WaitMe][Auth] Dev: origen OAuth inválido o vacío. Usa Safari en la IP LAN (no localhost). Define VITE_DEV_LAN_ORIGIN=http://192.168.x.x:5173 en .env.local o deja que Vite detecte la IP al hacer npm run dev.'
+      )
+      return { data: null, error: new Error('oauth_dev_lan_origin_invalid') }
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: devOrigin },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)

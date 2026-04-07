@@ -96,9 +96,23 @@ export default defineConfig(({ mode, command }) => {
     )
   }
 
+  const devLanOriginEnv = String(fileEnv.VITE_DEV_LAN_ORIGIN || '').trim()
+  const lanIpForDev = command === 'serve' ? preferredLanIPv4() : null
+  const resolvedDevLanOrigin =
+    command === 'serve' && mode === 'development'
+      ? devLanOriginEnv || (lanIpForDev ? `http://${lanIpForDev}:5173` : '')
+      : ''
+
   return {
-    /** Producción: rutas relativas para empaquetar `dist/` en Capacitor iOS; dev y Vercel en raíz siguen bien. */
+    /** Producción: rutas relativas para empaquetar `dist/` en Capacitor iOS. */
     base: command === 'build' ? './' : '/',
+    ...(command === 'serve'
+      ? {
+          define: {
+            'import.meta.env.VITE_DEV_LAN_ORIGIN': JSON.stringify(resolvedDevLanOrigin),
+          },
+        }
+      : {}),
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
@@ -114,20 +128,27 @@ export default defineConfig(({ mode, command }) => {
                 server.httpServer?.once('listening', () => {
                   const addr = server.httpServer?.address()
                   const port = typeof addr === 'object' && addr && 'port' in addr ? addr.port : 5173
-                  const ip = preferredLanIPv4()
-                  if (ip) {
-                    console.log(`\nSERVER RUNNING ON: http://${ip}:${port}`)
-                    console.log(`ABRE ESTA URL EN TU IPHONE: http://${ip}:${port}\n`)
+                  const display =
+                    resolvedDevLanOrigin || (lanIpForDev ? `http://${lanIpForDev}:${port}` : '')
+                  if (display) {
+                    console.log(`\nRUNNING ON LAN: ${display}`)
+                    console.log(`SERVER RUNNING ON: ${display}`)
+                    console.log(`ABRE ESTA URL EN TU IPHONE: ${display}\n`)
                   } else {
                     console.warn(
-                      '\n[waitme] No se detectó IP LAN (10.x / 192.168.x). Para el iPhone usa la IP del Mac (Ajustes → Wi‑Fi) en http://<IP>:' +
+                      '\n[waitme] Sin IP LAN (10.x / 192.168.x). Define VITE_DEV_LAN_ORIGIN=http://<IP>:' +
                         port +
-                        '\n'
+                        ' en .env.local\n'
                     )
                   }
-                  if (process.platform === 'darwin') {
+                  if (process.platform === 'darwin' && display) {
                     try {
-                      execSync(`open -a Safari http://127.0.0.1:${port}/`, { stdio: 'ignore' })
+                      execSync(
+                        `open -a Safari ${display.endsWith('/') ? display : `${display}/`}`,
+                        {
+                          stdio: 'ignore',
+                        }
+                      )
                     } catch {
                       /* Safari ausente o restricción del entorno */
                     }
@@ -153,11 +174,11 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     server: {
-      /** Escucha en todas las interfaces para que el iPhone en la misma Wi‑Fi pueda conectar. */
-      host: '0.0.0.0',
+      /** true = todas las interfaces (mismo dev server para iPhone + Safari vía IP LAN). */
+      host: true,
       port: 5173,
       strictPort: true,
-      /** HMR activo; el cliente usa el mismo origen que la página (Safari LAN / iPhone). */
+      /** HMR activo; el cliente usa el mismo origen que la página (LAN). */
       hmr: true,
     },
   }

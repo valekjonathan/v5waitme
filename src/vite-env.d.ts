@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string
+  /** Mismo origen dev para Safari + OAuth web (p. ej. http://192.168.0.50:5173). Opcional si Vite detecta IP. */
+  readonly VITE_DEV_LAN_ORIGIN?: string
 }
 
 interface ImportMeta {
