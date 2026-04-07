@@ -1,6 +1,10 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** Evita el mismo aviso dos veces cuando herramientas cargan esta config más de una vez en el mismo proceso. */
 let sentryUploadHintLogged = false
@@ -48,6 +52,11 @@ export default defineConfig(({ mode, command }) => {
   return {
     /** Producción: rutas relativas para empaquetar `dist/` en Capacitor iOS; dev y Vercel en raíz siguen bien. */
     base: command === 'build' ? './' : '/',
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
+    },
     plugins: [react(), ...sentryPlugins],
     optimizeDeps: {
       include: ['mapbox-gl'],

@@ -4,6 +4,7 @@ import IconSlot from '../../../ui/IconSlot'
 import ButtonBase from '../../../ui/primitives/ButtonBase'
 import { colors } from '../../../design/colors'
 import { useAuth } from '../../../lib/AuthContext'
+import { signInWithGoogle } from '@/services/auth'
 import { LAYOUT } from '../../../ui/layout/layout'
 
 const OAUTH_ICON_SLOT_PX = 24
@@ -204,7 +205,7 @@ function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label,
 }
 
 export default function LoginButtons() {
-  const { authError, signInWithGoogle, status } = useAuth()
+  const { authError, status } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [appleMessage, setAppleMessage] = useState('')
   const [googleHover, setGoogleHover] = useState(false)
@@ -230,20 +231,6 @@ export default function LoginButtons() {
     const t = window.setTimeout(() => setShowSlowNotice(true), 1000)
     return () => window.clearTimeout(t)
   }, [isLoading])
-
-  const onGoogle = async () => {
-    if (isLoading) return
-    setIsLoading(true)
-    setAppleMessage('')
-    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-      navigator.vibrate(10)
-    }
-    try {
-      await signInWithGoogle()
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const onApple = () => {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -296,9 +283,16 @@ export default function LoginButtons() {
       <OAuthButton
         variant="primary"
         disabled={isLoading}
-        onClick={() => {
+        onClick={async () => {
           console.log('[UI] Botón Google pulsado')
-          void onGoogle()
+          if (isLoading) return
+          setIsLoading(true)
+          setAppleMessage('')
+          try {
+            await signInWithGoogle()
+          } finally {
+            setIsLoading(false)
+          }
         }}
         handlers={googleHandlers}
         data-home-google-button=""
