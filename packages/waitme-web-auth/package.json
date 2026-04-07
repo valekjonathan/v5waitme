@@ -1,0 +1,10 @@
+{
+  "name": "waitme-web-auth",
+  "version": "1.0.0",
+  "private": true,
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  }
+}

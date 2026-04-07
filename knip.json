@@ -8,6 +8,7 @@
     "@babel/preset-react",
     "@capacitor/cli",
     "@capacitor/core",
-    "@capacitor/ios"
+    "@capacitor/ios",
+    "waitme-web-auth"
   ]
 }

@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T08:15:14.368Z
-Git revision: 0a815c63f07a879d8b500b118e7d3386adfa489d
+Generated: 2026-04-07T08:27:03.997Z
+Git revision: 2a3bf744af707b5237867350ce28e081f22d4888
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -58,6 +58,13 @@ knip.json
 node_modules/  [omitido]
 package-lock.json
 package.json
+packages/
+  waitme-web-auth/
+    ios/
+      Sources/
+        WaitmeWebAuthPlugin/
+    package.json
+    Package.swift
 playwright.config.ts
 public/
   logo.png
@@ -156,6 +163,8 @@ src/
     ProfileIncompleteNoticeContext.jsx
     ratingStars.js
   main.jsx
+  plugins/
+    waitmeWebAuth.js
   services/
     auth.js
     geocodingSpain.js
@@ -220,7 +229,7 @@ vite.config.js
 vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
-runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom
+runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
 dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===

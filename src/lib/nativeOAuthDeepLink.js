@@ -9,12 +9,11 @@ const NATIVE_SCHEME_SNIPPET = 'es.waitme.v5waitme'
 /** Evita doble intercambio si `getLaunchUrl` y `appUrlOpen` entregan la misma URL. */
 const seenOAuthCallbackUrls = new Set()
 
-/** Temporizador armado desde `signInWithGoogle` nativo; se limpia al recibir deep link. */
+/** Temporizador armado desde `signInWithGoogle` con in-app browser; se limpia al recibir deep link. */
 let oauthReturnWatchId = null
 
 /**
- * Tras abrir el Browser OAuth nativo: si en 5s no llega URL con el scheme, aviso en consola.
- * No altera el flujo; 5s puede dispararse si el usuario tarda más (falso positivo posible).
+ * Tras abrir el Browser OAuth (p. ej. Android): si no llega URL en 5s, aviso en consola.
  */
 export function armNativeOAuthReturnWatch() {
   if (!Capacitor.isNativePlatform()) return
@@ -24,8 +23,7 @@ export function armNativeOAuthReturnWatch() {
   }
   oauthReturnWatchId = globalThis.setTimeout(() => {
     oauthReturnWatchId = null
-    console.warn('[WaitMe][OAuth] timeout esperando deep link')
-    console.error('[WaitMe][OAuth] ERROR: no llegó deep link')
+    console.warn('[WaitMe][OAuth] timeout esperando deep link (in-app browser)')
   }, 5000)
 }
 
@@ -41,28 +39,30 @@ function normalizeNativeCallbackUrl(url) {
 }
 
 /**
- * @param {'appUrlOpen' | 'getLaunchUrl'} source
+ * Procesa el callback OAuth nativo (código en query o hash). Un único camino para
+ * ASWebAuthenticationSession, appUrlOpen y getLaunchUrl.
+ *
+ * @param {string} url
+ * @param {'appUrlOpen' | 'getLaunchUrl' | 'webAuthSession'} source
+ * @returns {Promise<boolean>} true si se intercambió el code y se disparó la navegación a /
  */
-async function handleNativeOAuthUrl(url, source) {
-  console.log(`[WaitMe][OAuth] handler (${source})`)
-  console.log('APP OPEN URL:', url)
+export async function deliverNativeOAuthCallback(url, source) {
+  console.log(`[WaitMe][OAuth] callback (${source})`)
 
   if (!url) {
-    console.log('[WaitMe][OAuth] URL vacía; no se procesa')
-    return
+    console.warn('[WaitMe][OAuth] URL vacía; no se procesa')
+    return false
   }
 
   const matchesPrefix = url.startsWith(NATIVE_CALLBACK_PREFIX)
-  console.log('[WaitMe][OAuth] ¿empieza por auth-callback?:', matchesPrefix)
-
   if (!matchesPrefix) {
-    console.log('[WaitMe][OAuth] URL no es nuestro callback OAuth; se ignora sin error')
-    return
+    console.log('[WaitMe][OAuth] URL no es auth-callback; ignorada')
+    return false
   }
 
   if (seenOAuthCallbackUrls.has(url)) {
     console.log('[WaitMe][OAuth] URL ya procesada; skip')
-    return
+    return false
   }
   seenOAuthCallbackUrls.add(url)
 
@@ -74,38 +74,38 @@ async function handleNativeOAuthUrl(url, source) {
       parsed.searchParams.get('code') ||
       new URLSearchParams(parsed.hash.replace(/^#/, '')).get('code')
 
-    console.log('[WaitMe][OAuth] ¿hay code?:', Boolean(code))
-
     if (!code) {
-      console.log(
-        '[WaitMe][OAuth] SIN code en query ni hash; no se rompe el flujo. URL completa arriba (APP OPEN URL).'
-      )
+      console.warn('[WaitMe][OAuth] callback sin code; URL:', url)
       seenOAuthCallbackUrls.delete(url)
-      return
+      return false
     }
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
-      console.error('[WaitMe][OAuth] exchangeCodeForSession error:', error)
+      console.error('[WaitMe][OAuth] exchangeCodeForSession:', error)
       seenOAuthCallbackUrls.delete(url)
-      return
+      return false
     }
 
-    console.log('[WaitMe][OAuth] sesión OK; cerrando Browser (defer) y navegando a /')
+    console.log('[WaitMe][OAuth] sesión OK; navegando a /')
 
-    setTimeout(async () => {
-      try {
-        await Browser.close()
-      } catch (e) {
-        console.log('Browser close failed', e)
-      }
-    }, 300)
+    if (Capacitor.getPlatform() === 'android') {
+      setTimeout(async () => {
+        try {
+          await Browser.close()
+        } catch (e) {
+          console.warn('[WaitMe][OAuth] Browser.close', e)
+        }
+      }, 300)
+    }
 
     window.location.href = '/'
+    return true
   } catch (err) {
-    console.error('[WaitMe][OAuth] Deep link error:', err)
+    console.error('[WaitMe][OAuth] callback error:', err)
     seenOAuthCallbackUrls.delete(url)
+    return false
   }
 }
 
@@ -113,22 +113,18 @@ export function registerNativeOAuthDeepLink() {
   if (!Capacitor.isNativePlatform() || !supabase) return
 
   void App.addListener('appUrlOpen', async ({ url }) => {
-    console.log('[WaitMe][OAuth] appUrlOpen evento recibido')
     if (typeof url === 'string' && url.includes(NATIVE_SCHEME_SNIPPET)) {
       clearOAuthReturnWatch()
-      console.log('[WaitMe][OAuth] retorno recibido')
     }
-    await handleNativeOAuthUrl(url, 'appUrlOpen')
+    await deliverNativeOAuthCallback(url, 'appUrlOpen')
   })
 
   void App.getLaunchUrl().then((launch) => {
     if (launch?.url) {
-      console.log('[WaitMe][OAuth] getLaunchUrl:', launch.url)
       if (launch.url.includes(NATIVE_SCHEME_SNIPPET)) {
         clearOAuthReturnWatch()
-        console.log('[WaitMe][OAuth] retorno recibido')
       }
-      void handleNativeOAuthUrl(launch.url, 'getLaunchUrl')
+      void deliverNativeOAuthCallback(launch.url, 'getLaunchUrl')
     }
   })
 }

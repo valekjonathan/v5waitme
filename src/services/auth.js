@@ -3,7 +3,11 @@
  */
 import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
-import { armNativeOAuthReturnWatch } from '../lib/nativeOAuthDeepLink.js'
+import {
+  armNativeOAuthReturnWatch,
+  deliverNativeOAuthCallback,
+} from '../lib/nativeOAuthDeepLink.js'
+import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
@@ -98,7 +102,40 @@ export async function signInWithGoogle() {
         console.error('[WaitMe][Auth] signInWithGoogle nativo: respuesta OAuth sin url')
         return { data: null, error: new Error('oauth_no_url') }
       }
-      console.log('[WaitMe][OAuth] flujo nativo iniciado')
+
+      if (Capacitor.getPlatform() === 'ios') {
+        try {
+          const res = await WaitmeWebAuth.start({
+            url: data.url,
+            callbackScheme: 'es.waitme.v5waitme',
+          })
+          const callbackUrl = res?.callbackUrl
+          if (!callbackUrl) {
+            return { data: null, error: new Error('oauth_no_callback_url') }
+          }
+          const ok = await deliverNativeOAuthCallback(callbackUrl, 'webAuthSession')
+          if (!ok) {
+            return { data: null, error: new Error('oauth_callback_failed') }
+          }
+          return { data, error: null }
+        } catch (e) {
+          const code =
+            e && typeof e === 'object' && 'code' in e
+              ? String(/** @type {{ code?: string }} */ (e).code)
+              : ''
+          const msg =
+            e && typeof e === 'object' && 'message' in e
+              ? String(/** @type {{ message?: string }} */ (e).message)
+              : ''
+          if (code === 'USER_CANCELED' || /canceled|cancelled/i.test(msg)) {
+            return { data: null, error: null }
+          }
+          console.error('[WaitMe][Auth] signInWithGoogle iOS WebAuth', e)
+          return { data: null, error: e instanceof Error ? e : new Error(String(e)) }
+        }
+      }
+
+      console.log('[WaitMe][OAuth] in-app browser (Android u otro nativo)')
       armNativeOAuthReturnWatch()
       await Browser.open({ url: data.url })
       return { data, error: null }

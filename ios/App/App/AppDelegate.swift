@@ -21,11 +21,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("WAITME URL OPEN:", url.absoluteString)
 
-        NotificationCenter.default.post(
-            name: Notification.Name("CapacitorOpenURL"),
-            object: url
-        )
-
         // Obligatorio: sin esto el bridge Capacitor no entrega la URL al WKWebView (appUrlOpen / OAuth).
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
