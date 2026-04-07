@@ -15,14 +15,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
 function primaryLanIPv4() {
-  for (const list of Object.values(networkInterfaces())) {
+  const nets = networkInterfaces()
+  const candidates = []
+  for (const [name, list] of Object.entries(nets)) {
     if (!list) continue
     for (const n of list) {
       if (n.family !== 'IPv4' || n.internal) continue
-      return n.address
+      candidates.push({ name, address: n.address })
     }
   }
-  return null
+  if (candidates.length === 0) return null
+  const en0 = candidates.find((c) => c.name === 'en0')
+  if (en0) return en0.address
+  return candidates[0].address
 }
 
 const port = String(process.env.VITE_DEV_PORT || '5173').trim() || '5173'

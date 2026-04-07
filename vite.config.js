@@ -95,6 +95,8 @@ export default defineConfig(({ mode, command }) => {
       host: true,
       port: 5173,
       strictPort: true,
+      /** HMR activo; con host true el cliente usa el mismo origen que la página (Safari LAN / iPhone). */
+      hmr: true,
     },
   }
 })
