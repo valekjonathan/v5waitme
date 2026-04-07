@@ -105,11 +105,14 @@ export async function signInWithGoogle() {
 
       if (Capacitor.getPlatform() === 'ios') {
         try {
+          console.log('[OAuth][iOS] URL enviada a WebAuth:', data.url)
           const res = await WaitmeWebAuth.start({
             url: data.url,
             callbackScheme: 'es.waitme.v5waitme',
           })
+          console.log('[OAuth][iOS] respuesta plugin:', res)
           const callbackUrl = res?.callbackUrl
+          console.log('[OAuth][iOS] callbackUrl:', callbackUrl)
           if (!callbackUrl) {
             return { data: null, error: new Error('oauth_no_callback_url') }
           }

@@ -48,6 +48,7 @@ function normalizeNativeCallbackUrl(url) {
  */
 export async function deliverNativeOAuthCallback(url, source) {
   console.log(`[WaitMe][OAuth] callback (${source})`)
+  console.log('[OAuth][JS] procesando callback:', url)
 
   if (!url) {
     console.warn('[WaitMe][OAuth] URL vacía; no se procesa')
@@ -74,6 +75,8 @@ export async function deliverNativeOAuthCallback(url, source) {
       parsed.searchParams.get('code') ||
       new URLSearchParams(parsed.hash.replace(/^#/, '')).get('code')
 
+    console.log('[OAuth][JS] code extraído:', code)
+
     if (!code) {
       console.warn('[WaitMe][OAuth] callback sin code; URL:', url)
       seenOAuthCallbackUrls.delete(url)
@@ -83,11 +86,13 @@ export async function deliverNativeOAuthCallback(url, source) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
+      console.error('[OAuth][JS] ERROR exchange:', error)
       console.error('[WaitMe][OAuth] exchangeCodeForSession:', error)
       seenOAuthCallbackUrls.delete(url)
       return false
     }
 
+    console.log('[OAuth][JS] sesión intercambiada OK')
     console.log('[WaitMe][OAuth] sesión OK; navegando a /')
 
     if (Capacitor.getPlatform() === 'android') {
