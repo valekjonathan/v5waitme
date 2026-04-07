@@ -3,6 +3,7 @@
  */
 import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
+import { armNativeOAuthReturnWatch } from '../lib/nativeOAuthDeepLink.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
@@ -97,6 +98,8 @@ export async function signInWithGoogle() {
         console.error('[WaitMe][Auth] signInWithGoogle nativo: respuesta OAuth sin url')
         return { data: null, error: new Error('oauth_no_url') }
       }
+      console.log('[WaitMe][OAuth] flujo nativo iniciado')
+      armNativeOAuthReturnWatch()
       await Browser.open({ url: data.url })
       return { data, error: null }
     }

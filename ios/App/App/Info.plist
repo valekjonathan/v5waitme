@@ -50,8 +50,6 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleURLName</key>
-			<string>v5waitme</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>es.waitme.v5waitme</string>
