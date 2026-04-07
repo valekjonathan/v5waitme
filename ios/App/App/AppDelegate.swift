@@ -34,6 +34,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        print("WAITME URL OPEN:", url.absoluteString)
         // Notificación explícita (p. ej. depuración); el bridge JS sigue dependiendo de ApplicationDelegateProxy.
         NotificationCenter.default.post(
             name: Notification.Name("CapacitorOpenURL"),
