@@ -171,6 +171,33 @@ function readPackageJson() {
   }
 }
 
+function readJsonFile(absPath) {
+  try {
+    return JSON.parse(fs.readFileSync(absPath, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function summarizeCapacitorServerUrl() {
+  const webCap = readJsonFile(join(root, 'capacitor.config.json'))
+  const iosCap = readJsonFile(join(root, 'ios', 'App', 'App', 'capacitor.config.json'))
+
+  const webUrl = webCap?.server && typeof webCap.server === 'object' ? webCap.server.url : undefined
+  const iosUrl = iosCap?.server && typeof iosCap.server === 'object' ? iosCap.server.url : undefined
+
+  const parts = []
+  if (typeof webUrl === 'string' && webUrl.trim())
+    parts.push(`root capacitor.config.json server.url = ${webUrl}`)
+  else parts.push('root capacitor.config.json server.url = (no configurado)')
+
+  if (typeof iosUrl === 'string' && iosUrl.trim())
+    parts.push(`ios/App/App/capacitor.config.json server.url = ${iosUrl}`)
+  else parts.push('ios/App/App/capacitor.config.json server.url = (no configurado)')
+
+  return parts.join('; ')
+}
+
 function gitRevisionMetadata() {
   const ciSha = (process.env.GITHUB_SHA || '').trim()
   if (ciSha.length >= 7) {
@@ -314,7 +341,7 @@ function buildDocument(orphans, reachable) {
     '- Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).',
     '- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.',
     '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.',
-    '- Capacitor iOS: `capacitor.config.json` — webDir `dist` (obligatorio para `cap sync`); `server.url` = producción `https://v5waitme.vercel.app` (WKWebView carga la misma web que Vercel; cambios desplegados se ven al abrir la app sin rebuild de frontend). `cleartext: false`. `Info.plist`: ATS con `NSAllowsArbitraryLoads` = false (solo HTTPS estándar). `npm run cap:sync` = build + sync: el build sigue siendo requisito del CLI para copiar `webDir`; el runtime nativo usa la URL remota.'
+    `- Capacitor iOS: ${summarizeCapacitorServerUrl()}. webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por \`cap sync\`.`
   )
   lines.push('')
   lines.push('=== FIN ===')

@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T09:42:28.249Z
-Git revision: 8af01d79ab73486a7f81380126f0d9f909f0aa02
+Generated: 2026-04-07T09:45:36.870Z
+Git revision: 37665812a949f6f8384fa1ad3609ed8b8535b99e
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -271,6 +271,6 @@ ninguno
 - Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).
 - Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
 - PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
-- Capacitor iOS: `capacitor.config.json` — webDir `dist` (obligatorio para `cap sync`); `server.url` = producción `https://v5waitme.vercel.app` (WKWebView carga la misma web que Vercel; cambios desplegados se ven al abrir la app sin rebuild de frontend). `cleartext: false`. `Info.plist`: ATS con `NSAllowsArbitraryLoads` = false (solo HTTPS estándar). `npm run cap:sync` = build + sync: el build sigue siendo requisito del CLI para copiar `webDir`; el runtime nativo usa la URL remota.
+- Capacitor iOS: root capacitor.config.json server.url = (no configurado); ios/App/App/capacitor.config.json server.url = (no configurado). webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por `cap sync`.
 
 === FIN ===
