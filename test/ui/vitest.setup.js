@@ -1,5 +1,22 @@
 import { beforeEach, vi } from 'vitest'
 
+/** Coherente con motores reales: altura visible para `--app-height`. */
+if (typeof window !== 'undefined' && window.visualViewport == null) {
+  Object.defineProperty(window, 'visualViewport', {
+    value: {
+      width: 390,
+      height: 844,
+      offsetTop: 0,
+      offsetLeft: 0,
+      scale: 1,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+    configurable: true,
+    writable: true,
+  })
+}
+
 /** jsdom no expone ResizeObserver; el shell lo usa para medir header/nav. */
 if (typeof globalThis.ResizeObserver === 'undefined') {
   globalThis.ResizeObserver = class ResizeObserver {

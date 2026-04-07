@@ -1,3 +1,13 @@
+:root {
+  /* Sobrescrito en runtime por `syncWaitmeViewportCssVars()` (visualViewport). */
+  --app-height: 100dvh;
+  --vv-height: 100dvh;
+  --vv-offset-top: 0px;
+  --vv-offset-left: 0px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 html,
 body,
 #root {
@@ -9,6 +19,8 @@ body,
   flex: 1 1 0%;
   min-height: 0;
   width: 100%;
+  height: var(--app-height);
+  max-height: var(--app-height);
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -16,7 +28,7 @@ body,
 }
 
 /**
- * Única franja vertical acotada a window.innerHeight (--app-height en App.jsx).
+ * Franja vertical = altura del visual viewport (`--app-height`).
  * Entre header y bottom nav: scroll solo en `<main>` (ScreenShell), nunca aquí.
  */
 .waitme-iphone-frame-fullbleed {

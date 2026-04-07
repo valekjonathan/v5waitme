@@ -21,8 +21,8 @@ export default function IphoneFrame({ children }) {
   return (
     <div
       style={{
-        width: '100vw',
-        height: '100vh',
+        width: '100%',
+        minHeight: 'var(--app-height, 100dvh)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -5,9 +5,11 @@ import App from './app/App.jsx'
 import { logFlow } from './lib/devFlowLog.js'
 import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink'
 import IphoneFrame from './ui/IphoneFrame.jsx'
+import { syncWaitmeViewportCssVars } from './lib/waitmeViewport.js'
 import './styles/global.css'
 
 registerNativeOAuthDeepLink()
+syncWaitmeViewportCssVars()
 
 if (import.meta.env.DEV) {
   const lan = String(import.meta.env.VITE_DEV_LAN_ORIGIN || '').trim()

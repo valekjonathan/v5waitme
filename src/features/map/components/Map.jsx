@@ -32,7 +32,21 @@ import {
   jumpMapToGpsSearch,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
-import { isDevSafari } from '../../../lib/isDevSafari.js'
+import { logWaitmeViewportDebug } from '../../../lib/waitmeViewport.js'
+
+/** `resize`/`scroll` del visual viewport + `window.resize` (Safari iOS, PWA, Mac). */
+function subscribeVisualViewportAndWindowResize(handler) {
+  const vv = window.visualViewport
+  const onVv = () => handler()
+  window.addEventListener('resize', handler)
+  vv?.addEventListener('resize', onVv)
+  vv?.addEventListener('scroll', onVv)
+  return () => {
+    window.removeEventListener('resize', handler)
+    vv?.removeEventListener('resize', onVv)
+    vv?.removeEventListener('scroll', onVv)
+  }
+}
 
 /**
  * Home/Login: `__WAITME_PIN_OFFSET_Y__` = punta del pin vs centro vertical del mapa.
@@ -49,6 +63,7 @@ function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust)
 
   if (!parkingBandPinAdjust) {
     window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
+    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
     return
   }
 
@@ -56,16 +71,19 @@ function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust)
   const cardEl = document.querySelector(GAP_CARD_TOP)
   if (!searchEl || !cardEl) {
     window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
+    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
     return
   }
   const searchBottom = searchEl.getBoundingClientRect().bottom
   const cardTop = cardEl.getBoundingClientRect().top
   if (!(cardTop > searchBottom)) {
     window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
+    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
     return
   }
 
   delete window.__WAITME_PIN_OFFSET_Y__
+  logWaitmeViewportDebug({ mapOffsetY_px: 'gap-mode' })
 }
 
 let globalContainer = null
@@ -207,11 +225,11 @@ export default function Map({
       const mapEl = mapShellRef.current
       const ro = mapEl ? new ResizeObserver(run) : null
       if (mapEl && ro) ro.observe(mapEl)
-      window.addEventListener('resize', run)
+      const unsubVvWin = subscribeVisualViewportAndWindowResize(run)
       const raf = requestAnimationFrame(run)
       return () => {
         ro?.disconnect()
-        window.removeEventListener('resize', run)
+        unsubVvWin()
         cancelAnimationFrame(raf)
         delete window.__WAITME_PIN_OFFSET_Y__
       }
@@ -280,11 +298,11 @@ export default function Map({
     const mapEl = mapShellRef.current
     const ro = mapEl ? new ResizeObserver(run) : null
     if (mapEl && ro) ro.observe(mapEl)
-    window.addEventListener('resize', run)
+    const unsubVvWin = subscribeVisualViewportAndWindowResize(run)
     const raf = requestAnimationFrame(run)
     return () => {
       ro?.disconnect()
-      window.removeEventListener('resize', run)
+      unsubVvWin()
       cancelAnimationFrame(raf)
       observedParking.forEach((obs) => obs.disconnect())
       observedParking.clear()
@@ -518,8 +536,12 @@ export default function Map({
 
     resizeMap()
 
+    const vv = window.visualViewport
+    const onVvResize = () => resizeMap()
     window.addEventListener('resize', resizeMap)
     window.addEventListener('orientationchange', resizeMap)
+    vv?.addEventListener('resize', onVvResize)
+    vv?.addEventListener('scroll', onVvResize)
 
     const t1 = setTimeout(resizeMap, 500)
     const t2 = setTimeout(resizeMap, 1200)
@@ -527,6 +549,8 @@ export default function Map({
     return () => {
       window.removeEventListener('resize', resizeMap)
       window.removeEventListener('orientationchange', resizeMap)
+      vv?.removeEventListener('resize', onVvResize)
+      vv?.removeEventListener('scroll', onVvResize)
       clearTimeout(t1)
       clearTimeout(t2)
     }
@@ -535,7 +559,7 @@ export default function Map({
   useEffect(() => {
     if (mapFocusGeneration === 0) return
     const map = getGlobalMapInstance()
-    if ((!map?.isStyleLoaded?.() && !isDevSafari()) || !followUserGps) return
+    if (!map?.isStyleLoaded?.() || !followUserGps) return
 
     const fast = getCurrentLocationFast()
     if (fast) {

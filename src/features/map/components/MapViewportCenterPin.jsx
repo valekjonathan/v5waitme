@@ -52,7 +52,7 @@ const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
             }
           : {
               left: '50%',
-              top: gap ? `${parkingPinTopPx}px` : 'calc(50% + 50px)',
+              top: gap ? `${parkingPinTopPx}px` : '50%',
               transform: 'translate(-50%, -100%)',
             }),
         zIndex: 5,

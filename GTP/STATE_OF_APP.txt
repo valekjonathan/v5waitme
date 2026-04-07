@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T12:14:26.575Z
-Git revision: d9a8c37c2c6f012d3a3b35d929cf95eddfe6dbe9
+Generated: 2026-04-07T12:28:11.997Z
+Git revision: 7c1403ce18037363701c643adb5db08a94622b43
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -170,6 +170,7 @@ src/
     nativeOAuthDeepLink.js
     ProfileIncompleteNoticeContext.jsx
     ratingStars.js
+    waitmeViewport.js
   main.jsx
   plugins/
     waitmeWebAuth.js

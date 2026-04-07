@@ -27,8 +27,9 @@ import {
   APP_SCREEN_REVIEWS,
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
+import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
-/** Raíz React: llena #root (flex); alto útil en `.waitme-iphone-frame-fullbleed` vía `--app-height`. */
+/** Raíz React: llena #root (flex); `--app-height` = `visualViewport.height` (waitmeViewport). */
 const appRootLayoutStyle = {
   display: 'flex',
   flexDirection: 'column',
@@ -294,37 +295,24 @@ function AppGate() {
 
 export default function App() {
   useLayoutEffect(() => {
-    const getAppHeight = () => {
-      const isNative = window.Capacitor?.isNativePlatform?.()
-
-      if (isNative) {
-        return window.innerHeight
-      }
-
-      // Web (dev): altura tipo iPhone para alinear Safari desktop con WKWebView real.
-      return Math.min(window.innerHeight, 844)
-    }
-
-    const apply = () => {
-      document.documentElement.style.setProperty('--app-height', `${getAppHeight()}px`)
-      const isDevDesktop =
+    const updateDevLayoutClass = () => {
+      const narrowChromeSim =
         !window.Capacitor?.isNativePlatform?.() &&
         window.innerWidth > DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH
-      if (isDevDesktop) {
+      if (narrowChromeSim) {
         document.documentElement.classList.add('force-iphone')
       } else {
         document.documentElement.classList.remove('force-iphone')
       }
     }
 
-    apply()
-
-    window.addEventListener('resize', apply)
-    window.addEventListener('orientationchange', apply)
+    updateDevLayoutClass()
+    const unsubViewport = subscribeWaitmeViewportCssVars()
+    window.addEventListener('resize', updateDevLayoutClass)
 
     return () => {
-      window.removeEventListener('resize', apply)
-      window.removeEventListener('orientationchange', apply)
+      unsubViewport()
+      window.removeEventListener('resize', updateDevLayoutClass)
       document.documentElement.classList.remove('force-iphone')
     }
   }, [])
