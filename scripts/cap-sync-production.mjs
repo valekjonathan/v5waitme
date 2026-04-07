@@ -26,6 +26,7 @@ if (b.status !== 0) process.exit(b.status ?? 1)
 
 const env = { ...process.env }
 delete env.WAITME_CAP_DEV_SERVER_URL
+delete env.WAITME_LAN_IP
 
 const r = spawnSync('npx', ['cap', 'sync', 'ios'], { cwd: root, env, stdio: 'inherit' })
 process.exit(r.status === null ? 1 : r.status)

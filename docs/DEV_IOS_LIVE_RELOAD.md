@@ -4,7 +4,7 @@
 
 | Entorno                                | Uso                                                                                                                         |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Safari en Mac (`npm run dev:ios`)**  | Espejo en la **misma URL LAN** que el iPhone; Safari se abre **solo** ahí tras arrancar Vite (no Chrome ni Simple Browser). |
+| **Safari en Mac (`npm run dev:ios`)**  | Preview **tipo iPhone** en `http://<LAN>:5173/?iphone=true` (automático); misma origen LAN que el iPhone. |
 | **iPhone + Capacitor + Vite**          | Live reload real (`server.url` solo en dev, misma URL que `VITE_DEV_LAN_ORIGIN` en `.env.local`).                           |
 | **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                               |
 | **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                    |
@@ -22,15 +22,14 @@ npm run dev:ios
 
 1. Detecta IPv4 LAN (10.x / 192.168.x) y valida con ping (o `SKIP_LAN_PING=1`).
 2. Escribe/actualiza **`.env.local`** → `VITE_DEV_LAN_ORIGIN=http://<IP>:5173`.
-3. Exporta `WAITME_LAN_IP` y `WAITME_CAP_DEV_SERVER_URL` (misma URL) y ejecuta **`npx cap sync ios`** → `server.url` + `cleartext: true` en la config generada (solo si existe la variable; nunca en prod sin ella).
+3. Define `WAITME_LAN_IP` y `WAITME_CAP_DEV_SERVER_URL` (origen LAN sin query) y ejecuta **`npx cap sync ios`** → `server.url` + `cleartext: true` en la config generada (solo con esa variable; nunca en prod sin ella).
 4. Arranca **Vite** en **5173**, `host: true`, HMR sin overlay agresivo, **sin** abrir navegador desde Vite.
-5. Cuando **`/`** responde **200**, en macOS abre **solo Safari** en esa URL LAN.
+5. Cuando **`/`** responde **200**, en macOS abre **solo Safari** en `http://<LAN>:5173/?iphone=true`.
 
-**Logs al inicio**
+**Logs**
 
-- `RUNNING ON LAN: http://…`
-- `OPEN IN SAFARI: …`
-- `OPEN IN IPHONE: …`
+- `RUNNING ON:` → URL con `?iphone=true` (Safari preview).
+- `IPHONE USING:` → `http://<LAN>:5173` (Capacitor `server.url`, sin query).
 
 **Solo Vite / sin sync iOS:** `npm run dev:vite`  
 **Solo sync iOS (sin Vite):** `npm run cap:live:on`  
