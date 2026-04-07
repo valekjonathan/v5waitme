@@ -27,7 +27,6 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
         width: '100%',
         flexShrink: 0,
         zIndex: 60,
-        paddingTop: 'env(safe-area-inset-top, 0px)',
         backgroundColor: colors.background,
         // Contraste suave con el mapa / fondo
         borderBottom: '1px solid rgba(255,255,255,0.28)',
@@ -39,7 +38,10 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
       <div
         style={{
           position: 'relative',
-          padding: `${HEADER_PADDING_Y}px ${HEADER_PADDING_X}px`,
+          paddingTop: `calc(env(safe-area-inset-top, 0px) + ${HEADER_PADDING_Y}px)`,
+          paddingBottom: HEADER_PADDING_Y,
+          paddingLeft: HEADER_PADDING_X,
+          paddingRight: HEADER_PADDING_X,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
