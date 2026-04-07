@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
 
 /**
  * Producción: no definas `WAITME_CAP_DEV_SERVER_URL` al hacer `cap sync`.
- * Dev (Live Reload): `npm run dev` (vía `scripts/cap-live-ios.mjs`) o `npm run cap:live:on`.
+ * Dev (Live Reload): `npm run dev:ios` / `npm run dev` o `npm run cap:live:on` (misma URL que `VITE_DEV_LAN_ORIGIN` en `.env.local`).
  * Solo `http://<IP_LAN>:<puerto Vite>` (10.x o 192.168.x). Nunca localhost, Vercel ni otros dominios.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md

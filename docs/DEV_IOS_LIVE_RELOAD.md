@@ -2,57 +2,59 @@
 
 ## Resumen
 
-| Entorno                                | Uso                                                                                                                               |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Safari en Mac (`npm run dev`)**      | Misma URL **LAN** que el iPhone (`http://<IP>:5173`); en escritorio ancho, marco tipo iPhone. **No** sustituye al WKWebView real. |
-| **iPhone + Capacitor + Vite**          | Ver cambios en tiempo casi real con **Live Reload** (`server.url` solo en dev).                                                   |
-| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                                     |
-| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                          |
-| **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode.                      |
+| Entorno                                | Uso                                                                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Safari en Mac (`npm run dev:ios`)**  | Espejo en la **misma URL LAN** que el iPhone; Safari se abre **solo** ahí tras arrancar Vite (no Chrome ni Simple Browser). |
+| **iPhone + Capacitor + Vite**          | Live reload real (`server.url` solo en dev, misma URL que `VITE_DEV_LAN_ORIGIN` en `.env.local`).                           |
+| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                               |
+| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                    |
+| **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode.                |
 
-## 1. Espejo rápido en Mac
+## 1. Un solo comando (casa)
 
-- `npm run dev`: Vite escucha en toda la interfaz; la URL correcta es **`http://<IP_LAN>:5173`** (se imprime al arrancar y Safari en macOS se abre ahí en condiciones normales).
-- En ventana muy ancha y **hostname `localhost`**, puede activarse el marco tipo iPhone (`IphoneFrame`); **en LAN** (p. ej. IP del Mac) el layout es ancho completo, alineado con el iPhone en live reload.
-- La **verdad final** nativa sigue siendo **WKWebView en iPhone** (misma Wi‑Fi + Live Reload o build de release).
+```bash
+npm run dev:ios
+```
 
-**Guía corta de modos (casa / fuera / prod):** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).
+(`npm run dev` es el mismo flujo.)
+
+**Qué hace el script**
+
+1. Detecta IPv4 LAN (10.x / 192.168.x) y valida con ping (o `SKIP_LAN_PING=1`).
+2. Escribe/actualiza **`.env.local`** → `VITE_DEV_LAN_ORIGIN=http://<IP>:5173`.
+3. Exporta `WAITME_LAN_IP` y `WAITME_CAP_DEV_SERVER_URL` (misma URL) y ejecuta **`npx cap sync ios`** → `server.url` + `cleartext: true` en la config generada (solo si existe la variable; nunca en prod sin ella).
+4. Arranca **Vite** en **5173**, `host: true`, HMR sin overlay agresivo, **sin** abrir navegador desde Vite.
+5. Cuando **`/`** responde **200**, en macOS abre **solo Safari** en esa URL LAN.
+
+**Logs al inicio**
+
+- `RUNNING ON LAN: http://…`
+- `OPEN IN SAFARI: …`
+- `OPEN IN IPHONE: …`
+
+**Solo Vite / sin sync iOS:** `npm run dev:vite`  
+**Solo sync iOS (sin Vite):** `npm run cap:live:on`  
+**IP manual:** `CAP_LAN_IP=192.168.x.x npm run dev:ios`  
+**Solo imprimir IP / variables:** `npm run get:lan-ip` · `node scripts/get-lan-ip.mjs --export-env` (líneas `WAITME_LAN_IP=…` y `WAITME_CAP_DEV_SERVER_URL=…`).
 
 ## 2. Live Reload en iPhone real
 
 **Requisitos:** Mac e iPhone en la misma red Wi‑Fi.
 
-1. **Un solo comando** (sync iOS con `server.url` + Vite + Safari en macOS):
-
-   ```bash
-   npm run dev
-   ```
-
-   Incluye `cap sync ios` con `WAITME_CAP_DEV_SERVER_URL` (IP LAN automática, o `CAP_LAN_IP=…`). Puerto **5173** (`VITE_DEV_PORT` si cambias).
-
-2. **Solo navegador / sin tocar Capacitor:** `npm run dev:vite`
-
-3. **Xcode:** abrir `ios/App/App.xcworkspace` (o `npm run cap:open:ios`), **Run** en el **iPhone** (una vez por sesión o tras cambios nativos). La app carga desde `http://<LAN>:5173` con actualización vía Vite.
-
-4. **`npm run cap:live:on`** sigue disponible si solo quieres sync sin arrancar Vite.
+1. `npm run dev:ios` (ver arriba).
+2. **Xcode:** abrir `ios/App/App.xcworkspace` (o `npm run cap:open:ios`), **Run** en el **iPhone** (una vez por sesión o tras cambios nativos). La app carga desde `http://<LAN>:5173`.
 
 ## 3. Volver a modo producción (sin `server.url`)
-
-**Obligatorio** antes de archivar para TestFlight/App Store o si quieres probar el bundle embebido:
 
 ```bash
 npm run cap:live:off
 ```
 
-Equivale a `npx cap sync ios` **sin** `WAITME_CAP_DEV_SERVER_URL`. Si exportaste esa variable en la shell, haz `unset WAITME_CAP_DEV_SERVER_URL` antes o usa una terminal nueva.
-
-Luego, cuando toque empaquetar web + nativo **sin arrastrar** `WAITME_CAP_DEV_SERVER_URL` de la shell:
+Empaquetar web + iOS **sin** arrastrar `WAITME_CAP_DEV_SERVER_URL`:
 
 ```bash
 npm run cap:sync:prod
 ```
-
-(`build` + `cap sync` en un proceso que **elimina** la variable → **no** queda `server.url`. Si usas `npm run cap:sync` en la misma terminal donde exportaste la URL de dev, podría volver a inyectarse; por eso existe `cap:sync:prod`.)
 
 ## 4. Inspeccionar el WKWebView real
 
@@ -62,39 +64,25 @@ npm run cap:sync:prod
 
 ## 5. Duplicación del iPhone como monitor
 
-Usa las funciones del sistema (p. ej. duplicación de pantalla / Continuidad según tu versión de macOS/iOS). No forma parte de este repositorio; solo sirve para **ver** el hardware, no para sustituir Live Reload ni al inspector.
+Usa las funciones del sistema (p. ej. duplicación de pantalla / Continuidad según tu versión de macOS/iOS). No forma parte de este repositorio.
 
 ## 6. Producción limpia
 
 - `capacitor.config.ts` **no** incluye `server` salvo que exista `WAITME_CAP_DEV_SERVER_URL` en el momento de `cap sync`.
 - No commitees `WAITME_CAP_DEV_SERVER_URL` en `.env` de producción.
-- Tras desarrollo con live reload, ejecuta **`npm run cap:live:off`** antes de entregar un build “real”.
+- Tras desarrollo con live reload, **`npm run cap:live:off`** y **`npm run cap:sync:prod`** antes de un build “real”.
 
 ## 7. BrowserStack (opcional, secundario)
 
-**No forma parte del flujo principal** de este repo (iPhone físico + Live Reload + Web Inspector). No hay scripts ni dependencias npm de BrowserStack; el flujo de `npm run dev` / `cap:sync` **no cambia**.
-
-### Para qué sí puede servir
-
-- Probar la **app web** (mismo front en el navegador) en **otras versiones de Safari / iOS** o dispositivos que no tengas a mano.
-- Smoke tests de **layout responsive** o regresiones visuales **aproximadas** en la nube.
-
-### Para qué no sirve (no usarlo como sustituto del flujo principal)
-
-- **No** reemplaza un **iPhone con Capacitor** conectado por Xcode: no es el mismo binario nativo ni el mismo WKWebView con plugins y permisos reales.
-- **No** sustituye **Safari → Develop** sobre el dispositivo ni **Live Reload** en LAN.
-- **No** valida rendimiento real, GPS, cámara ni el comportamiento exacto del usuario final en App Store.
+**No forma parte del flujo principal** de este repo. No hay scripts ni dependencias npm de BrowserStack; `npm run dev:ios` / `cap:sync` **no cambian**.
 
 ### Localhost y BrowserStack Local (solo si lo necesitas)
 
-Si en algún momento quieres que la nube de BrowserStack acceda a tu **`http://localhost:5173`**, la vía habitual es **[BrowserStack Local](https://www.browserstack.com/docs/app-live/local-testing)** (binario o aplicación oficial con tus credenciales de cuenta). Es **opcional**, manual y **ajena** a `capacitor.config` y a producción: **no** añade `server.url` ni toca el build.
-
-### ¿Merece la pena en WaitMe?
-
-Solo si necesitas **matriz extra de Safari/iOS en navegador** sin más hardware. Para el producto **Capacitor**, la referencia sigue siendo **iPhone real**.
+Si quieres que la nube acceda a tu **`http://localhost:5173`**, la vía habitual es **[BrowserStack Local](https://www.browserstack.com/docs/app-live/local-testing)**. Es **opcional** y **ajena** a `capacitor.config` y a producción.
 
 ## Tareas en Cursor / VS Code
 
-En `.vscode/tasks.json` hay tareas `cap:live:on` y `cap:live:off` para ejecutar desde el IDE.
+En `.vscode/tasks.json` la tarea **dev** ejecuta `npm run dev` (= `dev:ios`).
 
-**Web fuera de casa (staging Vercel):** no usa este flujo; ver [STAGING_VERCEL.md](./STAGING_VERCEL.md) y [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).
+**Guía casa / fuera / prod:** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).  
+**Staging Vercel:** [STAGING_VERCEL.md](./STAGING_VERCEL.md).

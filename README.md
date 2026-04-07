@@ -6,10 +6,10 @@ WaitMe v5 — React 19 + Vite 8. Contrato de layout: `src/ui/layout/layout.ts`, 
 
 ```bash
 npm install
-npm run dev
+npm run dev:ios
 ```
 
-**En casa (Safari + iPhone live reload):** un solo comando (`npm run dev`). La URL buena es la que imprime la consola (**`RUNNING ON LAN: http://…:5173`**); Safari en Mac se abre ahí.
+**En casa (Safari + iPhone live reload):** **`npm run dev:ios`** (o **`npm run dev`**). Sync iOS, `.env.local` con `VITE_DEV_LAN_ORIGIN`, Vite 5173; **solo Safari** en la URL LAN tras **`/`** OK. Logs: `RUNNING ON LAN`, `OPEN IN SAFARI`, `OPEN IN IPHONE`.
 
 **Fuera de casa (web staging):** rama **`staging`** + Vercel Preview; la URL exacta la copias del dashboard → **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**.
 

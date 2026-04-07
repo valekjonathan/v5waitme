@@ -62,7 +62,7 @@ Sin la línea de **staging**, el login Google en la URL de Vercel staging fallar
 ## Qué no hace este flujo
 
 - No sustituye **TestFlight** para validar plugins nativos, GPS, etc.
-- No escribe `WAITME_CAP_DEV_SERVER_URL` (eso es solo **en casa** con `npm run dev`).
+- No escribe `WAITME_CAP_DEV_SERVER_URL` (eso es solo **en casa** con `npm run dev:ios`).
 
 ## Si no ves deploy al empujar `staging`
 

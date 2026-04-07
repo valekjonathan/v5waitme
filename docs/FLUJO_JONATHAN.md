@@ -6,8 +6,8 @@ Tres modos separados. Sin mezclar URLs ni `server.url` en builds finales.
 
 | Situación                         | Qué usar                                                                                                                                              |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Casa — Safari Mac**             | La URL que imprime la consola: **`RUNNING ON LAN: http://…:5173`** al hacer `npm run dev` (misma que OAuth web en dev).                               |
-| **Casa — iPhone**                 | Misma Wi‑Fi + **`npm run dev`** (live reload al Mac). Primera vez: Run desde Xcode.                                                                   |
+| **Casa — Safari Mac**             | Tras **`npm run dev:ios`**: misma URL en **`OPEN IN SAFARI`** / **`RUNNING ON LAN`** (Safari se abre solo en LAN; no Chrome).                         |
+| **Casa — iPhone**                 | Misma Wi‑Fi + **`npm run dev:ios`** (live reload al Mac). Primera vez: Run desde Xcode.                                                               |
 | **Fuera — web “casi producción”** | URL del deploy **Preview** de la rama **`staging`** en Vercel → [STAGING_VERCEL.md](./STAGING_VERCEL.md) (la copias del dashboard; no va en el repo). |
 | **Fuera — app nativa real**       | **TestFlight** (build sin `server.url`, ver modo C).                                                                                                  |
 | **Producción web**                | Dominio **Production** de Vercel (rama habitual `main`).                                                                                              |
@@ -18,20 +18,21 @@ Tres modos separados. Sin mezclar URLs ni `server.url` en builds finales.
 ## A) Dev en casa (cambios al instante)
 
 **Qué ejecutar (una vez por sesión de trabajo)**  
-En Cursor: tarea **dev** (`.vscode/tasks.json`) o en terminal: `npm run dev`.
+En Cursor: tarea **dev** (`.vscode/tasks.json`) o en terminal: `npm run dev` / **`npm run dev:ios`**.
 
 **Qué hace solo el comando**
 
 1. Detecta IP LAN (10.x o 192.168.x), opcional `CAP_LAN_IP=…` si hace falta.
-2. Exporta `WAITME_CAP_DEV_SERVER_URL=http://<IP>:5173` y ejecuta `npx cap sync ios` → el iPhone nativo apunta al Mac.
-3. Arranca Vite (host de red, puerto 5173, HMR).
-4. En macOS abre **Safari** en la URL LAN (la misma que debe usar el OAuth web).
+2. Actualiza **`.env.local`** con `VITE_DEV_LAN_ORIGIN=http://<IP>:5173` (origen OAuth + Vite alineados).
+3. Exporta `WAITME_CAP_DEV_SERVER_URL` (misma URL) y `WAITME_LAN_IP`, y ejecuta `npx cap sync ios` → el iPhone nativo apunta al Mac.
+4. Arranca Vite (5173, HMR sin overlay agresivo, sin abrir navegador desde Vite).
+5. Cuando `/` responde, en macOS abre **solo Safari** en la URL LAN.
 
-**URL correcta Safari en casa:** exactamente la de **`RUNNING ON LAN`** / **`ABRE ESTA URL EN TU IPHONE`** (mismo origen). No uses `localhost` en el iPhone ni para Supabase redirect en ese modo.
+**URL correcta Safari en casa:** **`OPEN IN SAFARI`** / **`RUNNING ON LAN`** / **`OPEN IN IPHONE`** (todas la misma). No uses `localhost` en el iPhone ni para Supabase redirect en ese modo.
 
 **Qué debes tener abierto**
 
-- Terminal / tarea con `npm run dev` (Vite vivo).
+- Terminal / tarea con **`npm run dev:ios`** (Vite vivo).
 - iPhone con la app **ya instalada** desde Xcode al menos una vez; en la misma Wi‑Fi que el Mac.
 
 **Qué se actualiza solo**
@@ -43,7 +44,7 @@ En Cursor: tarea **dev** (`.vscode/tasks.json`) o en terminal: `npm run dev`.
 - No es Vercel. No uses `*.vercel.app` en `WAITME_CAP_DEV_SERVER_URL` (Capacitor lo rechaza).
 
 **Si algo falla el ping a la IP**  
-`SKIP_LAN_PING=1 npm run dev`
+`SKIP_LAN_PING=1 npm run dev:ios`
 
 **Solo web, sin tocar iOS**  
 `npm run dev:vite`
@@ -75,7 +76,7 @@ Añade esa URL exacta en Supabase **Redirect URLs** (tabla en STAGING_VERCEL.md)
 Deploy **Production** en Vercel (normalmente rama `main`).
 
 **iOS nativo final**  
-No uses `npm run dev` para generar el binario de tienda.
+No uses `npm run dev:ios` / `npm run dev` para generar el binario de tienda.
 
 1. Asegúrate de no arrastrar live reload: **`npm run cap:live:off`** (o una terminal sin `WAITME_CAP_DEV_SERVER_URL`).
 2. Empaqueta web + sync **sin** variable de dev: **`npm run cap:sync:prod`**  
@@ -118,7 +119,7 @@ Staging remoto paso a paso: [STAGING_VERCEL.md](./STAGING_VERCEL.md).
 
 | Situación        | Comando / acción principal                     |
 | ---------------- | ---------------------------------------------- |
-| Casa, iterar     | `npm run dev`                                  |
+| Casa, iterar     | `npm run dev:ios` (o `npm run dev`)            |
 | Casa, iOS limpio | `npm run ios:fresh:dev`                        |
 | Quitar live iOS  | `npm run cap:live:off`                         |
 | iOS tienda-ready | `npm run cap:sync:prod`                        |

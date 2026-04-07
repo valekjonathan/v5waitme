@@ -1,4 +1,3 @@
-import { execSync } from 'node:child_process'
 import { networkInterfaces } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 /** Evita el mismo aviso dos veces cuando herramientas cargan esta config más de una vez en el mismo proceso. */
 let sentryUploadHintLogged = false
 
-/** Misma idea que `scripts/cap-live-ios.mjs`: solo 10.x / 192.168.x, sin interfaces virtuales. */
+/** Misma idea que `scripts/get-lan-ip.mjs`: solo 10.x / 192.168.x, sin interfaces virtuales. */
 function preferredLanIPv4() {
   const skipName = (name) => {
     const n = String(name).toLowerCase()
@@ -126,32 +125,19 @@ export default defineConfig(({ mode, command }) => {
               name: 'waitme-dev-server-lan-log',
               configureServer(server) {
                 server.httpServer?.once('listening', () => {
+                  if (process.env.WAITME_SKIP_VITE_LAN_LOG === '1') return
                   const addr = server.httpServer?.address()
                   const port = typeof addr === 'object' && addr && 'port' in addr ? addr.port : 5173
                   const display =
                     resolvedDevLanOrigin || (lanIpForDev ? `http://${lanIpForDev}:${port}` : '')
                   if (display) {
-                    console.log(`\nRUNNING ON LAN: ${display}`)
-                    console.log(`SERVER RUNNING ON: ${display}`)
-                    console.log(`ABRE ESTA URL EN TU IPHONE: ${display}\n`)
+                    console.log(`\nRUNNING ON LAN: ${display}\n`)
                   } else {
                     console.warn(
                       '\n[waitme] Sin IP LAN (10.x / 192.168.x). Define VITE_DEV_LAN_ORIGIN=http://<IP>:' +
                         port +
                         ' en .env.local\n'
                     )
-                  }
-                  if (process.platform === 'darwin' && display) {
-                    try {
-                      execSync(
-                        `open -a Safari ${display.endsWith('/') ? display : `${display}/`}`,
-                        {
-                          stdio: 'ignore',
-                        }
-                      )
-                    } catch {
-                      /* Safari ausente o restricción del entorno */
-                    }
                   }
                 })
               },
@@ -178,8 +164,11 @@ export default defineConfig(({ mode, command }) => {
       host: true,
       port: 5173,
       strictPort: true,
-      /** HMR activo; el cliente usa el mismo origen que la página (LAN). */
-      hmr: true,
+      open: false,
+      /** HMR estable; sin overlay agresivo. Safari solo desde `npm run dev:ios`. */
+      hmr: {
+        overlay: false,
+      },
     },
   }
 })

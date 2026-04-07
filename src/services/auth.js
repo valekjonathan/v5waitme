@@ -183,7 +183,7 @@ export async function signInWithGoogle() {
     const devOrigin = String(import.meta.env.VITE_DEV_LAN_ORIGIN ?? '').trim()
     if (!isValidUnifiedDevLanOrigin(devOrigin)) {
       console.error(
-        '[WaitMe][Auth] Dev: origen OAuth inválido o vacío. Usa Safari en la IP LAN (no localhost). Define VITE_DEV_LAN_ORIGIN=http://192.168.x.x:5173 en .env.local o deja que Vite detecte la IP al hacer npm run dev.'
+        '[WaitMe][Auth] Dev: origen OAuth inválido o vacío. Usa Safari en la IP LAN (no localhost). Ejecuta npm run dev:ios (actualiza .env.local) o define VITE_DEV_LAN_ORIGIN=http://192.168.x.x:5173 en .env.local.'
       )
       return { data: null, error: new Error('oauth_dev_lan_origin_invalid') }
     }
