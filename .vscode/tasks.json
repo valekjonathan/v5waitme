@@ -9,6 +9,18 @@
       "runOptions": {
         "instanceLimit": 1
       }
+    },
+    {
+      "label": "cap:live:on",
+      "type": "shell",
+      "command": "npm run cap:live:on",
+      "problemMatcher": []
+    },
+    {
+      "label": "cap:live:off",
+      "type": "shell",
+      "command": "npm run cap:live:off",
+      "problemMatcher": []
     }
   ]
 }

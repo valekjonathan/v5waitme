@@ -180,20 +180,18 @@ function readJsonFile(absPath) {
 }
 
 function summarizeCapacitorServerUrl() {
-  const webCap = readJsonFile(join(root, 'capacitor.config.json'))
   const iosCap = readJsonFile(join(root, 'ios', 'App', 'App', 'capacitor.config.json'))
-
-  const webUrl = webCap?.server && typeof webCap.server === 'object' ? webCap.server.url : undefined
   const iosUrl = iosCap?.server && typeof iosCap.server === 'object' ? iosCap.server.url : undefined
 
-  const parts = []
-  if (typeof webUrl === 'string' && webUrl.trim())
-    parts.push(`root capacitor.config.json server.url = ${webUrl}`)
-  else parts.push('root capacitor.config.json server.url = (no configurado)')
-
+  const parts = [
+    'Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync)',
+  ]
   if (typeof iosUrl === 'string' && iosUrl.trim())
-    parts.push(`ios/App/App/capacitor.config.json server.url = ${iosUrl}`)
-  else parts.push('ios/App/App/capacitor.config.json server.url = (no configurado)')
+    parts.push(`ios/App/App/capacitor.config.json (generado) server.url = ${iosUrl}`)
+  else
+    parts.push(
+      'ios/App/App/capacitor.config.json (generado) server.url = (no configurado; WKWebView usa dist local)'
+    )
 
   return parts.join('; ')
 }
