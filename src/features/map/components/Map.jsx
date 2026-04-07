@@ -33,11 +33,83 @@ import {
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 import {
-  applyWaitmePinAndParkingCamera,
+  logWaitmeViewportDebug,
   subscribeWaitmeViewportEvents,
 } from '../../../lib/waitmeViewport.js'
 
 let globalContainer = null
+
+/** Nodo al que Mapbox engancha el canvas (`getContainer()`), no el shell que también lleva el pin. */
+function resolveWaitmeMapDomContainer(containerRef) {
+  const m = getGlobalMapInstance()
+  const fromMap = m?.getContainer?.()
+  if (fromMap instanceof HTMLElement) return fromMap
+  const wrap = containerRef?.current
+  if (!wrap) return null
+  const first = wrap.firstElementChild
+  return first instanceof HTMLElement ? first : wrap
+}
+
+/**
+ * Offset Y para `jumpTo`/`flyTo`: solo rect del contenedor Mapbox + pin (coords locales al mapa).
+ * pinTipLocalY - mapCenterLocalY === pinTipClientY - mapCenterClientY (sin visualViewport).
+ */
+function measureWaitmeMapPinCameraOffsetY(pinEl, mapContainerEl) {
+  if (!pinEl || !mapContainerEl) return null
+  const mapRect = mapContainerEl.getBoundingClientRect()
+  const pinRect = pinEl.getBoundingClientRect()
+  const mapCenterLocalY = mapRect.height / 2
+  const pinTipLocalY = pinRect.bottom - mapRect.top
+  const offsetY = pinTipLocalY - mapCenterLocalY
+  return {
+    offsetY,
+    mapRect,
+    mapCenterLocalY,
+    pinTipLocalY,
+    mapCenterClientY: mapRect.top + mapCenterLocalY,
+    pinTipClientY: pinRect.bottom,
+  }
+}
+
+function applyWaitmeMapPinAndParkingCamera(pinEl, mapContainerEl, parkingBandPinAdjust) {
+  if (typeof window === 'undefined' || !pinEl || !mapContainerEl) return
+
+  const measured = measureWaitmeMapPinCameraOffsetY(pinEl, mapContainerEl)
+  if (!measured) return
+  const { offsetY } = measured
+
+  if (!parkingBandPinAdjust) {
+    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    if (import.meta.env.DEV) {
+      console.info('[WaitMe][MAP_PIN_CAMERA]', {
+        mapContainer: { w: measured.mapRect.width, h: measured.mapRect.height },
+        mapCenterLocalY_px: measured.mapCenterLocalY,
+        pinTipLocalY_px: measured.pinTipLocalY,
+        offsetY_px: offsetY,
+      })
+    }
+    logWaitmeViewportDebug({ mapPinCamera: 'mapbox-container' })
+    return
+  }
+
+  const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
+  const cardEl = document.querySelector(GAP_CARD_TOP)
+  if (!searchEl || !cardEl) {
+    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    logWaitmeViewportDebug({ mapPinCamera: 'parking-fallback-offset' })
+    return
+  }
+  const searchBottom = searchEl.getBoundingClientRect().bottom
+  const cardTop = cardEl.getBoundingClientRect().top
+  if (!(cardTop > searchBottom)) {
+    window.__WAITME_PIN_OFFSET_Y__ = offsetY
+    logWaitmeViewportDebug({ mapPinCamera: 'parking-fallback-offset' })
+    return
+  }
+
+  delete window.__WAITME_PIN_OFFSET_Y__
+  logWaitmeViewportDebug({ mapPinCamera: 'gap-mode' })
+}
 
 void mapboxgl.Map
 
@@ -163,19 +235,20 @@ export default function Map({
     projectSearchPinFromGps()
   }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
 
-  /** Home: pin en viewport + offset. Parking search: hueco buscador–tarjeta. */
+  /** Home: offset de cámara desde el contenedor Mapbox real + pin. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
     if (!parkingBandPinAdjust) {
       const run = () => {
         requestAnimationFrame(() => {
-          applyWaitmePinAndParkingCamera(pinRef.current, mapShellRef.current, false)
+          const mapContainer = resolveWaitmeMapDomContainer(containerRef)
+          applyWaitmeMapPinAndParkingCamera(pinRef.current, mapContainer, false)
         })
       }
 
       run()
-      const mapEl = mapShellRef.current
-      const ro = mapEl ? new ResizeObserver(run) : null
-      if (mapEl && ro) ro.observe(mapEl)
+      const observeEl = containerRef.current ?? mapShellRef.current
+      const ro = observeEl ? new ResizeObserver(run) : null
+      if (observeEl && ro) ro.observe(observeEl)
       const unsubVvWin = subscribeWaitmeViewportEvents(run)
       const raf = requestAnimationFrame(run)
       return () => {
@@ -203,7 +276,8 @@ export default function Map({
 
     const run = () => {
       requestAnimationFrame(() => {
-        applyWaitmePinAndParkingCamera(pinRef.current, mapShellRef.current, true)
+        const mapContainer = resolveWaitmeMapDomContainer(containerRef)
+        applyWaitmeMapPinAndParkingCamera(pinRef.current, mapContainer, true)
 
         let nextPinTop = null
         const shellEl = mapShellRef.current
@@ -246,9 +320,9 @@ export default function Map({
     }
 
     run()
-    const mapEl = mapShellRef.current
-    const ro = mapEl ? new ResizeObserver(run) : null
-    if (mapEl && ro) ro.observe(mapEl)
+    const observeEl = containerRef.current ?? mapShellRef.current
+    const ro = observeEl ? new ResizeObserver(run) : null
+    if (observeEl && ro) ro.observe(observeEl)
     const unsubVvWin = subscribeWaitmeViewportEvents(run)
     const raf = requestAnimationFrame(run)
     return () => {
