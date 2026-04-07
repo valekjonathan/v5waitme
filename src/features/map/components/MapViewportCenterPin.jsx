@@ -29,12 +29,13 @@ const tuLabelStyle = {
 }
 
 const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
-  { parkingPinTopPx, pinPixel },
+  { parkingPinTopPx, pinPixel, showTuLabel = false },
   ref
 ) {
   const gap = typeof parkingPinTopPx === 'number' && Number.isFinite(parkingPinTopPx)
   const useProjected =
     pinPixel != null && Number.isFinite(pinPixel.x) && Number.isFinite(pinPixel.y)
+  const showTu = gap || useProjected || showTuLabel
   return (
     <div
       ref={ref}
@@ -61,7 +62,7 @@ const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
         alignItems: 'center',
       }}
     >
-      {gap || useProjected ? (
+      {showTu ? (
         <span style={tuLabelStyle} aria-hidden>
           Tú
         </span>

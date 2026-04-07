@@ -1,6 +1,7 @@
 import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapbox.js'
 import { getMapFollowUserGps, getParkingMapPinMode, setSearchFollowUserGps } from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
+import { isDevSafari } from '../../lib/isDevSafari.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
 
 /** Selectores compartidos con `Map.jsx` (hueco buscador–tarjeta). */
@@ -156,7 +157,7 @@ export function jumpMapToGpsSearch(map, lng, lat) {
 
 export function recenterGlobalMapOnUser() {
   const map = getGlobalMapInstance()
-  if (!map?.isStyleLoaded?.()) return
+  if (!map?.isStyleLoaded?.() && !isDevSafari()) return
 
   if (getParkingMapPinMode() === 'search') {
     setSearchFollowUserGps(true)

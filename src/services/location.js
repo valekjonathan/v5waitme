@@ -1,10 +1,29 @@
+import { isDevSafari } from '../lib/isDevSafari.js'
+
 /**
  * GPS en producción (mapa, overlays):
  *   startLocationTracking() → watchPosition → persistAndNotifyLocation() → callbacks de subscribeToLocation().
  *
+ * En dev Safari (`isDevSafari`): coordenadas fijas (Oviedo), sin geolocalización del navegador.
+ *
  * createPositionGuard() no forma parte de ese pipeline. Solo tests u opciones futuras explícitas:
  * enlazarlo a persistAndNotifyLocation cambiaría qué puntos ve el mapa (decisión de producto).
  */
+
+/** Debe coincidir con el centro por defecto del mapa (`mapbox.js` OVIEDO_*). */
+const DEV_BROWSER_MOCK_LAT = 43.3619
+const DEV_BROWSER_MOCK_LNG = -5.8494
+
+function devMockGeolocationPosition() {
+  return {
+    coords: {
+      latitude: DEV_BROWSER_MOCK_LAT,
+      longitude: DEV_BROWSER_MOCK_LNG,
+      accuracy: 12,
+    },
+    timestamp: Date.now(),
+  }
+}
 const GEO_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
 const MAX_REASONABLE_ACCURACY_M = 1500
 const MAX_PLAUSIBLE_SPEED_MPS = 75
@@ -86,6 +105,13 @@ function emit(emitEvent, persistEvent, type, payload) {
 }
 
 export function getCurrentPosition(onSuccess, onError) {
+  if (isDevSafari()) {
+    const v = validateRawPosition(devMockGeolocationPosition())
+    if (v) queueMicrotask(() => onSuccess?.(v))
+    else onError?.({ type: 'error', code: 0, raw: null })
+    return
+  }
+
   if (!navigator.geolocation) {
     onError?.({ type: 'unavailable', code: 0, raw: null })
     return
@@ -120,6 +146,10 @@ try {
   /* */
 }
 
+if (typeof window !== 'undefined' && isDevSafari()) {
+  currentLocation = { latitude: DEV_BROWSER_MOCK_LAT, longitude: DEV_BROWSER_MOCK_LNG }
+}
+
 function persistAndNotifyLocation(lat, lng) {
   if (!isValidGps(lat, lng)) return
   currentLocation = { latitude: lat, longitude: lng }
@@ -146,6 +176,12 @@ function persistAndNotifyLocation(lat, lng) {
 export function startLocationTracking() {
   if (locationTrackingStarted) return
   locationTrackingStarted = true
+
+  if (isDevSafari()) {
+    persistAndNotifyLocation(DEV_BROWSER_MOCK_LAT, DEV_BROWSER_MOCK_LNG)
+    return
+  }
+
   if (typeof navigator === 'undefined' || !navigator.geolocation) return
 
   getCurrentPosition(

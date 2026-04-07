@@ -32,6 +32,7 @@ import {
   jumpMapToGpsSearch,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
+import { isDevSafari } from '../../../lib/isDevSafari.js'
 
 /**
  * Home/Login: `__WAITME_PIN_OFFSET_Y__` = punta del pin vs centro vertical del mapa.
@@ -168,6 +169,7 @@ export default function Map({
   }, [readOnly, followUserGps, parkingBandPinAdjust, parkingPinMode])
 
   const projectSearchPinFromGps = useCallback(() => {
+    if (isDevSafari()) return
     const map = getGlobalMapInstance()
     if (!map?.project || !map.isStyleLoaded?.()) return
     const g = searchGpsRef.current
@@ -189,6 +191,10 @@ export default function Map({
     const fast = getCurrentLocationFast()
     if (fast) {
       searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
+    }
+    if (isDevSafari()) {
+      setSearchPinPixel(null)
+      return
     }
     projectSearchPinFromGps()
   }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
@@ -366,12 +372,21 @@ export default function Map({
           searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
         }
         const map = getGlobalMapInstance()
-        if (!map?.isStyleLoaded?.()) return
+        if (!map) return
+
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          if (isDevSafari()) {
+            projectSearchPinFromGpsRef.current()
+            if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
+            return
+          }
+          if (!map.isStyleLoaded?.()) return
           projectSearchPinFromGpsRef.current()
           if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
           return
         }
+
+        if (!map.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
           alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
           return
@@ -529,7 +544,7 @@ export default function Map({
   useEffect(() => {
     if (mapFocusGeneration === 0) return
     const map = getGlobalMapInstance()
-    if (!map?.isStyleLoaded?.() || !followUserGps) return
+    if ((!map?.isStyleLoaded?.() && !isDevSafari()) || !followUserGps) return
 
     const fast = getCurrentLocationFast()
     if (fast) {
@@ -625,12 +640,15 @@ export default function Map({
         ) : parkingPinMode === 'search' ? (
           <MapViewportCenterPin
             ref={pinRef}
+            showTuLabel={isDevSafari()}
             pinPixel={
-              searchPinPixel != null &&
-              Number.isFinite(searchPinPixel.x) &&
-              Number.isFinite(searchPinPixel.y)
-                ? searchPinPixel
-                : undefined
+              isDevSafari()
+                ? undefined
+                : searchPinPixel != null &&
+                    Number.isFinite(searchPinPixel.x) &&
+                    Number.isFinite(searchPinPixel.y)
+                  ? searchPinPixel
+                  : undefined
             }
           />
         ) : (
