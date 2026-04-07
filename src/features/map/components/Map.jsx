@@ -169,7 +169,6 @@ export default function Map({
   }, [readOnly, followUserGps, parkingBandPinAdjust, parkingPinMode])
 
   const projectSearchPinFromGps = useCallback(() => {
-    if (isDevSafari()) return
     const map = getGlobalMapInstance()
     if (!map?.project || !map.isStyleLoaded?.()) return
     const g = searchGpsRef.current
@@ -191,10 +190,6 @@ export default function Map({
     const fast = getCurrentLocationFast()
     if (fast) {
       searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
-    }
-    if (isDevSafari()) {
-      setSearchPinPixel(null)
-      return
     }
     projectSearchPinFromGps()
   }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
@@ -375,14 +370,10 @@ export default function Map({
         if (!map) return
 
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          if (isDevSafari()) {
-            projectSearchPinFromGpsRef.current()
-            if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
-            return
-          }
-          if (!map.isStyleLoaded?.()) return
           projectSearchPinFromGpsRef.current()
-          if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
+          if (getSearchFollowUserGps() && map.isStyleLoaded?.()) {
+            jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
+          }
           return
         }
 
@@ -640,15 +631,13 @@ export default function Map({
         ) : parkingPinMode === 'search' ? (
           <MapViewportCenterPin
             ref={pinRef}
-            showTuLabel={isDevSafari()}
+            showTuLabel
             pinPixel={
-              isDevSafari()
-                ? undefined
-                : searchPinPixel != null &&
-                    Number.isFinite(searchPinPixel.x) &&
-                    Number.isFinite(searchPinPixel.y)
-                  ? searchPinPixel
-                  : undefined
+              searchPinPixel != null &&
+              Number.isFinite(searchPinPixel.x) &&
+              Number.isFinite(searchPinPixel.y)
+                ? searchPinPixel
+                : undefined
             }
           />
         ) : (
