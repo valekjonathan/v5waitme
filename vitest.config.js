@@ -8,6 +8,11 @@ const root = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   root,
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.join(root, 'src'),
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: [path.join(root, 'test/ui/vitest.setup.js')],

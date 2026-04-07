@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T08:27:03.997Z
-Git revision: 2a3bf744af707b5237867350ce28e081f22d4888
+Generated: 2026-04-07T09:17:21.091Z
+Git revision: 956287d959fd370e92696da729ed89a56313e7eb
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -30,6 +30,7 @@ ios/
       capacitor.config.json
       config.xml
       Info.plist
+      InspectableBridgeViewController.swift
       public/
         assets/
         cordova_plugins.js

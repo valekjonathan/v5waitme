@@ -194,7 +194,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
-  it('Error de auth: signInWithOAuth falla -> muestra alerta con mensaje', async () => {
+  it('Error de auth: signInWithOAuth falla -> permanece en login (no pasa a Home)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     signInError = 'auth_error'
     render(<App />)
@@ -206,9 +206,10 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
 
     await waitFor(() => {
-      const alert = screen.queryByRole('alert')
-      expect(alert).not.toBeNull()
-      expect(alert.textContent).toMatch(/auth_error/i)
+      expect(screen.queryByRole('button', { name: /continuar con google/i })).not.toBeNull()
+      expect(document.querySelector('[data-home-google-button=""]')).not.toBeNull()
+      /** Login y Home comparten `MainLayout` + fallback de mapa; Home no tiene CTA Google. */
+      expect(screen.queryByRole('button', { name: /¿Dónde quieres aparcar/i })).toBeNull()
     })
   })
 

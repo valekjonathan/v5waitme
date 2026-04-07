@@ -490,7 +490,6 @@ export default function Map({
 
     window.addEventListener('resize', resizeMap)
     window.addEventListener('orientationchange', resizeMap)
-    window.visualViewport?.addEventListener('resize', resizeMap)
 
     const t1 = setTimeout(resizeMap, 500)
     const t2 = setTimeout(resizeMap, 1200)
@@ -498,7 +497,6 @@ export default function Map({
     return () => {
       window.removeEventListener('resize', resizeMap)
       window.removeEventListener('orientationchange', resizeMap)
-      window.visualViewport?.removeEventListener('resize', resizeMap)
       clearTimeout(t1)
       clearTimeout(t2)
     }

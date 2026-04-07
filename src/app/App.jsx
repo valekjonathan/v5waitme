@@ -27,12 +27,7 @@ import {
   APP_SCREEN_SEARCH_PARKING,
 } from '../lib/appScreenState.js'
 
-const isStandalone =
-  typeof window !== 'undefined' &&
-  typeof window.matchMedia === 'function' &&
-  (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)
-
-/** Raíz React: llena #root (flex); alto lo fija la cadena html/body/#root, no duplicar 100% aquí. */
+/** Raíz React: llena #root (flex); alto útil en `.waitme-iphone-frame-fullbleed` vía `--app-height`. */
 const appRootLayoutStyle = {
   display: 'flex',
   flexDirection: 'column',
@@ -40,6 +35,7 @@ const appRootLayoutStyle = {
   flex: '1 1 0%',
   minHeight: 0,
   overflowX: 'hidden',
+  /** `visible` evita recortar modales `position:fixed` hijos en algunos motores. */
   overflowY: 'visible',
   boxSizing: 'border-box',
 }
@@ -298,33 +294,29 @@ function AppGate() {
 export default function App() {
   useLayoutEffect(() => {
     const setHeight = () => {
-      const vh = isStandalone
-        ? window.innerHeight
-        : window.visualViewport?.height || window.innerHeight
-
-      document.documentElement.style.setProperty('--app-height', `${vh}px`)
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
     }
 
     setHeight()
 
     window.addEventListener('resize', setHeight)
     window.addEventListener('orientationchange', setHeight)
-    window.visualViewport?.addEventListener('resize', setHeight)
 
     return () => {
       window.removeEventListener('resize', setHeight)
       window.removeEventListener('orientationchange', setHeight)
-      window.visualViewport?.removeEventListener('resize', setHeight)
     }
   }, [])
 
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>
-      <ErrorBoundary name="root">
-        <AppAuthRoot>
-          <AppGate />
-        </AppAuthRoot>
-      </ErrorBoundary>
+      <div className="waitme-iphone-frame-fullbleed">
+        <ErrorBoundary name="root">
+          <AppAuthRoot>
+            <AppGate />
+          </AppAuthRoot>
+        </ErrorBoundary>
+      </div>
     </div>
   )
 }

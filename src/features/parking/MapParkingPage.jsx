@@ -30,12 +30,7 @@ export default function MapParkingPage() {
   const users = useSimulatedParkingUsers()
 
   return (
-    <ScreenShell
-      interactive
-      mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}
-      mainOverflow="hidden"
-      fullBleedMainOverflow="visible"
-    >
+    <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
       <div style={mapPageShellStyle}>
         <div style={mapPageMapSlotStyle} data-waitme-map-slot>
           <Map
