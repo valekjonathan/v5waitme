@@ -52,6 +52,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>capacitor</string>
 				<string>es.waitme.v5waitme</string>
 			</array>
 		</dict>

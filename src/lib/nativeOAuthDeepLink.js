@@ -3,7 +3,10 @@ import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../services/supabase.js'
 
-const NATIVE_CALLBACK_PREFIX = 'es.waitme.v5waitme://auth-callback'
+/** Debe coincidir con `redirectTo` en OAuth nativo y con CFBundleURLSchemes (`capacitor`). */
+const NATIVE_CALLBACK_PREFIX = 'capacitor://localhost'
+/** Compat: builds anteriores con URL scheme custom. */
+const LEGACY_CALLBACK_PREFIX = 'es.waitme.v5waitme://auth-callback'
 const NATIVE_SCHEME_SNIPPET = 'es.waitme.v5waitme'
 
 /** Evita doble intercambio si `getLaunchUrl` y `appUrlOpen` entregan la misma URL. */
@@ -35,7 +38,10 @@ function clearOAuthReturnWatch() {
 }
 
 function normalizeNativeCallbackUrl(url) {
-  return url.replace('es.waitme.v5waitme://auth-callback', 'http://localhost/auth-callback')
+  if (url.startsWith(NATIVE_CALLBACK_PREFIX)) {
+    return url.replace(/^capacitor:\/\/localhost\/?/i, 'http://localhost/')
+  }
+  return url.replace(LEGACY_CALLBACK_PREFIX, 'http://localhost/auth-callback')
 }
 
 /**
@@ -55,7 +61,8 @@ export async function deliverNativeOAuthCallback(url, source) {
     return false
   }
 
-  const matchesPrefix = url.startsWith(NATIVE_CALLBACK_PREFIX)
+  const matchesPrefix =
+    url.startsWith(NATIVE_CALLBACK_PREFIX) || url.startsWith(LEGACY_CALLBACK_PREFIX)
   if (!matchesPrefix) {
     console.log('[WaitMe][OAuth] URL no es auth-callback; ignorada')
     return false
@@ -118,7 +125,10 @@ export function registerNativeOAuthDeepLink() {
   if (!Capacitor.isNativePlatform() || !supabase) return
 
   void App.addListener('appUrlOpen', async ({ url }) => {
-    if (typeof url === 'string' && url.includes(NATIVE_SCHEME_SNIPPET)) {
+    if (
+      typeof url === 'string' &&
+      (url.startsWith(NATIVE_CALLBACK_PREFIX) || url.includes(NATIVE_SCHEME_SNIPPET))
+    ) {
       clearOAuthReturnWatch()
     }
     await deliverNativeOAuthCallback(url, 'appUrlOpen')
@@ -126,7 +136,10 @@ export function registerNativeOAuthDeepLink() {
 
   void App.getLaunchUrl().then((launch) => {
     if (launch?.url) {
-      if (launch.url.includes(NATIVE_SCHEME_SNIPPET)) {
+      if (
+        launch.url.startsWith(NATIVE_CALLBACK_PREFIX) ||
+        launch.url.includes(NATIVE_SCHEME_SNIPPET)
+      ) {
         clearOAuthReturnWatch()
       }
       void deliverNativeOAuthCallback(launch.url, 'getLaunchUrl')

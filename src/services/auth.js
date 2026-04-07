@@ -93,7 +93,7 @@ export async function signInWithGoogle() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'es.waitme.v5waitme://auth-callback',
+          redirectTo: 'capacitor://localhost',
           skipBrowserRedirect: true,
         },
       })
@@ -111,7 +111,7 @@ export async function signInWithGoogle() {
           console.log('[OAuth][iOS] URL enviada a WebAuth:', data.url)
           const res = await WaitmeWebAuth.start({
             url: data.url,
-            callbackScheme: 'es.waitme.v5waitme',
+            callbackScheme: 'capacitor',
           })
           console.log('[OAuth][iOS] respuesta plugin:', res)
           const callbackUrl = res?.callbackUrl

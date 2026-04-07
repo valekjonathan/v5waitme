@@ -5,7 +5,8 @@
 export function envWithBuildPlaceholders() {
   const env = { ...process.env }
   if (!String(env.VITE_SUPABASE_URL || '').trim()) {
-    env.VITE_SUPABASE_URL = 'https://placeholder.supabase.co'
+    /** No usar *.supabase.co ficticio: el cliente lo rechaza como no configurado. */
+    env.VITE_SUPABASE_URL = 'https://build-config-missing.invalid'
   }
   if (!String(env.VITE_SUPABASE_ANON_KEY || '').trim()) {
     env.VITE_SUPABASE_ANON_KEY =

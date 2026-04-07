@@ -14,6 +14,9 @@ const MISSING_ENV_MSG =
 function envLooksConfigured() {
   if (!urlRaw || !keyRaw) return false
   if (urlRaw === 'REEMPLAZAR' || keyRaw === 'REEMPLAZAR') return false
+  if (/placeholder\.supabase\.co/i.test(urlRaw)) return false
+  if (/build-config-missing\.invalid/i.test(urlRaw)) return false
+  if (/build-placeholder-not-for-production/i.test(keyRaw)) return false
   return true
 }
 
