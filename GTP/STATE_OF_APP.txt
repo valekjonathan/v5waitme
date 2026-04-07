@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T12:50:13.239Z
-Git revision: 9177b662ba13f82a314afd63f78e4b6a869bd69e
+Generated: 2026-04-07T12:57:43.501Z
+Git revision: e4358c65b18b8b429bf6b452232dfc7044250eed
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -10,6 +10,7 @@ dist/  [omitido]
 docs/
   DEV_IOS_LIVE_RELOAD.md
   FLUJO_JONATHAN.md
+  STAGING_VERCEL.md
 e2e/
   nav.spec.ts
   README.md

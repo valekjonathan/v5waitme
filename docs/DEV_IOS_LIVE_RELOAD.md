@@ -96,3 +96,5 @@ Solo si necesitas **matriz extra de Safari/iOS en navegador** sin más hardware.
 ## Tareas en Cursor / VS Code
 
 En `.vscode/tasks.json` hay tareas `cap:live:on` y `cap:live:off` para ejecutar desde el IDE.
+
+**Web fuera de casa (staging Vercel):** no usa este flujo; ver [STAGING_VERCEL.md](./STAGING_VERCEL.md) y [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).

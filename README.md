@@ -9,7 +9,11 @@ npm install
 npm run dev
 ```
 
-**En casa (Safari + iPhone live reload):** un solo comando. Vite usa la **IP LAN** (`http://192.168.x.x:5173` o similar); en macOS Safari se abre solo. Detalle, staging y producción: **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
+**En casa (Safari + iPhone live reload):** un solo comando (`npm run dev`). La URL buena es la que imprime la consola (**`RUNNING ON LAN: http://…:5173`**); Safari en Mac se abre ahí.
+
+**Fuera de casa (web staging):** rama **`staging`** + Vercel Preview; la URL exacta la copias del dashboard → **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**.
+
+Resumen casa / fuera / producción: **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
 
 Solo navegador sin sync iOS: `npm run dev:vite`. iOS listo para tienda (sin `server.url`): `npm run cap:sync:prod`.
 
