@@ -4,7 +4,6 @@ import IconSlot from '../../../ui/IconSlot'
 import ButtonBase from '../../../ui/primitives/ButtonBase'
 import { colors } from '../../../design/colors'
 import { useAuth } from '../../../lib/AuthContext'
-import { signInWithGoogle } from '@/services/auth'
 import { LAYOUT } from '../../../ui/layout/layout'
 
 const OAUTH_ICON_SLOT_PX = 24
@@ -205,8 +204,7 @@ function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label,
 }
 
 export default function LoginButtons() {
-  const { authError, status } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
+  const { authError, status, signInWithGoogle, authActionLoading } = useAuth()
   const [appleMessage, setAppleMessage] = useState('')
   const [googleHover, setGoogleHover] = useState(false)
   const [googlePressed, setGooglePressed] = useState(false)
@@ -224,13 +222,13 @@ export default function LoginButtons() {
   }, [status])
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!authActionLoading) {
       setShowSlowNotice(false)
       return undefined
     }
     const t = window.setTimeout(() => setShowSlowNotice(true), 1000)
     return () => window.clearTimeout(t)
-  }, [isLoading])
+  }, [authActionLoading])
 
   const onApple = () => {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -258,7 +256,7 @@ export default function LoginButtons() {
     transform: googleTransform,
     transition: googleTransition,
     filter: googleHover && !googlePressed ? 'brightness(1.04)' : 'none',
-    opacity: isLoading ? 0.86 : 1,
+    opacity: authActionLoading ? 0.86 : 1,
   }
 
   const appleTransform = applePressed ? 'scale(0.96)' : 'scale(1)'
@@ -282,27 +280,22 @@ export default function LoginButtons() {
       <style>{oauthSpinStyleTag}</style>
       <OAuthButton
         variant="primary"
-        disabled={isLoading}
+        disabled={authActionLoading}
         onClick={async () => {
           console.log('[UI] Botón Google pulsado')
-          if (isLoading) return
-          setIsLoading(true)
+          if (authActionLoading) return
           setAppleMessage('')
-          try {
-            await signInWithGoogle()
-          } finally {
-            setIsLoading(false)
-          }
+          await signInWithGoogle()
         }}
         handlers={googleHandlers}
         data-home-google-button=""
         style={googleStyle}
         icon={
           <IconSlot {...googleIconStyle}>
-            {isLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
+            {authActionLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
           </IconSlot>
         }
-        label={isLoading ? 'Conectando...' : 'Continuar con Google'}
+        label={authActionLoading ? 'Conectando...' : 'Continuar con Google'}
       />
       {showSlowNotice ? (
         <div role="status" aria-live="polite" style={slowNoticeWrapStyle}>
@@ -314,7 +307,7 @@ export default function LoginButtons() {
       ) : null}
       <OAuthButton
         variant="secondary"
-        disabled={isLoading}
+        disabled={authActionLoading}
         onClick={onApple}
         handlers={appleHandlers}
         style={appleStyle}

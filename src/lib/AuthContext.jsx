@@ -101,6 +101,8 @@ export function AuthProvider({ children }) {
   const [isNewUser, setIsNewUser] = useState(false)
   const [isProfileComplete, setIsProfileComplete] = useState(false)
   const [authError, setAuthError] = useState(null)
+  const [authActionLoading, setAuthActionLoading] = useState(false)
+  const authActionLoadingRef = useRef(false)
   const authStatusRef = useRef(status)
 
   useEffect(() => {
@@ -346,22 +348,24 @@ export function AuthProvider({ children }) {
 
   const signInWithGoogle = useCallback(async () => {
     logFlow('LOGIN_CLICK')
-    setAuthError(null)
-    if (!isSupabaseConfigured()) {
-      writeLocalFlag(DEV_AUTH_KEY, true)
-      applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: true })
-      return
-    }
+    if (authActionLoadingRef.current) return
+    authActionLoadingRef.current = true
+    setAuthActionLoading(true)
     try {
-      const { error } = await signInWithGoogleRequest()
-      if (error) {
-        const msg = error.message || String(error)
-        setAuthError(msg)
+      setAuthError(null)
+      if (!isSupabaseConfigured()) {
+        writeLocalFlag(DEV_AUTH_KEY, true)
+        applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: true })
         return
       }
+      const { error } = await signInWithGoogleRequest()
+      if (error) setAuthError(error.message || String(error))
     } catch (e) {
       console.error('[WaitMe][Auth] signInWithGoogle excepción no prevista', e)
       setAuthError(e instanceof Error ? e.message : String(e))
+    } finally {
+      authActionLoadingRef.current = false
+      setAuthActionLoading(false)
     }
   }, [applyDevAuthenticatedCore])
 
@@ -400,6 +404,7 @@ export function AuthProvider({ children }) {
       setProfile,
       headerProfile,
       authError,
+      authActionLoading,
       signInWithGoogle,
       signOut,
       profileBootstrapReady,
@@ -416,6 +421,7 @@ export function AuthProvider({ children }) {
       setProfile,
       headerProfile,
       authError,
+      authActionLoading,
       signInWithGoogle,
       signOut,
       profileBootstrapReady,
