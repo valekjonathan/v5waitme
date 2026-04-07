@@ -1,21 +1,22 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 /**
- * Producción / App Store: nunca defines `WAITME_CAP_DEV_SERVER_URL`.
- * Live reload (solo dev): `npm run cap:live:on` → sync con server.url temporal en ios/.
+ * Producción: no definas `WAITME_CAP_DEV_SERVER_URL` al hacer `cap sync`.
+ * Dev (Live Reload): `npm run cap:live:on` y luego `npm run dev` + Xcode Run.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
-const devServerUrl = String(process.env.WAITME_CAP_DEV_SERVER_URL ?? '').trim()
+const devUrl = String(process.env.WAITME_CAP_DEV_SERVER_URL ?? '').trim()
+const isDev = Boolean(devUrl)
 
 const config: CapacitorConfig = {
   appId: 'es.waitme.v5waitme',
   appName: 'WaitMe',
   webDir: 'dist',
-  ...(devServerUrl
+  ...(isDev
     ? {
         server: {
-          url: devServerUrl,
+          url: devUrl,
           cleartext: true,
         },
       }

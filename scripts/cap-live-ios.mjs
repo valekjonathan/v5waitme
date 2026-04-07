@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Live reload en iPhone físico: aplica `server.url` solo durante `cap sync ios`
- * si WAITME_CAP_DEV_SERVER_URL está definida (vía este script con subcomando `on`).
+ * Live Reload (iPhone físico): detecta IPv4 LAN, fija WAITME_CAP_DEV_SERVER_URL
+ * y ejecuta `npx cap sync ios` para escribir server.url solo en el config generado.
  *
- * `off` sincroniza sin esa variable → WKWebView vuelve a cargar `dist/` embebido (producción).
+ * Producción: `npm run cap:live:off` (sync sin esa variable).
  */
 import { spawnSync } from 'node:child_process'
 import { networkInterfaces } from 'node:os'
@@ -25,38 +25,25 @@ function primaryLanIPv4() {
   return null
 }
 
-const sub = process.argv[2] || 'on'
 const port = String(process.env.VITE_DEV_PORT || '5173').trim() || '5173'
+const ip = String(process.env.CAP_LAN_IP || primaryLanIPv4() || '').trim()
 
-/** Entorno limpio para cap sync: sin server.url heredado de la shell. */
-const baseEnv = { ...process.env }
-delete baseEnv.WAITME_CAP_DEV_SERVER_URL
-
-if (sub === 'off') {
-  console.info('[waitme] cap:live:off → sync iOS sin server.url (bundle local dist/).\n')
-} else if (sub === 'on') {
-  const ip = String(process.env.CAP_LAN_IP || primaryLanIPv4() || '').trim()
-  if (!ip) {
-    console.error(
-      '[waitme] No hay IPv4 LAN. Exporta CAP_LAN_IP=192.168.x.x o conecta la interfaz Wi‑Fi.'
-    )
-    process.exit(1)
-  }
-  const url = `http://${ip}:${port}`
-  baseEnv.WAITME_CAP_DEV_SERVER_URL = url
-  console.info(`[waitme] cap:live:on → server.url = ${url}`)
-  console.info('  • Terminal A: npm run dev')
-  console.info('  • Misma Wi‑Fi: Mac + iPhone')
-  console.info('  • Xcode: Run en el dispositivo')
-  console.info('  • Al acabar: npm run cap:live:off\n')
-} else {
-  console.error('Uso: node scripts/cap-live-ios.mjs [on|off]')
+if (!ip) {
+  console.error('[waitme] Sin IPv4 LAN. Conecta Wi‑Fi o exporta CAP_LAN_IP=192.168.x.x')
   process.exit(1)
 }
 
+const url = `http://${ip}:${port}`
+const env = { ...process.env, WAITME_CAP_DEV_SERVER_URL: url }
+
+console.info(`[waitme] cap:live:on → ${url}`)
+console.info('  → otra terminal: npm run dev')
+console.info('  → Xcode: Run en iPhone (misma Wi‑Fi)')
+console.info('  → fin dev: npm run cap:live:off\n')
+
 const r = spawnSync('npx', ['cap', 'sync', 'ios'], {
   cwd: root,
-  env: baseEnv,
+  env,
   stdio: 'inherit',
 })
 

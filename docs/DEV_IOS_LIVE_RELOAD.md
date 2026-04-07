@@ -45,6 +45,8 @@
 npm run cap:live:off
 ```
 
+Equivale a `npx cap sync ios` **sin** `WAITME_CAP_DEV_SERVER_URL`. Si exportaste esa variable en la shell, haz `unset WAITME_CAP_DEV_SERVER_URL` antes o usa una terminal nueva.
+
 Luego, cuando toque empaquetar web + nativo:
 
 ```bash
@@ -67,7 +69,7 @@ Usa las funciones del sistema (p. ej. duplicación de pantalla / Continuidad seg
 
 - `capacitor.config.ts` **no** incluye `server` salvo que exista `WAITME_CAP_DEV_SERVER_URL` en el momento de `cap sync`.
 - No commitees `WAITME_CAP_DEV_SERVER_URL` en `.env` de producción.
-- Tras desarrollo con live reload, ejecuta **`npm run cap:live:off`** (o un `cap sync` sin esa variable) antes de entregar un build “real”.
+- Tras desarrollo con live reload, ejecuta **`npm run cap:live:off`** antes de entregar un build “real”.
 
 ## Tareas en Cursor / VS Code
 
