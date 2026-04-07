@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-06T19:15:28.443Z
-Git revision: f418a336ac92bb6d50e91bdbe2ea37a7a9d7e4cc
+Generated: 2026-04-07T07:21:44.490Z
+Git revision: 9fdc7603ad3419a6dce07028a9cebe875f49cc80
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
