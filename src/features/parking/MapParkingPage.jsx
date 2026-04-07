@@ -8,15 +8,18 @@ import SearchParkingOverlay from './components/SearchParkingOverlay.jsx'
 
 const mapPageShellStyle = {
   position: 'relative',
-  flex: 1,
+  flex: '1 1 0%',
   minHeight: 0,
+  minWidth: 0,
   width: '100%',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
 }
 const mapPageMapSlotStyle = {
-  flex: 1,
+  flex: '1 1 0%',
   minHeight: 0,
+  minWidth: 0,
   height: '100%',
   width: '100%',
   position: 'relative',

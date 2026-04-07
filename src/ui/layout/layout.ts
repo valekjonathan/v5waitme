@@ -1,7 +1,7 @@
 /**
  * Contrato maestro de layout (v5waitme).
  * Cadena: `html/body/#root` → `.waitme-app-root` → `.waitme-iphone-frame-fullbleed` → ScreenShell.
- * ScreenShell: Header + `<main>` (scroll en inset cuando toca) + BottomNav (fuera de `<main>`).
+ * ScreenShell: grid `auto 1fr auto` bajo `var(--app-height)` → fila central = alto real del mapa/slot.
  * Mapa / overlays: bajo `data-waitme-content-slot` dentro de `<main>`.
  */
 

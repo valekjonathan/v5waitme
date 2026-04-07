@@ -1,6 +1,7 @@
 /**
- * Shell: Header → `<main>` (scroll en inset) → BottomNav (fixed al viewport).
- * Modo fullBleed: `<main>` sin scroll; el mapa/overlays rellenan el slot.
+ * Shell: Header → `<main>` (scroll en inset) → BottomNav (flujo normal).
+ * Grid `auto 1fr auto` + `height: var(--app-height)`: la fila central tiene alto definido
+ * (mismo cálculo Safari / WKWebView); el mapa no depende de flex-basis entre motores.
  */
 import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
@@ -8,27 +9,33 @@ import BottomNav from '../BottomNav'
 import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 
 const shellRootStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
+  display: 'grid',
+  gridTemplateRows: 'auto 1fr auto',
+  gridTemplateColumns: 'minmax(0, 1fr)',
   height: 'var(--app-height)',
   width: '100%',
   overflow: 'hidden',
+  boxSizing: 'border-box',
 }
 
 const mainStyleBase: CSSProperties = {
-  flex: 1,
+  minHeight: 0,
+  minWidth: 0,
+  width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  minHeight: 0,
+  overflow: 'hidden',
+  boxSizing: 'border-box',
 }
 
 const shellMainColumnStyle: CSSProperties = {
   width: '100%',
+  height: '100%',
   maxWidth: 'none',
   margin: 0,
   padding: 0,
   minHeight: 0,
-  flex: 1,
+  minWidth: 0,
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',

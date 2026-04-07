@@ -12,8 +12,9 @@ const s = LAYOUT.spacing
 const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
 const rootStyle = {
   position: 'relative',
-  flex: 1,
+  flex: '1 1 0%',
   minHeight: 0,
+  minWidth: 0,
   height: '100%',
   width: '100%',
   display: 'flex',
