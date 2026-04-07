@@ -31,6 +31,18 @@ body,
   overflow: hidden;
 }
 
+/**
+ * Solo dev web (clase en `html` desde App.jsx): ancho lógico tipo iPhone en Safari Mac.
+ * Nativo Capacitor no añade esta clase.
+ */
+.force-iphone .waitme-app-root,
+.force-iphone .waitme-iphone-frame-fullbleed {
+  max-width: 390px;
+  margin: 0 auto;
+  border-radius: 40px;
+  overflow: hidden;
+}
+
 html {
   width: 100%;
   margin: 0;

@@ -293,18 +293,36 @@ function AppGate() {
 
 export default function App() {
   useLayoutEffect(() => {
-    const setHeight = () => {
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+    const getAppHeight = () => {
+      const isNative = window.Capacitor?.isNativePlatform?.()
+
+      if (isNative) {
+        return window.innerHeight
+      }
+
+      // Web (dev): altura tipo iPhone para alinear Safari desktop con WKWebView real.
+      return Math.min(window.innerHeight, 844)
     }
 
-    setHeight()
+    const apply = () => {
+      document.documentElement.style.setProperty('--app-height', `${getAppHeight()}px`)
+      const isDevDesktop = !window.Capacitor?.isNativePlatform?.() && window.innerWidth > 500
+      if (isDevDesktop) {
+        document.documentElement.classList.add('force-iphone')
+      } else {
+        document.documentElement.classList.remove('force-iphone')
+      }
+    }
 
-    window.addEventListener('resize', setHeight)
-    window.addEventListener('orientationchange', setHeight)
+    apply()
+
+    window.addEventListener('resize', apply)
+    window.addEventListener('orientationchange', apply)
 
     return () => {
-      window.removeEventListener('resize', setHeight)
-      window.removeEventListener('orientationchange', setHeight)
+      window.removeEventListener('resize', apply)
+      window.removeEventListener('orientationchange', apply)
+      document.documentElement.classList.remove('force-iphone')
     }
   }, [])
 
