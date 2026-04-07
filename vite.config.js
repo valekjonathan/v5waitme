@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
@@ -57,7 +58,26 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
-    plugins: [react(), ...sentryPlugins],
+    plugins: [
+      react(),
+      ...(command === 'serve' && process.platform === 'darwin'
+        ? [
+            {
+              name: 'waitme-open-safari',
+              configureServer(server) {
+                server.httpServer?.once('listening', () => {
+                  try {
+                    execSync('open -a Safari http://127.0.0.1:5173/', { stdio: 'ignore' })
+                  } catch {
+                    /* Safari ausente o restricción del entorno */
+                  }
+                })
+              },
+            },
+          ]
+        : []),
+      ...sentryPlugins,
+    ],
     optimizeDeps: {
       include: ['mapbox-gl'],
     },

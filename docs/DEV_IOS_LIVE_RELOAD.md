@@ -17,25 +17,21 @@
 
 ## 2. Live Reload en iPhone real
 
-**Requisitos:** Mac e iPhone en la misma red Wi‑Fi; Vite escuchando en LAN (`vite.config.js` tiene `server.host: true`).
+**Requisitos:** Mac e iPhone en la misma red Wi‑Fi.
 
-1. **Activar** `server.url` en la config nativa y sincronizar:
-
-   ```bash
-   npm run cap:live:on
-   ```
-
-   Detecta la IPv4 de la LAN (o usa `CAP_LAN_IP=192.168.x.x` si hace falta). Puerto por defecto **5173** (`VITE_DEV_PORT` para otro).
-
-2. **Arrancar** el dev server (otra terminal):
+1. **Un solo comando** (sync iOS con `server.url` + Vite + Safari en macOS):
 
    ```bash
    npm run dev
    ```
 
-3. **Xcode:** abrir `ios/App/App.xcworkspace` (o `npm run cap:open:ios`), seleccionar el **iPhone físico**, **Run**.
+   Incluye `cap sync ios` con `WAITME_CAP_DEV_SERVER_URL` (IP LAN automática, o `CAP_LAN_IP=…`). Puerto **5173** (`VITE_DEV_PORT` si cambias).
 
-4. La app carga la UI desde `http://<tu-ip-LAN>:5173` con HMR de Vite.
+2. **Solo navegador / sin tocar Capacitor:** `npm run dev:vite`
+
+3. **Xcode:** abrir `ios/App/App.xcworkspace` (o `npm run cap:open:ios`), **Run** en el **iPhone** (una vez por sesión o tras cambios nativos). La app carga desde `http://<LAN>:5173` con actualización vía Vite.
+
+4. **`npm run cap:live:on`** sigue disponible si solo quieres sync sin arrancar Vite.
 
 ## 3. Volver a modo producción (sin `server.url`)
 

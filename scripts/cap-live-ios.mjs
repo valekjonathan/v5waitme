@@ -36,10 +36,11 @@ if (!ip) {
 const url = `http://${ip}:${port}`
 const env = { ...process.env, WAITME_CAP_DEV_SERVER_URL: url }
 
-console.info(`[waitme] cap:live:on → ${url}`)
-console.info('  → otra terminal: npm run dev')
-console.info('  → Xcode: Run en iPhone (misma Wi‑Fi)')
-console.info('  → fin dev: npm run cap:live:off\n')
+console.info(`[waitme] Live URL → ${url} (cap sync ios)`)
+console.info('  → Vite arranca a continuación (Safari + HMR).')
+console.info('  → iPhone: Xcode → Run una vez; luego HMR vía red Wi‑Fi.')
+console.info('  → Solo web / sin iOS: npm run dev:vite')
+console.info('  → Producción limpia: npm run cap:live:off\n')
 
 const r = spawnSync('npx', ['cap', 'sync', 'ios'], {
   cwd: root,
