@@ -128,13 +128,14 @@ if (!pingLanHost(ip)) {
 }
 
 const url = `http://${ip}:${port}`
-if (/localhost|127\.0\.0\.1/i.test(url)) {
-  console.error('[waitme] URL no debe ser localhost:', url)
+if (/localhost|127\.0\.0\.1|0\.0\.0\.0/i.test(url)) {
+  console.error('[waitme] URL no debe ser localhost ni 0.0.0.0:', url)
   process.exit(1)
 }
 
 const env = { ...process.env, WAITME_CAP_DEV_SERVER_URL: url }
 
+console.info(`USING DEV SERVER: ${url}`)
 console.info(`DEV SERVER URL → ${url}`)
 console.info(`[waitme] Live URL → ${url} (cap sync ios)`)
 console.info('  → Vite arranca a continuación (Safari + HMR).')
