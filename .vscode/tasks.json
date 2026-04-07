@@ -21,6 +21,18 @@
       "type": "shell",
       "command": "npm run cap:live:off",
       "problemMatcher": []
+    },
+    {
+      "label": "cap:sync:prod",
+      "type": "shell",
+      "command": "npm run cap:sync:prod",
+      "problemMatcher": []
+    },
+    {
+      "label": "ios:fresh:dev",
+      "type": "shell",
+      "command": "npm run ios:fresh:dev",
+      "problemMatcher": []
     }
   ]
 }

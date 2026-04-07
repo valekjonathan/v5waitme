@@ -6,6 +6,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * Solo `http://<IP_LAN>:<puerto Vite>` (10.x o 192.168.x). Nunca localhost, Vercel ni otros dominios.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
+ * @see docs/FLUJO_JONATHAN.md
  */
 function isPrivateLanIPv4(host: string): boolean {
   const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host)

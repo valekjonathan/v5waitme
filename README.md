@@ -9,7 +9,9 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:5173` en el navegador.
+**En casa (Safari + iPhone live reload):** un solo comando. Vite usa la **IP LAN** (`http://192.168.x.x:5173` o similar); en macOS Safari se abre solo. Detalle, staging y producción: **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
+
+Solo navegador sin sync iOS: `npm run dev:vite`. iOS listo para tienda (sin `server.url`): `npm run cap:sync:prod`.
 
 ## Calidad
 

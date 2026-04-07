@@ -26,6 +26,7 @@
     "supabase:setup": "node scripts/supabase-setup.mjs",
     "supabase:types": "supabase gen types typescript --linked",
     "cap:sync": "npm run build && npx cap sync ios",
+    "cap:sync:prod": "node scripts/cap-sync-production.mjs",
     "cap:open:ios": "npx cap open ios",
     "cap:live:on": "node scripts/cap-live-ios.mjs",
     "cap:live:off": "node scripts/cap-live-off.mjs",

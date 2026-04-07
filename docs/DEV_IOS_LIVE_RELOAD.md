@@ -2,19 +2,21 @@
 
 ## Resumen
 
-| Entorno                                | Uso                                                                                                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Safari en Mac (`npm run dev`)**      | Espejo **rápido** de layout (marco tipo iPhone en escritorio). **No** sustituye al dispositivo.              |
-| **iPhone + Capacitor + Vite**          | Ver cambios en tiempo casi real con **Live Reload** (`server.url` solo en dev).                              |
-| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                |
-| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                     |
-| **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode. |
+| Entorno                                | Uso                                                                                                                               |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Safari en Mac (`npm run dev`)**      | Misma URL **LAN** que el iPhone (`http://<IP>:5173`); en escritorio ancho, marco tipo iPhone. **No** sustituye al WKWebView real. |
+| **iPhone + Capacitor + Vite**          | Ver cambios en tiempo casi real con **Live Reload** (`server.url` solo en dev).                                                   |
+| **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                                     |
+| **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                          |
+| **BrowserStack (opcional)**            | Validación **secundaria** en navegadores / iOS remotos; **no** sustituye iPhone real ni WKWebView con Xcode.                      |
 
-## 1. Espejo rápido en Mac (sin cambios)
+## 1. Espejo rápido en Mac
 
-- `npm run dev` en `localhost`.
-- En ventana ancha, el proyecto ya aplica simulación tipo iPhone (`IphoneFrame` + `force-iphone`); sirve para iterar **rápido** en CSS/layout.
-- La **verdad final** para el usuario es **WKWebView en iPhone** (misma Wi‑Fi + Live Reload o build de release).
+- `npm run dev`: Vite escucha en toda la interfaz; la URL correcta es **`http://<IP_LAN>:5173`** (se imprime al arrancar y Safari en macOS se abre ahí en condiciones normales).
+- En ventana muy ancha y **hostname `localhost`**, puede activarse el marco tipo iPhone (`IphoneFrame`); **en LAN** (p. ej. IP del Mac) el layout es ancho completo, alineado con el iPhone en live reload.
+- La **verdad final** nativa sigue siendo **WKWebView en iPhone** (misma Wi‑Fi + Live Reload o build de release).
+
+**Guía corta de modos (casa / fuera / prod):** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).
 
 ## 2. Live Reload en iPhone real
 
@@ -44,13 +46,13 @@ npm run cap:live:off
 
 Equivale a `npx cap sync ios` **sin** `WAITME_CAP_DEV_SERVER_URL`. Si exportaste esa variable en la shell, haz `unset WAITME_CAP_DEV_SERVER_URL` antes o usa una terminal nueva.
 
-Luego, cuando toque empaquetar web + nativo:
+Luego, cuando toque empaquetar web + nativo **sin arrastrar** `WAITME_CAP_DEV_SERVER_URL` de la shell:
 
 ```bash
-npm run cap:sync
+npm run cap:sync:prod
 ```
 
-(`build` + `cap sync` sin variable de entorno → **no** queda `server.url` en la config generada.)
+(`build` + `cap sync` en un proceso que **elimina** la variable → **no** queda `server.url`. Si usas `npm run cap:sync` en la misma terminal donde exportaste la URL de dev, podría volver a inyectarse; por eso existe `cap:sync:prod`.)
 
 ## 4. Inspeccionar el WKWebView real
 
