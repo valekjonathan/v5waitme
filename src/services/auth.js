@@ -10,6 +10,9 @@ import {
 import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
+/** Único redirect PKCE en iOS/Android nativo; debe estar en Supabase Auth → Redirect URLs. */
+export const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
+
 /**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
  * Limpia la URL para no re-procesar el error en cada recarga.
@@ -93,7 +96,7 @@ export async function signInWithGoogle() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'capacitor://localhost',
+          redirectTo: NATIVE_OAUTH_REDIRECT_URL,
           skipBrowserRedirect: true,
         },
       })
@@ -111,6 +114,7 @@ export async function signInWithGoogle() {
           console.log('[OAuth][iOS] URL enviada a WebAuth:', data.url)
           const res = await WaitmeWebAuth.start({
             url: data.url,
+            /** Debe coincidir con el scheme de `NATIVE_OAUTH_REDIRECT_URL` (capacitor://…). */
             callbackScheme: 'capacitor',
           })
           console.log('[OAuth][iOS] respuesta plugin:', res)

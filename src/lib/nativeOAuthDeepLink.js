@@ -3,11 +3,8 @@ import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { supabase } from '../services/supabase.js'
 
-/** Debe coincidir con `redirectTo` en OAuth nativo y con CFBundleURLSchemes (`capacitor`). */
-const NATIVE_CALLBACK_PREFIX = 'capacitor://localhost'
-/** Compat: builds anteriores con URL scheme custom. */
+/** Compat: builds anteriores (antes de capacitor://localhost). */
 const LEGACY_CALLBACK_PREFIX = 'es.waitme.v5waitme://auth-callback'
-const NATIVE_SCHEME_SNIPPET = 'es.waitme.v5waitme'
 
 /** Evita doble intercambio si `getLaunchUrl` y `appUrlOpen` entregan la misma URL. */
 const seenOAuthCallbackUrls = new Set()
@@ -37,11 +34,40 @@ function clearOAuthReturnWatch() {
   }
 }
 
-function normalizeNativeCallbackUrl(url) {
-  if (url.startsWith(NATIVE_CALLBACK_PREFIX)) {
-    return url.replace(/^capacitor:\/\/localhost\/?/i, 'http://localhost/')
+/**
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isCapacitorLocalhostCallback(url) {
+  if (!url || typeof url !== 'string') return false
+  if (url.startsWith(LEGACY_CALLBACK_PREFIX)) return true
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'capacitor:') return false
+    return u.hostname.toLowerCase() === 'localhost'
+  } catch {
+    return /^capacitor:\/\/localhost/i.test(url)
   }
-  return url.replace(LEGACY_CALLBACK_PREFIX, 'http://localhost/auth-callback')
+}
+
+/**
+ * @param {string} url
+ * @returns {string}
+ */
+function normalizeNativeCallbackUrl(url) {
+  if (url.startsWith(LEGACY_CALLBACK_PREFIX)) {
+    return url.replace(LEGACY_CALLBACK_PREFIX, 'http://localhost/auth-callback')
+  }
+  try {
+    const u = new URL(url)
+    if (u.protocol === 'capacitor:' && u.hostname.toLowerCase() === 'localhost') {
+      const path = u.pathname === '/' ? '' : u.pathname
+      return `http://localhost${path}${u.search}${u.hash}`
+    }
+  } catch {
+    /* */
+  }
+  return url.replace(/^capacitor:\/\/localhost\/?/i, 'http://localhost/')
 }
 
 /**
@@ -61,10 +87,8 @@ export async function deliverNativeOAuthCallback(url, source) {
     return false
   }
 
-  const matchesPrefix =
-    url.startsWith(NATIVE_CALLBACK_PREFIX) || url.startsWith(LEGACY_CALLBACK_PREFIX)
-  if (!matchesPrefix) {
-    console.log('[WaitMe][OAuth] URL no es auth-callback; ignorada')
+  if (!isCapacitorLocalhostCallback(url)) {
+    console.log('[WaitMe][OAuth] URL no es capacitor://localhost (ni legacy); ignorada')
     return false
   }
 
@@ -82,7 +106,7 @@ export async function deliverNativeOAuthCallback(url, source) {
       parsed.searchParams.get('code') ||
       new URLSearchParams(parsed.hash.replace(/^#/, '')).get('code')
 
-    console.log('[OAuth][JS] code extraído:', code)
+    console.log('[OAuth][JS] code extraído:', code ? '(presente)' : null)
 
     if (!code) {
       console.warn('[WaitMe][OAuth] callback sin code; URL:', url)
@@ -121,14 +145,15 @@ export async function deliverNativeOAuthCallback(url, source) {
   }
 }
 
+function shouldClearOAuthWatch(url) {
+  return typeof url === 'string' && isCapacitorLocalhostCallback(url)
+}
+
 export function registerNativeOAuthDeepLink() {
   if (!Capacitor.isNativePlatform() || !supabase) return
 
   void App.addListener('appUrlOpen', async ({ url }) => {
-    if (
-      typeof url === 'string' &&
-      (url.startsWith(NATIVE_CALLBACK_PREFIX) || url.includes(NATIVE_SCHEME_SNIPPET))
-    ) {
+    if (shouldClearOAuthWatch(url)) {
       clearOAuthReturnWatch()
     }
     await deliverNativeOAuthCallback(url, 'appUrlOpen')
@@ -136,10 +161,7 @@ export function registerNativeOAuthDeepLink() {
 
   void App.getLaunchUrl().then((launch) => {
     if (launch?.url) {
-      if (
-        launch.url.startsWith(NATIVE_CALLBACK_PREFIX) ||
-        launch.url.includes(NATIVE_SCHEME_SNIPPET)
-      ) {
+      if (shouldClearOAuthWatch(launch.url)) {
         clearOAuthReturnWatch()
       }
       void deliverNativeOAuthCallback(launch.url, 'getLaunchUrl')

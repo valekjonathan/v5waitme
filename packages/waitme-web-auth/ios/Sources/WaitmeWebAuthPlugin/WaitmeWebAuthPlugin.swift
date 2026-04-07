@@ -59,7 +59,8 @@ public class WaitmeWebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
             }
 
             session.presentationContextProvider = self
-            session.prefersEphemeralWebBrowserSession = false
+            // true: sesión aislada; al completar el redirect al scheme, iOS cierra el sheet (no queda en Safari).
+            session.prefersEphemeralWebBrowserSession = true
 
             self.authSession = session
 
