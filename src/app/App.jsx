@@ -29,7 +29,10 @@ import {
 } from '../lib/appScreenState.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
-/** Raíz React: llena #root (flex); `--app-height` = `visualViewport.height` (waitmeViewport). */
+/**
+ * Raíz React: llena #root (flex). `--app-height` se escribe solo desde `visualViewport.height`
+ * en `subscribeWaitmeViewportCssVars()` (resize/scroll/orientation del vv y de `window`).
+ */
 const appRootLayoutStyle = {
   display: 'flex',
   flexDirection: 'column',

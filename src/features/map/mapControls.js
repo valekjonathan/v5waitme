@@ -2,10 +2,9 @@ import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapbox.js'
 import { getMapFollowUserGps, getParkingMapPinMode, setSearchFollowUserGps } from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
+import { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
-/** Selectores compartidos con `Map.jsx` (hueco buscador–tarjeta). */
-export const GAP_SEARCH_BOTTOM = '[data-search-box]'
-export const GAP_CARD_TOP = '[data-alert-card]'
+export { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
 export function isWaitmeParkingLayoutReady() {
   if (typeof document === 'undefined') return false

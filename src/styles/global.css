@@ -1,9 +1,10 @@
 :root {
-  /* Sobrescrito en runtime por `syncWaitmeViewportCssVars()` (visualViewport). */
+  /* Sobrescrito en runtime por `syncWaitmeViewportCssVars()` solo con `visualViewport.height` (sin innerHeight). */
   --app-height: 100dvh;
   --vv-height: 100dvh;
   --vv-offset-top: 0px;
   --vv-offset-left: 0px;
+  /* Desktop: env(...) suele ser 0; segundo valor = fallback explícito. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

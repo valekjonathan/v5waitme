@@ -32,59 +32,10 @@ import {
   jumpMapToGpsSearch,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
-import { logWaitmeViewportDebug } from '../../../lib/waitmeViewport.js'
-
-/** `resize`/`scroll` del visual viewport + `window.resize` (Safari iOS, PWA, Mac). */
-function subscribeVisualViewportAndWindowResize(handler) {
-  const vv = window.visualViewport
-  const onVv = () => handler()
-  window.addEventListener('resize', handler)
-  vv?.addEventListener('resize', onVv)
-  vv?.addEventListener('scroll', onVv)
-  return () => {
-    window.removeEventListener('resize', handler)
-    vv?.removeEventListener('resize', onVv)
-    vv?.removeEventListener('scroll', onVv)
-  }
-}
-
-/**
- * Home/Login: `__WAITME_PIN_OFFSET_Y__` = punta del pin vs centro vertical del mapa.
- * Search/Parked con hueco medible: la cámara se corrige con project/unproject en mapControls (sin offset).
- * Search/Parked sin medición aún: offset como Home hasta que exista layout.
- */
-function applyWaitmePinAndParkingCamera(pinEl, mapShellEl, parkingBandPinAdjust) {
-  if (typeof window === 'undefined' || !pinEl || !mapShellEl) return
-  const pinRect = pinEl.getBoundingClientRect()
-  const mapRect = mapShellEl.getBoundingClientRect()
-  const pinTipY = pinRect.bottom
-  const mapCenterY = mapRect.top + mapRect.height / 2
-  const offsetVersusMapCenter = pinTipY - mapCenterY
-
-  if (!parkingBandPinAdjust) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
-    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
-    return
-  }
-
-  const searchEl = document.querySelector(GAP_SEARCH_BOTTOM)
-  const cardEl = document.querySelector(GAP_CARD_TOP)
-  if (!searchEl || !cardEl) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
-    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
-    return
-  }
-  const searchBottom = searchEl.getBoundingClientRect().bottom
-  const cardTop = cardEl.getBoundingClientRect().top
-  if (!(cardTop > searchBottom)) {
-    window.__WAITME_PIN_OFFSET_Y__ = offsetVersusMapCenter
-    logWaitmeViewportDebug({ mapOffsetY_px: offsetVersusMapCenter })
-    return
-  }
-
-  delete window.__WAITME_PIN_OFFSET_Y__
-  logWaitmeViewportDebug({ mapOffsetY_px: 'gap-mode' })
-}
+import {
+  applyWaitmePinAndParkingCamera,
+  subscribeWaitmeViewportEvents,
+} from '../../../lib/waitmeViewport.js'
 
 let globalContainer = null
 
@@ -225,7 +176,7 @@ export default function Map({
       const mapEl = mapShellRef.current
       const ro = mapEl ? new ResizeObserver(run) : null
       if (mapEl && ro) ro.observe(mapEl)
-      const unsubVvWin = subscribeVisualViewportAndWindowResize(run)
+      const unsubVvWin = subscribeWaitmeViewportEvents(run)
       const raf = requestAnimationFrame(run)
       return () => {
         ro?.disconnect()
@@ -298,7 +249,7 @@ export default function Map({
     const mapEl = mapShellRef.current
     const ro = mapEl ? new ResizeObserver(run) : null
     if (mapEl && ro) ro.observe(mapEl)
-    const unsubVvWin = subscribeVisualViewportAndWindowResize(run)
+    const unsubVvWin = subscribeWaitmeViewportEvents(run)
     const raf = requestAnimationFrame(run)
     return () => {
       ro?.disconnect()
@@ -536,21 +487,13 @@ export default function Map({
 
     resizeMap()
 
-    const vv = window.visualViewport
-    const onVvResize = () => resizeMap()
-    window.addEventListener('resize', resizeMap)
-    window.addEventListener('orientationchange', resizeMap)
-    vv?.addEventListener('resize', onVvResize)
-    vv?.addEventListener('scroll', onVvResize)
+    const unsubVv = subscribeWaitmeViewportEvents(resizeMap)
 
     const t1 = setTimeout(resizeMap, 500)
     const t2 = setTimeout(resizeMap, 1200)
 
     return () => {
-      window.removeEventListener('resize', resizeMap)
-      window.removeEventListener('orientationchange', resizeMap)
-      vv?.removeEventListener('resize', onVvResize)
-      vv?.removeEventListener('scroll', onVvResize)
+      unsubVv()
       clearTimeout(t1)
       clearTimeout(t2)
     }
@@ -607,11 +550,11 @@ export default function Map({
       }
       map.on('dragstart', onDragStart)
       map.on('move', onMove)
-      window.addEventListener('resize', onResize)
+      const unsubVv = subscribeWaitmeViewportEvents(onResize)
       detach = () => {
         map.off('dragstart', onDragStart)
         map.off('move', onMove)
-        window.removeEventListener('resize', onResize)
+        unsubVv()
       }
     }
     tryAttach()
