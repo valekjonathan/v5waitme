@@ -169,7 +169,7 @@ export default function Map({
 
   const projectSearchPinFromGps = useCallback(() => {
     const map = getGlobalMapInstance()
-    if (!map?.project) return
+    if (!map?.project || !map.isStyleLoaded?.()) return
     const g = searchGpsRef.current
     if (!g || !Number.isFinite(g.lng) || !Number.isFinite(g.lat)) return
     try {
@@ -179,6 +179,19 @@ export default function Map({
       /* */
     }
   }, [])
+
+  const projectSearchPinFromGpsRef = useRef(projectSearchPinFromGps)
+  projectSearchPinFromGpsRef.current = projectSearchPinFromGps
+
+  useEffect(() => {
+    if (import.meta.env?.MODE === 'test') return
+    if (!parkingBandPinAdjust || parkingPinMode !== 'search') return
+    const fast = getCurrentLocationFast()
+    if (fast) {
+      searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
+    }
+    projectSearchPinFromGps()
+  }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
 
   /** Home: pin en viewport + offset. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
@@ -349,11 +362,13 @@ export default function Map({
       if (unsubscribeLocation) return
       unsubscribeLocation = subscribeToLocation((loc) => {
         if (!loc) return
+        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
+        }
         const map = getGlobalMapInstance()
         if (!map?.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
-          projectSearchPinFromGps()
+          projectSearchPinFromGpsRef.current()
           if (getSearchFollowUserGps()) jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
           return
         }
@@ -380,6 +395,10 @@ export default function Map({
         applyPostLoadStyle(existingMap, readOnlyRef.current)
         const fast = getCurrentLocationFast()
         if (followUserGpsRef.current && fast) centerMapOnUserImmediate(existingMap, fast)
+        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
+          projectSearchPinFromGpsRef.current()
+        }
         fireSettled()
       }
       ensureLocationPipe()
@@ -450,6 +469,11 @@ export default function Map({
         } catch {
           /* */
         }
+      }
+      if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+        const fast = getCurrentLocationFast()
+        if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
+        projectSearchPinFromGpsRef.current()
       }
       fireSettled()
     }
@@ -599,9 +623,16 @@ export default function Map({
         {unavailable ? null : !parkingBandPinAdjust ? (
           <MapViewportCenterPin ref={pinRef} />
         ) : parkingPinMode === 'search' ? (
-          searchPinPixel ? (
-            <MapViewportCenterPin ref={pinRef} pinPixel={searchPinPixel} />
-          ) : null
+          <MapViewportCenterPin
+            ref={pinRef}
+            pinPixel={
+              searchPinPixel != null &&
+              Number.isFinite(searchPinPixel.x) &&
+              Number.isFinite(searchPinPixel.y)
+                ? searchPinPixel
+                : undefined
+            }
+          />
         ) : (
           <MapViewportCenterPin ref={pinRef} parkingPinTopPx={parkingPinTopPx ?? undefined} />
         )}
