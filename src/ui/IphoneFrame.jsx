@@ -1,8 +1,10 @@
+import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
+
 const isDevDesktop =
   import.meta.env.DEV &&
   typeof window !== 'undefined' &&
   window.location.hostname === 'localhost' &&
-  window.innerWidth > 768
+  window.innerWidth > DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH
 
 /** Primera instancia en el árbol = marco (main.jsx); la de AppLayout es passthrough sin segundo marco. */
 let devIphoneFrameShellClaimed = false

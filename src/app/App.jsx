@@ -13,6 +13,7 @@ import MapParkingPage from '../features/parking/MapParkingPage'
 import AlertsPage from '../features/alerts/AlertsPage'
 import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
+import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
@@ -306,7 +307,9 @@ export default function App() {
 
     const apply = () => {
       document.documentElement.style.setProperty('--app-height', `${getAppHeight()}px`)
-      const isDevDesktop = !window.Capacitor?.isNativePlatform?.() && window.innerWidth > 500
+      const isDevDesktop =
+        !window.Capacitor?.isNativePlatform?.() &&
+        window.innerWidth > DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH
       if (isDevDesktop) {
         document.documentElement.classList.add('force-iphone')
       } else {
