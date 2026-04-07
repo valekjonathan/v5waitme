@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { networkInterfaces } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
@@ -9,6 +10,51 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** Evita el mismo aviso dos veces cuando herramientas cargan esta config más de una vez en el mismo proceso. */
 let sentryUploadHintLogged = false
+
+/** Misma idea que `scripts/cap-live-ios.mjs`: solo 10.x / 192.168.x, sin interfaces virtuales. */
+function preferredLanIPv4() {
+  const skipName = (name) => {
+    const n = String(name).toLowerCase()
+    if (n === 'lo0' || n === 'lo') return true
+    return (
+      /^utun\d*$/.test(n) ||
+      /^awdl\d*$/.test(n) ||
+      /^llw\d*$/.test(n) ||
+      /^bridge\d*$/.test(n) ||
+      n.includes('docker') ||
+      n.includes('veth') ||
+      n.includes('vmnet') ||
+      n.includes('virbr') ||
+      n.startsWith('br-') ||
+      n.startsWith('tun') ||
+      n.startsWith('tap') ||
+      n.includes('cni') ||
+      n.includes('vbox') ||
+      n.includes('vethernet')
+    )
+  }
+  const ok = (addr) => {
+    const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(addr)
+    if (!m) return false
+    const a = Number(m[1])
+    const b = Number(m[2])
+    if (a === 127 || a === 0) return false
+    if (a === 10) return true
+    if (a === 192 && b === 168) return true
+    return false
+  }
+  const candidates = []
+  for (const [name, list] of Object.entries(networkInterfaces())) {
+    if (!list || skipName(name)) continue
+    for (const n of list) {
+      if (n.family !== 'IPv4' || n.internal) continue
+      if (ok(n.address)) candidates.push({ name, address: n.address })
+    }
+  }
+  if (candidates.length === 0) return null
+  const en0 = candidates.find((c) => c.name === 'en0')
+  return (en0 ?? candidates[0]).address
+}
 
 export default defineConfig(({ mode, command }) => {
   const fileEnv = loadEnv(mode, process.cwd(), '')
@@ -60,16 +106,31 @@ export default defineConfig(({ mode, command }) => {
     },
     plugins: [
       react(),
-      ...(command === 'serve' && process.platform === 'darwin'
+      ...(command === 'serve'
         ? [
             {
-              name: 'waitme-open-safari',
+              name: 'waitme-dev-server-lan-log',
               configureServer(server) {
                 server.httpServer?.once('listening', () => {
-                  try {
-                    execSync('open -a Safari http://127.0.0.1:5173/', { stdio: 'ignore' })
-                  } catch {
-                    /* Safari ausente o restricción del entorno */
+                  const addr = server.httpServer?.address()
+                  const port = typeof addr === 'object' && addr && 'port' in addr ? addr.port : 5173
+                  const ip = preferredLanIPv4()
+                  if (ip) {
+                    console.log(`\nSERVER RUNNING ON: http://${ip}:${port}`)
+                    console.log(`ABRE ESTA URL EN TU IPHONE: http://${ip}:${port}\n`)
+                  } else {
+                    console.warn(
+                      '\n[waitme] No se detectó IP LAN (10.x / 192.168.x). Para el iPhone usa la IP del Mac (Ajustes → Wi‑Fi) en http://<IP>:' +
+                        port +
+                        '\n'
+                    )
+                  }
+                  if (process.platform === 'darwin') {
+                    try {
+                      execSync(`open -a Safari http://127.0.0.1:${port}/`, { stdio: 'ignore' })
+                    } catch {
+                      /* Safari ausente o restricción del entorno */
+                    }
                   }
                 })
               },
@@ -92,10 +153,11 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     server: {
-      host: true,
+      /** Escucha en todas las interfaces para que el iPhone en la misma Wi‑Fi pueda conectar. */
+      host: '0.0.0.0',
       port: 5173,
       strictPort: true,
-      /** HMR activo; con host true el cliente usa el mismo origen que la página (Safari LAN / iPhone). */
+      /** HMR activo; el cliente usa el mismo origen que la página (Safari LAN / iPhone). */
       hmr: true,
     },
   }
