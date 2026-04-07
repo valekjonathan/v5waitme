@@ -58,12 +58,9 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       data-waitme-nav
       style={{
         pointerEvents: 'auto',
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
         width: '100%',
-        zIndex: 1000,
+        flexShrink: 0,
+        zIndex: LAYOUT.z.nav,
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
         paddingTop: navPaddingTop,
@@ -72,7 +69,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
-        paddingBottom: 'calc(env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
     >
       <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
