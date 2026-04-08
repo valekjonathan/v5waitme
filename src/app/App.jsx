@@ -225,18 +225,11 @@ function AuthBootScreen() {
   )
 }
 
-/** Solo `status` y `user` deciden la vista; el perfil se completa en segundo plano (evita loading infinito si profileBootstrapReady no llega a true). */
-function computeTargetView(status, user) {
-  if (status === 'loading') return 'loading'
-  if (!user || status === 'unauthenticated') return 'login'
-  return 'authenticated'
-}
-
 function AppGate() {
   const { status, user, isProfileComplete } = useAuth()
-  const [displayedView, setDisplayedView] = useState('loading')
-  const [opacity, setOpacity] = useState(1)
-  const [targetView, setTargetView] = useState('loading')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  /** Evita mostrar Login mientras el auth inicial no ha resuelto (solo se actualiza en efecto). */
+  const [authReady, setAuthReady] = useState(false)
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -247,32 +240,34 @@ function AppGate() {
   )
 
   useEffect(() => {
-    const next = computeTargetView(status, user)
-    setTargetView(next)
+    if (status === 'loading') return
+    setAuthReady(true)
+  }, [status])
+
+  useEffect(() => {
+    if (status === 'authenticated' && user) {
+      setIsAuthenticated(true)
+    }
   }, [status, user])
 
   useEffect(() => {
-    if (displayedView === targetView) return
-    setOpacity(0)
-    const swapTimer = setTimeout(() => {
-      setDisplayedView(targetView)
-      setOpacity(1)
-    }, 200)
-    return () => clearTimeout(swapTimer)
-  }, [displayedView, targetView])
+    if (status === 'unauthenticated') {
+      setIsAuthenticated(false)
+    }
+  }, [status])
 
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
   return (
     <AppScreenProvider>
-      {displayedView === 'loading' ? (
+      {!authReady ? (
         <AppLayout>
           <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
             <AuthBootScreen />
           </ScreenShell>
         </AppLayout>
-      ) : displayedView === 'login' ? (
-        <div style={{ ...fade200Style, opacity }}>
+      ) : !isAuthenticated ? (
+        <div style={fade200Style}>
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
               <LoginPage />
@@ -280,7 +275,7 @@ function AppGate() {
           </AppLayout>
         </div>
       ) : (
-        <AuthenticatedShellWithBoundary opacity={opacity}>
+        <AuthenticatedShellWithBoundary opacity={1}>
           <ProfileIncompleteNoticeProvider value={noticeValue}>
             <AppLayout>
               <IncompleteProfileModalHost
