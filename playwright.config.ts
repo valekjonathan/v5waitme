@@ -58,6 +58,7 @@ if (browserStackGridOn) {
   projects.push({
     name: 'browserstack-iphone',
     use: {
+      browserName: 'webkit',
       connectOptions: {
         wsEndpoint: `wss://cdp.browserstack.com/playwright?caps=${encodeURIComponent(JSON.stringify(caps))}`,
       },
