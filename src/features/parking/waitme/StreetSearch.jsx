@@ -29,10 +29,26 @@ const streetSearchInputClass = 'waitme-street-search-input'
 
 const DEBOUNCE_MS = 185
 
+const streetResultLiStyle = {
+  padding: '12px 16px',
+  color: '#fff',
+  fontSize: 14,
+  cursor: 'pointer',
+  borderBottom: '1px solid rgba(55, 65, 81, 0.5)',
+}
+
+/**
+ * @param {{ id: string, label: string, matchText?: string }[]} [localFilterItems] — si hay ítems, no se llama a Mapbox; filtra en cliente.
+ * @param {(item: { id: string, label: string }) => void} [onLocalSelect]
+ * @param {(q: string) => void} [onQueryChange]
+ */
 export default function StreetSearch({
   onSelect,
   placeholder = '¿Dónde quieres aparcar?',
   className = '',
+  localFilterItems,
+  onLocalSelect,
+  onQueryChange,
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -46,7 +62,10 @@ export default function StreetSearch({
     setQuery('')
   }, [])
 
+  const useLocal = Array.isArray(localFilterItems) && localFilterItems.length > 0
+
   const fetchResults = useCallback(async (q) => {
+    if (useLocal) return
     const trimmed = typeof q === 'string' ? q.trim() : ''
 
     if (!trimmed || trimmed.length < 2) {
@@ -83,9 +102,24 @@ export default function StreetSearch({
         abortRef.current = null
       }
     }
-  }, [])
+  }, [useLocal])
 
   useEffect(() => {
+    if (!useLocal) return
+    const q = (query || '').trim().toLowerCase()
+    if (q.length < 2) {
+      setResults([])
+      return
+    }
+    const filtered = localFilterItems.filter((it) => {
+      const hay = String(it.matchText ?? it.label ?? '').toLowerCase()
+      return hay.includes(q)
+    })
+    setResults(filtered)
+  }, [query, localFilterItems, useLocal])
+
+  useEffect(() => {
+    if (useLocal) return
     const q = (query || '').trim()
     if (q.length < 2) {
       requestIdRef.current += 1
@@ -100,7 +134,7 @@ export default function StreetSearch({
     }
     const t = window.setTimeout(() => fetchResults(q), DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [query, fetchResults])
+  }, [query, fetchResults, useLocal])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -129,6 +163,13 @@ export default function StreetSearch({
     setResults([])
     setOpen(false)
     onSelect?.({ lng, lat, place_name: formatted })
+  }
+
+  const handleLocalPick = (item) => {
+    setQuery('')
+    setResults([])
+    setOpen(false)
+    onLocalSelect?.({ id: item.id, label: item.label })
   }
 
   const handleInputBlur = () => {
@@ -201,7 +242,9 @@ export default function StreetSearch({
             className={streetSearchInputClass}
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value)
+              const v = e.target.value
+              setQuery(v)
+              onQueryChange?.(v)
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
@@ -217,7 +260,7 @@ export default function StreetSearch({
         </div>
       </div>
 
-      {open && (query || '').trim().length >= 2 && (
+      {open && (query || '').trim().length >= 2 && results.length > 0 ? (
         <ul
           data-waitme-street-results
           style={{
@@ -240,27 +283,35 @@ export default function StreetSearch({
             padding: 0,
           }}
         >
-          {results.map((f) => (
-            <li
-              key={f.id}
-              role="button"
-              tabIndex={0}
-              style={{
-                padding: '12px 16px',
-                color: '#fff',
-                fontSize: 14,
-                cursor: 'pointer',
-                borderBottom: '1px solid rgba(55, 65, 81, 0.5)',
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleSelect(f)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
-            >
-              {formatAddress(f) || f.place_name || f.text || '—'}
-            </li>
-          ))}
+          {useLocal
+            ? results.map((it) => (
+                <li
+                  key={it.id}
+                  role="button"
+                  tabIndex={0}
+                  style={streetResultLiStyle}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleLocalPick(it)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLocalPick(it)}
+                >
+                  {it.label}
+                </li>
+              ))
+            : results.map((f) => (
+                <li
+                  key={f.id}
+                  role="button"
+                  tabIndex={0}
+                  style={streetResultLiStyle}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelect(f)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
+                >
+                  {formatAddress(f) || f.place_name || f.text || '—'}
+                </li>
+              ))}
         </ul>
-      )}
+      ) : null}
     </div>
   )
 }

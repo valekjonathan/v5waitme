@@ -50,6 +50,41 @@ const oauthButtonBase = {
   WebkitBackdropFilter: 'blur(12px)',
 }
 
+const USER_CARD_AVATAR_WRAP = {
+  width: 95,
+  height: 85,
+  borderRadius: 8,
+  overflow: 'hidden',
+  border: '2px solid rgba(168, 85, 247, 0.4)',
+  backgroundColor: '#111827',
+  flexShrink: 0,
+}
+
+const USER_CARD_NAME_STYLE = {
+  fontWeight: 700,
+  fontSize: 20,
+  color: '#fff',
+  lineHeight: 1,
+  minHeight: 22,
+  margin: 0,
+  display: 'block',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}
+
+function UserAlertAvatarBlock({ alert }) {
+  const first = (alert?.user_name || 'Usuario').split(' ')[0]
+  const src =
+    alert?.user_photo ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent((alert?.user_name || 'U').split(' ')[0].charAt(0))}&background=8b5cf6&color=fff&size=128`
+  return (
+    <div style={USER_CARD_AVATAR_WRAP}>
+      <img src={src} alt={first} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+    </div>
+  )
+}
+
 function UserAlertCard({
   alert,
   onBuyAlert,
@@ -65,6 +100,8 @@ function UserAlertCard({
   showCountdownTimer: _showCountdownTimer = false,
   isOperationAccepted = false,
   collapsed = false,
+  /** Lista chats: misma caja morada que parking; pie “Últimos mensajes” en lugar de WaitMe!. */
+  chatListMode = false,
 }) {
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -159,6 +196,24 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
+  const badgeBase = {
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+    color: '#d8b4fe',
+    border: '1px solid rgba(192, 132, 252, 0.5)',
+    fontWeight: 700,
+    fontSize: 12,
+    height: 28,
+    width: 95,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    borderRadius: 6,
+    cursor: 'default',
+    userSelect: 'none',
+    pointerEvents: 'none',
+  }
+
   if (isEmpty || !alert) {
     return (
       <div
@@ -188,22 +243,85 @@ function UserAlertCard({
     )
   }
 
-  const badgeBase = {
-    backgroundColor: 'rgba(168, 85, 247, 0.2)',
-    color: '#d8b4fe',
-    border: '1px solid rgba(192, 132, 252, 0.5)',
-    fontWeight: 700,
-    fontSize: 12,
-    height: 28,
-    width: 95,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    textAlign: 'center',
-    borderRadius: 6,
-    cursor: 'default',
-    userSelect: 'none',
-    pointerEvents: 'none',
+  if (chatListMode) {
+    return (
+      <div
+        data-alert-card
+        data-waitme-chat-preview-card
+        data-waitme-parking-gap-card-top
+        style={{
+          backgroundColor: '#111827',
+          borderRadius: 12,
+          padding: 8,
+          border: '2px solid rgba(168, 85, 247, 0.5)',
+          position: 'relative',
+          overflow: 'visible',
+          transform: collapsed ? 'translateY(85%)' : 'translateY(0)',
+          transition: 'transform 0.3s ease',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <div style={badgeBase}>Chat</div>
+          <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
+        </div>
+
+        <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <UserAlertAvatarBlock alert={alert} />
+
+          <div
+            style={{
+              flex: 1,
+              height: 85,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
+            <div
+              style={{
+                width: '100%',
+                marginTop: 6,
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
+                <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
+                  {star}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 8,
+            paddingTop: 10,
+            borderTop: '1px solid rgba(55, 65, 81, 0.8)',
+          }}
+        >
+          <div style={{ color: colors.primary, fontWeight: 700, fontSize: 13 }}>Últimos mensajes:</div>
+          <p
+            style={{
+              color: '#e5e7eb',
+              fontSize: 14,
+              fontWeight: 500,
+              margin: '6px 0 0',
+              lineHeight: 1.4,
+            }}
+          >
+            {alert?.chatLastMessage || '—'}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   const btnIcon = {
@@ -249,19 +367,6 @@ function UserAlertCard({
     transition: applePremiumTransition,
     filter: waitMePremiumHover && !waitMePremiumPressed ? 'brightness(1.05)' : 'none',
     cursor: isLoading ? 'wait' : 'pointer',
-  }
-
-  const nameStyle = {
-    fontWeight: 700,
-    fontSize: 20,
-    color: '#fff',
-    lineHeight: 1,
-    minHeight: 22,
-    margin: 0,
-    display: 'block',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
   }
 
   const vehicleIconNode = (
@@ -353,26 +458,7 @@ function UserAlertCard({
       <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <div
-          style={{
-            width: 95,
-            height: 85,
-            borderRadius: 8,
-            overflow: 'hidden',
-            border: '2px solid rgba(168, 85, 247, 0.4)',
-            backgroundColor: '#111827',
-            flexShrink: 0,
-          }}
-        >
-          <img
-            src={
-              alert?.user_photo ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent((alert?.user_name || 'U').split(' ')[0].charAt(0))}&background=8b5cf6&color=fff&size=128`
-            }
-            alt={(alert?.user_name || 'Usuario').split(' ')[0]}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        </div>
+        <UserAlertAvatarBlock alert={alert} />
 
         <div
           style={{
@@ -386,7 +472,7 @@ function UserAlertCard({
         >
           <div style={{ display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={nameStyle}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
+              <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
 
             <div

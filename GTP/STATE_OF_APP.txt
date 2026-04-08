@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-08T12:20:38.188Z
-Git revision: e25185f0d6bea78eac2e8aac179cf1aa40c81328
+Generated: 2026-04-08T13:50:32.107Z
+Git revision: 9169612dcb08dc966f883ef5f8b4bc9170675eea
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -14,6 +14,7 @@ docs/
   FLUJO_JONATHAN.md
   STAGING_VERCEL.md
 e2e/
+  fixtures.ts
   nav.spec.ts
   percy-snapshot.spec.ts
   README.md
@@ -104,6 +105,8 @@ scripts/
     pre-commit
     pre-push
   ios-fresh-dev-sync.mjs
+  ngrok-public.mjs
+  ngrok-tunnel-lib.mjs
   quality-gate.mjs
   run-browserstack-e2e.mjs
   supabase-setup.mjs
@@ -124,7 +127,9 @@ src/
         LoginButtons.jsx
         LoginPage.jsx
     chats/
+      chatMockData.js
       ChatsPage.jsx
+      ChatThreadView.jsx
     home/
       components/
         CenterPin.jsx
@@ -261,7 +266,7 @@ vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
-dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
+dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, ngrok, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
 auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
