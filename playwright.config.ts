@@ -65,14 +65,10 @@ const lanIp = preferredLanIPv4()
 const E2E_ORIGIN =
   useLanBase && lanIp ? `http://${lanIp}:${E2E_PORT}` : `http://localhost:${E2E_PORT}`
 
-if (useLanBase) {
-  if (lanIp) {
-    console.log(`[playwright] WAITME_E2E_LAN_BASE=1 → baseURL y webServer.url = ${E2E_ORIGIN}`)
-  } else {
-    console.warn(
-      '[playwright] WAITME_E2E_LAN_BASE=1 pero no hay IPv4 LAN (10.x/192.168.x); se usa localhost'
-    )
-  }
+if (useLanBase && !lanIp) {
+  console.warn(
+    '[playwright] WAITME_E2E_LAN_BASE=1 pero no hay IPv4 LAN (10.x/192.168.x); se usa localhost'
+  )
 }
 
 /** iPhone real (BrowserStack) + Local: los tests suelen tardar >30s; el SDK también toca la page en hooks. */
@@ -86,20 +82,29 @@ const projects: NonNullable<PlaywrightTestConfig['projects']> = [
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: !browserstackRealMobileE2e,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
-  ...(browserstackRealMobileE2e ? { timeout: 120_000 } : {}),
+  ...(browserstackRealMobileE2e
+    ? {
+        workers: 1,
+        /** Dispositivo real + Local: ~15–25 s/test; 90 s evita cortes sin alargar fallos. */
+        timeout: 90_000,
+      }
+    : {}),
   use: {
     baseURL: E2E_ORIGIN,
     trace: 'on-first-retry',
+    video: 'off',
+    screenshot: 'only-on-failure',
   },
   projects,
   webServer: {
     command: `env VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite --host 0.0.0.0 --port ${E2E_PORT} --strictPort`,
     url: E2E_ORIGIN,
-    reuseExistingServer: false,
+    /** Por defecto arranque limpio (evita colisión con otro proceso en 5174). Opt-in: PW_REUSE_E2E_SERVER=1. */
+    reuseExistingServer: process.env.PW_REUSE_E2E_SERVER === '1',
     timeout: 120_000,
   },
 })

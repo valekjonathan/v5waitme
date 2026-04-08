@@ -27,6 +27,6 @@ framework: playwright
 source: v5waitme
 
 debug: false
-networkLogs: true
-consoleLogs: verbose
+networkLogs: false
+consoleLogs: errors
 testObservability: false
