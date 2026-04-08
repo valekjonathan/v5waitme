@@ -125,7 +125,9 @@ export default function ChatsPage() {
               >
                 <UserAlertCard
                   alert={threadToChatAlert(t)}
-                  hideParkingActionsRow
+                  isChat
+                  lastMessage={t.lastMessage}
+                  time={t.time}
                   isEmpty={false}
                   onBuyAlert={() => {}}
                   onChat={() => setThreadId(t.id)}

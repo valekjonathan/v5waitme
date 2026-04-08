@@ -105,6 +105,10 @@ function UserAlertCard({
   lastMessage = '',
   /** Lista Chats: oculta fila Chats/Llamada/Navegar/contador y botón WaitMe inferior (misma tarjeta). */
   hideParkingActionsRow = false,
+  /** Variante lista Chats: UI distinta sin romper parking/alertas. */
+  isChat = false,
+  /** Hora mostrada arriba a la derecha (lista Chats). */
+  time: chatTimeProp = '',
 }) {
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -187,6 +191,13 @@ function UserAlertCard({
   const handleBuy = () => {
     if (isLoading) return
     onBuyAlert?.(alert)
+  }
+
+  const handleDeleteChatClick = (e) => {
+    e.stopPropagation()
+    if (window.confirm('¿Quieres eliminar la conversación?')) {
+      console.log('[UserAlertCard] delete conversation', alert?.id)
+    }
   }
 
   const carLabel = `${alert?.brand || ''} ${alert?.model || ''}`.trim() || 'Coche'
@@ -321,7 +332,7 @@ function UserAlertCard({
         </div>
         <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-          {distanceLabel ? (
+          {!isChat && distanceLabel ? (
             <div
               style={{
                 background: 'rgba(15, 23, 42, 0.9)',
@@ -346,25 +357,44 @@ function UserAlertCard({
               </span>
             </div>
           ) : null}
-          <div
-            style={{
-              backgroundColor: 'rgba(22, 163, 74, 0.2)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              borderRadius: 8,
-              padding: '2px 8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              height: 28,
-            }}
-          >
-            <span
-              style={{ color: '#4ade80', fontWeight: 700, fontSize: 14, display: 'flex', gap: 2 }}
+          {!isChat ? (
+            <div
+              style={{
+                backgroundColor: 'rgba(22, 163, 74, 0.2)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: 8,
+                padding: '2px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                height: 28,
+              }}
             >
-              {priceText.replace('.00', '')} <span style={{ fontSize: 10 }}>↑</span>
-            </span>
-          </div>
-          {onReject ? (
+              <span
+                style={{ color: '#4ade80', fontWeight: 700, fontSize: 14, display: 'flex', gap: 2 }}
+              >
+                {priceText.replace('.00', '')} <span style={{ fontSize: 10 }}>↑</span>
+              </span>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, opacity: 0.6 }}>{chatTimeProp || '12:45'}</div>
+              <button
+                type="button"
+                onClick={handleDeleteChatClick}
+                style={{
+                  ...btnIcon,
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: '#f87171',
+                }}
+                aria-label="Eliminar conversación"
+              >
+                <IconX size={20} />
+              </button>
+            </>
+          )}
+          {!isChat && onReject ? (
             <button
               type="button"
               onClick={onReject}
@@ -382,7 +412,9 @@ function UserAlertCard({
         </div>
       </div>
 
-      <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
+      {!isChat ? (
+        <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
+      ) : null}
 
       <div style={{ display: 'flex', gap: 10 }}>
         <UserAlertAvatarBlock alert={alert} />
@@ -402,66 +434,86 @@ function UserAlertCard({
               <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
 
-            <div
-              style={{
-                width: 64,
-                marginLeft: 'auto',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexShrink: 0,
-                transform: 'translateX(-12px)',
-              }}
-            >
-              {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
-                <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
-                  {star}
-                </span>
-              ))}
-            </div>
+            {!isChat ? (
+              <div
+                style={{
+                  width: 64,
+                  marginLeft: 'auto',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                  transform: 'translateX(-12px)',
+                }}
+              >
+                {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
+                  <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
+                    {star}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <p
-            style={{
-              fontSize: 14,
-              fontWeight: 500,
-              color: '#e5e7eb',
-              lineHeight: 1,
-              margin: 0,
-              marginTop: 4,
-            }}
-          >
-            {carLabel}
-          </p>
-
-          <div style={{ position: 'relative', marginTop: 4 }}>
-            <Plate value={alert?.plate} width={140} />
-
-            <div
+          {isChat ? (
+            <p
               style={{
-                position: 'absolute',
-                right: 16,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none',
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#e5e7eb',
+                lineHeight: 1,
+                margin: 0,
+                marginTop: 4,
               }}
             >
-              {vehicleIconNode}
-            </div>
-          </div>
+              {lastMessageText}
+            </p>
+          ) : (
+            <>
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#e5e7eb',
+                  lineHeight: 1,
+                  margin: 0,
+                  marginTop: 4,
+                }}
+              >
+                {carLabel}
+              </p>
+
+              <div style={{ position: 'relative', marginTop: 4 }}>
+                <Plate value={alert?.plate} width={140} />
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {vehicleIconNode}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      <div style={{ paddingTop: 6, borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginTop: 4 }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            marginLeft: 8,
-          }}
-        >
-          {alert?.address ? (
+      {!isChat ? (
+        <div style={{ paddingTop: 6, borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginTop: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              marginLeft: 8,
+            }}
+          >
+            {alert?.address ? (
             <span
               style={{
                 display: 'flex',
@@ -551,11 +603,12 @@ function UserAlertCard({
                 </span>
               </span>
             </span>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
-      {!hideParkingActionsRow ? (
+      {!hideParkingActionsRow && !isChat ? (
         <div style={{ marginTop: 8 }}>
           <UserAlertCardActions
             hideBuy={hideBuy}
@@ -600,7 +653,7 @@ function UserAlertCard({
         </div>
       ) : null}
 
-      {showLastMessage ? (
+      {showLastMessage && !isChat ? (
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 12, opacity: 0.6 }}>Últimos mensajes:</div>
           <div style={{ fontSize: 14 }}>{lastMessageText}</div>

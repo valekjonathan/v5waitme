@@ -1,7 +1,7 @@
 /**
  * Datos mock solo para UI de chats (sin backend).
  * @typedef {{ id: string, from: 'me' | 'them', text: string, at: string }} ChatMsg
- * @typedef {{ id: string, name: string, rating: number, lastMessage: string, brand: string, model: string, plate: string, messages: ChatMsg[] }} ChatThread
+ * @typedef {{ id: string, name: string, rating: number, lastMessage: string, time: string, brand: string, model: string, plate: string, messages: ChatMsg[] }} ChatThread
  */
 
 /** @type {ChatThread[]} */
@@ -11,6 +11,7 @@ export const CHAT_MOCK_THREADS = [
     name: 'Carlos',
     rating: 4,
     lastMessage: 'Sí, estoy en la zona',
+    time: '10:03',
     brand: 'Opel',
     model: 'Corsa',
     plate: '2145 BCD',
@@ -24,6 +25,7 @@ export const CHAT_MOCK_THREADS = [
     name: 'Lucía',
     rating: 5,
     lastMessage: 'Perfecto gracias!',
+    time: '09:42',
     brand: 'Toyota',
     model: 'Yaris',
     plate: '9012 XYZ',
@@ -37,6 +39,7 @@ export const CHAT_MOCK_THREADS = [
     name: 'Andrés',
     rating: 4,
     lastMessage: 'Voy en 5 min',
+    time: '11:15',
     brand: 'VW',
     model: 'Golf',
     plate: '5566 MNO',
@@ -51,6 +54,7 @@ export const CHAT_MOCK_THREADS = [
     name: 'Marta',
     rating: 5,
     lastMessage: 'Genial, nos vemos',
+    time: '08:56',
     brand: 'Renault',
     model: 'Clio',
     plate: '7788 PQR',
