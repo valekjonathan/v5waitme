@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Flujo automático dev iOS:
- * LAN → `.env.local` (VITE_DEV_LAN_ORIGIN) → WAITME_CAP_DEV_SERVER_URL → cap sync ios → Vite (host LAN) → HTTP 200 → Safari con `?iphone=true`.
- * iPhone: misma URL LAN en `server.url` (live reload/HMR). Producción: `npm run cap:sync:prod` (sin server.url).
+ * Flujo dev completo (sin BrowserStack; validación nube → `npm run test:e2e:browserstack`):
+ * LAN → `.env.local` (VITE_DEV_LAN_ORIGIN) → cap sync ios → Vite :5173 (0.0.0.0) → URLs claras → ngrok opcional.
+ * Safari tiempo real: preview `?iphone=true`. iPhone misma red: URL LAN. Fuera: ngrok si hay NGROK_AUTHTOKEN.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
@@ -12,16 +12,28 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { resolveWaitmeLanDevOrExit, upsertEnvLocalViteDevLanOrigin } from './get-lan-ip.mjs'
+import {
+  mergeDevEnvFromFiles,
+  ngrokBinPath,
+  hasNgrokAuthtoken,
+  waitForHttpOk,
+  waitForNgrokHttpsUrl,
+  spawnNgrokHttp,
+  NGROK_DEV_PORT,
+} from './ngrok-tunnel-lib.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
-function printDevBanners(safariPreviewUrl, iphoneDevUrl) {
-  console.log('\nRUNNING ON:')
-  console.log(safariPreviewUrl)
-  console.log('\nIPHONE USING:')
-  console.log(iphoneDevUrl)
-  console.log('')
+mergeDevEnvFromFiles(root)
+
+function printUrlBanner(baseDevUrl) {
+  console.log('\n')
+  console.log('👉 URL Safari → http://localhost:5173')
+  console.log(`👉 URL iPhone local → ${baseDevUrl}`)
+  console.log(
+    '[waitme] Validación BrowserStack (no se ejecuta en dev): npm run test:e2e:browserstack\n'
+  )
 }
 
 async function waitForRootOk(baseUrl, maxMs = 45000) {
@@ -42,7 +54,7 @@ async function waitForRootOk(baseUrl, maxMs = 45000) {
   return false
 }
 
-/** Safari con preview iPhone (`App.jsx` + clase `iphone-preview`). Sin shell: URLs con `?` no se rompen. */
+/** Safari con preview iPhone (`App.jsx` + clase `iphone-preview`). */
 function openSafariIphonePreview(url) {
   if (process.platform !== 'darwin') return
   try {
@@ -65,10 +77,10 @@ console.info('[waitme] ① LAN IP:', ip)
 console.info('[waitme] ② .env.local → VITE_DEV_LAN_ORIGIN=' + baseDevUrl)
 upsertEnvLocalViteDevLanOrigin(root, baseDevUrl)
 
-// ③ Variable para Capacitor (server.url) y procesos hijos
+// ③ Capacitor + Vite
 console.info('[waitme] ③ WAITME_CAP_DEV_SERVER_URL=' + baseDevUrl + ' (Capacitor + Vite)\n')
 
-printDevBanners(safariPreviewUrl, baseDevUrl)
+printUrlBanner(baseDevUrl)
 
 // ④ cap sync ios
 console.info(`[waitme] ④ npx cap sync ios (server.url → ${baseDevUrl})\n`)
@@ -79,29 +91,38 @@ const sync = spawnSync('npx', ['cap', 'sync', 'ios'], {
 })
 if (sync.status !== 0) process.exit(sync.status === null ? 1 : sync.status)
 
-// ⑤ Vite
+// ⑤ Vite (CLI alineado con vite.config: host 0.0.0.0, 5173, strictPort)
 const childEnv = {
   ...process.env,
   WAITME_LAN_IP: ip,
   WAITME_CAP_DEV_SERVER_URL: baseDevUrl,
-  /** Evita log duplicado desde el plugin Vite (banners ya salen aquí). */
   WAITME_SKIP_VITE_LAN_LOG: '1',
 }
 
-console.info('[waitme] ⑤ Iniciando Vite (host LAN, puerto 5173)…\n')
+console.info('[waitme] ⑤ Vite --host 0.0.0.0 --port 5173 --strictPort\n')
 
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
+const viteArgs = ['--host', '0.0.0.0', '--port', '5173', '--strictPort']
 const vite = fs.existsSync(viteJs)
-  ? spawn(process.execPath, [viteJs], { cwd: root, env: childEnv, stdio: 'inherit' })
-  : spawn('npx', ['vite'], {
+  ? spawn(process.execPath, [viteJs, ...viteArgs], { cwd: root, env: childEnv, stdio: 'inherit' })
+  : spawn('npx', ['vite', ...viteArgs], {
       cwd: root,
       env: childEnv,
       stdio: 'inherit',
       shell: true,
     })
 
+let ngrokChild = null
+function stopNgrok() {
+  try {
+    ngrokChild?.kill('SIGTERM')
+  } catch {
+    /* */
+  }
+  ngrokChild = null
+}
+
 let safariOpened = false
-// ⑥ HTTP 200 en /  →  ⑦ Safari solo con preview iPhone
 waitForRootOk(baseDevUrl).then((ok) => {
   if (ok && !safariOpened) {
     safariOpened = true
@@ -116,12 +137,42 @@ waitForRootOk(baseDevUrl).then((ok) => {
   }
 })
 
+void (async () => {
+  if (process.env.WAITME_DEV_NO_NGROK === '1') {
+    console.log('👉 URL iPhone fuera de casa → (omitido: WAITME_DEV_NO_NGROK=1)\n')
+    return
+  }
+  if (!ngrokBinPath(root)) {
+    console.log('👉 URL iPhone fuera de casa → (ejecuta npm install; paquete ngrok en devDependencies)\n')
+    return
+  }
+  if (!hasNgrokAuthtoken()) {
+    console.log('👉 URL iPhone fuera de casa → (NGROK_AUTHTOKEN en .env.local, o: npm run tunnel:public)\n')
+    return
+  }
+  const up = await waitForHttpOk(`http://127.0.0.1:${NGROK_DEV_PORT}/`, 90_000)
+  if (!up) {
+    console.warn('[waitme] ngrok omitido: localhost:5173 no respondió a tiempo.\n')
+    return
+  }
+  ngrokChild = spawnNgrokHttp(root, NGROK_DEV_PORT)
+  if (!ngrokChild) return
+  ngrokChild.on('error', (e) => console.warn('[waitme] ngrok:', e.message))
+  const pub = await waitForNgrokHttpsUrl()
+  if (pub) console.log(`👉 URL iPhone fuera de casa → ${pub}\n`)
+  else console.warn('[waitme] ngrok en marcha; no se leyó URL HTTPS (revisa http://127.0.0.1:4040).\n')
+})()
+
 async function run() {
   const exitCode = await new Promise((resolve) => {
     vite.on('exit', (code, signal) => {
+      stopNgrok()
       resolve(signal ? 1 : (code ?? 0))
     })
-    vite.on('error', () => resolve(1))
+    vite.on('error', () => {
+      stopNgrok()
+      resolve(1)
+    })
   })
   process.exit(exitCode)
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Vite (5173) + ngrok. Muestra el HTTPS público vía API local :4040.
- * Requiere ngrok authtoken en el fichero de configuración.
+ * Vite (5173) + ngrok (este proceso). `npm run dev` lleva ngrok integrado; aquí lo desactivamos para no duplicar túneles.
+ * Carga NGROK_AUTHTOKEN desde .env.local vía mergeDevEnvFromFiles.
  */
 import { execSync, spawn } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -9,9 +9,12 @@ import { homedir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { mergeDevEnvFromFiles } from './ngrok-tunnel-lib.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
+
+mergeDevEnvFromFiles(root)
 
 function ngrokBinPath() {
   const local = path.join(root, 'node_modules', '.bin', 'ngrok')
@@ -98,7 +101,7 @@ function main() {
     cwd: root,
     shell: true,
     stdio: 'inherit',
-    env: { ...process.env },
+    env: { ...process.env, WAITME_DEV_NO_NGROK: '1' },
   })
 
   const ngrokCmd = ngrokBinPath() || 'ngrok'

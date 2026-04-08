@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "dev:ios → IP LAN, VITE_DEV_LAN_ORIGIN en .env.local, WAITME_CAP_DEV_SERVER_URL, cap sync ios, Vite, Safari con ?iphone=true; iPhone usa la misma URL LAN (server.url). Producción: cap:sync:prod sin server.url.",
+  "description": "npm run dev → Vite :5173 (0.0.0.0), URLs Safari/LAN/ngrok en consola, cap sync iOS; validación nube: npm run test:e2e:browserstack. Producción: cap:sync:prod sin server.url.",
   "scripts": {
     "dev:ios": "node scripts/dev-ios.mjs",
     "get:lan-ip": "node scripts/get-lan-ip.mjs",
