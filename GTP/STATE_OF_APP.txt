@@ -1,10 +1,12 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-08T07:15:53.793Z
-Git revision: 18c120e9c2f7505c19bbbef1ac62fb5fcd6d74e3
+Generated: 2026-04-08T11:51:19.239Z
+Git revision: f964b2974ee826b81d159b304c4d1b3f2120fb57
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
+browserstack.config.cjs
+browserstack.yml
 capacitor.config.ts
 dist/  [omitido]
 docs/
@@ -15,6 +17,7 @@ e2e/
   nav.spec.ts
   percy-snapshot.spec.ts
   README.md
+  sentry-smoke.spec.ts
   shell.spec.ts
   smoke.spec.ts
 eslint.config.js
@@ -61,6 +64,15 @@ ios/
     sources/
   debug.xcconfig
 knip.json
+local.log
+log/
+  events.json
+  performance-report/
+    modified-key-metrics.json
+    performance-report-36285-0.json
+  sdk-cli.log
+  sdk-debug-utility.log
+  usage.log
 node_modules/  [omitido]
 package-lock.json
 package.json
@@ -84,6 +96,7 @@ scripts/
   cap-live-off.mjs
   cap-sync-production.mjs
   dev-ios.mjs
+  dev-safari-live-reload.mjs
   ensure-git-hooks.mjs
   generate-state-of-app.mjs
   get-lan-ip.mjs
@@ -95,6 +108,7 @@ scripts/
   run-browserstack-e2e.mjs
   supabase-setup.mjs
   tunnel-dev.mjs
+  validate-integrations.mjs
 src/
   app/
     App.jsx
@@ -247,7 +261,7 @@ vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
-dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browserstack-local, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
+dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
 auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js

@@ -4,6 +4,7 @@
   "project": ["src/**/*.{js,jsx,ts,tsx}"],
   "ignore": ["src/vite-env.d.ts"],
   "ignoreDependencies": [
+    "browserstack-node-sdk",
     "@vitest/coverage-v8",
     "@babel/preset-react",
     "@capacitor/cli",

@@ -15,40 +15,10 @@ for (const [k, v] of Object.entries(viteFileEnv)) {
 const E2E_PORT = 5174
 const E2E_ORIGIN = `http://localhost:${E2E_PORT}`
 
-const bsUser = String(process.env.BROWSERSTACK_USERNAME || '').trim()
-const bsKey = String(process.env.BROWSERSTACK_ACCESS_KEY || '').trim()
-const browserStackGridOn =
-  process.env.WAITME_PLAYWRIGHT_BROWSERSTACK === '1' && Boolean(bsUser && bsKey)
-
 const projects: NonNullable<PlaywrightTestConfig['projects']> = [
   { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   { name: 'webkit', use: { ...devices['Desktop Safari'] } },
 ]
-
-if (browserStackGridOn) {
-  const caps: Record<string, string> = {
-    browser: 'playwright-webkit',
-    browser_version: 'latest',
-    os: 'ios',
-    os_version: '16',
-    device: 'iPhone 14',
-    real_mobile: 'true',
-    name: 'v5waitme e2e',
-    build: 'v5waitme-build',
-    'browserstack.username': process.env.BROWSERSTACK_USERNAME ?? '',
-    'browserstack.accessKey': process.env.BROWSERSTACK_ACCESS_KEY ?? '',
-    'browserstack.playwrightVersion': '1.latest',
-  }
-  projects.push({
-    name: 'browserstack-iphone',
-    use: {
-      browserName: 'webkit',
-      connectOptions: {
-        wsEndpoint: `wss://cdp.browserstack.com/playwright?caps=${encodeURIComponent(JSON.stringify(caps))}`,
-      },
-    },
-  })
-}
 
 export default defineConfig({
   testDir: './e2e',
@@ -62,7 +32,6 @@ export default defineConfig({
   },
   projects,
   webServer: {
-    // `npm run dev` es dev:ios (LAN + cap sync); E2E necesita solo Vite en puerto dedicado.
     command: `env VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite --port ${E2E_PORT} --strictPort`,
     url: E2E_ORIGIN,
     reuseExistingServer: false,

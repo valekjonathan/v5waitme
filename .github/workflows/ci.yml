@@ -67,7 +67,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: E2E iPhone (BrowserStack Local + Playwright grid)
+      - name: E2E iPhone (BrowserStack Node SDK + browserstack.yml)
         env:
           BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
           BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}

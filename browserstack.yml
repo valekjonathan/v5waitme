@@ -1,0 +1,28 @@
+# BrowserStack Node SDK (Playwright). Credenciales: BROWSERSTACK_USERNAME y BROWSERSTACK_ACCESS_KEY.
+# https://www.browserstack.com/docs/automate/playwright/getting-started/nodejs
+userName: YOUR_USERNAME
+accessKey: YOUR_ACCESS_KEY
+
+projectName: v5waitme
+buildName: v5waitme-e2e
+buildIdentifier: '#${BUILD_NUMBER}'
+
+# iOS real en Automate: `safari` (docs BrowserStack). Playwright 1.59+ valida browserName en el protocolo y rechaza
+# `safari` del hub; usar @playwright/test 1.58.x hasta que BrowserStack alinee el initializer con 1.59+.
+playwrightVersion: 1.58.2
+platforms:
+  - deviceName: iPhone 14
+    osVersion: '16'
+    browserName: safari
+    realMobile: true
+
+parallelsPerPlatform: 1
+browserstackLocal: true
+
+framework: playwright
+source: v5waitme
+
+debug: false
+networkLogs: false
+consoleLogs: errors
+testObservability: false

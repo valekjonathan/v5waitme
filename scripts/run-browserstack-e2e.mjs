@@ -1,24 +1,22 @@
 /**
- * E2E en BrowserStack (iPhone + Safari vía grid) con túnel Local hacia el dev server de Playwright.
- * Requiere BROWSERSTACK_USERNAME y BROWSERSTACK_ACCESS_KEY (p. ej. secretos de GitHub).
+ * E2E en BrowserStack (iPhone real) vía BrowserStack Node SDK + `browserstack.yml`.
+ * Requiere BROWSERSTACK_USERNAME y BROWSERSTACK_ACCESS_KEY (env o .env.local).
+ *
+ * No usa CDP manual (wss://cdp.browserstack.com/playwright?caps=...).
  */
-import { randomBytes } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
-
-const require = createRequire(import.meta.url)
-const browserstack = require('browserstack-local')
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const viteFileEnv = loadEnv('development', root, '')
 for (const [k, v] of Object.entries(viteFileEnv)) {
   if (!String(process.env[k] ?? '').trim()) process.env[k] = v
 }
-const key = String(process.env.BROWSERSTACK_ACCESS_KEY || '').trim()
+
 const user = String(process.env.BROWSERSTACK_USERNAME || '').trim()
+const key = String(process.env.BROWSERSTACK_ACCESS_KEY || '').trim()
 
 if (!user || !key) {
   if (!user) console.error('[run-browserstack-e2e] Falta BROWSERSTACK_USERNAME (env o .env.local).')
@@ -26,36 +24,17 @@ if (!user || !key) {
   process.exit(1)
 }
 
-const localIdentifier = `waitme-${randomBytes(8).toString('hex')}`
+const r = spawnSync(
+  'npx',
+  [
+    'browserstack-node-sdk',
+    'playwright',
+    'test',
+    '--config=playwright.config.ts',
+    '--grep-invert',
+    'parking search|park here',
+  ],
+  { cwd: root, stdio: 'inherit', env: { ...process.env } }
+)
 
-const bs = new browserstack.Local()
-await new Promise((resolve, reject) => {
-  bs.start({ key, localIdentifier }, (err) => (err ? reject(err) : resolve()))
-})
-
-const env = {
-  ...process.env,
-  WAITME_PLAYWRIGHT_BROWSERSTACK: '1',
-  WAITME_BROWSERSTACK_LOCAL_IDENTIFIER: localIdentifier,
-}
-
-let exitCode = 1
-try {
-  const r = spawnSync(
-    'npx',
-    [
-      'playwright',
-      'test',
-      '--project=browserstack-iphone',
-      '--grep-invert',
-      'parking search|park here',
-    ],
-    { cwd: root, stdio: 'inherit', env }
-  )
-  exitCode = r.status ?? 1
-} finally {
-  await new Promise((resolve) => {
-    bs.stop(() => resolve())
-  })
-}
-process.exit(exitCode)
+process.exit(r.status === null ? 1 : r.status)
