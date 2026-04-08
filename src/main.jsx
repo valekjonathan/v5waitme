@@ -21,10 +21,14 @@ if (import.meta.env.DEV) {
 const rawSentryDsn = import.meta.env.VITE_SENTRY_DSN
 const sentryDsn = typeof rawSentryDsn === 'string' ? rawSentryDsn.trim() : ''
 if (sentryDsn) {
+  const rawRelease = import.meta.env.VITE_SENTRY_RELEASE
+  const release =
+    typeof rawRelease === 'string' && rawRelease.trim() ? rawRelease.trim() : undefined
   Sentry.init({
     dsn: sentryDsn,
     environment: import.meta.env.MODE,
     sendDefaultPii: false,
+    ...(release ? { release } : {}),
   })
 } else if (import.meta.env.DEV) {
   console.info(

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import React from 'react'
 import { colors } from '../design/colors'
 import { resetKeysChanged } from './errorBoundaryReset.js'
@@ -18,6 +19,10 @@ export default class ErrorBoundary extends React.Component {
       : '[WaitMe][ErrorBoundary]'
     console.error(label, error?.message ?? error, info?.componentStack ?? info)
     if (error?.stack) console.error(`${label} stack:`, error.stack)
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info?.componentStack } },
+      ...(this.props.name ? { tags: { waitme_error_boundary: this.props.name } } : {}),
+    })
   }
 
   componentDidUpdate(prevProps) {

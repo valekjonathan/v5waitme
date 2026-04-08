@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string
+  /** Opcional: versión/release mostrada en Sentry (p. ej. hash de build o tag git). */
+  readonly VITE_SENTRY_RELEASE?: string
   /** Mismo origen dev para Safari + OAuth web (p. ej. http://192.168.0.50:5173). Opcional si Vite detecta IP. */
   readonly VITE_DEV_LAN_ORIGIN?: string
 }

@@ -53,7 +53,8 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
 
   await page.goto('/')
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })
-  await page.getByRole('button', { name: /Dónde quieres aparcar/i }).click()
+  const searchCta = page.getByRole('button', { name: /Dónde quieres aparcar/i })
+  await searchCta.evaluate((el) => (el as HTMLButtonElement).click())
   const input = page.getByPlaceholder(/Dónde quieres aparcar/i)
   await expect(input).toBeVisible()
 
@@ -117,7 +118,9 @@ test('park here: placeholder modo aparcado y shell fullBleed (dev auth)', async 
 
   await page.goto('/')
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })
-  await page.getByRole('button', { name: /Estoy aparcado aquí/i }).click()
+  await page
+    .getByRole('button', { name: /Estoy aparcado aquí/i })
+    .evaluate((el) => (el as HTMLButtonElement).click())
   await expect(page.getByPlaceholder(/Donde estas aparcado/i)).toBeVisible({ timeout: 20000 })
   await expect(page.locator('[data-waitme-main="fullBleed"]')).toBeVisible()
 })

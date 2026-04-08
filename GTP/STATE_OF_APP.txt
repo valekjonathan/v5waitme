@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-07T13:54:27.755Z
-Git revision: e2bdf0be7b7ae7fb130a0da6c0d5ce74d006dfa2
+Generated: 2026-04-08T07:15:53.793Z
+Git revision: 18c120e9c2f7505c19bbbef1ac62fb5fcd6d74e3
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -13,6 +13,7 @@ docs/
   STAGING_VERCEL.md
 e2e/
   nav.spec.ts
+  percy-snapshot.spec.ts
   README.md
   shell.spec.ts
   smoke.spec.ts
@@ -91,6 +92,7 @@ scripts/
     pre-push
   ios-fresh-dev-sync.mjs
   quality-gate.mjs
+  run-browserstack-e2e.mjs
   supabase-setup.mjs
   tunnel-dev.mjs
 src/
@@ -121,6 +123,7 @@ src/
       constants/
         mapbox.js
       mapControls.js
+      mapGapSelectors.js
       mapInstance.js
       mapSession.js
       simulatedUsers.js
@@ -244,7 +247,7 @@ vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
-dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
+dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browserstack-local, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
 auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
@@ -262,7 +265,7 @@ src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext
 src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
 src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
 src/services/reviews.ts  ← 0 import(s) relativos (muestra): —
-Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5, map 9
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5, map 10
 
 === ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
 ninguno
