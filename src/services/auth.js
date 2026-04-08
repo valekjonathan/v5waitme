@@ -10,6 +10,19 @@ import {
 import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
+/** Ventana principal: el popup OAuth postea `oauth_success` tras login; recargamos para aplicar sesión. */
+let oauthSuccessReloadListenerAttached = false
+function attachOAuthSuccessReloadListener() {
+  if (typeof window === 'undefined' || oauthSuccessReloadListenerAttached) return
+  oauthSuccessReloadListenerAttached = true
+  window.addEventListener('message', (event) => {
+    if (event.data === 'oauth_success') {
+      window.location.reload()
+    }
+  })
+}
+attachOAuthSuccessReloadListener()
+
 /** Único redirect PKCE en iOS/Android nativo; debe estar en Supabase Auth → Redirect URLs. */
 export const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
 
@@ -153,7 +166,7 @@ export async function signInWithGoogle() {
       return { data, error: null }
     }
 
-    /** Web: popup antes del `await` (Safari); `redirectTo` = origen actual. */
+    /** Web: listener en módulo (antes de cualquier popup); popup antes del `await` (Safari); `redirectTo` = origen actual. */
     const popup = window.open('', '_blank')
     webOAuthPopup = popup
     const { data, error } = await supabase.auth.signInWithOAuth({

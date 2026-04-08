@@ -301,6 +301,14 @@ function AppGate() {
 }
 
 export default function App() {
+  /** Popup OAuth: mismo origen tras redirect; avisa a la ventana principal y se cierra. */
+  useEffect(() => {
+    if (window.opener) {
+      window.opener.postMessage('oauth_success', '*')
+      window.close()
+    }
+  }, [])
+
   /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
   useEffect(() => {
     const isSafariPreview = window.location.search.includes('iphone=true')
