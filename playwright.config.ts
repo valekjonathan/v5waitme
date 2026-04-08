@@ -75,6 +75,10 @@ if (useLanBase) {
   }
 }
 
+/** iPhone real (BrowserStack) + Local: los tests suelen tardar >30s; el SDK también toca la page en hooks. */
+const browserstackRealMobileE2e =
+  String(process.env.WAITME_E2E_SINGLE_BROWSER_CONTEXT ?? '').trim() === '1'
+
 const projects: NonNullable<PlaywrightTestConfig['projects']> = [
   { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   { name: 'webkit', use: { ...devices['Desktop Safari'] } },
@@ -86,6 +90,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
+  ...(browserstackRealMobileE2e ? { timeout: 120_000 } : {}),
   use: {
     baseURL: E2E_ORIGIN,
     trace: 'on-first-retry',
