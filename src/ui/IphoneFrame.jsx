@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 
 const isDevDesktop =
@@ -10,10 +11,21 @@ const isDevDesktop =
 let devIphoneFrameShellClaimed = false
 
 export default function IphoneFrame({ children }) {
+  const claimedHere = useRef(false)
   const isShell = isDevDesktop && !devIphoneFrameShellClaimed
   if (isShell) {
     devIphoneFrameShellClaimed = true
+    claimedHere.current = true
   }
+
+  useEffect(() => {
+    return () => {
+      if (claimedHere.current) {
+        devIphoneFrameShellClaimed = false
+        claimedHere.current = false
+      }
+    }
+  }, [])
 
   if (!isDevDesktop) return children
   if (!isShell) return children
