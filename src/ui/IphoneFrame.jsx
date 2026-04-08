@@ -33,8 +33,10 @@ export default function IphoneFrame({ children }) {
     >
       <div
         style={{
-          width: 390,
-          height: 844,
+          width: '100%',
+          maxWidth: 390,
+          height: '100%',
+          maxHeight: 844,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
