@@ -109,6 +109,21 @@ export function AuthProvider({ children }) {
     authStatusRef.current = status
   }, [status])
 
+  /** Tras OAuth el `finally` puede no ejecutarse antes del unload; al volver (bfcache) el ref quedaba true y el clic no hacía nada. */
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const resetOAuthLoading = () => {
+      authActionLoadingRef.current = false
+      setAuthActionLoading(false)
+    }
+    resetOAuthLoading()
+    const onPageShow = (e) => {
+      if (e.persisted) resetOAuthLoading()
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
+
   /** Único camino a sesión vacía + flags de arranque (tokens, perfil, errores opcionales). */
   const setUnauthenticatedState = useCallback((clearAuthError) => {
     setUser(null)
@@ -354,6 +369,7 @@ export function AuthProvider({ children }) {
     try {
       setAuthError(null)
       if (!isSupabaseConfigured()) {
+        console.log('LOGIN START')
         writeLocalFlag(DEV_AUTH_KEY, true)
         applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: true })
         return
@@ -361,6 +377,7 @@ export function AuthProvider({ children }) {
       const { error } = await signInWithGoogleRequest()
       if (error) setAuthError(error.message || String(error))
     } catch (e) {
+      console.error('GOOGLE LOGIN ERROR', e)
       console.error('[WaitMe][Auth] signInWithGoogle excepción no prevista', e)
       setAuthError(e instanceof Error ? e.message : String(e))
     } finally {

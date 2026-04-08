@@ -155,16 +155,19 @@ export async function signInWithGoogle() {
     const redirectTo =
       typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
 
+    console.log('LOGIN START')
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
+      console.error('GOOGLE LOGIN ERROR', error)
       return { data: null, error }
     }
     return { data, error: null }
   } catch (e) {
+    console.error('GOOGLE LOGIN ERROR', e)
     console.error('[WaitMe][Auth] signInWithGoogle excepción', e)
     return { data: null, error: e }
   }
