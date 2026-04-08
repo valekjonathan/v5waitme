@@ -1,7 +1,7 @@
 /**
  * Datos mock solo para UI de chats (sin backend).
  * @typedef {{ id: string, from: 'me' | 'them', text: string, at: string }} ChatMsg
- * @typedef {{ id: string, name: string, rating: number, lastMessage: string, avatarUrl: string, brand: string, model: string, plate: string, messages: ChatMsg[] }} ChatThread
+ * @typedef {{ id: string, name: string, rating: number, lastMessage: string, brand: string, model: string, plate: string, messages: ChatMsg[] }} ChatThread
  */
 
 /** @type {ChatThread[]} */
@@ -11,7 +11,6 @@ export const CHAT_MOCK_THREADS = [
     name: 'Carlos',
     rating: 4,
     lastMessage: 'Sí, estoy en la zona',
-    avatarUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
     brand: 'Opel',
     model: 'Corsa',
     plate: '2145 BCD',
@@ -25,7 +24,6 @@ export const CHAT_MOCK_THREADS = [
     name: 'Lucía',
     rating: 5,
     lastMessage: 'Perfecto gracias!',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
     brand: 'Toyota',
     model: 'Yaris',
     plate: '9012 XYZ',
@@ -39,7 +37,6 @@ export const CHAT_MOCK_THREADS = [
     name: 'Andrés',
     rating: 4,
     lastMessage: 'Voy en 5 min',
-    avatarUrl: 'https://randomuser.me/api/portraits/men/22.jpg',
     brand: 'VW',
     model: 'Golf',
     plate: '5566 MNO',
@@ -54,7 +51,6 @@ export const CHAT_MOCK_THREADS = [
     name: 'Marta',
     rating: 5,
     lastMessage: 'Genial, nos vemos',
-    avatarUrl: 'https://randomuser.me/api/portraits/women/68.jpg',
     brand: 'Renault',
     model: 'Clio',
     plate: '7788 PQR',
@@ -64,3 +60,17 @@ export const CHAT_MOCK_THREADS = [
     ],
   },
 ]
+
+/** @param {ChatThread} t */
+export function threadToChatAlert(t) {
+  return {
+    id: t.id,
+    user_name: t.name,
+    rating: t.rating,
+    brand: t.brand,
+    model: t.model,
+    plate: t.plate,
+    chatLastMessage: t.lastMessage,
+    user_photo: null,
+  }
+}

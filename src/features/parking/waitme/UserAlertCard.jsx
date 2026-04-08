@@ -103,6 +103,8 @@ function UserAlertCard({
   /** Lista chats: misma tarjeta que parking + bloque “Últimos mensajes” al pie. */
   showLastMessage = false,
   lastMessage = '',
+  /** Lista Chats: oculta fila Chats/Llamada/Navegar/contador y botón WaitMe inferior (misma tarjeta). */
+  hideParkingActionsRow = false,
 }) {
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -553,48 +555,50 @@ function UserAlertCard({
         </div>
       </div>
 
-      <div style={{ marginTop: 8 }}>
-        <UserAlertCardActions
-          hideBuy={hideBuy}
-          phoneEnabled={phoneEnabled}
-          handleChat={handleChat}
-          handleCall={handleCall}
-          isOperationAccepted={isOperationAccepted}
-          alert={alert}
-          handleBuy={handleBuy}
-          isLoading={isLoading}
-          buyLabel={buyLabel}
-        />
-        <div
-          style={{
-            width: '100%',
-            height: 1,
-            background: 'rgba(255,255,255,0.1)',
-            marginTop: 10,
-            marginBottom: 0,
-          }}
-        />
-        <div style={{ marginTop: 10, marginBottom: 0 }}>
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={handleBuy}
-            onMouseEnter={() => setWaitMePremiumHover(true)}
-            onMouseLeave={() => {
-              setWaitMePremiumHover(false)
-              setWaitMePremiumPressed(false)
+      {!hideParkingActionsRow ? (
+        <div style={{ marginTop: 8 }}>
+          <UserAlertCardActions
+            hideBuy={hideBuy}
+            phoneEnabled={phoneEnabled}
+            handleChat={handleChat}
+            handleCall={handleCall}
+            isOperationAccepted={isOperationAccepted}
+            alert={alert}
+            handleBuy={handleBuy}
+            isLoading={isLoading}
+            buyLabel={buyLabel}
+          />
+          <div
+            style={{
+              width: '100%',
+              height: 1,
+              background: 'rgba(255,255,255,0.1)',
+              marginTop: 10,
+              marginBottom: 0,
             }}
-            onMouseDown={() => setWaitMePremiumPressed(true)}
-            onMouseUp={() => setWaitMePremiumPressed(false)}
-            onTouchStart={() => setWaitMePremiumPressed(true)}
-            onTouchEnd={() => setWaitMePremiumPressed(false)}
-            onTouchCancel={() => setWaitMePremiumPressed(false)}
-            style={waitMePremiumStyle}
-          >
-            {isLoading ? 'Procesando...' : buyLabel}
-          </button>
+          />
+          <div style={{ marginTop: 10, marginBottom: 0 }}>
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={handleBuy}
+              onMouseEnter={() => setWaitMePremiumHover(true)}
+              onMouseLeave={() => {
+                setWaitMePremiumHover(false)
+                setWaitMePremiumPressed(false)
+              }}
+              onMouseDown={() => setWaitMePremiumPressed(true)}
+              onMouseUp={() => setWaitMePremiumPressed(false)}
+              onTouchStart={() => setWaitMePremiumPressed(true)}
+              onTouchEnd={() => setWaitMePremiumPressed(false)}
+              onTouchCancel={() => setWaitMePremiumPressed(false)}
+              style={waitMePremiumStyle}
+            >
+              {isLoading ? 'Procesando...' : buyLabel}
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {showLastMessage ? (
         <div style={{ marginTop: 8 }}>
