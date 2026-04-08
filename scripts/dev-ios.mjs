@@ -32,6 +32,9 @@ function printUrlBanner(baseDevUrl) {
   console.log('👉 URL Safari → http://localhost:5173')
   console.log(`👉 URL iPhone local → ${baseDevUrl}`)
   console.log(
+    '👉 URL iPhone fuera → (tras Vite + NGROK_AUTHTOKEN en .env.local, ver línea HTTPS abajo; si no hay token, configura ngrok)\n'
+  )
+  console.log(
     '[waitme] Validación BrowserStack (no se ejecuta en dev): npm run test:e2e:browserstack\n'
   )
 }
@@ -139,15 +142,15 @@ waitForRootOk(baseDevUrl).then((ok) => {
 
 void (async () => {
   if (process.env.WAITME_DEV_NO_NGROK === '1') {
-    console.log('👉 URL iPhone fuera de casa → (omitido: WAITME_DEV_NO_NGROK=1)\n')
+    console.log('👉 URL iPhone fuera → (omitido: WAITME_DEV_NO_NGROK=1)\n')
     return
   }
   if (!ngrokBinPath(root)) {
-    console.log('👉 URL iPhone fuera de casa → (ejecuta npm install; paquete ngrok en devDependencies)\n')
+    console.log('👉 URL iPhone fuera → (npm install; paquete ngrok en devDependencies)\n')
     return
   }
   if (!hasNgrokAuthtoken()) {
-    console.log('👉 URL iPhone fuera de casa → (NGROK_AUTHTOKEN en .env.local, o: npm run tunnel:public)\n')
+    console.log('👉 URL iPhone fuera → (NGROK_AUTHTOKEN en .env.local)\n')
     return
   }
   const up = await waitForHttpOk(`http://127.0.0.1:${NGROK_DEV_PORT}/`, 90_000)
@@ -159,7 +162,7 @@ void (async () => {
   if (!ngrokChild) return
   ngrokChild.on('error', (e) => console.warn('[waitme] ngrok:', e.message))
   const pub = await waitForNgrokHttpsUrl()
-  if (pub) console.log(`👉 URL iPhone fuera de casa → ${pub}\n`)
+  if (pub) console.log(`👉 URL iPhone fuera → ${pub}\n`)
   else console.warn('[waitme] ngrok en marcha; no se leyó URL HTTPS (revisa http://127.0.0.1:4040).\n')
 })()
 
