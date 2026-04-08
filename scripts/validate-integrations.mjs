@@ -12,6 +12,15 @@
  * - Percy: requiere PERCY_TOKEN
  */
 import { spawnSync } from 'node:child_process'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { loadEnv } from 'vite'
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+const viteFileEnv = loadEnv('development', root, '')
+for (const [k, v] of Object.entries(viteFileEnv)) {
+  if (!String(process.env[k] ?? '').trim()) process.env[k] = v
+}
 
 function env(name) {
   return String(process.env[name] || '').trim()
