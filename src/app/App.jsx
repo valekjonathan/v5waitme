@@ -225,15 +225,15 @@ function AuthBootScreen() {
   )
 }
 
-function computeTargetView(status, user, profileBootstrapReady) {
+/** Solo `status` y `user` deciden la vista; el perfil se completa en segundo plano (evita loading infinito si profileBootstrapReady no llega a true). */
+function computeTargetView(status, user) {
   if (status === 'loading') return 'loading'
-  if (status === 'authenticated' && user && !profileBootstrapReady) return 'loading'
   if (!user || status === 'unauthenticated') return 'login'
   return 'authenticated'
 }
 
 function AppGate() {
-  const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
+  const { status, user, isProfileComplete } = useAuth()
   const [displayedView, setDisplayedView] = useState('loading')
   const [opacity, setOpacity] = useState(1)
   const [targetView, setTargetView] = useState('loading')
@@ -247,9 +247,9 @@ function AppGate() {
   )
 
   useEffect(() => {
-    const next = computeTargetView(status, user, profileBootstrapReady)
+    const next = computeTargetView(status, user)
     setTargetView(next)
-  }, [status, user, profileBootstrapReady])
+  }, [status, user])
 
   useEffect(() => {
     if (displayedView === targetView) return
