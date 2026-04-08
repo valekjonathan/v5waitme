@@ -124,7 +124,8 @@ export default function ChatsPage() {
               >
                 <UserAlertCard
                   alert={threadToChatAlert(t)}
-                  chatListMode
+                  showLastMessage
+                  lastMessage={t.lastMessage}
                   isEmpty={false}
                   onBuyAlert={() => {}}
                   onChat={() => setThreadId(t.id)}

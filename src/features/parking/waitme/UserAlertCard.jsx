@@ -100,8 +100,9 @@ function UserAlertCard({
   showCountdownTimer: _showCountdownTimer = false,
   isOperationAccepted = false,
   collapsed = false,
-  /** Lista chats: misma caja morada que parking; pie “Últimos mensajes” en lugar de WaitMe!. */
-  chatListMode = false,
+  /** Lista chats: misma tarjeta que parking + bloque “Últimos mensajes” al pie. */
+  showLastMessage = false,
+  lastMessage = '',
 }) {
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -243,86 +244,10 @@ function UserAlertCard({
     )
   }
 
-  if (chatListMode) {
-    return (
-      <div
-        data-alert-card
-        data-waitme-chat-preview-card
-        data-waitme-parking-gap-card-top
-        style={{
-          backgroundColor: '#111827',
-          borderRadius: 12,
-          padding: 8,
-          border: '2px solid rgba(168, 85, 247, 0.5)',
-          position: 'relative',
-          overflow: 'visible',
-          transform: collapsed ? 'translateY(85%)' : 'translateY(0)',
-          transition: 'transform 0.3s ease',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <div style={badgeBase}>Chat</div>
-          <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
-        </div>
-
-        <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <UserAlertAvatarBlock alert={alert} />
-
-          <div
-            style={{
-              flex: 1,
-              height: 85,
-              minWidth: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
-            <div
-              style={{
-                width: '100%',
-                marginTop: 6,
-                display: 'flex',
-                justifyContent: 'flex-start',
-                alignItems: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
-                <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
-                  {star}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 8,
-            paddingTop: 10,
-            borderTop: '1px solid rgba(55, 65, 81, 0.8)',
-          }}
-        >
-          <div style={{ color: colors.primary, fontWeight: 700, fontSize: 13 }}>Últimos mensajes:</div>
-          <p
-            style={{
-              color: '#e5e7eb',
-              fontSize: 14,
-              fontWeight: 500,
-              margin: '6px 0 0',
-              lineHeight: 1.4,
-            }}
-          >
-            {alert?.chatLastMessage || '—'}
-          </p>
-        </div>
-      </div>
-    )
-  }
+  const lastMessageText =
+    typeof lastMessage === 'string' && lastMessage.trim() !== ''
+      ? lastMessage
+      : (alert?.chatLastMessage ?? '')
 
   const btnIcon = {
     width: 32,
@@ -670,6 +595,13 @@ function UserAlertCard({
           </button>
         </div>
       </div>
+
+      {showLastMessage ? (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 12, opacity: 0.6 }}>Últimos mensajes:</div>
+          <div style={{ fontSize: 14 }}>{lastMessageText}</div>
+        </div>
+      ) : null}
     </div>
   )
 }
