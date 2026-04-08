@@ -7,7 +7,8 @@ test('sentry: envía un error real (requiere VITE_SENTRY_DSN)', async ({ page })
   // Confirmamos que el SDK intenta enviar un envelope real.
   const envelope = page.waitForRequest((req) => {
     const url = req.url()
-    if (!/\/api\/\d+\/envelope\/?$/.test(url)) return false
+    // Sentry añade query (p. ej. ?sentry_version=...) — no exigir fin de URL en `/envelope`
+    if (!/\/api\/\d+\/envelope(\/|\?|$)/.test(url)) return false
     const m = /^https?:\/\/([^/]+)/.exec(url)
     // sentry.io o self-hosted: no asumimos el dominio, solo la ruta de envelope
     return Boolean(m)

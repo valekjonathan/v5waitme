@@ -2,6 +2,7 @@
  * E2E en BrowserStack (iPhone + Safari vía grid) con túnel Local hacia el dev server de Playwright.
  * Requiere BROWSERSTACK_USERNAME y BROWSERSTACK_ACCESS_KEY (p. ej. secretos de GitHub).
  */
+import { randomBytes } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
@@ -25,14 +26,17 @@ if (!user || !key) {
   process.exit(1)
 }
 
+const localIdentifier = `waitme-${randomBytes(8).toString('hex')}`
+
 const bs = new browserstack.Local()
 await new Promise((resolve, reject) => {
-  bs.start({ key }, (err) => (err ? reject(err) : resolve()))
+  bs.start({ key, localIdentifier }, (err) => (err ? reject(err) : resolve()))
 })
 
 const env = {
   ...process.env,
   WAITME_PLAYWRIGHT_BROWSERSTACK: '1',
+  WAITME_BROWSERSTACK_LOCAL_IDENTIFIER: localIdentifier,
 }
 
 let exitCode = 1

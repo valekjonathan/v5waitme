@@ -27,6 +27,7 @@ const E2E_ORIGIN = `http://localhost:${E2E_PORT}`
 
 const bsUser = String(process.env.BROWSERSTACK_USERNAME || '').trim()
 const bsKey = String(process.env.BROWSERSTACK_ACCESS_KEY || '').trim()
+const bsLocalId = String(process.env.WAITME_BROWSERSTACK_LOCAL_IDENTIFIER || '').trim()
 const browserStackGridOn =
   process.env.WAITME_PLAYWRIGHT_BROWSERSTACK === '1' && Boolean(bsUser && bsKey)
 
@@ -45,8 +46,11 @@ if (browserStackGridOn) {
     'browserstack.username': bsUser,
     'browserstack.accessKey': bsKey,
     'browserstack.local': 'true',
+    ...(bsLocalId ? { 'browserstack.localIdentifier': bsLocalId } : {}),
+    browser: 'playwright-webkit',
     device: 'iPhone 14',
     os_version: '16',
+    'browserstack.playwrightVersion': '1.latest',
     name: 'v5waitme-playwright',
     build: `waitme-${buildIdentifier}`,
     'client.playwrightVersion': readPlaywrightPackageVersion(),
