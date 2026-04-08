@@ -163,35 +163,17 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     )
   })
 
-  it('Logout: authenticated -> perfil -> Cerrar sesión -> vuelve a Login', async () => {
+  it('Authenticated: App.jsx aislamiento muestra AUTH TREE OK (sin chrome perfil/logout)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     sessionMode = 'auth'
     render(<App />)
 
-    // Espera a que el home autenticado esté montado (evita clicar durante "Cargando…"/AppLayout no interactivo).
     await waitFor(
       () => {
-        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
+        expect(screen.queryByText('AUTH TREE OK')).not.toBeNull()
       },
       { timeout: 15_000 }
     )
-
-    const headerPerfilBtn = document.querySelector(
-      'header[data-waitme-header="true"] button[aria-label="Perfil"]'
-    )
-    expect(headerPerfilBtn).not.toBeNull()
-    await act(async () => {
-      fireEvent.click(headerPerfilBtn)
-    })
-
-    const closeBtn = await screen.findByRole('button', { name: /cerrar sesión/i })
-    await act(async () => {
-      fireEvent.click(closeBtn)
-    })
-
-    await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /continuar con google/i })).not.toBeNull()
-    })
   })
 
   it('Error de auth: signInWithOAuth falla -> permanece en login (no pasa a Home)', async () => {

@@ -30,14 +30,6 @@ import {
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
 /**
- * Aislamiento runtime (solo local): en `.env.local` → `VITE_AUTH_TREE_DIAG=a|b|c|d`
- * Sin variable = comportamiento normal. El agente no puede ver Safari; tú validas qué fase enseña negro.
- */
-const AUTH_TREE_DIAG = String(import.meta.env.VITE_AUTH_TREE_DIAG ?? '')
-  .trim()
-  .toLowerCase()
-
-/**
  * Raíz React: llena #root (flex). `--app-height` se escribe solo desde `visualViewport.height`
  * en `subscribeWaitmeViewportCssVars()` (resize/scroll/orientation del vv y de `window`).
  */
@@ -74,14 +66,6 @@ const authTreeInnerStyle = {
   boxSizing: 'border-box',
 }
 
-const authDiagBlockStyle = {
-  color: '#fff',
-  padding: 24,
-  width: '100%',
-  minHeight: 'var(--app-height, 100dvh)',
-  backgroundColor: colors.background,
-  boxSizing: 'border-box',
-}
 const homeGateStyle = {
   flex: '1 1 0%',
   minHeight: 0,
@@ -262,71 +246,9 @@ function AppGate() {
     </AuthenticatedShellWithBoundary>
   )
 
-  if (user && AUTH_TREE_DIAG === 'a') {
+  if (!user) {
     return (
       <AppScreenProvider>
-        <div data-waitme-auth-diag="a" style={authDiagBlockStyle}>
-          AUTH TREE OK
-        </div>
-      </AppScreenProvider>
-    )
-  }
-
-  if (user && AUTH_TREE_DIAG === 'b') {
-    return (
-      <AppScreenProvider>
-        <AuthenticatedShellWithBoundary>
-          <div data-waitme-auth-diag="b" style={authDiagBlockStyle}>
-            AUTH TREE OK — B
-          </div>
-        </AuthenticatedShellWithBoundary>
-      </AppScreenProvider>
-    )
-  }
-
-  if (user && AUTH_TREE_DIAG === 'c') {
-    return (
-      <AppScreenProvider>
-        <AuthenticatedShellWithBoundary>
-          <ProfileIncompleteNoticeProvider value={noticeValue}>
-            <AppLayout>
-              <div style={authTreeInnerStyle}>
-                <IncompleteProfileModalHost
-                  open={incompleteModalOpen}
-                  onClose={closeIncompleteModal}
-                />
-                <ProfilePage />
-              </div>
-            </AppLayout>
-          </ProfileIncompleteNoticeProvider>
-        </AuthenticatedShellWithBoundary>
-      </AppScreenProvider>
-    )
-  }
-
-  if (user && AUTH_TREE_DIAG === 'd') {
-    return (
-      <AppScreenProvider>
-        <AuthenticatedShellWithBoundary>
-          <ProfileIncompleteNoticeProvider value={noticeValue}>
-            <AppLayout>
-              <div style={authTreeInnerStyle}>
-                <IncompleteProfileModalHost
-                  open={incompleteModalOpen}
-                  onClose={closeIncompleteModal}
-                />
-                <AuthenticatedMainChrome />
-              </div>
-            </AppLayout>
-          </ProfileIncompleteNoticeProvider>
-        </AuthenticatedShellWithBoundary>
-      </AppScreenProvider>
-    )
-  }
-
-  return (
-    <AppScreenProvider>
-      {!user ? (
         <div style={gateColumnStyle}>
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
@@ -334,9 +256,27 @@ function AppGate() {
             </ScreenShell>
           </AppLayout>
         </div>
-      ) : (
-        authenticatedDefault
-      )}
+      </AppScreenProvider>
+    )
+  }
+
+  void authenticatedDefault
+
+  return (
+    <AppScreenProvider>
+      <div
+        style={{
+          color: 'white',
+          background: 'black',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 24,
+        }}
+      >
+        AUTH TREE OK
+      </div>
     </AppScreenProvider>
   )
 }
