@@ -13,7 +13,14 @@ import { fileURLToPath } from 'node:url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
+function ngrokBinPath() {
+  const local = path.join(root, 'node_modules', '.bin', 'ngrok')
+  if (existsSync(local)) return local
+  return null
+}
+
 function ensureNgrokCli() {
+  if (ngrokBinPath()) return
   try {
     execSync('command -v ngrok', { stdio: 'ignore' })
     return
@@ -24,8 +31,8 @@ function ensureNgrokCli() {
     execSync('brew install ngrok/ngrok/ngrok', { stdio: 'inherit' })
   } catch {
     console.error(
-      '\nERROR: ngrok no está en PATH y la instalación con brew falló.\n' +
-        'Instala: brew install ngrok/ngrok/ngrok\n'
+      '\nERROR: ngrok no está disponible. En la raíz del proyecto: npm install\n' +
+        'O instala el CLI: brew install ngrok/ngrok/ngrok\n'
     )
     process.exit(1)
   }
@@ -94,9 +101,10 @@ function main() {
     env: { ...process.env },
   })
 
-  const ngrok = spawn('ngrok', ['http', '5173'], {
+  const ngrokCmd = ngrokBinPath() || 'ngrok'
+  const ngrok = spawn(ngrokCmd, ['http', '5173'], {
     cwd: root,
-    shell: true,
+    shell: !ngrokBinPath(),
     stdio: 'ignore',
     env: { ...process.env },
   })
