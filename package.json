@@ -21,6 +21,8 @@
     "test:e2e": "playwright test",
     "test:e2e:browserstack": "node scripts/run-browserstack-e2e.mjs",
     "test:percy": "playwright test e2e/percy-snapshot.spec.ts --project=chromium",
+    "test:percy:upload": "percy exec -- npm run test:percy",
+    "test:sentry": "playwright test e2e/sentry-smoke.spec.ts --project=chromium",
     "e2e": "playwright test",
     "lint": "eslint . --max-warnings 0 && tsc --noEmit",
     "format": "prettier --write .",
@@ -35,7 +37,8 @@
     "cap:open:ios": "npx cap open ios",
     "cap:live:on": "node scripts/cap-live-ios.mjs",
     "cap:live:off": "node scripts/cap-live-off.mjs",
-    "ios:fresh:dev": "node scripts/ios-fresh-dev-sync.mjs"
+    "ios:fresh:dev": "node scripts/ios-fresh-dev-sync.mjs",
+    "dev:safari": "node scripts/dev-safari-live-reload.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
@@ -64,6 +67,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.1",
     "browserstack-local": "^1.5.12",
+    "browser-sync": "^3.0.4",
     "eslint": "^9.18.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.1.0",
