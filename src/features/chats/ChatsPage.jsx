@@ -4,12 +4,45 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import MessageCircleIcon from '../../ui/icons/MessageCircleIcon'
 import StreetSearch from '../parking/waitme/StreetSearch.jsx'
-import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
-import { CHAT_MOCK_THREADS, threadToChatAlert } from './chatMockData.js'
+import { CHAT_MOCK_THREADS } from './chatMockData.js'
 import ChatThreadView from './ChatThreadView.jsx'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
+
+/** Misma altura que el bloque avatar de `UserAlertCard` (UserAlertAvatarBlock); ahora circular. */
+const CHAT_LIST_AVATAR_PX = 85
+
+const chatRowStyle = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 12,
+  padding: '10px 4px',
+  borderBottom: '1px solid rgba(55, 65, 81, 0.6)',
+  boxSizing: 'border-box',
+}
+
+const chatAvatarStyle = {
+  width: CHAT_LIST_AVATAR_PX,
+  height: CHAT_LIST_AVATAR_PX,
+  borderRadius: '50%',
+  objectFit: 'cover',
+  flexShrink: 0,
+  border: '2px solid rgba(168, 85, 247, 0.4)',
+  backgroundColor: '#111827',
+}
+
+const chatNameStyle = {
+  fontWeight: 700,
+  fontSize: 20,
+  color: '#fff',
+  lineHeight: 1.2,
+  margin: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+}
 
 export default function ChatsPage() {
   const [threadId, setThreadId] = useState(null)
@@ -61,6 +94,7 @@ export default function ChatsPage() {
       >
         <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
           <StreetSearch
+            placeholder="Buscar..."
             localFilterItems={localItems}
             onLocalSelect={(item) => setThreadId(item.id)}
             onQueryChange={(q) => setListFilter(q)}
@@ -76,7 +110,7 @@ export default function ChatsPage() {
             paddingBottom: 16,
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: 0,
           }}
         >
           {filteredThreads.length === 0 ? (
@@ -122,15 +156,18 @@ export default function ChatsPage() {
                 }}
                 style={{ cursor: 'pointer', flexShrink: 0 }}
               >
-                <UserAlertCard
-                  alert={threadToChatAlert(t)}
-                  showLastMessage
-                  lastMessage={t.lastMessage}
-                  isEmpty={false}
-                  onBuyAlert={() => {}}
-                  onChat={() => setThreadId(t.id)}
-                  onCall={() => {}}
-                />
+                <div style={chatRowStyle}>
+                  <img
+                    src={t.avatarUrl}
+                    alt=""
+                    width={CHAT_LIST_AVATAR_PX}
+                    height={CHAT_LIST_AVATAR_PX}
+                    style={chatAvatarStyle}
+                  />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p style={chatNameStyle}>{t.name}</p>
+                  </div>
+                </div>
               </div>
             ))
           )}
