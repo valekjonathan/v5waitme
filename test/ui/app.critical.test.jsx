@@ -163,14 +163,14 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     )
   })
 
-  it('Authenticated: App.jsx aislamiento muestra AUTH SHELL OK (sin chrome perfil/logout)', async () => {
+  it('Authenticated: aislamiento ProfilePage sin IphoneFrame/shell (botón Guardar)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     sessionMode = 'auth'
     render(<App />)
 
     await waitFor(
       () => {
-        expect(screen.queryByText('AUTH SHELL OK')).not.toBeNull()
+        expect(screen.queryByRole('button', { name: /guardar/i })).not.toBeNull()
       },
       { timeout: 15_000 }
     )
