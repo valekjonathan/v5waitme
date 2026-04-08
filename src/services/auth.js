@@ -91,6 +91,8 @@ export async function signInWithGoogle() {
   if (!supabase) {
     return { data: null, error: new Error('supabase_not_configured') }
   }
+  /** Popup OAuth web: se abre antes del `await` para que Safari no lo bloquee. */
+  let webOAuthPopup = null
   try {
     if (Capacitor.isNativePlatform()) {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -156,6 +158,7 @@ export async function signInWithGoogle() {
       typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
 
     console.log('LOGIN START')
+    webOAuthPopup = window.open('', '_blank')
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -164,15 +167,19 @@ export async function signInWithGoogle() {
       },
     })
     if (error) {
-      console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
+      if (webOAuthPopup) webOAuthPopup.close()
       console.error('GOOGLE LOGIN ERROR', error)
+      console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
     }
-    if (data?.url) {
-      window.open(data.url, '_blank', 'noopener,noreferrer')
+    if (data?.url && webOAuthPopup) {
+      webOAuthPopup.location.href = data.url
+    } else if (webOAuthPopup) {
+      webOAuthPopup.close()
     }
     return { data, error: null }
   } catch (e) {
+    if (webOAuthPopup) webOAuthPopup.close()
     console.error('GOOGLE LOGIN ERROR', e)
     console.error('[WaitMe][Auth] signInWithGoogle excepción', e)
     return { data: null, error: e }
