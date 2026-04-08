@@ -402,6 +402,7 @@ export default function Map({
       globalContainer = document.createElement('div')
       globalContainer.style.width = '100%'
       globalContainer.style.height = '100%'
+      globalContainer.style.position = 'relative'
     }
 
     if (containerRef.current.firstChild !== globalContainer) {
@@ -651,10 +652,18 @@ export default function Map({
     <>
       <style>
         {`
+          [data-waitme-map-shell] {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+          }
           [data-waitme-map-shell] .mapboxgl-canvas,
           [data-waitme-map-shell] .mapboxgl-canvas-container {
             width: 100% !important;
             height: 100% !important;
+            max-width: none !important;
           }
         `}
       </style>
@@ -662,9 +671,16 @@ export default function Map({
         ref={mapShellRef}
         data-waitme-map-shell
         style={{
-          flex: 1,
+          position: 'relative',
           width: '100%',
           height: '100%',
+          maxWidth: 'none',
+          margin: 0,
+          padding: 0,
+          boxSizing: 'border-box',
+          flex: 1,
+          minWidth: 0,
+          alignSelf: 'stretch',
         }}
       >
         <div
@@ -672,7 +688,7 @@ export default function Map({
           style={{
             width: '100%',
             height: '100%',
-            flex: 1,
+            position: 'relative',
           }}
         />
         {unavailable ? null : !parkingBandPinAdjust ? (
