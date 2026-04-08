@@ -18,11 +18,15 @@ platforms:
 
 parallelsPerPlatform: 1
 browserstackLocal: true
+# Opciones del binario Local (en el SDK la clave reconocida es `browserStackLocalOptions`, no `browserstackLocalOptions`).
+browserStackLocalOptions:
+  localIdentifier: v5waitme-local
+  forceLocal: true
 
 framework: playwright
 source: v5waitme
 
 debug: false
-networkLogs: false
-consoleLogs: errors
+networkLogs: true
+consoleLogs: verbose
 testObservability: false

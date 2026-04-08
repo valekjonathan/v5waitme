@@ -5,11 +5,17 @@
  * No usa CDP manual (wss://cdp.browserstack.com/playwright?caps=...).
  */
 import { spawnSync } from 'node:child_process'
+import { mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv } from 'vite'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+try {
+  mkdirSync(join(root, 'log', '.obs_test_details-default'), { recursive: true })
+} catch {
+  /* ignore */
+}
 const viteFileEnv = loadEnv('development', root, '')
 for (const [k, v] of Object.entries(viteFileEnv)) {
   if (!String(process.env[k] ?? '').trim()) process.env[k] = v

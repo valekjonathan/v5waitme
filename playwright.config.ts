@@ -13,6 +13,7 @@ for (const [k, v] of Object.entries(viteFileEnv)) {
 
 /** Puerto dedicado E2E para no chocar con `npm run dev` en 5173. */
 const E2E_PORT = 5174
+/** URL que usa el iPhone vía BrowserStack Local (debe coincidir con lo que enruta el túnel). */
 const E2E_ORIGIN = `http://localhost:${E2E_PORT}`
 
 const projects: NonNullable<PlaywrightTestConfig['projects']> = [
@@ -32,7 +33,7 @@ export default defineConfig({
   },
   projects,
   webServer: {
-    command: `env VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite --port ${E2E_PORT} --strictPort`,
+    command: `env VITE_SUPABASE_URL= VITE_SUPABASE_ANON_KEY= npx vite --host 0.0.0.0 --port ${E2E_PORT} --strictPort`,
     url: E2E_ORIGIN,
     reuseExistingServer: false,
     timeout: 120_000,
