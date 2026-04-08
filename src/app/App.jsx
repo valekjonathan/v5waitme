@@ -246,9 +246,9 @@ function AppGate() {
     </AuthenticatedShellWithBoundary>
   )
 
-  if (!user) {
-    return (
-      <AppScreenProvider>
+  return (
+    <AppScreenProvider>
+      {!user ? (
         <div style={gateColumnStyle}>
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
@@ -256,17 +256,9 @@ function AppGate() {
             </ScreenShell>
           </AppLayout>
         </div>
-      </AppScreenProvider>
-    )
-  }
-
-  void authenticatedDefault
-
-  return (
-    <AppScreenProvider>
-      <div style={{ height: '100vh', background: 'black' }}>
-        <ProfilePage />
-      </div>
+      ) : (
+        authenticatedDefault
+      )}
     </AppScreenProvider>
   )
 }
