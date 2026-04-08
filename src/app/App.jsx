@@ -263,21 +263,9 @@ function AppGate() {
   void authenticatedDefault
 
   return (
-    <AppScreenProvider>
-      <div
-        style={{
-          color: 'white',
-          background: 'black',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 24,
-        }}
-      >
-        AUTH TREE OK
-      </div>
-    </AppScreenProvider>
+    <div style={{ color: 'white', padding: 24 }}>
+      AUTH SHELL OK
+    </div>
   )
 }
 

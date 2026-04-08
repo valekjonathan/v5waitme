@@ -163,14 +163,14 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     )
   })
 
-  it('Authenticated: App.jsx aislamiento muestra AUTH TREE OK (sin chrome perfil/logout)', async () => {
+  it('Authenticated: App.jsx aislamiento muestra AUTH SHELL OK (sin chrome perfil/logout)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     sessionMode = 'auth'
     render(<App />)
 
     await waitFor(
       () => {
-        expect(screen.queryByText('AUTH TREE OK')).not.toBeNull()
+        expect(screen.queryByText('AUTH SHELL OK')).not.toBeNull()
       },
       { timeout: 15_000 }
     )
