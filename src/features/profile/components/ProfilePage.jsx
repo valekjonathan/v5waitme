@@ -139,14 +139,16 @@ export default function ProfilePage() {
           }
           return
         }
-        const user = await getCurrentUser()
+        const remoteUser = await getCurrentUser()
         if (cancelled) return
-        if (!user?.id) {
+        /** `getUser()` puede fallar o ir vacío un instante tras OAuth; no cerrar sesión si el contexto sigue con id. */
+        const userId = remoteUser?.id ?? sessionUser?.id
+        if (!userId) {
           void signOut()
           return
         }
 
-        const { data, error } = await getProfile(user.id)
+        const { data, error } = await getProfile(userId)
         if (cancelled) return
         if (error) return
         if (data) {
@@ -227,12 +229,13 @@ export default function ProfilePage() {
         setAutosaveStatus('idle')
         logFlow('AUTOSAVE_SUCCESS', { mode: 'dev-local' })
       } else {
-        const user = await getCurrentUser()
-        if (!user?.id) {
+        const remoteUser = await getCurrentUser()
+        const userId = remoteUser?.id ?? sessionUserIdRef.current
+        if (!userId) {
           void signOut()
           return
         }
-        const { data, error } = await updateProfile(user.id, currentProfile)
+        const { data, error } = await updateProfile(userId, currentProfile)
         if (error) throw error
         const merged = data
           ? {
