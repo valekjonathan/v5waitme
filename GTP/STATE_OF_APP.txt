@@ -1,8 +1,8 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-08T20:08:12.090Z
-Git revision: 1d8a6200937bc3edd14b88f9b6e4775f2fec9e13
+Generated: 2026-04-08T20:09:29.836Z
+Git revision: f07a489aa0d9da632a335848a45999b7629a618b
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
-Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
+Git source: local HEAD (working tree clean al generar; `git status` vacío).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs

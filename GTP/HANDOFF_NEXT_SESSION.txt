@@ -1,0 +1,25 @@
+=== Handoff — retomar desde aquí ===
+Actualizado: cierre de sesión (solo meta; no sustituye GTP/STATE_OF_APP.txt generado).
+
+Estado guardado
+- Rama: main, working tree limpio tras el último commit de cierre (incl. STATE_OF_APP + este archivo).
+- Validación: npm run lint, test, build y npm run quality pasan.
+
+Qué quedó estable (no tocar salvo tarea explícita)
+- Layout general estable.
+- IphoneFrame en modo escritorio con maxWidth/maxHeight (no ancho fijo 390).
+- Login: no tocar.
+- Mapa: no tocar.
+- Auth: no tocar.
+
+Siguiente foco de producto
+- Continuar SOLO con la pantalla Chats cuando se retome.
+
+Referencia — último alcance pedido para Chats (ya reflejado en código en el commit de variante isChat; revisar mañana si hace falta pulir)
+1. Botón verde → botón rojo X para eliminar conversación con confirmación nativa.
+2. Quitar marca/modelo/matrícula/estrellas/icono coche; usar ese espacio para el último mensaje.
+3. Quitar línea gris bajo la cabecera en modo lista Chats.
+4. Hora entre “Info usuario” y botón X.
+
+Notas
+- El inventario automático del repo sigue en GTP/STATE_OF_APP.txt (se regenera con quality).
