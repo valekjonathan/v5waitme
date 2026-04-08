@@ -225,9 +225,6 @@ function AuthBootScreen() {
   )
 }
 
-/** Solo desarrollo: `VITE_DEBUG_AUTH_GATE=1` pinta AUTH OK tras login (smoke test AppGate; sin tocar Auth). */
-const DEBUG_AUTH_OK = import.meta.env.VITE_DEBUG_AUTH_GATE === '1'
-
 function AppGate() {
   const { status, user, isProfileComplete } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -277,12 +274,6 @@ function AppGate() {
             </ScreenShell>
           </AppLayout>
         </div>
-      ) : DEBUG_AUTH_OK ? (
-        <AppLayout>
-          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-            <div style={{ color: '#fff' }}>AUTH OK</div>
-          </ScreenShell>
-        </AppLayout>
       ) : (
         <AuthenticatedShellWithBoundary opacity={1}>
           <ProfileIncompleteNoticeProvider value={noticeValue}>
@@ -301,14 +292,6 @@ function AppGate() {
 }
 
 export default function App() {
-  /** Popup OAuth: mismo origen tras redirect; avisa a la ventana principal y se cierra. */
-  useEffect(() => {
-    if (window.opener) {
-      window.opener.postMessage('oauth_success', '*')
-      window.close()
-    }
-  }, [])
-
   /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
   useEffect(() => {
     const isSafariPreview = window.location.search.includes('iphone=true')

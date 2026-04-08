@@ -10,19 +10,6 @@ import {
 import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
-/** Ventana principal: el popup OAuth postea `oauth_success` tras login; recargamos para aplicar sesión. */
-let oauthSuccessReloadListenerAttached = false
-function attachOAuthSuccessReloadListener() {
-  if (typeof window === 'undefined' || oauthSuccessReloadListenerAttached) return
-  oauthSuccessReloadListenerAttached = true
-  window.addEventListener('message', (event) => {
-    if (event.data === 'oauth_success') {
-      window.location.reload()
-    }
-  })
-}
-attachOAuthSuccessReloadListener()
-
 /** Único redirect PKCE en iOS/Android nativo; debe estar en Supabase Auth → Redirect URLs. */
 export const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
 
@@ -95,17 +82,12 @@ export async function getCurrentUser() {
  * Inicia login con Google (OAuth) mediante Supabase Auth.
  */
 export async function signInWithGoogle() {
-  console.log('[Auth] signInWithGoogle llamada')
-  console.log('[Auth] platform:', Capacitor.getPlatform())
-  console.log('[Auth] isNative:', Capacitor.isNativePlatform())
   if (!isSupabaseConfigured()) {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   if (!supabase) {
     return { data: null, error: new Error('supabase_not_configured') }
   }
-  /** Popup OAuth web: se abre antes del `await` para que Safari no lo bloquee. */
-  let webOAuthPopup = null
   try {
     if (Capacitor.isNativePlatform()) {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -166,28 +148,22 @@ export async function signInWithGoogle() {
       return { data, error: null }
     }
 
-    /** Web: listener en módulo (antes de cualquier popup); popup antes del `await` (Safari); `redirectTo` = origen actual. */
-    const popup = window.open('', '_blank')
-    webOAuthPopup = popup
+    /**
+     * Web: flujo estándar Supabase (misma ventana). El cliente redirige al proveedor;
+     * el retorno va a `redirectTo` con `?code=`; AuthContext hace `exchangeCodeForSession`.
+     */
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
-        skipBrowserRedirect: true,
+        redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
       },
     })
     if (error) {
-      if (popup) popup.close()
-      console.error('GOOGLE LOGIN ERROR', error)
+      console.error('[WaitMe][Auth] signInWithGoogle', error.message ?? error, error)
       return { data: null, error }
-    }
-    if (data?.url && popup) {
-      popup.location.href = data.url
     }
     return { data, error: null }
   } catch (e) {
-    if (webOAuthPopup) webOAuthPopup.close()
-    console.error('GOOGLE LOGIN ERROR', e)
     console.error('[WaitMe][Auth] signInWithGoogle excepción', e)
     return { data: null, error: e }
   }

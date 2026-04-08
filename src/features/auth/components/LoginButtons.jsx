@@ -282,7 +282,6 @@ export default function LoginButtons() {
         variant="primary"
         disabled={authActionLoading}
         onClick={async () => {
-          console.log('CLICK GOOGLE')
           if (authActionLoading) return
           setAppleMessage('')
           await signInWithGoogle()
