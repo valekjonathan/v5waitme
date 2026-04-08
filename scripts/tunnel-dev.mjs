@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Vite (5173) + ngrok (este proceso). `npm run dev` lleva ngrok integrado; aquí lo desactivamos para no duplicar túneles.
+ * Vite (5173) + ngrok en este proceso. `npm run dev` no arranca ngrok salvo WAITME_DEV_NGROK=1; aquí forzamos WAITME_DEV_NO_NGROK en el hijo para no duplicar túneles.
  * Carga NGROK_AUTHTOKEN desde .env.local vía mergeDevEnvFromFiles.
  */
 import { execSync, spawn } from 'node:child_process'

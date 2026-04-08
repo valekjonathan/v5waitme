@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Flujo dev completo (sin BrowserStack; validación nube → `npm run test:e2e:browserstack`):
- * LAN → `.env.local` (VITE_DEV_LAN_ORIGIN) → cap sync ios → Vite :5173 (0.0.0.0) → URLs claras → ngrok opcional.
- * Safari tiempo real: preview `?iphone=true`. iPhone misma red: URL LAN. Fuera: ngrok si hay NGROK_AUTHTOKEN.
+ * Flujo dev local principal: Vite :5173 en 0.0.0.0, strictPort, cap sync iOS, `.env.local` (VITE_DEV_LAN_ORIGIN).
+ * Fuera de casa con el PC apagado → Vercel (preview/production), no depender de este servidor.
+ * Ngrok solo como demo temporal: `WAITME_DEV_NGROK=1` + NGROK_AUTHTOKEN (ver bloque async abajo).
+ * Validación dispositivos reales en nube: `npm run test:e2e:browserstack` (no se ejecuta aquí).
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
@@ -28,14 +29,24 @@ const root = path.join(__dirname, '..')
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
+  const safariLocal = 'http://localhost:5173/?iphone=true'
   console.log('\n')
-  console.log('👉 URL Safari → http://localhost:5173')
-  console.log(`👉 URL iPhone local → ${baseDevUrl}`)
+  console.log('👉 URL Safari (Mac, local) → http://localhost:5173')
+  console.log(`   Vista previa iPhone en Mac → ${safariLocal}`)
+  console.log(`👉 URL iPhone misma red (local) → ${baseDevUrl}`)
+  console.log('')
   console.log(
-    '👉 URL iPhone fuera → (tras Vite + NGROK_AUTHTOKEN en .env.local, ver línea HTTPS abajo; si no hay token, configura ngrok)\n'
+    '🏠 Fuera de casa / PC apagado → usa el despliegue Vercel (preview o production), no este dev server.'
   )
   console.log(
-    '[waitme] Validación BrowserStack (no se ejecuta en dev): npm run test:e2e:browserstack\n'
+    '   OAuth: redirectTo = origen de la pestaña (localhost o IP:5173 en local; Vercel en prod). Añade esas URLs en Supabase → Auth → Redirect URLs.'
+  )
+  console.log('')
+  console.log(
+    '[waitme] Ngrok: opcional solo para demo temporal. Para activarlo: WAITME_DEV_NGROK=1 y NGROK_AUTHTOKEN en .env.local (URL HTTPS en consola si arranca).'
+  )
+  console.log(
+    '[waitme] Validación final en dispositivos reales (BrowserStack): npm run test:e2e:browserstack\n'
   )
 }
 
@@ -141,29 +152,36 @@ waitForRootOk(baseDevUrl).then((ok) => {
 })
 
 void (async () => {
+  if (process.env.WAITME_DEV_NGROK !== '1') {
+    return
+  }
   if (process.env.WAITME_DEV_NO_NGROK === '1') {
-    console.log('👉 URL iPhone fuera → (omitido: WAITME_DEV_NO_NGROK=1)\n')
+    console.log('[waitme] ngrok desactivado (WAITME_DEV_NO_NGROK=1).\n')
     return
   }
   if (!ngrokBinPath(root)) {
-    console.log('👉 URL iPhone fuera → (npm install; paquete ngrok en devDependencies)\n')
+    console.warn('[waitme] ngrok (demo): falta binario; npm install (paquete ngrok en devDependencies).\n')
     return
   }
   if (!hasNgrokAuthtoken()) {
-    console.log('👉 URL iPhone fuera → (NGROK_AUTHTOKEN en .env.local)\n')
+    console.warn('[waitme] ngrok (demo): falta NGROK_AUTHTOKEN en .env.local.\n')
     return
   }
   const up = await waitForHttpOk(`http://127.0.0.1:${NGROK_DEV_PORT}/`, 90_000)
   if (!up) {
-    console.warn('[waitme] ngrok omitido: localhost:5173 no respondió a tiempo.\n')
+    console.warn('[waitme] ngrok (demo) omitido: localhost:5173 no respondió a tiempo.\n')
     return
   }
   ngrokChild = spawnNgrokHttp(root, NGROK_DEV_PORT)
   if (!ngrokChild) return
   ngrokChild.on('error', (e) => console.warn('[waitme] ngrok:', e.message))
   const pub = await waitForNgrokHttpsUrl()
-  if (pub) console.log(`👉 URL iPhone fuera → ${pub}\n`)
-  else console.warn('[waitme] ngrok en marcha; no se leyó URL HTTPS (revisa http://127.0.0.1:4040).\n')
+  if (pub) {
+    console.log(`[waitme] Túnel ngrok (demo temporal) → ${pub}`)
+    console.log('   Recuerda: para uso estable fuera de casa usa Vercel; añade esta URL a Supabase Redirect URLs si la usas.\n')
+  } else {
+    console.warn('[waitme] ngrok en marcha; no se leyó URL HTTPS (revisa http://127.0.0.1:4040).\n')
+  }
 })()
 
 async function run() {
