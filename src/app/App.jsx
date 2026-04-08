@@ -45,8 +45,8 @@ const appRootLayoutStyle = {
   boxSizing: 'border-box',
 }
 
-const fade200Style = {
-  transition: 'opacity 200ms ease-out',
+/** Columna shell sin transición (evita parpadeo / opacidad intermedia). */
+const gateColumnStyle = {
   minHeight: 0,
   flex: '1 1 0%',
   display: 'flex',
@@ -171,10 +171,10 @@ function HomeActionGate({ children }) {
   )
 }
 
-function AuthenticatedShellWithBoundary({ opacity, children }) {
+function AuthenticatedShellWithBoundary({ children }) {
   const { screen } = useAppScreen()
   return (
-    <div style={{ ...fade200Style, opacity }}>
+    <div style={gateColumnStyle}>
       <ErrorBoundary resetKeys={[screen]} name="shell">
         {children}
       </ErrorBoundary>
@@ -204,32 +204,8 @@ function AuthenticatedMainChrome() {
   )
 }
 
-function AuthBootScreen() {
-  return (
-    <div
-      data-waitme-auth-boot
-      style={{
-        display: 'flex',
-        flex: '1 1 0%',
-        minHeight: 0,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.background,
-        color: colors.textMuted,
-        fontSize: 14,
-        fontWeight: 500,
-      }}
-    >
-      Cargando…
-    </div>
-  )
-}
-
 function AppGate() {
-  const { status, user, isProfileComplete } = useAuth()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  /** Evita mostrar Login mientras el auth inicial no ha resuelto (solo se actualiza en efecto). */
-  const [authReady, setAuthReady] = useState(false)
+  const { user, isProfileComplete } = useAuth()
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -239,35 +215,12 @@ function AppGate() {
     []
   )
 
-  useEffect(() => {
-    if (status === 'loading') return
-    setAuthReady(true)
-  }, [status])
-
-  useEffect(() => {
-    if (status === 'authenticated' && user) {
-      setIsAuthenticated(true)
-    }
-  }, [status, user])
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      setIsAuthenticated(false)
-    }
-  }, [status])
-
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
   return (
     <AppScreenProvider>
-      {!authReady ? (
-        <AppLayout>
-          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-            <AuthBootScreen />
-          </ScreenShell>
-        </AppLayout>
-      ) : !isAuthenticated ? (
-        <div style={fade200Style}>
+      {!user ? (
+        <div style={gateColumnStyle}>
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
               <LoginPage />
@@ -275,7 +228,7 @@ function AppGate() {
           </AppLayout>
         </div>
       ) : (
-        <AuthenticatedShellWithBoundary opacity={1}>
+        <AuthenticatedShellWithBoundary>
           <ProfileIncompleteNoticeProvider value={noticeValue}>
             <AppLayout>
               <IncompleteProfileModalHost
