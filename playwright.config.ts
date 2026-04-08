@@ -2,8 +2,15 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, devices, type PlaywrightTestConfig } from '@playwright/test'
+import { loadEnv } from 'vite'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+/** Misma carga que Vite: `.env`, `.env.local`, etc. (gitignored) para E2E y credenciales locales. */
+const viteFileEnv = loadEnv('development', __dirname, '')
+for (const [k, v] of Object.entries(viteFileEnv)) {
+  if (!String(process.env[k] ?? '').trim()) process.env[k] = v
+}
 
 function readPlaywrightPackageVersion(): string {
   try {
