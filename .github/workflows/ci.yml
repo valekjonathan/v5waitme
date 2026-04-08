@@ -43,6 +43,12 @@ jobs:
       - name: E2E tests (Chromium + WebKit)
         run: npm run test:e2e
 
+      - name: Sentry smoke (solo si hay DSN)
+        if: secrets.VITE_SENTRY_DSN != ''
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+        run: npm run test:sentry
+
   browserstack-iphone:
     name: e2e-browserstack-iphone
     if: secrets.BROWSERSTACK_USERNAME != '' && secrets.BROWSERSTACK_ACCESS_KEY != ''

@@ -23,6 +23,7 @@
     "test:percy": "playwright test e2e/percy-snapshot.spec.ts --project=chromium",
     "test:percy:upload": "percy exec -- npm run test:percy",
     "test:sentry": "playwright test e2e/sentry-smoke.spec.ts --project=chromium",
+    "validate:integrations": "node scripts/validate-integrations.mjs",
     "e2e": "playwright test",
     "lint": "eslint . --max-warnings 0 && tsc --noEmit",
     "format": "prettier --write .",
