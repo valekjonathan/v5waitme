@@ -148,14 +148,10 @@ export async function signInWithGoogle() {
       return { data, error: null }
     }
 
-    /**
-     * Web: flujo estándar Supabase (misma ventana). El cliente redirige al proveedor;
-     * el retorno va a `redirectTo` con `?code=`; AuthContext hace `exchangeCodeForSession`.
-     */
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+        redirectTo: window.location.origin,
       },
     })
     if (error) {
