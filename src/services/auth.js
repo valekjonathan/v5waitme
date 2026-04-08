@@ -153,29 +153,23 @@ export async function signInWithGoogle() {
       return { data, error: null }
     }
 
-    /** Web (dev y prod): mismo host/puerto que la pestaña actual para no volver a Site URL (p. ej. Vercel). */
-    const redirectTo =
-      typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
-
-    console.log('LOGIN START')
-    webOAuthPopup = window.open('', '_blank')
+    /** Web: popup antes del `await` (Safari); `redirectTo` = origen actual. */
+    const popup = window.open('', '_blank')
+    webOAuthPopup = popup
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: window.location.origin,
         skipBrowserRedirect: true,
       },
     })
     if (error) {
-      if (webOAuthPopup) webOAuthPopup.close()
+      if (popup) popup.close()
       console.error('GOOGLE LOGIN ERROR', error)
-      console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
     }
-    if (data?.url && webOAuthPopup) {
-      webOAuthPopup.location.href = data.url
-    } else if (webOAuthPopup) {
-      webOAuthPopup.close()
+    if (data?.url && popup) {
+      popup.location.href = data.url
     }
     return { data, error: null }
   } catch (e) {

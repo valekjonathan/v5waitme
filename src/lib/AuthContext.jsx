@@ -339,14 +339,15 @@ export function AuthProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return
-      /** Supabase puede invocar esto en el mismo tick que otros updates; deferir evita updates durante commit/render de React. */
+
       queueMicrotask(() => {
         if (cancelled) return
-        void (async () => {
+
+        ;(async () => {
           try {
             await syncFromSession(session)
           } catch (e) {
-            console.error('[WaitMe][Auth] onAuthStateChange: error al sincronizar sesión', e)
+            console.error('[Auth] sync error', e)
           }
         })()
       })
