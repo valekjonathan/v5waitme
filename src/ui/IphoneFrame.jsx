@@ -5,11 +5,24 @@ export default function IphoneFrame({ children }) {
         width: '100%',
         height: '100%',
         display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: 'black',
       }}
     >
-      {children}
+      <div
+        style={{
+          width: 390,
+          height: 844,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          borderRadius: 40,
+          background: '#000',
+        }}
+      >
+        {children}
+      </div>
     </div>
   )
 }
