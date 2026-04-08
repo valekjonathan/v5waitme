@@ -1,18 +1,21 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 test('sentry: envía un error real (requiere VITE_SENTRY_DSN)', async ({ page }) => {
+  test.setTimeout(90_000)
+
   const dsn = String(process.env.VITE_SENTRY_DSN || '').trim()
   expect(dsn, 'Bloqueado: falta VITE_SENTRY_DSN para validar envío real a Sentry.').toBeTruthy()
 
-  // Confirmamos que el SDK intenta enviar un envelope real.
-  const envelope = page.waitForRequest((req) => {
-    const url = req.url()
-    // Sentry añade query (p. ej. ?sentry_version=...) — no exigir fin de URL en `/envelope`
-    if (!/\/api\/\d+\/envelope(\/|\?|$)/.test(url)) return false
-    const m = /^https?:\/\/([^/]+)/.exec(url)
-    // sentry.io o self-hosted: no asumimos el dominio, solo la ruta de envelope
-    return Boolean(m)
-  })
+  // Confirmamos que el SDK intenta enviar un envelope real (móvil/red lenta: espera larga).
+  const envelope = page.waitForRequest(
+    (req) => {
+      if (req.method() !== 'POST') return false
+      const url = req.url()
+      // Cualquier host; ruta tipo .../api/<id>/envelope... con query opcional
+      return /\/api\/[^/]+\/envelope/i.test(url)
+    },
+    { timeout: 75_000 }
+  )
 
   await page.goto('/')
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })

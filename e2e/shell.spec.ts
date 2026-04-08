@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 test('shell login: main fullBleed cuando no hay sesión', async ({ page }) => {
   await page.goto('/')

@@ -30,6 +30,7 @@ if (!user || !key) {
   process.exit(1)
 }
 
+/** Prueba acceso vía IP LAN (192.168.x / 10.x) en lugar de localhost para BrowserStack Local. */
 const r = spawnSync(
   'npx',
   [
@@ -40,7 +41,15 @@ const r = spawnSync(
     '--grep-invert',
     'parking search|park here',
   ],
-  { cwd: root, stdio: 'inherit', env: { ...process.env } }
+  {
+    cwd: root,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      WAITME_E2E_LAN_BASE: '1',
+      WAITME_E2E_SINGLE_BROWSER_CONTEXT: '1',
+    },
+  }
 )
 
 process.exit(r.status === null ? 1 : r.status)

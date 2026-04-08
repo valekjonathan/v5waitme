@@ -1,5 +1,5 @@
 import percySnapshot from '@percy/playwright'
-import { test, expect } from '@playwright/test'
+import { expect, test } from './fixtures'
 
 test('percy: baseline login shell (sin Percy = no-op)', async ({ page }) => {
   await page.goto('/')
