@@ -39,69 +39,32 @@ export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY
   }
 }
 
-/** Cancela reintento hero pendiente (nuevo tick GPS o mapa distinto). */
-let _heroJumpRetryRafId = null
-
-function cancelHeroJumpRetryRaf() {
-  if (_heroJumpRetryRafId != null && typeof cancelAnimationFrame === 'function') {
-    cancelAnimationFrame(_heroJumpRetryRafId)
-  }
-  _heroJumpRetryRafId = null
-}
-
-function scheduleHeroJumpRetry(attempt) {
-  if (_heroJumpRetryRafId != null || typeof requestAnimationFrame !== 'function') return
-  _heroJumpRetryRafId = requestAnimationFrame(() => {
-    _heroJumpRetryRafId = null
-    attempt()
-  })
-}
-
 /**
  * Home/Login: pin `[data-waitme-pin-tip]` fijo; solo mueve cámara (`jumpTo` con centro calculado).
- * Sin abortar en pin ausente / mapa 0×0 / fallos project: reintenta en el siguiente frame hasta aplicar.
+ * Un intento por tick GPS: si el pin o el contenedor aún no están listos, el siguiente update lo reintenta.
  */
 export function jumpMapLngLatUnderHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return
   if (!map?.jumpTo) return
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+  if (getGlobalMapInstance() !== map) return
 
-  cancelHeroJumpRetryRaf()
-
-  const attempt = () => {
-    if (getGlobalMapInstance() !== map || !map?.jumpTo) return
-
-    const pin = document.querySelector('[data-waitme-pin-tip]')
-    if (!pin) {
-      scheduleHeroJumpRetry(attempt)
-      return
-    }
-    const wrap = map.getContainer()
-    if (!(wrap instanceof HTMLElement)) {
-      scheduleHeroJumpRetry(attempt)
-      return
-    }
-    const pinRect = pin.getBoundingClientRect()
-    const mapRect = wrap.getBoundingClientRect()
-    if (mapRect.width === 0 || mapRect.height === 0) {
-      scheduleHeroJumpRetry(attempt)
-      return
-    }
-    const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
-    const targetY = pinRect.bottom - mapRect.top
-    const newCenter = computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY)
-    if (!newCenter) {
-      scheduleHeroJumpRetry(attempt)
-      return
-    }
-    try {
-      map.jumpTo({ center: newCenter })
-    } catch {
-      scheduleHeroJumpRetry(attempt)
-    }
+  const pin = document.querySelector('[data-waitme-pin-tip]')
+  if (!pin) return
+  const wrap = map.getContainer()
+  if (!(wrap instanceof HTMLElement)) return
+  const pinRect = pin.getBoundingClientRect()
+  const mapRect = wrap.getBoundingClientRect()
+  if (mapRect.width === 0 || mapRect.height === 0) return
+  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
+  const targetY = pinRect.bottom - mapRect.top
+  const newCenter = computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY)
+  if (!newCenter) return
+  try {
+    map.jumpTo({ center: newCenter })
+  } catch {
+    /* */
   }
-
-  attempt()
 }
 
 export function isWaitmeParkingLayoutReady() {

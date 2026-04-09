@@ -36,19 +36,17 @@ function isValidGps(lat, lng) {
   return true
 }
 
-/** Solo coordenadas válidas; sin umbral de accuracy ni deduplicación. */
+/** Lectura del `GeolocationPosition` del navegador → campos canónicos (sin filtrar por distancia). */
 function payloadFromBrowserPosition(pos) {
   const lat = pos?.coords?.latitude
   const lng = pos?.coords?.longitude
   if (!isValidGps(lat, lng)) return null
-  const acc = pos?.coords?.accuracy
+  const c = pos?.coords
   const ts = Number.isFinite(pos?.timestamp) ? pos.timestamp : Date.now()
-  return {
-    lat,
-    lng,
-    ...(typeof acc === 'number' && Number.isFinite(acc) ? { accuracy: acc } : {}),
-    ts,
-  }
+  const acc = typeof c?.accuracy === 'number' && Number.isFinite(c.accuracy) ? c.accuracy : null
+  const heading = typeof c?.heading === 'number' && Number.isFinite(c.heading) ? c.heading : null
+  const speed = typeof c?.speed === 'number' && Number.isFinite(c.speed) ? c.speed : null
+  return { lat, lng, accuracy: acc, ts, heading, speed }
 }
 
 export function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -129,9 +127,11 @@ export function getCurrentPosition(onSuccess, onError) {
 }
 
 let currentLocation = null
-/** @type {Array<(loc: { latitude: number, longitude: number }) => void>} */
+/** @type {Array<(loc: NonNullable<typeof currentLocation>) => void>} */
 let subscribers = []
 let locationTrackingStarted = false
+/** @type {number | null} */
+let geoWatchId = null
 
 try {
   const cached = typeof localStorage !== 'undefined' ? localStorage.getItem('last_location') : null
@@ -143,7 +143,14 @@ try {
       Number.isFinite(parsed.latitude) &&
       Number.isFinite(parsed.longitude)
     ) {
-      currentLocation = { latitude: parsed.latitude, longitude: parsed.longitude }
+      currentLocation = {
+        latitude: parsed.latitude,
+        longitude: parsed.longitude,
+        timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
+        accuracy: Number.isFinite(parsed.accuracy) ? parsed.accuracy : null,
+        heading: Number.isFinite(parsed.heading) ? parsed.heading : null,
+        speed: Number.isFinite(parsed.speed) ? parsed.speed : null,
+      }
     }
   }
 } catch {
@@ -151,9 +158,20 @@ try {
 }
 
 if (typeof window !== 'undefined' && isDevSafari()) {
-  currentLocation = { latitude: DEV_BROWSER_MOCK_LAT, longitude: DEV_BROWSER_MOCK_LNG }
+  currentLocation = {
+    latitude: DEV_BROWSER_MOCK_LAT,
+    longitude: DEV_BROWSER_MOCK_LNG,
+    timestamp: Date.now(),
+    accuracy: 12,
+    heading: null,
+    speed: null,
+  }
 }
 
+/**
+ * Única escritura de `currentLocation` desde el stream GPS / simulación.
+ * Forma canónica: lat/lng obligatorios; resto opcional pero estable (null si no aplica).
+ */
 function notify(location) {
   if (
     !location ||
@@ -162,14 +180,15 @@ function notify(location) {
   ) {
     return
   }
-  const lat = location.latitude
-  const lng = location.longitude
-  const accuracy = Number.isFinite(location.accuracy) ? location.accuracy : null
-  const timestamp = Number.isFinite(location.timestamp) ? location.timestamp : Date.now()
-  if (import.meta.env.DEV) {
-    console.log('GPS UPDATE:', lat, lng, accuracy, timestamp)
+  currentLocation = {
+    latitude: location.latitude,
+    longitude: location.longitude,
+    timestamp: Number.isFinite(location.timestamp) ? location.timestamp : Date.now(),
+    accuracy: Number.isFinite(location.accuracy) ? location.accuracy : null,
+    heading:
+      location.heading != null && Number.isFinite(location.heading) ? location.heading : null,
+    speed: location.speed != null && Number.isFinite(location.speed) ? location.speed : null,
   }
-  currentLocation = { latitude: lat, longitude: lng }
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('last_location', JSON.stringify(currentLocation))
@@ -213,6 +232,8 @@ export function startLocationTracking() {
         longitude: lng,
         accuracy: 5,
         timestamp: Date.now(),
+        heading: null,
+        speed: null,
       })
     }
     simulate()
@@ -229,6 +250,8 @@ export function startLocationTracking() {
       longitude: DEV_BROWSER_MOCK_LNG,
       accuracy: 12,
       timestamp: Date.now(),
+      heading: null,
+      speed: null,
     })
     return
   }
@@ -243,12 +266,23 @@ export function startLocationTracking() {
           longitude: p.lng,
           accuracy: p.accuracy,
           timestamp: p.ts,
+          heading: p.heading,
+          speed: p.speed,
         })
     },
     () => {}
   )
 
-  navigator.geolocation.watchPosition(
+  if (geoWatchId != null) {
+    try {
+      navigator.geolocation.clearWatch(geoWatchId)
+    } catch {
+      /* */
+    }
+    geoWatchId = null
+  }
+
+  geoWatchId = navigator.geolocation.watchPosition(
     (pos) => {
       const p = payloadFromBrowserPosition(pos)
       if (p)
@@ -257,6 +291,8 @@ export function startLocationTracking() {
           longitude: p.lng,
           accuracy: p.accuracy,
           timestamp: p.ts,
+          heading: p.heading,
+          speed: p.speed,
         })
     },
     () => {
