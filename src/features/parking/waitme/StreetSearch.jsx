@@ -60,6 +60,7 @@ export default function StreetSearch({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
   const [menuRect, setMenuRect] = useState(
     /** @type {{ top: number, left: number, width: number } | null} */ (null)
   )
@@ -281,8 +282,12 @@ export default function StreetSearch({
               onQueryChange?.(e.target.value)
               setOpen(true)
             }}
-            onFocus={() => setOpen(true)}
-            placeholder={placeholder}
+            onFocus={() => {
+              setIsFocused(true)
+              setOpen(true)
+            }}
+            onBlur={() => setIsFocused(false)}
+            placeholder={isFocused ? '' : placeholder}
             autoComplete="off"
             style={{
               ...inputStyle,

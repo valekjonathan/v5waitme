@@ -11,6 +11,7 @@ import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitme
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
+import { getProfile } from '../../services/profile.js'
 import {
   dmListCardToAlert,
   getOrCreateDmThread,
@@ -29,8 +30,8 @@ export default function ChatsPage() {
   const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
-  /** Peer UUID cuando abrimos hilo vía `openChatsWithPeer` y la lista aún no refleja el hilo. */
-  const [peerBootstrap, setPeerBootstrap] = useState(null)
+  /** Resumen del hilo abierto desde hash/pending, solo tras resolver nombre (sin flash). */
+  const [resolvedBootstrapSummary, setResolvedBootstrapSummary] = useState(null)
 
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
@@ -76,7 +77,7 @@ export default function ChatsPage() {
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
-    setPeerBootstrap(null)
+    setResolvedBootstrapSummary(null)
     setThreadId(null)
   }, [nav?.chatsListResetGeneration])
 
@@ -90,13 +91,38 @@ export default function ChatsPage() {
         console.error('[WaitMe][Chats] getOrCreateDmThread', error)
         return
       }
-      if (tid) {
-        setPeerBootstrap(peer)
-        openThread(tid)
+      if (!tid) return
+
+      let displayName = ''
+      const { data: prof } = await getProfile(peer)
+      displayName = String(prof?.name ?? '').trim()
+      if (!displayName) {
+        const listResult = await listDmThreadsForUser(userId)
+        const list = Array.isArray(listResult.data) ? listResult.data : []
+        const row = list.find((t) => t.id === tid)
+        displayName = String(row?.name ?? '').trim()
       }
+
+      const summary = {
+        id: tid,
+        name: displayName,
+        rating: 4,
+        lastMessage: '',
+        time: '',
+        brand: '',
+        model: '',
+        plate: '',
+        peerUserId: peer,
+        user_photo: null,
+        unreadCount: 0,
+        phone: null,
+        allow_phone_calls: false,
+      }
+      setResolvedBootstrapSummary(summary)
+      openThread(tid)
       void load()
     })()
-  }, [canLoadChats, load, openThread])
+  }, [canLoadChats, load, openThread, userId])
 
   const filteredThreads = useMemo(() => {
     const q = listFilter.trim().toLowerCase()
@@ -108,28 +134,18 @@ export default function ChatsPage() {
     const fromList =
       filteredThreads.find((t) => t.id === threadId) ?? threads.find((t) => t.id === threadId) ?? null
     if (fromList) return fromList
-    if (threadId && peerBootstrap) {
-      return {
-        id: threadId,
-        name: 'Usuario',
-        rating: 4,
-        lastMessage: '',
-        time: '',
-        brand: '',
-        model: '',
-        plate: '',
-        peerUserId: peerBootstrap,
-        user_photo: null,
-        unreadCount: 0,
-        phone: null,
-        allow_phone_calls: false,
-      }
+    if (
+      threadId &&
+      resolvedBootstrapSummary &&
+      resolvedBootstrapSummary.id === threadId
+    ) {
+      return resolvedBootstrapSummary
     }
     return null
-  }, [filteredThreads, peerBootstrap, threadId, threads])
+  }, [filteredThreads, resolvedBootstrapSummary, threadId, threads])
 
   const handleBackFromThread = useCallback(() => {
-    setPeerBootstrap(null)
+    setResolvedBootstrapSummary(null)
     setThreadId(null)
   }, [])
 

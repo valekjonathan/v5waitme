@@ -143,7 +143,7 @@ function pravatarImgIdFromString(s) {
 }
 
 function UserAlertAvatarBlock({ alert, onClick }) {
-  const name = String(alert?.user_name || 'Usuario')
+  const name = String(alert?.user_name ?? '').trim() || String(alert?.id ?? 'user')
   const photo = alert?.user_photo
   const seed = useMemo(() => pravatarImgIdFromString(name), [name])
   const [brokenPhoto, setBrokenPhoto] = useState(false)
@@ -595,7 +595,9 @@ function UserAlertCard({
                   }
                 }}
               >
-                {(alert?.user_name || 'Usuario').split(' ')[0]}
+                {String(alert?.user_name ?? '')
+                  .trim()
+                  .split(/\s+/)[0] || ''}
               </span>
             </div>
 

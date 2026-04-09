@@ -166,7 +166,7 @@ export function formatDmMsgTime(iso) {
  */
 export function dmThreadToListCard(p) {
   const pr = p.profile && typeof p.profile === 'object' ? p.profile : {}
-  const name = String(pr.name ?? '').trim() || 'Usuario'
+  const name = String(pr.name ?? '').trim()
   const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
   const phoneRaw = String(pr.phone ?? '').trim()
   return {
@@ -441,7 +441,7 @@ export async function getOrCreateDmThread(otherUserId) {
     ])
     const card = {
       id: tid,
-      name: 'Usuario',
+      name: '',
       rating: 4,
       lastMessage: 'Hola, escribe cuando quieras.',
       time: at,

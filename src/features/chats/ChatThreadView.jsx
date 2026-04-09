@@ -79,11 +79,12 @@ function nextTempId() {
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
   const threadId = String(s.id ?? '')
-  const title = String(s.name ?? 'Chat')
-  const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title)}`
+  const peerIdStr = String(s.peerUserId ?? '').trim()
+  const title = String(s.name ?? '').trim()
+  const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title || peerIdStr || threadId)}`
   const peerPhone = String(s.phone ?? '').trim()
   const headerCallEnabled = Boolean(peerPhone && s.allow_phone_calls !== false)
-  const { openReviews } = useAppScreen()
+  const { openUserReviews } = useAppScreen()
   const auth = useAuth()
   const meta =
     auth?.user?.user_metadata && typeof auth.user.user_metadata === 'object' ? auth.user.user_metadata : {}
@@ -290,7 +291,9 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           <button
             type="button"
             aria-label="Ver reseñas"
-            onClick={() => openReviews?.()}
+            onClick={() => {
+              if (peerIdStr) openUserReviews(peerIdStr)
+            }}
             style={{
               padding: 0,
               margin: 0,
@@ -316,7 +319,9 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             />
           </button>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
+            {title ? (
+              <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
+            ) : null}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <WaitmeCardPhoneButton enabled={headerCallEnabled} phone={peerPhone} />
