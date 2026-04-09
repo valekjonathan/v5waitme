@@ -5,12 +5,8 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
-import {
-  IconChevronLeft,
-  IconNavigation,
-  IconPhone,
-  WAITME_GLASS_MAP_CONTROL_36,
-} from '../parking/waitme/icons.jsx'
+import { IconChevronLeft } from '../parking/waitme/icons.jsx'
+import { WaitmeCardNavigateButton, WaitmeCardPhoneButton } from '../parking/waitme/UserAlertCardActions.jsx'
 import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -18,6 +14,7 @@ import {
   formatDmMsgTime,
   sendDmMessage,
 } from '../../services/waitmeChats.js'
+import { useAuth } from '../../lib/AuthContext'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -33,12 +30,6 @@ const bubbleShared = {
   wordBreak: 'break-word',
   boxSizing: 'border-box',
   borderRadius: 16,
-}
-
-const headerGlassBtnStyle = {
-  ...WAITME_GLASS_MAP_CONTROL_36,
-  width: 36,
-  height: 36,
 }
 
 const inputActionBtnStyle = {
@@ -89,7 +80,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const threadId = String(s.id ?? '')
   const title = String(s.name ?? 'Chat')
   const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title)}`
-  const myAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(userId || 'me')}`
+  const auth = useAuth()
+  const meta =
+    auth?.user?.user_metadata && typeof auth.user.user_metadata === 'object' ? auth.user.user_metadata : {}
+  const myAvatarUrl =
+    String(auth?.profile?.avatar_url ?? '').trim() || String(meta.avatar_url ?? meta.picture ?? '').trim()
+  const myAvatarFallback = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(userId || 'me')}`
+  const myAvatar = myAvatarUrl || myAvatarFallback
 
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
@@ -275,22 +272,8 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <button
-              type="button"
-              aria-label="Llamar"
-              onClick={() => {}}
-              style={headerGlassBtnStyle}
-            >
-              <IconPhone size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Navegación"
-              onClick={() => {}}
-              style={headerGlassBtnStyle}
-            >
-              <IconNavigation size={18} />
-            </button>
+            <WaitmeCardPhoneButton enabled onClick={() => {}} />
+            <WaitmeCardNavigateButton enabled onClick={() => {}} />
           </div>
         </header>
 

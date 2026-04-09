@@ -4,6 +4,26 @@
 import { useEffect, useState } from 'react'
 import { IconClock, IconMessageCircle, IconNavigation, IconPhone, IconPhoneOff } from './icons.jsx'
 
+export function WaitmeCardActionIconButton({
+  style,
+  onClick,
+  disabled,
+  ariaLabel,
+  children,
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      disabled={disabled}
+      style={style}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  )
+}
+
 function openMapsDirections(alert) {
   if (alert?.latitude != null && alert?.longitude != null) {
     window.open(
@@ -87,6 +107,34 @@ const phoneStyleRowEnabled = {
   color: '#000',
   border: '1px solid rgba(209, 213, 219, 0.5)',
   cursor: 'pointer',
+}
+
+export function WaitmeCardPhoneButton({ enabled, onClick }) {
+  return enabled ? (
+    <WaitmeCardActionIconButton ariaLabel="Llamar" style={phoneStyleRowEnabled} onClick={onClick}>
+      <IconPhone size={16} />
+    </WaitmeCardActionIconButton>
+  ) : (
+    <WaitmeCardActionIconButton ariaLabel="Llamar (no disponible)" disabled style={NAV_MUTED}>
+      <IconPhoneOff size={16} />
+    </WaitmeCardActionIconButton>
+  )
+}
+
+export function WaitmeCardNavigateButton({ enabled, onClick }) {
+  const style = enabled
+    ? { ...NAV_MUTED, width: 48, backgroundColor: '#2563eb', color: '#fff', cursor: 'pointer', opacity: 1 }
+    : { ...NAV_MUTED, width: 48 }
+  return (
+    <WaitmeCardActionIconButton
+      ariaLabel="Navegación"
+      disabled={!enabled}
+      style={style}
+      onClick={enabled ? onClick : undefined}
+    >
+      <IconNavigation size={16} />
+    </WaitmeCardActionIconButton>
+  )
 }
 
 /** Mismo tamaño que la hora en “Te espera hasta las …” en `UserAlertCard.jsx`. */

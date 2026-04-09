@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useLayoutEffect, useRef, useState } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
 import { colors } from '../design/colors'
 import { radius } from '../design/radius'
@@ -16,6 +16,29 @@ const BALANCE_PILL_PADDING_X = s.md
 
 const Header = forwardRef(function Header({ interactive = true }, ref) {
   const nav = useAppScreen()
+  const innerRef = useRef(null)
+  const logoRef = useRef(null)
+  const pillRef = useRef(null)
+  const [pillLeft, setPillLeft] = useState(null)
+
+  useLayoutEffect(() => {
+    const compute = () => {
+      const inner = innerRef.current
+      const logo = logoRef.current
+      const pill = pillRef.current
+      if (!inner || !logo || !pill) return
+      const innerRect = inner.getBoundingClientRect()
+      const logoRect = logo.getBoundingClientRect()
+      const pillRect = pill.getBoundingClientRect()
+      const spaceEndX = Math.max(0, logoRect.left - innerRect.left)
+      const centerX = spaceEndX / 2
+      const nextLeft = Math.max(0, centerX - pillRect.width / 2)
+      setPillLeft(nextLeft)
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    return () => window.removeEventListener('resize', compute)
+  }, [])
 
   return (
     <header
@@ -36,6 +59,7 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
       }}
     >
       <div
+        ref={innerRef}
         style={{
           position: 'relative',
           paddingTop: `calc(env(safe-area-inset-top, 0px) + ${HEADER_PADDING_Y}px)`,
@@ -44,34 +68,37 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
           paddingRight: HEADER_PADDING_X,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: s.sm }}>
-            <div style={{ width: 40, height: 40 }} />
-            <div
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ width: 40, height: 40 }} aria-hidden />
+          <div
+            ref={pillRef}
+            style={{
+              position: 'absolute',
+              left: pillLeft == null ? 0 : pillLeft,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              cursor: 'pointer',
+              alignItems: 'center',
+              gap: s.xs,
+              overflow: 'visible',
+              borderRadius: radius.pill,
+              border: `1px solid ${colors.primaryBorder}`,
+              backgroundColor: colors.primarySoft,
+              padding: `${BALANCE_PILL_PADDING_Y}px ${BALANCE_PILL_PADDING_X}px`,
+              boxSizing: 'border-box',
+            }}
+          >
+            <span
               style={{
                 position: 'relative',
-                display: 'flex',
-                cursor: 'pointer',
-                alignItems: 'center',
-                gap: s.xs,
-                overflow: 'visible',
-                borderRadius: radius.pill,
-                border: `1px solid ${colors.primaryBorder}`,
-                backgroundColor: colors.primarySoft,
-                padding: `${BALANCE_PILL_PADDING_Y}px ${BALANCE_PILL_PADDING_X}px`,
+                fontSize: 14,
+                fontWeight: 700,
+                color: colors.primary,
               }}
             >
-              <span
-                style={{
-                  position: 'relative',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: colors.primary,
-                }}
-              >
-                0.00€
-              </span>
-            </div>
+              0.00€
+            </span>
           </div>
 
           <div
@@ -108,6 +135,7 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
           }}
         >
           <span
+            ref={logoRef}
             style={{
               width: '100%',
               userSelect: 'none',
