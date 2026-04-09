@@ -105,16 +105,26 @@ export async function searchStreets(query, userLocation, signal) {
     return []
   }
 
-  const suggestions = data.suggestions || []
+  console.log('SEARCH RESULTS', data)
+
+  const suggestions = Array.isArray(data.suggestions) ? data.suggestions : []
+  if (suggestions.length === 0) return []
+
   return rankResults(raw, suggestions)
 }
 
 /**
+ * `/retrieve` + payload de dirección (una sola llamada para UI).
  * @param {string} mapboxId
- * @param {string} sessionToken — mismo token que en los suggest previos
+ * @param {string} sessionToken
  * @param {AbortSignal} [signal]
- * @returns {Promise<object | null>}
  */
+export async function fetchSelectionPayloadForSuggestion(mapboxId, sessionToken, signal) {
+  const feature = await retrieveStreetSuggestion(mapboxId, sessionToken, signal)
+  if (!feature) return null
+  return selectionPayload(feature)
+}
+
 export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
   const token = getMapboxAccessToken()
   if (!token || mapboxId == null || mapboxId === '' || !sessionToken) return null

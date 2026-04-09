@@ -1,13 +1,18 @@
 /**
  * Copia de WaitMe: src/components/StreetSearch.jsx (Input → input nativo, mismos estilos).
- * Sugerencias: Mapbox Search Box (`streetSearchService.search`) + hook compartido.
+ * Sugerencias: `searchStreets` + sesión Mapbox (misma fuente que CreateAlertCard vía servicio).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
+import {
+  fetchSelectionPayloadForSuggestion,
+  formatStreet,
+  newSearchSessionToken,
+  searchStreets,
+} from '../../../services/streetSearchService.js'
+import { OVIEDO_LAT, OVIEDO_LNG } from '../../../features/map/constants/mapbox.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
-import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
 
 const inputStyle = {
   background: 'transparent',
@@ -53,44 +58,59 @@ export default function StreetSearch({
   onSelect,
   placeholderMuted = false,
   enableSuggestions = true,
-  userLocation = null,
+  userLocation: locationProp = null,
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
+  const sessionRef = useRef(newSearchSessionToken())
 
-  const proximity = useMemo(() => {
-    const lat = userLocation?.latitude
-    const lng = userLocation?.longitude
-    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
+  const searchCoords = useMemo(() => {
+    const lat = locationProp?.latitude
+    const lng = locationProp?.longitude
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { latitude: lat, longitude: lng }
     const fast = getCurrentLocationFast()
     if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
-      return { lat: fast.latitude, lng: fast.longitude }
+      return { latitude: fast.latitude, longitude: fast.longitude }
     }
-    return null
-  }, [userLocation?.latitude, userLocation?.longitude])
-
-  const { runSearch, abortAndNewSession, pickSuggestion } = useStreetSearchMapbox({
-    proximity,
-    enableSuggestions,
-  })
-
-  const applyResults = useCallback((list) => {
-    setResults(list)
-  }, [])
+    return { latitude: OVIEDO_LAT, longitude: OVIEDO_LNG }
+  }, [locationProp?.latitude, locationProp?.longitude])
 
   useEffect(() => {
     if (!enableSuggestions) return
+
     const q = (query || '').trim()
-    if (q.length < 2) {
-      abortAndNewSession()
-      const t = window.setTimeout(() => setResults([]), 0)
-      return () => window.clearTimeout(t)
+    if (!q || q.length < 2) {
+      setResults([])
+      sessionRef.current = newSearchSessionToken()
+      return undefined
     }
-    const t = window.setTimeout(() => runSearch(q, applyResults), DEBOUNCE_MS)
-    return () => window.clearTimeout(t)
-  }, [query, runSearch, enableSuggestions, abortAndNewSession, applyResults])
+
+    let cancelled = false
+    const controller = new AbortController()
+    const t = window.setTimeout(() => {
+      searchStreets(
+        q,
+        {
+          latitude: searchCoords.latitude,
+          longitude: searchCoords.longitude,
+          sessionToken: sessionRef.current,
+        },
+        controller.signal
+      )
+        .then((res) => {
+          if (!cancelled) setResults(Array.isArray(res) ? res : [])
+        })
+        .catch(() => {})
+    }, DEBOUNCE_MS)
+
+    return () => {
+      cancelled = true
+      controller.abort()
+      window.clearTimeout(t)
+    }
+  }, [query, searchCoords.latitude, searchCoords.longitude, enableSuggestions])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -107,12 +127,23 @@ export default function StreetSearch({
   }, [])
 
   const handlePick = async (suggestion) => {
-    await pickSuggestion(suggestion, (payload) => {
+    if (!suggestion?.mapbox_id) return
+    const controller = new AbortController()
+    try {
+      const payload = await fetchSelectionPayloadForSuggestion(
+        suggestion.mapbox_id,
+        sessionRef.current,
+        controller.signal
+      )
+      if (!payload) return
+      sessionRef.current = newSearchSessionToken()
       setQuery(payload.address)
       setResults([])
       setOpen(false)
       onSelect?.(payload)
-    })
+    } catch (e) {
+      if (e?.name === 'AbortError') return
+    }
   }
 
   const showList =
@@ -191,9 +222,8 @@ export default function StreetSearch({
             className={streetSearchInputClass}
             value={query}
             onChange={(e) => {
-              const v = e.target.value
-              setQuery(v)
-              onQueryChange?.(v)
+              setQuery(e.target.value)
+              onQueryChange?.(e.target.value)
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
@@ -241,7 +271,7 @@ export default function StreetSearch({
               onClick={() => handlePick(f)}
               onKeyDown={(e) => e.key === 'Enter' && handlePick(f)}
             >
-              {formatSuggestionLabel(f)}
+              {formatStreet(f)}
             </li>
           ))}
         </ul>

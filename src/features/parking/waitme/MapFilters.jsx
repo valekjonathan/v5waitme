@@ -71,6 +71,7 @@ function FilterRangeBlock({
   title,
   valueEl,
   valueMarginLeft = 8,
+  titleValueRow = false,
   min,
   max,
   step,
@@ -107,20 +108,60 @@ function FilterRangeBlock({
           boxSizing: 'border-box',
         }}
       >
-        <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
-          {title}
-          <span style={{ ...valueValueStyle, marginLeft: valueMarginLeft }}>{valueEl}</span>
-        </label>
-        <input
-          type="range"
-          className={rangeClass}
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={onChange}
-          style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
-        />
+        {titleValueRow ? (
+          <>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+              }}
+            >
+              <span style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>{title}</span>
+              <span
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  whiteSpace: 'nowrap',
+                  fontWeight: 700,
+                  color: '#c084fc',
+                  fontSize: 22,
+                  lineHeight: 1,
+                }}
+              >
+                {valueEl}
+              </span>
+            </div>
+            <input
+              type="range"
+              className={rangeClass}
+              min={min}
+              max={max}
+              step={step}
+              value={value}
+              onChange={onChange}
+              style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
+            />
+          </>
+        ) : (
+          <>
+            <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
+              {title}
+              <span style={{ ...valueValueStyle, marginLeft: valueMarginLeft }}>{valueEl}</span>
+            </label>
+            <input
+              type="range"
+              className={rangeClass}
+              min={min}
+              max={max}
+              step={step}
+              value={value}
+              onChange={onChange}
+              style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
+            />
+          </>
+        )}
       </div>
     </div>
   )
@@ -276,13 +317,13 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
             <FilterRangeBlock
               icon={<EuroIconCreateAlertStyle />}
               title="Precio máximo:"
+              titleValueRow
               valueEl={
                 <>
                   <span>{Math.round(filters.maxPrice)}</span>
                   <span>euros</span>
                 </>
               }
-              valueMarginLeft={42}
               min={PRICE_MIN}
               max={PRICE_MAX}
               step={1}

@@ -1,9 +1,8 @@
 import { useCallback, useRef } from 'react'
 import {
+  fetchSelectionPayloadForSuggestion,
   newSearchSessionToken,
-  retrieveStreetSuggestion,
   search as mapboxStreetSearch,
-  selectionPayload,
 } from '../../../services/streetSearchService.js'
 
 /**
@@ -58,13 +57,12 @@ export function useStreetSearchMapbox({ proximity, enableSuggestions = true }) {
     if (!suggestion?.mapbox_id) return null
     const controller = new AbortController()
     try {
-      const feature = await retrieveStreetSuggestion(
+      const payload = await fetchSelectionPayloadForSuggestion(
         suggestion.mapbox_id,
         sessionRef.current,
         controller.signal
       )
-      if (!feature) return null
-      const payload = selectionPayload(feature)
+      if (!payload) return null
       sessionRef.current = newSearchSessionToken()
       onResolved?.(payload)
       return payload
