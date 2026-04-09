@@ -4,6 +4,7 @@ import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import { useAuth } from '../../lib/AuthContext'
+import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -74,6 +75,7 @@ function ScopeTab({ active, onClick, side, children }) {
 
 export default function AlertsPage() {
   const { user } = useAuth()
+  const { openChatsWithPeer } = useAppScreen()
   const [scope, setScope] = useState('alerts')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -171,7 +173,10 @@ export default function AlertsPage() {
                     isEmpty={false}
                     hideBuy={false}
                     onBuyAlert={() => {}}
-                    onChat={() => {}}
+                    onChat={(alert) => {
+                      const p = alert?.peer_user_id
+                      if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                    }}
                     onCall={() => {}}
                   />
                 ))}
@@ -194,7 +199,10 @@ export default function AlertsPage() {
                     isEmpty={false}
                     hideBuy
                     onBuyAlert={() => {}}
-                    onChat={() => {}}
+                    onChat={(alert) => {
+                      const p = alert?.peer_user_id
+                      if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                    }}
                     onCall={() => {}}
                   />
                 ))}

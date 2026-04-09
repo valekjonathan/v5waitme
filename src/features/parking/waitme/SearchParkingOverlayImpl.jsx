@@ -23,6 +23,8 @@ import {
 } from './icons.jsx'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import { LAYOUT, MAP_SLOT } from '../../../ui/layout/layout'
+import { useAppScreen } from '../../../lib/AppScreenContext'
+import { isRealSupabaseAuthUid } from '../../../services/authUid.js'
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -49,6 +51,7 @@ const filterBtnStyle = {
 }
 
 export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [] }) {
+  const { openChatsWithPeer } = useAppScreen()
   const isSearch = mode === 'search'
   const [address, setAddress] = useState('')
   const [showFilters, setShowFilters] = useState(false)
@@ -268,6 +271,10 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
                   isEmpty={!displayUser}
                   userLocation={userLocation}
                   collapsed={false}
+                  onChat={(a) => {
+                    const p = a?.peer_user_id
+                    if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                  }}
                 />
               ) : (
                 <CreateAlertCard

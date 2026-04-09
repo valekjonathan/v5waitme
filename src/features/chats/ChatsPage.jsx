@@ -7,9 +7,14 @@ import StreetSearch from '../parking/waitme/StreetSearch.jsx'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import ChatThreadView from './ChatThreadView.jsx'
 import { useAuth } from '../../lib/AuthContext'
+import { takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
-import { dmListCardToAlert, listDmThreadsForUser } from '../../services/waitmeChats.js'
+import {
+  dmListCardToAlert,
+  getOrCreateDmThread,
+  listDmThreadsForUser,
+} from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -21,6 +26,8 @@ export default function ChatsPage() {
   const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
+  /** Peer UUID cuando abrimos hilo vía `openChatsWithPeer` y la lista aún no refleja el hilo. */
+  const [peerBootstrap, setPeerBootstrap] = useState(null)
 
   const userId = user?.id ?? ''
   const canUseRemote = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
@@ -49,6 +56,24 @@ export default function ChatsPage() {
     void load()
   }, [load])
 
+  useEffect(() => {
+    if (!canUseRemote) return
+    const peer = takePendingDmPeerUserId()
+    if (!peer) return
+    void (async () => {
+      const { data: tid, error } = await getOrCreateDmThread(peer)
+      if (error) {
+        console.error('[WaitMe][Chats] getOrCreateDmThread', error)
+        return
+      }
+      await load()
+      if (tid) {
+        setPeerBootstrap(peer)
+        setThreadId(tid)
+      }
+    })()
+  }, [canUseRemote, load])
+
   const localItems = useMemo(
     () =>
       threads.map((t) => ({
@@ -65,13 +90,38 @@ export default function ChatsPage() {
     return threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
   }, [listFilter, threads])
 
-  const activeSummary = useMemo(
-    () => filteredThreads.find((t) => t.id === threadId) ?? threads.find((t) => t.id === threadId) ?? null,
-    [filteredThreads, threads, threadId]
-  )
+  const activeSummary = useMemo(() => {
+    const fromList =
+      filteredThreads.find((t) => t.id === threadId) ?? threads.find((t) => t.id === threadId) ?? null
+    if (fromList) return fromList
+    if (threadId && peerBootstrap) {
+      return {
+        id: threadId,
+        name: 'Usuario',
+        rating: 4,
+        lastMessage: '',
+        time: '',
+        brand: '',
+        model: '',
+        plate: '',
+        peerUserId: peerBootstrap,
+        user_photo: null,
+      }
+    }
+    return null
+  }, [filteredThreads, peerBootstrap, threadId, threads])
 
   if (activeSummary && threadId) {
-    return <ChatThreadView summary={activeSummary} userId={userId} onBack={() => setThreadId(null)} />
+    return (
+      <ChatThreadView
+        summary={activeSummary}
+        userId={userId}
+        onBack={() => {
+          setPeerBootstrap(null)
+          setThreadId(null)
+        }}
+      />
+    )
   }
 
   return (
