@@ -191,12 +191,18 @@ export function getReviewsForUserScreen(userId: string): Review[] {
   return mergeReviewsWithTestRow(expandRatingsToReviews(id, ratings))
 }
 
-export function buildRatingDistribution(reviews: Review[]): RatingBucket[] {
+/**
+ * Distribución en 4 niveles de UI: las valoraciones 4 y 5★ (datos 1–5) se agrupan en el nivel “4 estrellas”.
+ */
+export function buildRatingDistributionFourBars(reviews: Review[]): RatingBucket[] {
   const d = getDistribution(reviews)
-  return [5, 4, 3, 2, 1].map((stars) => ({
-    stars,
-    count: d[stars as keyof typeof d] ?? 0,
-  }))
+  const n4 = (d[4] ?? 0) + (d[5] ?? 0)
+  return [
+    { stars: 4, count: n4 },
+    { stars: 3, count: d[3] ?? 0 },
+    { stars: 2, count: d[2] ?? 0 },
+    { stars: 1, count: d[1] ?? 0 },
+  ]
 }
 
 export function computeAverageRating(reviews: Review[]): number {

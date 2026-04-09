@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { Row } from '../../../ui/primitives/Row'
 import { average5ToDisplay10 } from '../../../lib/ratingStars'
-import { buildRatingDistribution, computeAverageRating } from '../../../services/reviews'
+import { buildRatingDistributionFourBars, computeAverageRating } from '../../../services/reviews'
 
 const cardStyle = {
   width: '100%',
@@ -87,16 +87,13 @@ const barsColumnStyle = {
   gap: 6,
 }
 
-function normalizeDistribution(distribution) {
-  const map = new Map((distribution || []).map((item) => [item.stars, item.count]))
-  const rows = [5, 4, 3, 2, 1].map((stars) => ({
-    stars,
-    /** Etiqueta en escala /10 (coherente con el círculo); datos siguen en 1–5. */
-    label10: stars * 2,
-    count: Number(map.get(stars) || 0),
+function rowsWithRatios(distribution, totalReviews) {
+  const total = Math.max(0, totalReviews) || 1
+  return (distribution || []).map((row) => ({
+    stars: row.stars,
+    count: row.count,
+    ratio: row.count / total,
   }))
-  const total = rows.reduce((sum, row) => sum + row.count, 0) || 1
-  return rows.map((row) => ({ ...row, ratio: row.count / total }))
 }
 
 function AnimatedBarFill({ ratio }) {
@@ -119,16 +116,19 @@ function AnimatedBarFill({ ratio }) {
 }
 
 export default function ReviewsSummary({ reviews = [] }) {
-  const distribution = useMemo(() => buildRatingDistribution(reviews), [reviews])
+  const distribution = useMemo(() => buildRatingDistributionFourBars(reviews), [reviews])
   const average5 = useMemo(() => computeAverageRating(reviews), [reviews])
-  const display10 = useMemo(() => average5ToDisplay10(average5), [average5])
-  const rows = normalizeDistribution(distribution)
+  const avg10 = useMemo(() => average5ToDisplay10(average5), [average5])
   const totalSafe = Math.max(0, reviews.length)
+  const rows = useMemo(
+    () => rowsWithRatios(distribution, totalSafe),
+    [distribution, totalSafe]
+  )
   return (
     <section style={cardStyle} aria-label="Resumen de reseñas">
       <div style={summaryContainer}>
         <div style={circleColumnStyle}>
-          <div style={ratingCircle}>{display10.toFixed(1)}</div>
+          <div style={ratingCircle}>{avg10.toFixed(1)}</div>
           <div style={ratingMeta}>
             {totalSafe} reseña{totalSafe === 1 ? '' : 's'}
           </div>
@@ -136,7 +136,7 @@ export default function ReviewsSummary({ reviews = [] }) {
         <div style={barsColumnStyle}>
           {rows.map((row) => (
             <Row key={row.stars} gap={8} align="center" style={rowFullWidthStyle}>
-              <p style={labelStyle}>{row.label10}</p>
+              <p style={labelStyle}>{row.stars}</p>
               <div style={barTrackStyle} aria-hidden>
                 <AnimatedBarFill ratio={row.ratio} />
               </div>

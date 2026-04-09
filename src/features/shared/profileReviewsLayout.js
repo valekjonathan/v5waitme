@@ -57,7 +57,6 @@ export const reviewsBadgeLayerStyle = {
 /** Espaciado vertical perfil (centrado fijo, sin scroll): ajuste mínimo para que todo quepa. */
 export const profileHeaderCardMarginBottomPx = 4
 export const profileFormVerticalGapPx = 6
-const profileActionsFooterMarginTopPx = 6
 export const profileCenteredClusterGapPx = 10
 /** Solo pantalla perfil (`scrollBody={false}`): menos hueco entre bloques. */
 export const profileCenteredClusterGapProfilePx = 8
@@ -89,12 +88,12 @@ export const profileFormVerticalSlotStyleNoScroll = {
   overflow: 'hidden',
 }
 
-/** Profile: columna de botones (no encoge; queda bajo el slot del formulario). */
+/** Profile: columna de botones; `paddingBottom` = mismo token que aire superior del header. */
 export const profileActionsFooterStyle = {
   flexShrink: 0,
   width: '100%',
-  marginTop: profileActionsFooterMarginTopPx,
-  paddingBottom: 2,
+  marginTop: 0,
+  paddingBottom: profileReviewsInnerHeaderTopMarginPx,
   boxSizing: 'border-box',
 }
 
