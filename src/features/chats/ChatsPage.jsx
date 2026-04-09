@@ -7,7 +7,7 @@ import StreetSearch from '../parking/waitme/StreetSearch.jsx'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import ChatThreadView from './ChatThreadView.jsx'
 import { useAuth } from '../../lib/AuthContext'
-import { takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
+import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
@@ -82,7 +82,7 @@ export default function ChatsPage() {
 
   useEffect(() => {
     if (!canLoadChats) return
-    const peer = takePendingDmPeerUserId()
+    const peer = parseChatPeerFromHash() ?? takePendingDmPeerUserId()
     if (!peer) return
     void (async () => {
       const { data: tid, error } = await getOrCreateDmThread(peer)
@@ -90,11 +90,11 @@ export default function ChatsPage() {
         console.error('[WaitMe][Chats] getOrCreateDmThread', error)
         return
       }
-      await load()
       if (tid) {
         setPeerBootstrap(peer)
         openThread(tid)
       }
+      void load()
     })()
   }, [canLoadChats, load, openThread])
 

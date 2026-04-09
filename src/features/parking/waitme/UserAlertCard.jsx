@@ -287,8 +287,15 @@ function UserAlertCard({
 
   const phoneEnabled = Boolean(alert?.phone && alert?.allow_phone_calls !== false)
 
+  const { openUserReviews, openChatsWithPeer } = useAppScreen()
+
   const handleChat = () => {
-    onChat?.(alert)
+    if (isChat) {
+      onChat?.(alert)
+      return
+    }
+    const id = alert?.peer_user_id ?? alert?.user_id
+    if (typeof id === 'string' && id) openChatsWithPeer(id)
   }
   const handleCall = () => {
     waitmeOpenTelDialer(alert?.phone)
@@ -316,7 +323,6 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const { openUserReviews } = useAppScreen()
   const profileUserId = alert?.user_id ?? alert?.peer_user_id
   const goProfile = useCallback(
     (e) => {

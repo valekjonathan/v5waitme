@@ -140,3 +140,13 @@ body {
   opacity: 0.4 !important;
   transform: scale(0.85);
 }
+
+/**
+ * iOS Safari: el zoom al enfocar inputs ocurre si font-size computado < 16px.
+ * Base mínima en la app; los buscadores WaitMe también fijan 16px inline.
+ */
+.waitme-app-root input,
+.waitme-app-root textarea,
+.waitme-app-root select {
+  font-size: 16px;
+}

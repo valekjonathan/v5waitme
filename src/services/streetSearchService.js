@@ -24,6 +24,22 @@ function normalize(text) {
     .trim()
 }
 
+/** @param {string} url @param {AbortSignal} [signal] */
+async function fetchJsonOrNull(url, signal) {
+  let res
+  try {
+    res = await fetch(url, { signal })
+  } catch {
+    return null
+  }
+  if (!res.ok) return null
+  try {
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
 function rankResults(query, results) {
   const q = normalize(query)
 
@@ -147,22 +163,8 @@ export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
     access_token: token,
   })
   const url = `https://api.mapbox.com/search/searchbox/v1/retrieve/${id}?${params.toString()}`
-
-  let res
-  try {
-    res = await fetch(url, { signal })
-  } catch {
-    return null
-  }
-  if (!res.ok) return null
-
-  let data
-  try {
-    data = await res.json()
-  } catch {
-    return null
-  }
-
+  const data = await fetchJsonOrNull(url, signal)
+  if (!data || typeof data !== 'object') return null
   const feature = Array.isArray(data.features) ? data.features[0] : null
   return feature || null
 }
@@ -194,6 +196,26 @@ export function selectionPayload(retrievedFeature) {
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
   }
+}
+
+/**
+ * Mapbox Geocoding API: dirección legible a partir de coordenadas.
+ * @param {number} lat
+ * @param {number} lng
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<string | null>}
+ */
+export async function reverseGeocode(lat, lng, signal) {
+  const token = getMapboxAccessToken()
+  if (!token || !Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  const lon = encodeURIComponent(String(lng))
+  const la = encodeURIComponent(String(lat))
+  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${la}.json?limit=1&language=es&access_token=${token}`
+  const data = await fetchJsonOrNull(url, signal)
+  if (!data || typeof data !== 'object') return null
+  const f = Array.isArray(data.features) ? data.features[0] : null
+  const name = f && typeof f.place_name === 'string' ? f.place_name.trim() : ''
+  return name || null
 }
 
 /**

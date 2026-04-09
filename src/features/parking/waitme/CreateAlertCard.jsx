@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { suggestionDisplayText } from '../../../services/streetSearchService.js'
+import { reverseGeocode, suggestionDisplayText } from '../../../services/streetSearchService.js'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
@@ -114,12 +114,26 @@ export default function CreateAlertCard({
     }
   }, [])
 
-  const handlePickSuggestion = async (suggestion) => {
-    await pickSuggestion(suggestion, (payload) => {
+  useEffect(() => {
+    const lat = userLocation?.latitude
+    const lng = userLocation?.longitude
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    if ((address || '').trim() !== '') return
+    const ac = new AbortController()
+    reverseGeocode(lat, lng, ac.signal).then((placeName) => {
+      if (placeName) onAddressChange(placeName)
+    })
+    return () => ac.abort()
+  }, [userLocation?.latitude, userLocation?.longitude, address, onAddressChange])
+
+  const handlePickSuggestion = (suggestion) => {
+    const label = suggestionDisplayText(suggestion)
+    onAddressChange(label)
+    setSuggestions([])
+    setSuggestOpen(false)
+    void pickSuggestion(suggestion, (payload) => {
       onAddressChange(payload.address)
       onAddressResolved?.(payload)
-      setSuggestions([])
-      setSuggestOpen(false)
     })
   }
 
@@ -254,7 +268,7 @@ export default function CreateAlertCard({
               style={{
                 width: '100%',
                 height: 32,
-                fontSize: 12,
+                fontSize: 16,
                 backgroundColor: '#1f2937',
                 border: '1px solid #374151',
                 borderRadius: 6,

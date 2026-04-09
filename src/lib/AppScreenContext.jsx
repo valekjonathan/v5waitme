@@ -11,7 +11,6 @@ import { useAuth } from './AuthContext'
 import { isRealSupabaseAuthUid } from '../services/authUid.js'
 import { isSupabaseConfigured } from '../services/supabase.js'
 import { listDmThreadsForUser } from '../services/waitmeChats.js'
-import { stashPendingDmPeerUserId } from './waitmeDmPending.js'
 import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
 
 const AppScreenContext = createContext(null)
@@ -163,12 +162,27 @@ export function AppScreenProvider({ children }) {
       clearUserReviewsNav()
       const id = String(peerUserId ?? '')
       if (!id) return
-      const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
-      if (isRealSupabaseAuthUid(id) || dev) stashPendingDmPeerUserId(id)
+      const next = `#/chat/${encodeURIComponent(id)}`
+      if (typeof window !== 'undefined' && window.location.hash !== next) {
+        window.location.hash = next
+      }
       dispatch({ type: 'openChats' })
     },
     [clearUserReviewsNav]
   )
+
+  useEffect(() => {
+    const syncChatHash = () => {
+      const m = typeof window !== 'undefined' && window.location.hash.match(/^#\/chat\/([^/?#]+)/)
+      if (m) {
+        clearUserReviewsNav()
+        dispatch({ type: 'openChats' })
+      }
+    }
+    syncChatHash()
+    window.addEventListener('hashchange', syncChatHash)
+    return () => window.removeEventListener('hashchange', syncChatHash)
+  }, [clearUserReviewsNav])
 
   const value = useMemo(
     () => ({

@@ -20,7 +20,7 @@ const inputStyle = {
   opacity: 1,
   outline: 'none',
   height: 32,
-  fontSize: 14,
+  fontSize: 16,
   padding: 0,
   minWidth: 0,
   fontFamily: 'inherit',
@@ -153,11 +153,12 @@ export default function StreetSearch({
     }
   }, [])
 
-  const handlePick = async (suggestion) => {
-    await pickSuggestion(suggestion, (payload) => {
-      setQuery(payload.address)
-      setResults([])
-      setOpen(false)
+  const handlePick = (suggestion) => {
+    const label = suggestionDisplayText(suggestion)
+    setQuery(label)
+    setResults([])
+    setOpen(false)
+    void pickSuggestion(suggestion, (payload) => {
       onSelect?.(payload)
     })
   }
