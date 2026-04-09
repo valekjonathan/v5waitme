@@ -119,10 +119,6 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     setSelectedUserId(userId)
   }, [])
 
-  if (import.meta.env.DEV && user) {
-    console.log('RENDER USER:', user.id, user.name)
-  }
-
   const handleStreetResolved = useCallback((payload) => {
     if (!payload || typeof payload.address !== 'string') return
     setStreetPick(payload)

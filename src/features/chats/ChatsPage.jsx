@@ -370,9 +370,6 @@ export default function ChatsPage() {
 
           {!loadError && filteredThreads.length > 0
             ? filteredThreads.map((t) => {
-                if (import.meta.env.DEV) {
-                  console.log('RENDER USER:', t.id, t.name)
-                }
                 return (
                   <div
                     key={t.id}

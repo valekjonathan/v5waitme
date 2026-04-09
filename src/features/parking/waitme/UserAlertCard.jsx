@@ -238,9 +238,6 @@ function UserAlertCard({
   time: chatTimeProp = '',
 }) {
   const display = resolveDisplayRow(user, streetPickAddress)
-  if (import.meta.env.DEV && user) {
-    console.log('CARD USER:', user.id, user.name ?? user.user_name)
-  }
 
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -343,7 +340,7 @@ function UserAlertCard({
   const handleDeleteChatClick = (e) => {
     e.stopPropagation()
     if (window.confirm('¿Quieres eliminar la conversación?')) {
-      console.log('[UserAlertCard] delete conversation', user?.threadId)
+      /* Pendiente: eliminar hilo en backend (threadId en user.threadId). */
     }
   }
 
@@ -363,9 +360,6 @@ function UserAlertCard({
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()
     if (!uid) return
-    if (import.meta.env.DEV) {
-      console.log('CLICK USER:', user.id, user.name ?? user.user_name)
-    }
     openUserReviews(uid)
   }
 

@@ -162,9 +162,6 @@ export default function AlertsPage() {
                   .filter((r) => String(r.status) === 'active')
                   .map((r) => {
                     const user = parkingAlertRowToCard(r)
-                    if (import.meta.env.DEV) {
-                      console.log('RENDER USER:', user.id, user.name)
-                    }
                     return (
                       <UserAlertCard
                         key={user.id}
@@ -195,9 +192,6 @@ export default function AlertsPage() {
                   .filter((r) => String(r.status) !== 'active')
                   .map((r) => {
                     const user = parkingAlertRowToCard(r, { clearTimers: true })
-                    if (import.meta.env.DEV) {
-                      console.log('RENDER USER:', user.id, user.name)
-                    }
                     return (
                       <UserAlertCard
                         key={user.id}

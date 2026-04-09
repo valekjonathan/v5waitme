@@ -6,6 +6,8 @@ import {
   getAverage,
   getDistribution,
 } from '../lib/reviewsModel'
+// @ts-expect-error Módulo JS del mapa sin tipos; helper estable para perfil mock de reseñas.
+import { getSimulatedUserProfileFromUserId } from '../features/map/simulatedUsers.js'
 
 type Review = {
   id: string
@@ -130,6 +132,8 @@ const PROFILE_COLORS = ['gris', 'negro', 'blanco', 'azul', 'rojo']
 /** Perfil mínimo para `ProfileHeader` en reseñas de otro usuario (mock determinista). */
 export function buildMockProfileForUserReviews(userId: string | null) {
   const id = String(userId ?? '').trim() || 'user'
+  const fromSim = getSimulatedUserProfileFromUserId(id)
+  if (fromSim) return fromSim
   const h = hashUserId(id)
   const female = h % 2 === 0
   const namePool = female ? PROFILE_NAMES_FEMALE : PROFILE_NAMES_MALE

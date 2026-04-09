@@ -265,3 +265,34 @@ function buildOne(index, lat, lng, rng) {
     hasPhoneActive: index % 3 !== 1,
   }
 }
+
+/**
+ * Perfil de cabecera para reseñas: mismo índice/nombre/avatar que `buildOne` en el mapa.
+ * Evita mezclar `hashUserId` en reviews.ts con nombres distintos a la tarjeta.
+ * @param {string} userId p. ej. `sim-2-43.3614-5.8499`
+ * @returns {null | { id: string, full_name: string, email: string, avatar_url: string, brand: string, model: string, plate: string, color: string, vehicle_type: string }}
+ */
+export function getSimulatedUserProfileFromUserId(userId) {
+  const m = String(userId ?? '').match(/^sim-(\d+)-/)
+  if (!m) return null
+  const index = Number(m[1])
+  if (!Number.isFinite(index) || index < 0) return null
+  const women = index % 2 === 0
+  const nameList = women ? FEMALE_FULL_NAMES : MALE_FULL_NAMES
+  const full_name = nameList[index % nameList.length]
+  const portraitIdx = index % 99
+  const avatar_url = women
+    ? `https://randomuser.me/api/portraits/women/${portraitIdx}.jpg`
+    : `https://randomuser.me/api/portraits/men/${portraitIdx}.jpg`
+  return {
+    id: String(userId),
+    full_name,
+    email: '',
+    avatar_url,
+    brand: BRANDS[index % BRANDS.length],
+    model: MODELS[index % MODELS.length],
+    plate: PLATES[index % PLATES.length],
+    color: SIM_COLOR_NAMES[index % SIM_COLOR_NAMES.length],
+    vehicle_type: vehicleTypeForSimulatedIndex(index),
+  }
+}
