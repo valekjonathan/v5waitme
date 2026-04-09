@@ -29,7 +29,7 @@ const tuLabelStyle = {
 }
 
 const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
-  { parkingPinTopPx, pinPixel, showTuLabel = false },
+  { parkingPinTopPx, pinPixel, showTuLabel = false, forMeasurementOnly = false },
   ref
 ) {
   const gap = typeof parkingPinTopPx === 'number' && Number.isFinite(parkingPinTopPx)
@@ -44,6 +44,7 @@ const MapViewportCenterPin = forwardRef(function MapViewportCenterPin(
       data-waitme-parking-pin-projected={useProjected ? 'true' : undefined}
       style={{
         position: 'absolute',
+        ...(forMeasurementOnly ? { opacity: 0 } : {}),
         ...(useProjected
           ? {
               left: pinPixel.x,

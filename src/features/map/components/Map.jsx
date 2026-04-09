@@ -154,6 +154,8 @@ function centerMapOnUserImmediate(map, loc) {
 export default function Map({
   onSettled,
   readOnly = true,
+  /** Home/Login: pin visible en `MainLayout`; el del mapa queda solo para medición de offset. */
+  hideViewportCenterPin = false,
   parkingBandPinAdjust = false,
   /** Home: seguir GPS. Parking search: no. Parking parked: sí (recenter al volver al mapa). */
   followUserGps = true,
@@ -731,7 +733,7 @@ export default function Map({
           }}
         />
         {unavailable ? null : !parkingBandPinAdjust ? (
-          <MapViewportCenterPin ref={pinRef} />
+          <MapViewportCenterPin ref={pinRef} forMeasurementOnly={hideViewportCenterPin} />
         ) : parkingPinMode === 'search' ? (
           <MapViewportCenterPin
             ref={pinRef}

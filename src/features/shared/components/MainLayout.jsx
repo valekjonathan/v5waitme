@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
+import CenterPin from '../../home/components/CenterPin'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
@@ -68,9 +69,15 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
-/** Reserva el mismo hueco vertical que el pin decorativo del hero (padding lg + 18+36 en flujo). */
-const heroPinWrapStyle = { display: 'flex', justifyContent: 'center', padding: `${s.lg}px 0` }
-const heroPinSpacerStyle = { width: 18, height: 54, flexShrink: 0 }
+/** Pin entre subtítulo y CTA; encima del overlay del mapa (columna content). */
+const heroPinWrapStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginTop: 12,
+  marginBottom: 10,
+  flexShrink: 0,
+}
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {
   margin: 0,
@@ -154,7 +161,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Map readOnly />
+        <Map readOnly hideViewportCenterPin />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 
@@ -186,7 +193,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
                 Aparca donde te <span style={meTextStyle}>avisen!</span>
               </p>
               <div style={heroPinWrapStyle} aria-hidden>
-                <div style={heroPinSpacerStyle} />
+                <CenterPin />
               </div>
             </Section>
             {hasCta ? (
