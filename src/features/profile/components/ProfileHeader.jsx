@@ -195,6 +195,7 @@ const avatarImgStyle = {
  */
 export default function ProfileHeader({ profile }) {
   const { openReviews } = useAppScreen()
+  if (!profile) return null
   const displayName = profileDisplayFirstName(profile?.full_name)
   const carText =
     String(

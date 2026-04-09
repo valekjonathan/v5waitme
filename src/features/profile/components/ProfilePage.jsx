@@ -44,7 +44,11 @@ export default function ProfilePage() {
     headerProfile,
     profile,
     setProfile,
+    profileBootstrapReady,
   } = useAuth()
+
+  const canRenderProfile = Boolean(profileBootstrapReady && sessionUser && profile)
+
   const [savedProfile, setSavedProfile] = useState(() => {
     const seed = profile ?? seedProfileStateFromSession(sessionUser ?? null)
     return { ...seed }
@@ -372,6 +376,10 @@ export default function ProfilePage() {
   const handleLogout = useCallback(async () => {
     await signOut()
   }, [signOut])
+
+  if (!canRenderProfile) {
+    return null
+  }
 
   return (
     <ScreenShell

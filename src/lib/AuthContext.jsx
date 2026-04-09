@@ -96,7 +96,7 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading')
   const [user, setUser] = useState(null)
   const [session, setSession] = useState(null)
-  const [profile, setProfile] = useState(() => buildResolvedHeaderProfile(null, user))
+  const [profile, _setProfile] = useState(() => buildResolvedHeaderProfile(null, user))
   const [profileBootstrapReady, setProfileBootstrapReady] = useState(false)
   const [isNewUser, setIsNewUser] = useState(false)
   const [isProfileComplete, setIsProfileComplete] = useState(false)
@@ -108,6 +108,30 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     authStatusRef.current = status
   }, [status])
+
+  const isValidProfileValue = useCallback((v) => {
+    if (!v || typeof v !== 'object') return false
+    try {
+      return Object.keys(v).length > 0
+    } catch {
+      return false
+    }
+  }, [])
+
+  const setProfile = useCallback(
+    (next) => {
+      if (typeof next === 'function') {
+        _setProfile((prev) => {
+          const computed = next(prev)
+          return isValidProfileValue(computed) ? computed : prev
+        })
+        return
+      }
+      if (!isValidProfileValue(next)) return
+      _setProfile(next)
+    },
+    [isValidProfileValue]
+  )
 
   /** Tras OAuth el `finally` puede no ejecutarse antes del unload; al volver (bfcache) el ref quedaba true y el clic no hacía nada. */
   useEffect(() => {
@@ -128,7 +152,6 @@ export function AuthProvider({ children }) {
   const setUnauthenticatedState = useCallback((clearAuthError) => {
     setUser(null)
     setSession(null)
-    setProfile(null)
     setStatus('unauthenticated')
     setProfileBootstrapReady(true)
     setIsNewUser(false)
@@ -151,7 +174,7 @@ export function AuthProvider({ children }) {
     setIsProfileComplete(isComplete)
     setProfileBootstrapReady(true)
     if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
-  }, [])
+  }, [setProfile])
 
   /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
   const applyDevAuthenticatedCore = useCallback(
@@ -171,7 +194,7 @@ export function AuthProvider({ children }) {
     if (user && !profile) {
       setProfile(buildResolvedHeaderProfile(null, user))
     }
-  }, [user, profile])
+  }, [user, profile, setProfile])
 
   useEffect(() => {
     const bootTimer = window.setTimeout(() => {
@@ -364,6 +387,7 @@ export function AuthProvider({ children }) {
     setAuthenticatedState,
     applyDevAuthenticatedCore,
     commitDevLocalProfileBoot,
+    setProfile,
   ])
 
   const signInWithGoogle = useCallback(async () => {
@@ -415,7 +439,7 @@ export function AuthProvider({ children }) {
     }
     setIsNewUser(false)
     setProfileBootstrapReady(true)
-  }, [])
+  }, [setProfile])
 
   const value = useMemo(
     () => ({
