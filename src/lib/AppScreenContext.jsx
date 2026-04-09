@@ -23,7 +23,7 @@ export function AppScreenProvider({ children }) {
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
   /** Snapshot visual desde tarjeta (mapa) para abrir DM sin flash de lista ni header vacío. */
   const [pendingDmVisual, setPendingDmVisual] = useState(
-    /** @type {null | { peerId: string, displayName: string, userPhoto: string | null, phone: string | null, allowPhoneCalls: boolean }} */ (
+    /** @type {null | { peerId: string, displayName: string, userName: string, userPhoto: string | null, phone: string | null, allowPhoneCalls: boolean }} */ (
       null
     )
   )
@@ -184,6 +184,7 @@ export function AppScreenProvider({ children }) {
         setPendingDmVisual({
           peerId: id,
           displayName: dn,
+          userName: dn,
           userPhoto: typeof photo === 'string' && photo.trim() ? photo.trim() : null,
           phone: ph && ph.length > 0 ? ph : null,
           allowPhoneCalls: fromCard.allow_phone_calls !== false,

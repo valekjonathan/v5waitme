@@ -7,6 +7,19 @@ import {
 const SUGGEST_BASE = 'https://api.mapbox.com/search/searchbox/v1/suggest'
 
 /**
+ * Quita CP (5 dígitos) y normaliza comas/espacios para UI tipo mapas.
+ * @param {string} text
+ */
+export function cleanAddress(text) {
+  if (!text) return ''
+  return String(text)
+    .replace(/\b\d{5}\b/g, '')
+    .replace(/\s+,/g, ',')
+    .replace(/,\s*,/g, ',')
+    .trim()
+}
+
+/**
  * Token de sesión Search Box (UUID recomendado); agrupa suggest + retrieve para facturación.
  */
 export function newSearchSessionToken() {
@@ -175,8 +188,9 @@ export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
 export function suggestionDisplayText(suggestion) {
   if (!suggestion || typeof suggestion !== 'object') return ''
   const fa = typeof suggestion.full_address === 'string' ? suggestion.full_address.trim() : ''
-  if (fa) return fa
-  return suggestion.name != null ? String(suggestion.name).trim() : ''
+  if (fa) return cleanAddress(fa)
+  const nm = suggestion.name != null ? String(suggestion.name).trim() : ''
+  return cleanAddress(nm)
 }
 
 /**
@@ -190,7 +204,7 @@ export function selectionPayload(retrievedFeature) {
   const lng = coords?.longitude
   const fa = typeof props?.full_address === 'string' ? props.full_address.trim() : ''
   const name = props?.name != null ? String(props.name).trim() : ''
-  const address = fa || name || ''
+  const address = cleanAddress(fa || name || '')
   return {
     address,
     lat: Number.isFinite(lat) ? lat : null,
@@ -215,7 +229,8 @@ export async function reverseGeocode(lat, lng, signal) {
   if (!data || typeof data !== 'object') return null
   const f = Array.isArray(data.features) ? data.features[0] : null
   const name = f && typeof f.place_name === 'string' ? f.place_name.trim() : ''
-  return name || null
+  const cleaned = cleanAddress(name)
+  return cleaned || null
 }
 
 /**

@@ -82,11 +82,11 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const threadId = String(s.id ?? '')
   const threadPending = isWaitmePendingThreadId(threadId)
   const peerIdStr = String(s.peerUserId ?? '').trim()
-  const title = String(s.name ?? '').trim()
+  const displayName = String(s.snapshot_user_name ?? s.user_name ?? s.name ?? '').trim()
   const peerPhotoUploaded = String(s.user_photo ?? '').trim()
   const peerAvatar =
     peerPhotoUploaded ||
-    `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title || peerIdStr || threadId)}`
+    `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(displayName || peerIdStr || threadId)}`
   const peerPhone = String(s.phone ?? '').trim()
   const headerCallEnabled = Boolean(peerPhone && s.allow_phone_calls !== false)
   const { openUserReviews } = useAppScreen()
@@ -330,13 +330,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             />
           </button>
           <div style={{ minWidth: 0, flex: 1 }}>
-            {title ? (
-              <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
+            {displayName ? (
+              <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{displayName}</div>
             ) : null}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
             <WaitmeCardPhoneButton enabled={headerCallEnabled} phone={peerPhone} />
-            <WaitmeCardNavigateButton enabled onClick={() => {}} />
+            <WaitmeCardNavigateButton enabled={false} onClick={() => {}} />
           </div>
         </header>
 

@@ -151,6 +151,8 @@ export default function ChatsPage() {
       const summary = {
         id: tid,
         name: displayName,
+        user_name: displayName,
+        snapshot_user_name: displayName,
         rating: 4,
         lastMessage: '',
         time: '',
@@ -195,9 +197,12 @@ export default function ChatsPage() {
   const directThreadSummary = useMemo(() => {
     if (!directMatch || !pendingVis || !hashPeer) return null
     const tid = resolvedDirectThreadId
+    const snap = String(pendingVis.userName ?? pendingVis.displayName ?? '').trim()
     return {
       id: tid ?? WAITME_PENDING_THREAD_ID,
-      name: pendingVis.displayName,
+      name: snap,
+      user_name: snap,
+      snapshot_user_name: snap,
       peerUserId: hashPeer,
       user_photo: pendingVis.userPhoto,
       phone: pendingVis.phone,

@@ -203,7 +203,6 @@ function UserAlertCard({
   hideBuy = false,
   showDistanceInMeters: _showDistanceInMeters = false,
   showCountdownTimer: _showCountdownTimer = false,
-  isOperationAccepted = false,
   collapsed = false,
   /** Lista chats: misma tarjeta que parking + bloque “Últimos mensajes” al pie. */
   showLastMessage = false,
@@ -829,7 +828,6 @@ function UserAlertCard({
             phoneEnabled={phoneEnabled}
             handleChat={handleChat}
             handleCall={handleCall}
-            isOperationAccepted={isOperationAccepted}
             alert={alert}
             handleBuy={handleBuy}
             isLoading={isLoading}

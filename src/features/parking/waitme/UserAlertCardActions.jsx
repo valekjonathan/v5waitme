@@ -2,6 +2,7 @@
  * Acciones inferiores de UserAlertCard (WaitMe): evita duplicación de bloques chat/tel/navegar.
  */
 import { useEffect, useState } from 'react'
+import { isNavigationEnabledForAlert, openGoogleMapsAt } from '../../../lib/waitmeNavigation.js'
 import { IconClock, IconMessageCircle, IconNavigation, IconPhone, IconPhoneOff } from './icons.jsx'
 
 export function WaitmeCardActionIconButton({
@@ -22,15 +23,6 @@ export function WaitmeCardActionIconButton({
       {children}
     </button>
   )
-}
-
-function openMapsDirections(alert) {
-  if (alert?.latitude != null && alert?.longitude != null) {
-    window.open(
-      `https://www.google.com/maps/dir/?api=1&destination=${alert.latitude},${alert.longitude}`,
-      '_blank'
-    )
-  }
 }
 
 /** Abre el marcador `tel:` del sistema (móvil / escritorio). No hace nada si no hay número. */
@@ -96,7 +88,8 @@ const NAV_MUTED = {
   backgroundColor: 'rgba(55, 65, 81, 0.5)',
   color: '#6b7280',
   cursor: 'not-allowed',
-  opacity: 0.6,
+  opacity: 0.4,
+  pointerEvents: 'none',
 }
 
 const phoneStyleGridEnabled = {
@@ -159,7 +152,6 @@ export default function UserAlertCardActions({
   phoneEnabled,
   handleChat,
   handleCall,
-  isOperationAccepted,
   alert,
   handleBuy,
   isLoading,
@@ -189,11 +181,15 @@ export default function UserAlertCardActions({
   const seconds = Math.floor((timeLeftMs % 60000) / 1000)
   const formatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 
-  const navClass = isOperationAccepted ? 'btn-ir-navigate-waitme' : ''
-  const navDisabled = !isOperationAccepted || !alert?.latitude || !alert?.longitude
+  const lat = alert?.latitude != null ? Number(alert.latitude) : NaN
+  const lng = alert?.longitude != null ? Number(alert.longitude) : NaN
+  const hasCoords = Number.isFinite(lat) && Number.isFinite(lng)
+  const navEnabled = isNavigationEnabledForAlert(alert) && hasCoords
+
+  const navClass = navEnabled ? 'btn-ir-navigate-waitme' : ''
 
   const navButtonStyle = (width) =>
-    isOperationAccepted
+    navEnabled
       ? {
           ...NAV_MUTED,
           width,
@@ -201,6 +197,7 @@ export default function UserAlertCardActions({
           color: '#fff',
           cursor: 'pointer',
           opacity: 1,
+          pointerEvents: 'auto',
         }
       : { ...NAV_MUTED, width }
 
@@ -227,11 +224,11 @@ export default function UserAlertCardActions({
   const navigateBtn = (width) => (
     <button
       type="button"
-      disabled={navDisabled}
+      disabled={!navEnabled}
       className={navClass}
       style={navButtonStyle(width)}
       onClick={() => {
-        if (isOperationAccepted && alert?.latitude && alert?.longitude) openMapsDirections(alert)
+        if (navEnabled) openGoogleMapsAt(lat, lng)
       }}
     >
       <IconNavigation size={16} />

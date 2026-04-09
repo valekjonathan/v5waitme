@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-09T21:05:05.464Z
-Git revision: 1674c48ccdd17f821c942c18ab8cea57c1b4c312
+Generated: 2026-04-09T21:10:10.140Z
+Git revision: 31c00b86c1804f298a63db6c5eee925be534ea06
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -199,6 +199,7 @@ src/
     ProfileIncompleteNoticeContext.jsx
     ratingStars.js
     waitmeDmPending.js
+    waitmeNavigation.js
     waitmeViewport.js
   main.jsx
   plugins/
