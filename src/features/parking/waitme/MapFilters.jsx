@@ -3,7 +3,7 @@
  */
 import React, { useEffect, useMemo, useState } from 'react'
 import { LAYOUT } from '../../../ui/layout/layout'
-import { IconClock, IconEuro, IconNavigation, IconX, WAITME_ROW_ICON_SLOT } from './icons.jsx'
+import { IconClock, IconNavigation, IconX, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 /** Estado inicial Search (precio 10 euros, 30 min, 800 m). Exportado para el padre sin duplicar. */
 export const WAITME_DEFAULT_SEARCH_FILTERS = {
@@ -25,6 +25,44 @@ const rangeClass = 'waitme-create-alert-range'
 function rangeGradientPercent(value, min, max) {
   if (max <= min) return 0
   return ((value - min) / (max - min)) * 100
+}
+
+/** Mismo bloque € que CreateAlertCard.jsx (tarjeta «Estoy aparcado aquí»). */
+function EuroIconCreateAlertStyle() {
+  return (
+    <span
+      style={{
+        ...WAITME_ROW_ICON_SLOT,
+        position: 'relative',
+        top: 2,
+      }}
+    >
+      <span
+        style={{
+          ...WAITME_ROW_ICON_SLOT,
+          position: 'relative',
+          top: 2,
+          fontSize: 22,
+          lineHeight: 1,
+          fontWeight: 600,
+        }}
+        aria-hidden
+      >
+        €
+      </span>
+    </span>
+  )
+}
+
+const valueValueStyle = {
+  color: '#c084fc',
+  fontWeight: 700,
+  fontSize: 22,
+  lineHeight: 1,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  whiteSpace: 'nowrap',
 }
 
 /** Una fila = mismo layout y estilo de slider que CreateAlertCard (un solo lugar). */
@@ -58,20 +96,20 @@ function FilterRangeBlock({
       >
         {icon}
       </span>
-      <div style={{ flex: 1, marginTop: 8 }}>
+      <div
+        style={{
+          flex: 1,
+          marginTop: 8,
+          width: '100%',
+          minWidth: 0,
+          paddingRight: 12,
+          overflow: 'visible',
+          boxSizing: 'border-box',
+        }}
+      >
         <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
           {title}
-          <span
-            style={{
-              color: '#c084fc',
-              fontWeight: 700,
-              fontSize: 22,
-              lineHeight: 1,
-              marginLeft: valueMarginLeft,
-            }}
-          >
-            {valueEl}
-          </span>
+          <span style={{ ...valueValueStyle, marginLeft: valueMarginLeft }}>{valueEl}</span>
         </label>
         <input
           type="range"
@@ -81,7 +119,7 @@ function FilterRangeBlock({
           step={step}
           value={value}
           onChange={onChange}
-          style={trackStyle}
+          style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
         />
       </div>
     </div>
@@ -192,6 +230,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: 6,
+                  boxSizing: 'border-box',
                 }}
               >
                 Filtros
@@ -201,9 +240,10 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
               type="button"
               onClick={onClose}
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
+                width: 28,
+                height: 28,
+                minWidth: 28,
+                borderRadius: 6,
                 backgroundColor: 'rgba(239, 68, 68, 0.2)',
                 border: '1px solid rgba(239, 68, 68, 0.5)',
                 display: 'flex',
@@ -212,10 +252,11 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
                 color: '#f87171',
                 cursor: 'pointer',
                 padding: 0,
+                boxSizing: 'border-box',
               }}
               aria-label="Cerrar filtros"
             >
-              <IconX size={20} />
+              <IconX size={18} />
             </button>
           </div>
 
@@ -233,9 +274,14 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
             }}
           >
             <FilterRangeBlock
-              icon={<IconEuro size={22} strokeWidth={2} />}
+              icon={<EuroIconCreateAlertStyle />}
               title="Precio máximo:"
-              valueEl={<>{Math.round(filters.maxPrice)} euros</>}
+              valueEl={
+                <>
+                  <span>{Math.round(filters.maxPrice)}</span>
+                  <span>euros</span>
+                </>
+              }
               valueMarginLeft={42}
               min={PRICE_MIN}
               max={PRICE_MAX}
