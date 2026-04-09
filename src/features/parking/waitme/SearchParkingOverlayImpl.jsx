@@ -10,7 +10,6 @@ import {
   subscribeToLocation,
 } from '../../../services/location.js'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
-import { flyGlobalMapTo } from '../../map/mapControls.js'
 import CreateAlertCard from './CreateAlertCard.jsx'
 import MapFilters, { WAITME_DEFAULT_SEARCH_FILTERS } from './MapFilters.jsx'
 import MapZoomControls from './MapZoomControls.jsx'
@@ -145,10 +144,6 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
 
   const parkingCardSlideY = isCardVisible ? 0 : Math.max(0, parkingCardStackH - MAP_SLOT.cardPeek)
 
-  const onStreetSelect = ({ lng, lat }) => {
-    flyGlobalMapTo(lng, lat)
-  }
-
   const streetPlaceholder = isSearch ? '¿Dónde quieres aparcar?' : '¿Donde estas aparcado?'
 
   return (
@@ -187,7 +182,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
           }}
         >
           <div style={{ flex: 1, minWidth: 0, overflow: 'visible' }} role="search">
-            <StreetSearch onSelect={onStreetSelect} placeholder={streetPlaceholder} />
+            <StreetSearch placeholder={streetPlaceholder} />
           </div>
         </div>
       </div>

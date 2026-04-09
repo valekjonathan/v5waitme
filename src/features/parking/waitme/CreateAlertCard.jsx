@@ -1,12 +1,9 @@
 /**
  * Copia de WaitMe: src/components/cards/CreateAlertCard.jsx (input nativo + sliders nativos).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
-import { reverseGeocodeMapbox } from '../../../services/geocodingSpain.js'
-import { getGlobalMapInstance } from '../../map/mapInstance.js'
-import { getLngLatAtParkedPinGap } from '../../map/mapControls.js'
 import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 const rangeClass = 'waitme-create-alert-range'
@@ -52,71 +49,6 @@ export default function CreateAlertCard({
   const [minutes, setMinutes] = useState(10)
   const [publishHover, setPublishHover] = useState(false)
   const [publishPressed, setPublishPressed] = useState(false)
-  const throttleTimerRef = useRef(null)
-  const moveEndHandlerRef = useRef(null)
-
-  const setAddressSafe = useCallback(
-    (v) => {
-      if (typeof v === 'string' && v.trim()) onAddressChange(v)
-    },
-    [onAddressChange]
-  )
-
-  useEffect(() => {
-    let cancelled = false
-    let pollId = null
-    const throttleMs = 450
-
-    const scheduleReverse = (lat, lng) => {
-      if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current)
-      throttleTimerRef.current = setTimeout(() => {
-        throttleTimerRef.current = null
-        void reverseGeocodeMapbox(lat, lng).then((line) => {
-          if (!cancelled && line) setAddressSafe(line)
-        })
-      }, throttleMs)
-    }
-
-    const attach = (map) => {
-      if (!map?.on || moveEndHandlerRef.current) return
-      const handler = () => {
-        try {
-          const ll = getLngLatAtParkedPinGap(map)
-          if (!ll || !Number.isFinite(ll.lat) || !Number.isFinite(ll.lng)) return
-          scheduleReverse(ll.lat, ll.lng)
-        } catch {
-          /* */
-        }
-      }
-      moveEndHandlerRef.current = handler
-      map.on('moveend', handler)
-      handler()
-    }
-
-    const tryMap = getGlobalMapInstance()
-    if (tryMap?.isStyleLoaded?.()) {
-      attach(tryMap)
-    } else {
-      pollId = window.setInterval(() => {
-        const map = getGlobalMapInstance()
-        if (map?.isStyleLoaded?.()) {
-          window.clearInterval(pollId)
-          pollId = null
-          attach(map)
-        }
-      }, 120)
-    }
-
-    return () => {
-      cancelled = true
-      if (pollId != null) window.clearInterval(pollId)
-      if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current)
-      const map = getGlobalMapInstance()
-      const h = moveEndHandlerRef.current
-      moveEndHandlerRef.current = null
-      if (map && h) map.off('moveend', h)
-    }
-  }, [setAddressSafe])
 
   const handleCreate = () => {
     onCreateAlert?.({ price, minutes })
@@ -236,7 +168,7 @@ export default function CreateAlertCard({
           <input
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
-            placeholder="C/ Campoamor, 13"
+            placeholder="Calle Ejemplo, 13"
             autoComplete="off"
             style={{
               flex: 1,

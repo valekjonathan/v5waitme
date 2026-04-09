@@ -98,16 +98,6 @@ export default function ChatsPage() {
     })()
   }, [canLoadChats, load, openThread])
 
-  const localItems = useMemo(
-    () =>
-      threads.map((t) => ({
-        id: t.id,
-        label: t.name,
-        matchText: `${t.name} ${t.lastMessage}`.toLowerCase(),
-      })),
-    [threads]
-  )
-
   const filteredThreads = useMemo(() => {
     const q = listFilter.trim().toLowerCase()
     if (!q) return threads
@@ -190,13 +180,7 @@ export default function ChatsPage() {
         ) : null}
 
         <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
-          <StreetSearch
-            placeholder="Buscar..."
-            placeholderMuted
-            localFilterItems={localItems}
-            onLocalSelect={(item) => openThread(item.id)}
-            onQueryChange={(q) => setListFilter(q)}
-          />
+          <StreetSearch placeholder="Buscar..." placeholderMuted onQueryChange={(q) => setListFilter(q)} />
         </div>
 
         <div

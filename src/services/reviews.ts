@@ -68,6 +68,50 @@ export function getReviewsForScreen(): Review[] {
   return mergeReviewsWithTestRow(getReviewsMock())
 }
 
+/** Perfil mínimo para `ProfileHeader` en reseñas de otro usuario (mock). */
+export function buildMockProfileForUserReviews(userId: string | null) {
+  const id = String(userId ?? '').trim() || 'user'
+  return {
+    full_name: 'Usuario',
+    email: '',
+    avatar_url: `https://i.pravatar.cc/150?u=${encodeURIComponent(id)}`,
+    brand: 'Marca',
+    model: 'Modelo',
+    plate: '0000 XXX',
+    color: 'gris',
+    vehicle_type: 'car',
+  }
+}
+
+const MOCK_USER_PAGE_REVIEWS: Review[] = [
+  {
+    id: 'ur1',
+    name: 'Cliente',
+    date: 'hace 2 días',
+    rating: 5,
+    comment: 'Perfecto',
+  },
+  {
+    id: 'ur2',
+    name: 'Usuario',
+    date: 'hace 1 semana',
+    rating: 4,
+    comment: 'Todo bien',
+  },
+  {
+    id: 'ur3',
+    name: 'Vecino',
+    date: 'hace 3 semanas',
+    rating: 5,
+    comment: 'Muy recomendable',
+  },
+]
+
+/** Lista para `/user/:id` — misma forma que `getReviewsForScreen`. */
+export function getReviewsForUserScreen(_userId: string): Review[] {
+  return mergeReviewsWithTestRow(MOCK_USER_PAGE_REVIEWS)
+}
+
 export function buildRatingDistribution(reviews: Review[]): RatingBucket[] {
   return [4, 3, 2, 1].map((stars) => ({
     stars,
