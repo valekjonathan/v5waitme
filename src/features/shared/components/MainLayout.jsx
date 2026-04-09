@@ -1,6 +1,5 @@
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
-import CenterPin from '../../home/components/CenterPin'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
@@ -67,21 +66,6 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
-/** Mismo anclaje que `MapViewportCenterPin` (centro del mapa = GPS con `followUserGps`). */
-const homeMapPinLayerStyle = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: LAYOUT.z.homeMapPin,
-  pointerEvents: 'none',
-  overflow: 'visible',
-}
-const homeMapPinPositionStyle = {
-  position: 'absolute',
-  left: '50%',
-  top: '50%',
-  transform: 'translate(-50%, -100%)',
-  zIndex: 1,
-}
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {
   margin: 0,
@@ -96,7 +80,6 @@ const heroTitleStyle = {
 const heroSubtitleStyle = {
   margin: 0,
   marginTop: '8px',
-  marginBottom: s.lg,
   padding: 0,
   fontSize: 18,
   fontWeight: 600,
@@ -122,10 +105,10 @@ function overlayLayerStyle(background) {
 
 /**
  * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título).
- * Pin visible en `homeMapPin` (centro = misma referencia que mapa+GPS); medición sigue en `Map`.
- * `loginEntrance` (Login) se acepta por compatibilidad; la entrada es instantánea.
+ * Pin visible en la capa del mapa (`MapViewportCenterPin`: punta del palito en el centro / GPS).
+ * `loginEntrance` se acepta por compatibilidad con LoginPage; la entrada es instantánea.
  */
-export default function MainLayout({ children = null }) {
+export default function MainLayout({ children = null, loginEntrance: _loginEntrance = false }) {
   const simulatedUsers = useSimulatedParkingUsers()
   const hasCta = children != null
 
@@ -135,17 +118,11 @@ export default function MainLayout({ children = null }) {
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Map readOnly hideViewportCenterPin />
+        <Map readOnly />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 
       <div style={overlayLayerStyle(overlayBackground)} />
-
-      <div style={homeMapPinLayerStyle} data-waitme-home-map-pin aria-hidden>
-        <div style={homeMapPinPositionStyle}>
-          <CenterPin />
-        </div>
-      </div>
 
       <div style={centeredLayerStyle}>
         <div style={contentViewportStyle}>

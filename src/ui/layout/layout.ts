@@ -32,8 +32,6 @@ export const LAYOUT = {
   z: {
     map: 0,
     overlay: 5,
-    /** Home/Login: pin encima del velo, bajo el hero (mismo centro que el mapa / GPS). */
-    homeMapPin: 7,
     content: 10,
     nav: 20,
     /** Controles flotantes en slot de mapa (zoom, etc.). */
