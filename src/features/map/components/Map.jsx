@@ -25,6 +25,7 @@ import {
 } from '../../../services/location.js'
 import {
   alignParkedGpsMarkerToGap,
+  centerParkingMapOnGpsLikeParked,
   GAP_CARD_TOP,
   GAP_SEARCH_BOTTOM,
   getWaitmeMapCameraOptions,
@@ -152,7 +153,6 @@ function centerMapOnUserImmediate(map, loc) {
 
 export default function Map({
   onSettled,
-  mapFocusGeneration = 0,
   readOnly = true,
   parkingBandPinAdjust = false,
   /** Home: seguir GPS. Parking search: no. Parking parked: sí (recenter al volver al mapa). */
@@ -183,6 +183,9 @@ export default function Map({
   const parkingBandPinAdjustRef = useRef(parkingBandPinAdjust)
   parkingPinModeRef.current = parkingPinMode
   parkingBandPinAdjustRef.current = parkingBandPinAdjust
+  /** Una sola alineación tipo “aparcado” al entrar en búsqueda; luego ref se resetea al salir de search. */
+  const searchInitialGapAlignDoneRef = useRef(false)
+  const prevParkingPinModeForFollowRef = useRef(/** @type {string | null} */ (null))
 
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
@@ -198,8 +201,12 @@ export default function Map({
       setSearchPinPixel(null)
     } else {
       setParkingMapPinMode(parkingPinMode)
+      const prevMode = prevParkingPinModeForFollowRef.current
+      prevParkingPinModeForFollowRef.current = parkingPinMode
       if (parkingPinMode === 'search') {
-        setSearchFollowUserGps(true)
+        if (prevMode !== 'search') {
+          setSearchFollowUserGps(true)
+        }
       } else {
         setSearchFollowUserGps(false)
         searchGpsRef.current = null
@@ -386,7 +393,63 @@ export default function Map({
       cancelled = true
       window.clearTimeout(t)
     }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable, mapFocusGeneration])
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+
+  /**
+   * “Dónde quieres aparcar”: en el primer ciclo con layout listo, misma cámara/GPS que “Estoy aparcado aquí”.
+   * Después se desactiva el seguimiento que mueve el mapa al GPS para conservar arrastre + pin en píxeles.
+   */
+  useEffect(() => {
+    if (!parkingBandPinAdjust || parkingPinMode !== 'search') {
+      searchInitialGapAlignDoneRef.current = false
+      return undefined
+    }
+    if (unavailable || import.meta.env?.MODE === 'test') return undefined
+    if (searchInitialGapAlignDoneRef.current) return undefined
+
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 120
+
+    const finishAlign = (lng, lat) => {
+      if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+      const m = getGlobalMapInstance()
+      if (!m) return
+      centerParkingMapOnGpsLikeParked(m, lng, lat)
+      setSearchFollowUserGps(false)
+      searchGpsRef.current = { lng, lat }
+      projectSearchPinFromGpsRef.current()
+      searchInitialGapAlignDoneRef.current = true
+    }
+
+    const run = () => {
+      if (cancelled) return
+      const map = getGlobalMapInstance()
+      if (!map?.isStyleLoaded?.() || !isWaitmeParkingLayoutReady()) {
+        if (attempts++ < maxAttempts) requestAnimationFrame(run)
+        return
+      }
+      const fast = getCurrentLocationFast()
+      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
+        finishAlign(fast.longitude, fast.latitude)
+        return
+      }
+      getCurrentPosition(
+        (v) => {
+          if (cancelled || !v) return
+          finishAlign(v.lng, v.lat)
+        },
+        () => {}
+      )
+    }
+
+    const t = window.setTimeout(run, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+      searchInitialGapAlignDoneRef.current = false
+    }
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -581,30 +644,6 @@ export default function Map({
       clearTimeout(t2)
     }
   }, [])
-
-  useEffect(() => {
-    if (mapFocusGeneration === 0) return
-    const map = getGlobalMapInstance()
-    if (!map?.isStyleLoaded?.() || !followUserGps) return
-
-    const fast = getCurrentLocationFast()
-    if (fast) {
-      centerMapOnUserImmediate(map, fast)
-      return
-    }
-    getCurrentPosition(
-      (validated) => {
-        if (!validated) return
-        const m = getGlobalMapInstance()
-        if (!m) return
-        centerMapOnUserImmediate(m, {
-          latitude: validated.lat,
-          longitude: validated.lng,
-        })
-      },
-      () => {}
-    )
-  }, [mapFocusGeneration, followUserGps])
 
   useEffect(() => {
     if (unavailable || import.meta.env?.MODE === 'test') return

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAppScreen } from '../../../lib/AppScreenContext'
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
@@ -127,7 +126,6 @@ function overlayLayerStyle(background) {
  * @param {boolean} [props.loginEntrance]
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
-  const { mapFocusGeneration } = useAppScreen()
   const simulatedUsers = useSimulatedParkingUsers()
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
@@ -156,7 +154,7 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Map readOnly mapFocusGeneration={mapFocusGeneration} />
+        <Map readOnly />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 

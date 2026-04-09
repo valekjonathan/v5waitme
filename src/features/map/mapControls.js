@@ -16,6 +16,17 @@ export function isWaitmeParkingLayoutReady() {
   return cardTop > searchBottom
 }
 
+/**
+ * Misma cámara + alineación al hueco que “Estoy aparcado aquí” (GPS bajo el pin).
+ * Para primer frame de “Dónde quieres aparcar” antes del modo arrastre/píxel.
+ */
+export function centerParkingMapOnGpsLikeParked(map, lng, lat) {
+  jumpMapToLngLatAndAlignToGap(map, lng, lat, {
+    zoom: DEFAULT_ZOOM,
+    pitch: DEFAULT_PITCH,
+  })
+}
+
 /** Salto de cámara + misma alineación que `alignParkedGpsMarkerToGap` (un solo núcleo). */
 function jumpMapToLngLatAndAlignToGap(map, lng, lat, camera = {}) {
   if (!map?.jumpTo || !Number.isFinite(lng) || !Number.isFinite(lat)) return

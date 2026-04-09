@@ -2,17 +2,22 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   useState,
 } from 'react'
+import { useAuth } from './AuthContext'
 import { isRealSupabaseAuthUid } from '../services/authUid.js'
+import { isSupabaseConfigured } from '../services/supabase.js'
+import { listDmThreadsForUser } from '../services/waitmeChats.js'
 import { stashPendingDmPeerUserId } from './waitmeDmPending.js'
 import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
 
 const AppScreenContext = createContext(null)
 
 export function AppScreenProvider({ children }) {
+  const { user } = useAuth()
   const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
@@ -45,6 +50,33 @@ export function AppScreenProvider({ children }) {
     if (!id) return
     setChatUnreadByThread((prev) => ({ ...prev, [id]: 0 }))
   }, [])
+
+  /** Badge global: hidratar no leídos al iniciar sesión / refrescar usuario sin depender de montar ChatsPage. */
+  useEffect(() => {
+    let cancelled = false
+    const uid = String(user?.id ?? '')
+    const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+    const canLoad = Boolean(dev || (isSupabaseConfigured() && isRealSupabaseAuthUid(uid)))
+
+    if (!uid) {
+      setChatUnreadByThread({})
+      return undefined
+    }
+    if (!canLoad) {
+      return undefined
+    }
+
+    void (async () => {
+      const { data, error } = await listDmThreadsForUser(uid)
+      if (cancelled) return
+      if (error || !Array.isArray(data)) return
+      syncChatUnreadFromThreads(data)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, syncChatUnreadFromThreads])
 
   const openHome = useCallback(() => {
     dispatch({ type: 'openHome' })

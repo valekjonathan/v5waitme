@@ -28,7 +28,7 @@ const mapPageMapSlotStyle = {
  * Una sola pantalla de mapa para búsqueda y “aparcado”: el <Map /> no se desmonta al cambiar de modo.
  */
 export default function MapParkingPage() {
-  const { screen, mapFocusGeneration } = useAppScreen()
+  const { screen } = useAppScreen()
   const mode = screen === APP_SCREEN_PARK_HERE ? 'parked' : 'search'
   const users = useSimulatedParkingUsers()
 
@@ -38,7 +38,6 @@ export default function MapParkingPage() {
         <div style={mapPageMapSlotStyle} data-waitme-map-slot>
           <Map
             readOnly={false}
-            mapFocusGeneration={mapFocusGeneration}
             parkingBandPinAdjust
             parkingPinMode={mode}
             followUserGps={mode === 'parked'}
