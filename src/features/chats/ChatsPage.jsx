@@ -346,16 +346,32 @@ export default function ChatsPage() {
 
           {!loadError && filteredThreads.length > 0
             ? filteredThreads.map((t) => {
+                const threadIdStr = String(t.threadId ?? '').trim()
+                const peerForReviews = String(
+                  t.peer_user_id ?? t.peerUserId ?? t.id ?? ''
+                ).trim()
                 return (
                   <div
-                    key={String(t.threadId)}
+                    key={threadIdStr}
                     role="button"
                     tabIndex={0}
-                    onClick={() => openThread(t.threadId)}
+                    onClick={(e) => {
+                      if (
+                        e.target.closest(
+                          '[data-waitme-chat-avatar-reviews], [data-waitme-chat-name-reviews]'
+                        )
+                      ) {
+                        return
+                      }
+                      if (e.target.closest('[data-waitme-chat-delete]')) return
+                      if (!threadIdStr) return
+                      openThread(threadIdStr)
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        openThread(t.threadId)
+                        if (!threadIdStr) return
+                        openThread(threadIdStr)
                       }
                     }}
                     style={{ cursor: 'pointer', flexShrink: 0 }}
@@ -363,11 +379,12 @@ export default function ChatsPage() {
                     <UserAlertCard
                       user={t}
                       isChat
+                      chatReviewUserId={peerForReviews}
                       lastMessage={t.lastMessage}
                       time={t.time}
                       isEmpty={false}
                       onBuyAlert={() => {}}
-                      onChat={() => openThread(t.threadId)}
+                      onChat={() => openThread(threadIdStr)}
                       onCall={() => {}}
                     />
                   </div>

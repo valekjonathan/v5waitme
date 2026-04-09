@@ -179,15 +179,20 @@ function UserAlertAvatarBlock({ row, onClick }) {
 
   return (
     <div
+      data-waitme-chat-avatar-reviews={onClick ? '' : undefined}
       style={{
         ...USER_CARD_AVATAR_WRAP,
         cursor: onClick ? 'pointer' : undefined,
       }}
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick?.(e)
+      }}
       onKeyDown={(e) => {
         if (!onClick) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
+          e.stopPropagation()
           onClick(e)
         }
       }}
@@ -234,6 +239,8 @@ function UserAlertCard({
   hideParkingActionsRow = false,
   /** Variante lista Chats: UI distinta sin romper parking/alertas. */
   isChat = false,
+  /** Lista Chats: UUID del peer (mismo valor que `waitmeChats` `peer_user_id`); fuerza reseñas correctas. */
+  chatReviewUserId = '',
   /** Hora mostrada arriba a la derecha (lista Chats). */
   time: chatTimeProp = '',
 }) {
@@ -354,10 +361,12 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** En lista Chats, `id` debe ser peer; priorizar peer_* por si el objeto mezcla campos. */
+  const explicitChatPeer = String(chatReviewUserId ?? '').trim()
+  /** Lista Chats: reseñas = peer explícito del padre o campos peer_* en `user` (nunca threadId). */
   const uid = String(
     isChat
-      ? (user?.peer_user_id ?? user?.peerUserId ?? user?.user_id ?? user?.id ?? '')
+      ? explicitChatPeer ||
+          (user?.peer_user_id ?? user?.peerUserId ?? user?.user_id ?? user?.id ?? '')
       : (user?.id ?? '')
   ).trim()
 
@@ -510,6 +519,7 @@ function UserAlertCard({
           <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
           <button
             type="button"
+            data-waitme-chat-delete=""
             onClick={handleDeleteChatClick}
             style={CHAT_DELETE_BTN_STYLE}
             aria-label="Eliminar conversación"
@@ -623,6 +633,7 @@ function UserAlertCard({
               }}
             >
               <span
+                {...(isChat && uid ? { 'data-waitme-chat-name-reviews': '' } : {})}
                 style={{
                   ...USER_CARD_NAME_STYLE,
                   cursor: uid ? 'pointer' : undefined,
