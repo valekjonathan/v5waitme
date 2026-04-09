@@ -28,7 +28,7 @@ import {
   layoutActionsStyle,
   profileActionsFooterStyle,
   profileFormSectionLayoutStyle,
-  profileFormVerticalSlotStyle,
+  profileFormVerticalSlotStyleNoScroll,
   profileReviewsFullWidthButtonStyle,
   profileScreenAvatarBorder,
 } from '../../shared/profileReviewsLayout'
@@ -394,6 +394,7 @@ export default function ProfilePage() {
       mainOverflow="hidden"
     >
       <ProfileReviewsLayout
+        scrollBody={false}
         header={
           <ProfileHeader
             profile={headerProfile}
@@ -402,7 +403,7 @@ export default function ProfilePage() {
           />
         }
       >
-        <div style={profileFormVerticalSlotStyle}>
+        <div style={profileFormVerticalSlotStyleNoScroll}>
           <Section style={profileFormSectionLayoutStyle}>
             <ProfileForm
               value={profile ?? EMPTY_APP_PROFILE}
