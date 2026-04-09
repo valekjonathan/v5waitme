@@ -4,7 +4,6 @@ import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
 import Button from '../../ui/Button'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
-import { useAppScreen } from '../../lib/AppScreenContext'
 import { useAuth } from '../../lib/AuthContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
@@ -18,7 +17,7 @@ const BG = colors.background
 const TEXT_GRAY = colors.textMuted
 const TEXT_WHITE = colors.textPrimary
 
-/** Solo contenido interno en vacío controlado; listas reales desactivadas sin borrar hooks ni servicios. */
+/** Solo layout vacío en «Tus alertas»; integración real desactivada sin borrar servicios. */
 const ALERTS_LIST_RENDER_DISABLED = true
 
 const shellStyle = { backgroundColor: BG }
@@ -45,6 +44,34 @@ const dashedHintStyle = {
 
 function DashedHint({ children }) {
   return <div style={dashedHintStyle}>{children}</div>
+}
+
+/** Misma familia visual que tarjetas moradas (p. ej. CreateAlertCard). */
+const alertsPurpleCardStyle = {
+  backgroundColor: 'rgba(17, 24, 39, 0.92)',
+  borderRadius: 16,
+  padding: '16px 20px',
+  border: '2px solid rgba(168, 85, 247, 0.55)',
+  color: TEXT_WHITE,
+  fontSize: 15,
+  fontWeight: 600,
+  textAlign: 'center',
+  lineHeight: 1.45,
+  boxSizing: 'border-box',
+}
+
+function AlertsPurpleCard({ children }) {
+  return <div style={alertsPurpleCardStyle}>{children}</div>
+}
+
+const labelBtnBase = {
+  width: 'auto',
+  minHeight: 40,
+  height: 40,
+  padding: '0 28px',
+  fontWeight: 800,
+  letterSpacing: 0.4,
+  fontSize: 14,
 }
 
 function ScopeTab({ active, onClick, side, children }) {
@@ -77,68 +104,9 @@ function ScopeTab({ active, onClick, side, children }) {
   )
 }
 
-/** Subestado dentro de «Tus alertas»: ACTIVAS (verde) / FINALIZADAS (rojo). */
-function AlertsSubToggle({ value, onChange }) {
-  const isActive = value === 'active'
-  const isFinished = value === 'finished'
-  return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 8,
-        marginBottom: 16,
-        pointerEvents: 'auto',
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => onChange('active')}
-        style={{
-          flex: 1,
-          height: 40,
-          borderRadius: 10,
-          border: `2px solid ${isActive ? colors.success : colors.border}`,
-          background: isActive ? 'rgba(34, 197, 94, 0.18)' : 'transparent',
-          color: isActive ? TEXT_WHITE : TEXT_GRAY,
-          fontSize: 14,
-          fontWeight: 800,
-          letterSpacing: 0.4,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          boxSizing: 'border-box',
-        }}
-      >
-        ACTIVAS
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('finished')}
-        style={{
-          flex: 1,
-          height: 40,
-          borderRadius: 10,
-          border: `2px solid ${isFinished ? colors.danger : colors.border}`,
-          background: isFinished ? colors.dangerBg : 'transparent',
-          color: isFinished ? TEXT_WHITE : TEXT_GRAY,
-          fontSize: 14,
-          fontWeight: 800,
-          letterSpacing: 0.4,
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          boxSizing: 'border-box',
-        }}
-      >
-        FINALIZADAS
-      </button>
-    </div>
-  )
-}
-
 export default function AlertsPage() {
-  const { openSearchParking } = useAppScreen()
   const { user } = useAuth()
   const [scope, setScope] = useState('alerts')
-  const [alertsSubScope, setAlertsSubScope] = useState(/** @type {'active' | 'finished'} */ ('active'))
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -172,6 +140,7 @@ export default function AlertsPage() {
   }, [canLoadAlerts, userId, scope])
 
   useEffect(() => {
+    if (ALERTS_LIST_RENDER_DISABLED) return
     void load()
   }, [load])
 
@@ -219,26 +188,44 @@ export default function AlertsPage() {
           {errorBlock}
 
           {ALERTS_LIST_RENDER_DISABLED && scope === 'alerts' ? (
-            <>
-              <AlertsSubToggle value={alertsSubScope} onChange={setAlertsSubScope} />
-              {alertsSubScope === 'active' ? (
-                <>
-                  <DashedHint>
-                    <div style={{ marginBottom: 16, lineHeight: 1.45 }}>
-                      No tienes ninguna alerta activa
-                    </div>
-                    <Button type="button" variant="primary" onClick={() => openSearchParking?.()}>
-                      Crear alerta desde el mapa
-                    </Button>
-                  </DashedHint>
-                  <div style={{ marginTop: 12 }}>
-                    <DashedHint>No tienes ninguna alerta finalizada</DashedHint>
-                  </div>
-                </>
-              ) : (
-                <DashedHint>No tienes ninguna alerta finalizada</DashedHint>
-              )}
-            </>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <Button
+                  type="button"
+                  variant="primary"
+                  style={{
+                    ...labelBtnBase,
+                    border: `2px solid ${colors.success}`,
+                    background: 'rgba(34, 197, 94, 0.18)',
+                    color: TEXT_WHITE,
+                  }}
+                >
+                  ACTIVAS
+                </Button>
+              </div>
+              <AlertsPurpleCard>No tienes ninguna alerta activa.</AlertsPurpleCard>
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <Button
+                  type="button"
+                  variant="primary"
+                  style={{
+                    ...labelBtnBase,
+                    border: `2px solid ${colors.danger}`,
+                    background: colors.dangerBg,
+                    color: TEXT_WHITE,
+                  }}
+                >
+                  FINALIZADAS
+                </Button>
+              </div>
+              <AlertsPurpleCard>No tienes ninguna alerta finalizada.</AlertsPurpleCard>
+            </div>
           ) : null}
 
           {ALERTS_LIST_RENDER_DISABLED && scope === 'reservations' ? (

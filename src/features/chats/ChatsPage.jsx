@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { colors } from '../../design/colors'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
@@ -53,14 +53,11 @@ export default function ChatsPage() {
   const pendingVis = nav.pendingDmVisual
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
-  const openThread = useCallback(
-    (id) => {
-      const sid = String(id ?? '')
-      if (!sid) return
-      setThreadId(sid)
-    },
-    []
-  )
+  function openThread(id) {
+    const sid = String(id ?? '')
+    if (!sid) return
+    setThreadId(sid)
+  }
 
   const load = useCallback(async () => {
     if (!canLoadChats) {
@@ -171,38 +168,35 @@ export default function ChatsPage() {
         allow_phone_calls: false,
       }
       setResolvedBootstrapSummary(summary)
-      openThread(tid)
+      setThreadId(String(tid))
       void load()
     })()
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, load, openThread, userId, nav.pendingDmVisual])
+  }, [canLoadChats, load, userId, nav.pendingDmVisual])
 
-  const filteredThreads = useMemo(() => {
-    const q = listFilter.trim().toLowerCase()
-    if (!q) return threads
-    return threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
-  }, [listFilter, threads])
+  const q = listFilter.trim().toLowerCase()
+  const filteredThreads = !q
+    ? threads
+    : threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
 
-  const activeSummary = useMemo(() => {
-    const fromList =
-      filteredThreads.find((t) => t.threadId === threadId) ??
-      threads.find((t) => t.threadId === threadId) ??
-      null
-    if (fromList) return fromList
-    if (threadId && resolvedBootstrapSummary && resolvedBootstrapSummary.threadId === threadId) {
-      return resolvedBootstrapSummary
-    }
-    return null
-  }, [filteredThreads, resolvedBootstrapSummary, threadId, threads])
+  const fromListForActive =
+    filteredThreads.find((t) => t.threadId === threadId) ??
+    threads.find((t) => t.threadId === threadId) ??
+    null
+  const activeSummary =
+    fromListForActive ??
+    (threadId && resolvedBootstrapSummary && resolvedBootstrapSummary.threadId === threadId
+      ? resolvedBootstrapSummary
+      : null)
 
-  const directThreadSummary = useMemo(() => {
-    if (!directMatch || !pendingVis || !hashPeer) return null
+  let directThreadSummary = null
+  if (directMatch && pendingVis && hashPeer) {
     const tid = resolvedDirectThreadId
     const snap = String(pendingVis.userName ?? pendingVis.displayName ?? '').trim()
     const directReviews = generateReviewsForEntityId(hashPeer)
-    return {
+    directThreadSummary = {
       threadId: tid ?? WAITME_PENDING_THREAD_ID,
       id: hashPeer,
       name: snap,
@@ -221,15 +215,15 @@ export default function ChatsPage() {
       plate: '',
       unreadCount: 0,
     }
-  }, [directMatch, pendingVis, hashPeer, resolvedDirectThreadId])
+  }
 
-  const handleBackFromThread = useCallback(() => {
+  function handleBackFromThread() {
     setResolvedBootstrapSummary(null)
     setResolvedDirectThreadId(null)
     setThreadId(null)
     nav.clearPendingDmVisual?.()
     clearChatHashFromUrl()
-  }, [nav])
+  }
 
   const showDirectThread = Boolean(directMatch && directThreadSummary)
   const showListThread = Boolean(!showDirectThread && activeSummary && threadId)
