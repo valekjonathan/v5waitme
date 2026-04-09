@@ -152,23 +152,59 @@ function centerMapOnUserImmediate(map, loc) {
 }
 
 const HOME_LOGIN_PIN_ALIGN_MAX_RAF = 12
-const HOME_LOGIN_PIN_ALIGN_EPS_PX = 0.08
+/** Tras cada corrección: error medido project(GPS) − target; ≤ 1 px se considera cerrado. */
+const HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX = 1
 
 /**
- * Home/Login: desplaza la cámara para que `lng/lat` quede bajo la punta visible del hero
- * (`[data-waitme-pin-tip]` → `rect.bottom` en coords del contenedor real del mapa).
+ * Punto de la punta del pin en px relativos al contenedor real del mapa (Mapbox).
+ * x = pinRect.left + pinRect.width/2 − mapRect.left, y = pinRect.bottom − mapRect.top
+ */
+function getHomeLoginHeroPinTipTargetsInMapContainerPx(map) {
+  if (typeof document === 'undefined') return null
+  const mapEl = map?.getContainer?.()
+  if (!(mapEl instanceof HTMLElement)) return null
+  const pin = document.querySelector('[data-waitme-pin-tip]')
+  if (!(pin instanceof HTMLElement)) return null
+  const mapRect = mapEl.getBoundingClientRect()
+  if (mapRect.width < 2 || mapRect.height < 2) return null
+  const pinRect = pin.getBoundingClientRect()
+  if (pinRect.width < 0.5 || pinRect.height < 0.5) return null
+  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
+  const targetY = pinRect.bottom - mapRect.top
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return null
+  return { targetX, targetY }
+}
+
+function homeLoginHeroPinTipScreenErrorPx(map, lng, lat, targetX, targetY) {
+  let p
+  try {
+    p = map.project([lng, lat])
+  } catch {
+    return { errorX: Infinity, errorY: Infinity }
+  }
+  return { errorX: p.x - targetX, errorY: p.y - targetY }
+}
+
+function homeLoginApplyOnePinTipScreenCorrection(map, lng, lat, targetX, targetY) {
+  const point = map.project([lng, lat])
+  const centerPx = map.project(map.getCenter())
+  const dx = targetX - point.x
+  const dy = targetY - point.y
+  const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
+  const newCenter = map.unproject(newCenterPx)
+  map.easeTo({ center: newCenter, duration: 0, essential: true })
+}
+
+/**
+ * Home/Login: hasta 2 correcciones `easeTo` con verificación real en px tras la 1.ª.
  * Devuelve false si el layout aún no es fiable (reintentar en el siguiente rAF).
  */
 function alignHomeLoginMapOnceToHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return false
   if (!map?.project || !map?.unproject || !map.isStyleLoaded?.()) return false
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false
-  const mapEl = map.getContainer()
-  if (!(mapEl instanceof HTMLElement)) return false
-  const pin = document.querySelector('[data-waitme-pin-tip]')
-  if (!(pin instanceof HTMLElement)) return false
-  const mapRect = mapEl.getBoundingClientRect()
-  if (mapRect.width < 2 || mapRect.height < 2) {
+  let targets = getHomeLoginHeroPinTipTargetsInMapContainerPx(map)
+  if (!targets) {
     try {
       map.resize()
     } catch {
@@ -176,36 +212,32 @@ function alignHomeLoginMapOnceToHeroPinTip(map, lng, lat) {
     }
     return false
   }
-  const pinRect = pin.getBoundingClientRect()
-  if (pinRect.width < 0.5 || pinRect.height < 0.5) return false
-  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
-  const targetY = pinRect.bottom - mapRect.top
-  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return false
-  let point
-  let centerPx
+  let { targetX, targetY } = targets
+
+  const withinTol = (ex, ey) =>
+    Math.abs(ex) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX && Math.abs(ey) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX
+
+  let { errorX, errorY } = homeLoginHeroPinTipScreenErrorPx(map, lng, lat, targetX, targetY)
+  if (withinTol(errorX, errorY)) return true
+
   try {
-    point = map.project([lng, lat])
-    centerPx = map.project(map.getCenter())
+    homeLoginApplyOnePinTipScreenCorrection(map, lng, lat, targetX, targetY)
   } catch {
     return false
   }
-  const dx = targetX - point.x
-  const dy = targetY - point.y
-  if (Math.abs(dx) <= HOME_LOGIN_PIN_ALIGN_EPS_PX && Math.abs(dy) <= HOME_LOGIN_PIN_ALIGN_EPS_PX) {
+
+  targets = getHomeLoginHeroPinTipTargetsInMapContainerPx(map)
+  if (!targets) return true
+  ;({ targetX, targetY } = targets)
+  ;({ errorX, errorY } = homeLoginHeroPinTipScreenErrorPx(map, lng, lat, targetX, targetY))
+  if (withinTol(errorX, errorY)) return true
+
+  try {
+    homeLoginApplyOnePinTipScreenCorrection(map, lng, lat, targetX, targetY)
+  } catch {
     return true
   }
-  const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
-  let newCenter
-  try {
-    newCenter = map.unproject(newCenterPx)
-  } catch {
-    return false
-  }
-  try {
-    map.easeTo({ center: newCenter, duration: 0, essential: true })
-  } catch {
-    return false
-  }
+
   return true
 }
 
