@@ -19,6 +19,7 @@ import {
   listDmThreadsForUser,
   WAITME_PENDING_THREAD_ID,
 } from '../../services/waitmeChats.js'
+import { generateReviewsForEntityId, getAverage } from '../../lib/reviewsModel'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -148,12 +149,14 @@ export default function ChatsPage() {
       }
       if (cancelled) return
 
+      const bootstrapReviews = generateReviewsForEntityId(peer)
       const summary = {
         id: tid,
         name: displayName,
         user_name: displayName,
         snapshot_user_name: displayName,
-        rating: 4,
+        reviews: bootstrapReviews,
+        rating: getAverage(bootstrapReviews),
         lastMessage: '',
         time: '',
         brand: '',
@@ -198,6 +201,7 @@ export default function ChatsPage() {
     if (!directMatch || !pendingVis || !hashPeer) return null
     const tid = resolvedDirectThreadId
     const snap = String(pendingVis.userName ?? pendingVis.displayName ?? '').trim()
+    const directReviews = generateReviewsForEntityId(hashPeer)
     return {
       id: tid ?? WAITME_PENDING_THREAD_ID,
       name: snap,
@@ -207,7 +211,8 @@ export default function ChatsPage() {
       user_photo: pendingVis.userPhoto,
       phone: pendingVis.phone,
       allow_phone_calls: pendingVis.allowPhoneCalls,
-      rating: 4,
+      reviews: directReviews,
+      rating: getAverage(directReviews),
       lastMessage: '',
       time: '',
       brand: '',

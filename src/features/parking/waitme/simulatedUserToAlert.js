@@ -1,3 +1,5 @@
+import { getAverage } from '../../../lib/reviewsModel'
+
 /**
  * Adapta el usuario simulado de v5 al shape que espera UserAlertCard (WaitMe).
  * @param {object} u
@@ -6,6 +8,8 @@ export function simulatedUserToAlert(u) {
   if (!u) return null
   const now = Date.now()
   const avail = 10 + (String(u.id).length % 20)
+  const reviews = Array.isArray(u.reviews) ? u.reviews : []
+  const rating = reviews.length ? getAverage(reviews) : 0
   return {
     user_id: u.id,
     user_name: u.name,
@@ -25,5 +29,7 @@ export function simulatedUserToAlert(u) {
     phone: u.hasPhoneActive ? '+34600000000' : null,
     allow_phone_calls: Boolean(u.hasPhoneActive),
     isIncomingRequest: false,
+    rating,
+    reviews,
   }
 }

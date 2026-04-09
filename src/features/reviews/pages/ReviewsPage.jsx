@@ -12,12 +12,14 @@ import ProfileReviewsLayout, {
 } from '../../shared/layout/ProfileReviewsLayout'
 import { profileReviewsSectionFlushStyle } from '../../shared/profileReviewsLayout'
 import { getReviewsForScreen } from '../../../services/reviews'
+import { getAverage } from '../../../lib/reviewsModel'
 
 const shellStyle = { backgroundColor: colors.background }
 
 export default function ReviewsPage() {
   const { headerProfile } = useAuth()
   const reviews = useMemo(() => getReviewsForScreen(), [])
+  const headerAverage = useMemo(() => getAverage(reviews), [reviews])
 
   return (
     <ScreenShell
@@ -26,7 +28,9 @@ export default function ReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
+      <ProfileReviewsLayout
+        header={<ProfileHeader profile={headerProfile} averageRating={headerAverage} />}
+      >
         <Section style={profileReviewsSectionFlushStyle}>
           <ReviewsSummary reviews={reviews} />
         </Section>

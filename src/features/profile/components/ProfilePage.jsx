@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ProfileForm from './ProfileForm'
 import ProfileHeader from './ProfileHeader'
 import Button from '../../../ui/Button'
@@ -15,6 +15,8 @@ import {
   seedProfileStateFromSession,
   updateProfile,
 } from '../../../services/profile'
+import { getReviewsForScreen } from '../../../services/reviews'
+import { getAverage } from '../../../lib/reviewsModel'
 import { logFlow } from '../../../lib/devFlowLog.js'
 import ScreenShell from '../../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
@@ -378,6 +380,8 @@ export default function ProfilePage() {
     await signOut()
   }, [signOut])
 
+  const profileHeaderReviewsAvg = useMemo(() => getAverage(getReviewsForScreen()), [])
+
   if (!canRenderProfile) {
     return null
   }
@@ -390,7 +394,13 @@ export default function ProfilePage() {
       mainOverflow="hidden"
     >
       <ProfileReviewsLayout
-        header={<ProfileHeader profile={headerProfile} avatarBorder={profileScreenAvatarBorder} />}
+        header={
+          <ProfileHeader
+            profile={headerProfile}
+            avatarBorder={profileScreenAvatarBorder}
+            averageRating={profileHeaderReviewsAvg}
+          />
+        }
       >
         <div style={profileFormVerticalSlotStyle}>
           <Section style={profileFormSectionLayoutStyle}>

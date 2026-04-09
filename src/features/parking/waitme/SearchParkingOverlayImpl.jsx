@@ -127,9 +127,8 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const alert = useMemo(() => {
     const a = simulatedUserToAlert(displayUser)
     if (!a || !displayUser) return a
-    const withRating = { ...a, rating: displayUser.stars ?? a.rating }
-    if (streetPick?.address) return { ...withRating, address: streetPick.address }
-    return withRating
+    if (streetPick?.address) return { ...a, address: streetPick.address }
+    return a
   }, [displayUser, streetPick])
 
   const handleStreetResolved = useCallback((payload) => {

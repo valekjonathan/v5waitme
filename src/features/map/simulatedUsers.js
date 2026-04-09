@@ -1,4 +1,5 @@
 import { vehicleTypeForSimulatedIndex } from '../parking/waitme/carUtils.js'
+import { generateReviewsForEntityId } from '../../lib/reviewsModel'
 
 /** Nombres de color coherentes con `getCarFill` / tarjetas. */
 const SIM_COLOR_NAMES = ['rojo', 'azul', 'negro', 'blanco', 'gris', 'verde', 'naranja']
@@ -232,8 +233,8 @@ function buildOne(index, lat, lng, rng) {
   const model = MODELS[Math.floor(rng() * MODELS.length)]
   const plate = PLATES[index % PLATES.length]
   const priceEUR = 4 + Math.floor(rng() * 12)
-  const stars = 3 + Math.floor(rng() * 3)
   const id = `sim-${index}-${lat.toFixed(4)}-${lng.toFixed(4)}`
+  const reviews = generateReviewsForEntityId(id)
   const address = ADDRESSES[index % ADDRESSES.length]
   const portraitIdx = index % 99
   const women = index % 2 === 0
@@ -250,7 +251,7 @@ function buildOne(index, lat, lng, rng) {
     model,
     plate,
     priceEUR,
-    stars,
+    reviews,
     lat,
     lng,
     vehicleType: vehicleTypeForSimulatedIndex(index),

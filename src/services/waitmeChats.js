@@ -4,6 +4,7 @@
  */
 import { supabase, isSupabaseConfigured } from './supabase.js'
 import { isRealSupabaseAuthUid } from './authUid.js'
+import { generateReviewsForEntityId, getAverage } from '../lib/reviewsModel'
 
 /** Hilo aún sin UUID real: UI ya montada; mensajes esperan `getOrCreateDmThread`. */
 export const WAITME_PENDING_THREAD_ID = '__waitme_pending_thread__'
@@ -82,11 +83,14 @@ function seedFallbackDmIfNeeded() {
   const last2 = fallbackThreadMessages.get(FB_THREAD_2) ?? []
   const lm1 = last1[last1.length - 1]
   const lm2 = last2[last2.length - 1]
+  const fbReviews1 = generateReviewsForEntityId(FB_PEER_1)
+  const fbReviews2 = generateReviewsForEntityId(FB_PEER_2)
   fallbackStaticListCards = [
     {
       id: FB_THREAD_1,
       name: 'Carlos',
-      rating: 4,
+      reviews: fbReviews1,
+      rating: getAverage(fbReviews1),
       lastMessage: lm1?.text ?? '',
       time: lm1?.at ?? '',
       brand: 'Opel',
@@ -101,7 +105,8 @@ function seedFallbackDmIfNeeded() {
     {
       id: FB_THREAD_2,
       name: 'Lucía',
-      rating: 5,
+      reviews: fbReviews2,
+      rating: getAverage(fbReviews2),
       lastMessage: lm2?.text ?? '',
       time: lm2?.at ?? '',
       brand: 'Toyota',
@@ -176,10 +181,13 @@ export function dmThreadToListCard(p) {
   const name = String(pr.name ?? '').trim()
   const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
   const phoneRaw = String(pr.phone ?? '').trim()
+  const peerId = String(p.peerId ?? '')
+  const reviews = generateReviewsForEntityId(peerId || p.thread.id)
   return {
     id: p.thread.id,
     name,
-    rating: 4,
+    reviews,
+    rating: getAverage(reviews),
     lastMessage: String(last?.body ?? ''),
     time: formatDmMsgTime(last?.created_at ? String(last.created_at) : ''),
     brand: String(pr.car_brand ?? ''),
@@ -289,11 +297,15 @@ export async function listDmThreadsForUser(userId) {
 export function dmListCardToAlert(t) {
   const c = t && typeof t === 'object' ? t : {}
   const phone = c.phone != null && String(c.phone).trim() ? String(c.phone).trim() : null
+  const reviews = Array.isArray(c.reviews) ? c.reviews : []
+  const rating =
+    reviews.length > 0 ? getAverage(reviews) : Number(c.rating ?? 0)
   return {
     id: c.id,
     peer_user_id: typeof c.peerUserId === 'string' ? c.peerUserId : null,
     user_name: String(c.name ?? ''),
-    rating: c.rating,
+    rating,
+    reviews,
     brand: c.brand,
     model: c.model,
     plate: c.plate,
@@ -438,6 +450,7 @@ export async function getOrCreateDmThread(otherUserId) {
     if (existing) return { data: existing.id, error: null, usedDevFallback: true }
     const tid = crypto.randomUUID()
     const at = formatDmMsgTime(new Date().toISOString())
+    const dynReviews = generateReviewsForEntityId(peer)
     fallbackThreadMessages.set(tid, [
       {
         id: 'fb-dyn-seed',
@@ -449,7 +462,8 @@ export async function getOrCreateDmThread(otherUserId) {
     const card = {
       id: tid,
       name: '',
-      rating: 4,
+      reviews: dynReviews,
+      rating: getAverage(dynReviews),
       lastMessage: 'Hola, escribe cuando quieras.',
       time: at,
       brand: '',

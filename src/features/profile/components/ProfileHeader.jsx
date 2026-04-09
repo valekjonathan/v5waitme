@@ -193,7 +193,7 @@ const avatarImgStyle = {
  * Tarjeta amarilla única (Perfil y Reseñas montan este mismo componente).
  * Estructura: tokens `reviewsBadgeLayerStyle` + email en esquina + bloque morado con nombre único.
  */
-export default function ProfileHeader({ profile, avatarBorder }) {
+export default function ProfileHeader({ profile, avatarBorder, averageRating = 0 }) {
   const { openReviews } = useAppScreen()
   if (!profile) return null
   const avatarStyle = {
@@ -211,6 +211,7 @@ export default function ProfileHeader({ profile, avatarBorder }) {
   const colorKey = String(profile?.color || 'gris').toLowerCase()
   const vehicleType = profile?.vehicle_type || 'car'
   const fallbackLetter = (displayName || profile?.email || 'U').charAt(0)
+  const avgStars = Math.max(0, Math.min(5, Math.round(Number(averageRating) || 0)))
 
   return (
     <div style={rootStyle}>
@@ -261,7 +262,7 @@ export default function ProfileHeader({ profile, avatarBorder }) {
             <Row gap={s.sm} align="flex-start" style={nameRowStyle}>
               <p style={nameTextStyle}>{displayName}</p>
               <div style={starsWrapStyle}>
-                {renderHeaderStarSlots(1).map((star, i) => (
+                {renderHeaderStarSlots(avgStars).map((star, i) => (
                   <span key={i} style={star === '★' ? starStyle : starEmptyStyle}>
                     {star}
                   </span>

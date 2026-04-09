@@ -88,7 +88,7 @@ const barsColumnStyle = {
 
 function normalizeDistribution(distribution) {
   const map = new Map((distribution || []).map((item) => [item.stars, item.count]))
-  const rows = [4, 3, 2, 1].map((stars) => ({ stars, count: Number(map.get(stars) || 0) }))
+  const rows = [5, 4, 3, 2, 1].map((stars) => ({ stars, count: Number(map.get(stars) || 0) }))
   const total = rows.reduce((sum, row) => sum + row.count, 0) || 1
   return rows.map((row) => ({ ...row, ratio: row.count / total }))
 }

@@ -14,6 +14,7 @@ import {
   buildMockProfileForUserReviews,
   getReviewsForUserScreen,
 } from '../../services/reviews'
+import { getAverage } from '../../lib/reviewsModel'
 import { useAppScreen } from '../../lib/AppScreenContext'
 
 const shellStyle = { backgroundColor: colors.background }
@@ -28,6 +29,7 @@ export default function UserReviewsPage() {
     () => getReviewsForUserScreen(String(viewingUserReviewsId ?? '')),
     [viewingUserReviewsId]
   )
+  const headerAverage = useMemo(() => getAverage(reviews), [reviews])
 
   return (
     <ScreenShell
@@ -36,7 +38,7 @@ export default function UserReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={profile} />}>
+      <ProfileReviewsLayout header={<ProfileHeader profile={profile} averageRating={headerAverage} />}>
         <Section style={profileReviewsSectionFlushStyle}>
           <ReviewsSummary reviews={reviews} />
         </Section>

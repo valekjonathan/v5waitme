@@ -1,5 +1,5 @@
-/** Escala de valoración en toda la app (estrellas visibles). */
-const RATING_STAR_COUNT = 4
+/** Escala de valoración en toda la app (estrellas visibles, 1–5). */
+const RATING_STAR_COUNT = 5
 
 /**
  * Solo estrellas rellenas (★) — listas de reseñas, ratings compactos.
@@ -12,7 +12,7 @@ export function renderStars(rating) {
 }
 
 /**
- * Cuatro slots ★/☆ según rating — header amarillo y sitios que muestran escala completa.
+ * Cinco slots ★/☆ según rating — header amarillo y sitios que muestran escala completa.
  * @param {number} rating
  * @returns {readonly ('★' | '☆')[]}
  */

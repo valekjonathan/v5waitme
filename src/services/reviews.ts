@@ -1,6 +1,12 @@
 /**
  * Capa de datos de reseñas (mock → API real sin cambiar la UI).
  */
+import {
+  generateReviewsForEntityId,
+  getAverage,
+  getDistribution,
+} from '../lib/reviewsModel'
+
 type Review = {
   id: string
   name: string
@@ -10,6 +16,13 @@ type Review = {
 }
 
 type RatingBucket = { stars: number; count: number }
+
+function hashUserId(s: string): number {
+  let h = 0
+  const str = String(s ?? '')
+  for (let i = 0; i < str.length; i += 1) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
+  return h >>> 0
+}
 
 /** Fila extra para lista + resumen (misma referencia lógica; evita duplicar en UI). */
 const REVIEWS_TEST_ROW: Review = {
@@ -26,7 +39,7 @@ const MOCK_REVIEWS: Review[] = [
     id: 'r1',
     name: 'Laura M.',
     date: 'hoy',
-    rating: 4,
+    rating: 5,
     comment: 'Muy puntual y amable. Todo perfecto.',
   },
   {
@@ -68,59 +81,88 @@ export function getReviewsForScreen(): Review[] {
   return mergeReviewsWithTestRow(getReviewsMock())
 }
 
-/** Perfil mínimo para `ProfileHeader` en reseñas de otro usuario (mock). */
+const PROFILE_NAMES = [
+  'Ana García',
+  'Pablo Fernández',
+  'Marta López',
+  'Luis Ramírez',
+  'Elena Sánchez',
+  'Carlos Martínez',
+  'Lucía Rodríguez',
+  'Jorge González',
+]
+
+const PROFILE_BRANDS = ['Audi', 'BMW', 'Seat', 'Toyota', 'Peugeot', 'Mercedes', 'Renault', 'Ford']
+
+const PROFILE_MODELS = ['A3', 'Serie 1', 'León', 'Corolla', '308', 'Clase A', 'Clio', 'Focus']
+
+const PROFILE_PLATES = [
+  '1234 ABC',
+  '5678 DEF',
+  '9012 GHI',
+  '3456 JKL',
+  '7890 MNO',
+  '2468 PQR',
+  '1357 STU',
+  '8642 VWX',
+]
+
+const PROFILE_COLORS = ['gris', 'negro', 'blanco', 'azul', 'rojo']
+
+/** Perfil mínimo para `ProfileHeader` en reseñas de otro usuario (mock determinista). */
 export function buildMockProfileForUserReviews(userId: string | null) {
   const id = String(userId ?? '').trim() || 'user'
+  const h = hashUserId(id)
   return {
-    full_name: 'Usuario',
+    full_name: PROFILE_NAMES[h % PROFILE_NAMES.length],
     email: '',
     avatar_url: `https://i.pravatar.cc/150?u=${encodeURIComponent(id)}`,
-    brand: 'Marca',
-    model: 'Modelo',
-    plate: '0000 XXX',
-    color: 'gris',
+    brand: PROFILE_BRANDS[h % PROFILE_BRANDS.length],
+    model: PROFILE_MODELS[h % PROFILE_MODELS.length],
+    plate: PROFILE_PLATES[h % PROFILE_PLATES.length],
+    color: PROFILE_COLORS[h % PROFILE_COLORS.length],
     vehicle_type: 'car',
   }
 }
 
-const MOCK_USER_PAGE_REVIEWS: Review[] = [
-  {
-    id: 'ur1',
-    name: 'Cliente',
-    date: 'hace 2 días',
-    rating: 5,
-    comment: 'Perfecto',
-  },
-  {
-    id: 'ur2',
-    name: 'Usuario',
-    date: 'hace 1 semana',
-    rating: 4,
-    comment: 'Todo bien',
-  },
-  {
-    id: 'ur3',
-    name: 'Vecino',
-    date: 'hace 3 semanas',
-    rating: 5,
-    comment: 'Muy recomendable',
-  },
-]
+const REVIEW_AUTHOR_NAMES = ['Laura M.', 'Carlos P.', 'Sofía R.', 'Andrés T.', 'Marta L.', 'Iván R.']
 
-/** Lista para `/user/:id` — misma forma que `getReviewsForScreen`. */
-export function getReviewsForUserScreen(_userId: string): Review[] {
-  return mergeReviewsWithTestRow(MOCK_USER_PAGE_REVIEWS)
+const REVIEW_DATES = ['hoy', 'hace 2 días', 'hace 1 semana', 'hace 2 semanas', 'hace 3 semanas']
+
+const COMMENT_BY_RATING: Record<number, string> = {
+  5: 'Excelente, todo perfecto.',
+  4: 'Muy bien, repetiría.',
+  3: 'Correcto, sin problemas.',
+  2: 'Regular, mejorable.',
+  1: 'No cumplió expectativas.',
+}
+
+function expandRatingsToReviews(userId: string, ratings: { rating: number }[]): Review[] {
+  const h = hashUserId(userId)
+  return ratings.map((r, i) => ({
+    id: `${userId}-rev-${i}`,
+    name: REVIEW_AUTHOR_NAMES[(h + i) % REVIEW_AUTHOR_NAMES.length],
+    date: REVIEW_DATES[(h + i) % REVIEW_DATES.length],
+    rating: r.rating,
+    comment: COMMENT_BY_RATING[r.rating] ?? 'Valoración recibida.',
+  }))
+}
+
+/** Lista para reseñas de otro usuario — misma forma que `getReviewsForScreen`. */
+export function getReviewsForUserScreen(userId: string): Review[] {
+  const id = String(userId ?? '').trim() || 'guest'
+  const ratings = generateReviewsForEntityId(id)
+  return mergeReviewsWithTestRow(expandRatingsToReviews(id, ratings))
 }
 
 export function buildRatingDistribution(reviews: Review[]): RatingBucket[] {
-  return [4, 3, 2, 1].map((stars) => ({
+  const d = getDistribution(reviews)
+  return [5, 4, 3, 2, 1].map((stars) => ({
     stars,
-    count: reviews.filter((item) => Number(item.rating) === stars).length,
+    count: d[stars as keyof typeof d] ?? 0,
   }))
 }
 
 export function computeAverageRating(reviews: Review[]): number {
-  if (!reviews.length) return 0
-  const score = reviews.reduce((sum, item) => sum + Number(item.rating || 0), 0)
-  return score / reviews.length
+  return getAverage(reviews)
 }

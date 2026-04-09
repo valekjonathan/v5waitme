@@ -7,6 +7,7 @@ import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
 import { renderHeaderStarSlots } from '../../../lib/ratingStars'
+import { getAverage } from '../../../lib/reviewsModel'
 import Plate from '../../profile/components/Plate.jsx'
 import { VehicleIcon } from '../../profile/components/VehicleIcons.jsx'
 import { getCarFill } from './carUtils.js'
@@ -357,6 +358,12 @@ function UserAlertCard({
     pointerEvents: 'none',
   }
 
+  const headerStarAvg = useMemo(() => {
+    const list = alert?.reviews
+    if (Array.isArray(list) && list.length) return getAverage(list)
+    return Number(alert?.rating ?? 0)
+  }, [alert?.reviews, alert?.rating])
+
   if (isEmpty || !alert) {
     return (
       <div
@@ -630,7 +637,7 @@ function UserAlertCard({
                   }
                 }}
               >
-                {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
+                {renderHeaderStarSlots(Math.round(headerStarAvg)).map((star, i) => (
                   <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
                     {star}
                   </span>
