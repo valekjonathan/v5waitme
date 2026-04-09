@@ -1,28 +1,16 @@
-import { isDevSafari } from '../lib/isDevSafari.js'
-
 /**
  * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni filtros por distancia.
  * `startLocationTracking()` → cada success del navegador → `notify()` → callbacks de `subscribeToLocation`.
  *
- * En dev Safari (`isDevSafari`): coordenadas fijas (Oviedo), sin geolocalización real.
+ * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
+ * Mac / PWA / WebView iOS: mismo código; `navigator.geolocation` (permisos del sistema / navegador).
  *
  * `createPositionGuard()` no interviene en este pipeline (tests u observabilidad opcional).
  */
 
-/** Debe coincidir con el centro por defecto del mapa (`mapbox.js` OVIEDO_*). */
+/** Punto de partida solo para `VITE_SIMULATE_GPS` (no se usa como sustituto del GPS en dev). */
 const DEV_BROWSER_MOCK_LAT = 43.3619
 const DEV_BROWSER_MOCK_LNG = -5.8494
-
-function devMockGeolocationPosition() {
-  return {
-    coords: {
-      latitude: DEV_BROWSER_MOCK_LAT,
-      longitude: DEV_BROWSER_MOCK_LNG,
-      accuracy: 12,
-    },
-    timestamp: Date.now(),
-  }
-}
 
 /** Opciones exigidas por producto: máxima frescura y alta precisión cuando el SO lo permite. */
 const GEO_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
@@ -107,14 +95,7 @@ function emit(emitEvent, persistEvent, type, payload) {
 }
 
 export function getCurrentPosition(onSuccess, onError) {
-  if (isDevSafari()) {
-    const p = payloadFromBrowserPosition(devMockGeolocationPosition())
-    if (p) queueMicrotask(() => onSuccess?.(p))
-    else onError?.({ type: 'error', code: 0, raw: null })
-    return
-  }
-
-  if (!navigator.geolocation) {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
     onError?.({ type: 'unavailable', code: 0, raw: null })
     return
   }
@@ -157,17 +138,6 @@ try {
   /* */
 }
 
-if (typeof window !== 'undefined' && isDevSafari()) {
-  currentLocation = {
-    latitude: DEV_BROWSER_MOCK_LAT,
-    longitude: DEV_BROWSER_MOCK_LNG,
-    timestamp: Date.now(),
-    accuracy: 12,
-    heading: null,
-    speed: null,
-  }
-}
-
 /**
  * Única escritura de `currentLocation` desde el stream GPS / simulación.
  * Forma canónica: lat/lng obligatorios; resto opcional pero estable (null si no aplica).
@@ -207,7 +177,7 @@ function notify(location) {
 
 /**
  * Un único `watchPosition` global para toda la app. Idempotente.
- * `getCurrentPosition` inicial solo acelera la primera pintura si no hay caché.
+ * Sin `getCurrentPosition` previo: el stream es la única fuente continua (evita doble notify inicial).
  *
  * Simulación de deriva GPS (solo dev, opcional): `VITE_SIMULATE_GPS=1` en `.env.local`.
  * @returns {void | (() => void)} cleanup solo si se activó el simulador (para `clearInterval`).
@@ -244,34 +214,7 @@ export function startLocationTracking() {
     }
   }
 
-  if (isDevSafari()) {
-    notify({
-      latitude: DEV_BROWSER_MOCK_LAT,
-      longitude: DEV_BROWSER_MOCK_LNG,
-      accuracy: 12,
-      timestamp: Date.now(),
-      heading: null,
-      speed: null,
-    })
-    return
-  }
-
   if (typeof navigator === 'undefined' || !navigator.geolocation) return
-
-  getCurrentPosition(
-    (p) => {
-      if (p)
-        notify({
-          latitude: p.lat,
-          longitude: p.lng,
-          accuracy: p.accuracy,
-          timestamp: p.ts,
-          heading: p.heading,
-          speed: p.speed,
-        })
-    },
-    () => {}
-  )
 
   if (geoWatchId != null) {
     try {

@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-09T16:46:36.932Z
-Git revision: cb7ab45bfe0e5a3b6c650909da880486843e248e
+Generated: 2026-04-09T17:00:42.479Z
+Git revision: 102ac7ecbfd97c6dd75710b737b68a40d198942d
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -193,7 +193,6 @@ src/
     devWebIphoneSim.js
     ErrorBoundary.jsx
     errorBoundaryReset.js
-    isDevSafari.js
     nativeOAuthDeepLink.js
     ProfileIncompleteNoticeContext.jsx
     ratingStars.js
