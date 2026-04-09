@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
+import Button from '../../ui/Button'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
+import { useAppScreen } from '../../lib/AppScreenContext'
 import { useAuth } from '../../lib/AuthContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
@@ -15,6 +17,9 @@ const PURPLE = colors.primary
 const BG = colors.background
 const TEXT_GRAY = colors.textMuted
 const TEXT_WHITE = colors.textPrimary
+
+/** Solo contenido interno en vacío controlado; listas reales desactivadas sin borrar hooks ni servicios. */
+const ALERTS_LIST_RENDER_DISABLED = true
 
 const shellStyle = { backgroundColor: BG }
 
@@ -72,9 +77,68 @@ function ScopeTab({ active, onClick, side, children }) {
   )
 }
 
+/** Subestado dentro de «Tus alertas»: ACTIVAS (verde) / FINALIZADAS (rojo). */
+function AlertsSubToggle({ value, onChange }) {
+  const isActive = value === 'active'
+  const isFinished = value === 'finished'
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 8,
+        marginBottom: 16,
+        pointerEvents: 'auto',
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onChange('active')}
+        style={{
+          flex: 1,
+          height: 40,
+          borderRadius: 10,
+          border: `2px solid ${isActive ? colors.success : colors.border}`,
+          background: isActive ? 'rgba(34, 197, 94, 0.18)' : 'transparent',
+          color: isActive ? TEXT_WHITE : TEXT_GRAY,
+          fontSize: 14,
+          fontWeight: 800,
+          letterSpacing: 0.4,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          boxSizing: 'border-box',
+        }}
+      >
+        ACTIVAS
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('finished')}
+        style={{
+          flex: 1,
+          height: 40,
+          borderRadius: 10,
+          border: `2px solid ${isFinished ? colors.danger : colors.border}`,
+          background: isFinished ? colors.dangerBg : 'transparent',
+          color: isFinished ? TEXT_WHITE : TEXT_GRAY,
+          fontSize: 14,
+          fontWeight: 800,
+          letterSpacing: 0.4,
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          boxSizing: 'border-box',
+        }}
+      >
+        FINALIZADAS
+      </button>
+    </div>
+  )
+}
+
 export default function AlertsPage() {
+  const { openSearchParking } = useAppScreen()
   const { user } = useAuth()
   const [scope, setScope] = useState('alerts')
+  const [alertsSubScope, setAlertsSubScope] = useState(/** @type {'active' | 'finished'} */ ('active'))
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -111,10 +175,21 @@ export default function AlertsPage() {
     void load()
   }, [load])
 
-  const offlineHint = !hasRealSupabaseSession && !dev ? (
+  const showRealLists = !ALERTS_LIST_RENDER_DISABLED
+
+  const offlineHint =
+    !ALERTS_LIST_RENDER_DISABLED && !hasRealSupabaseSession && !dev ? (
       <DashedHint>
         Conecta Supabase e inicia sesión para cargar tu historial de alertas y reservas.
       </DashedHint>
+    ) : null
+
+  const loadingBlock =
+    showRealLists && canLoadAlerts && loading ? <DashedHint>Cargando…</DashedHint> : null
+
+  const errorBlock =
+    showRealLists && canLoadAlerts && loadError && !loading ? (
+      <DashedHint>No se pudieron cargar los datos. Revisa la conexión y el proyecto Supabase.</DashedHint>
     ) : null
 
   return (
@@ -140,74 +215,109 @@ export default function AlertsPage() {
 
         <div style={{ paddingTop: 56, paddingLeft: 16, paddingRight: 16 }}>
           {offlineHint}
+          {loadingBlock}
+          {errorBlock}
 
-          {canLoadAlerts && loading ? (
-            <DashedHint>Cargando…</DashedHint>
+          {ALERTS_LIST_RENDER_DISABLED && scope === 'alerts' ? (
+            <>
+              <AlertsSubToggle value={alertsSubScope} onChange={setAlertsSubScope} />
+              {alertsSubScope === 'active' ? (
+                <>
+                  <DashedHint>
+                    <div style={{ marginBottom: 16, lineHeight: 1.45 }}>
+                      No tienes ninguna alerta activa
+                    </div>
+                    <Button type="button" variant="primary" onClick={() => openSearchParking?.()}>
+                      Crear alerta desde el mapa
+                    </Button>
+                  </DashedHint>
+                  <div style={{ marginTop: 12 }}>
+                    <DashedHint>No tienes ninguna alerta finalizada</DashedHint>
+                  </div>
+                </>
+              ) : (
+                <DashedHint>No tienes ninguna alerta finalizada</DashedHint>
+              )}
+            </>
           ) : null}
 
-          {canLoadAlerts && loadError && !loading ? (
-            <DashedHint>No se pudieron cargar los datos. Revisa la conexión y el proyecto Supabase.</DashedHint>
+          {ALERTS_LIST_RENDER_DISABLED && scope === 'reservations' ? (
+            <>
+              <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
+              <DashedHint>No tienes reservas activas.</DashedHint>
+              <h2 style={sectionTitle}>Finalizadas</h2>
+              <DashedHint>No tienes reservas finalizadas.</DashedHint>
+            </>
           ) : null}
 
-          <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
-          {scope === 'alerts' ? (
-            rows.filter((r) => String(r.status) === 'active').length === 0 &&
-            !loading &&
-            !loadError &&
-            canLoadAlerts ? (
-              <DashedHint>No tienes alertas activas.</DashedHint>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {rows
-                  .filter((r) => String(r.status) === 'active')
-                  .map((r) => {
-                    const user = parkingAlertRowToCard(r)
-                    return (
-                      <UserAlertCard
-                        key={user.id}
-                        user={user}
-                        isEmpty={false}
-                        hideBuy={false}
-                        onBuyAlert={() => {}}
-                        onCall={() => {}}
-                      />
-                    )
-                  })}
-              </div>
-            )
-          ) : (
-            <DashedHint>No tienes reservas activas.</DashedHint>
-          )}
+          {showRealLists && scope === 'alerts' ? (
+            <>
+              <h2 style={{ ...sectionTitle, marginTop: offlineHint || loadingBlock || errorBlock ? 16 : 0 }}>
+                Activas
+              </h2>
+              {rows.filter((r) => String(r.status) === 'active').length === 0 &&
+              !loading &&
+              !loadError &&
+              canLoadAlerts ? (
+                <DashedHint>No tienes alertas activas.</DashedHint>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {rows
+                    .filter((r) => String(r.status) === 'active')
+                    .map((r) => {
+                      const user = parkingAlertRowToCard(r)
+                      return (
+                        <UserAlertCard
+                          key={user.id}
+                          user={user}
+                          isEmpty={false}
+                          hideBuy={false}
+                          onBuyAlert={() => {}}
+                          onCall={() => {}}
+                        />
+                      )
+                    })}
+                </div>
+              )}
 
-          <h2 style={sectionTitle}>Finalizadas</h2>
-          {scope === 'alerts' ? (
-            rows.filter((r) => String(r.status) !== 'active').length === 0 &&
-            !loading &&
-            !loadError &&
-            canLoadAlerts ? (
-              <DashedHint>No hay alertas finalizadas.</DashedHint>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
-                {rows
-                  .filter((r) => String(r.status) !== 'active')
-                  .map((r) => {
-                    const user = parkingAlertRowToCard(r, { clearTimers: true })
-                    return (
-                      <UserAlertCard
-                        key={user.id}
-                        user={user}
-                        isEmpty={false}
-                        hideBuy
-                        onBuyAlert={() => {}}
-                        onCall={() => {}}
-                      />
-                    )
-                  })}
-              </div>
-            )
-          ) : (
-            <DashedHint>Aquí verás reservas pasadas.</DashedHint>
-          )}
+              <h2 style={sectionTitle}>Finalizadas</h2>
+              {rows.filter((r) => String(r.status) !== 'active').length === 0 &&
+              !loading &&
+              !loadError &&
+              canLoadAlerts ? (
+                <DashedHint>No hay alertas finalizadas.</DashedHint>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
+                  {rows
+                    .filter((r) => String(r.status) !== 'active')
+                    .map((r) => {
+                      const user = parkingAlertRowToCard(r, { clearTimers: true })
+                      return (
+                        <UserAlertCard
+                          key={user.id}
+                          user={user}
+                          isEmpty={false}
+                          hideBuy
+                          onBuyAlert={() => {}}
+                          onCall={() => {}}
+                        />
+                      )
+                    })}
+                </div>
+              )}
+            </>
+          ) : null}
+
+          {showRealLists && scope === 'reservations' ? (
+            <>
+              <h2 style={{ ...sectionTitle, marginTop: offlineHint || loadingBlock || errorBlock ? 16 : 0 }}>
+                Activas
+              </h2>
+              <DashedHint>No tienes reservas activas.</DashedHint>
+              <h2 style={sectionTitle}>Finalizadas</h2>
+              <DashedHint>Aquí verás reservas pasadas.</DashedHint>
+            </>
+          ) : null}
         </div>
       </div>
     </ScreenShell>
