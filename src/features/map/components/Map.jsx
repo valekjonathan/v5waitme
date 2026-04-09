@@ -151,6 +151,40 @@ function centerMapOnUserImmediate(map, loc) {
   }
 }
 
+/**
+ * Home/Login: mueve la cámara una sola vez para que `lng/lat` coincida con la punta del pin del hero
+ * (`[data-waitme-pin-tip]`), sin desplazar el pin en el DOM.
+ */
+function alignHomeLoginMapOnceToHeroPinTip(map, lng, lat) {
+  if (typeof document === 'undefined') return false
+  if (!map?.project || !map?.unproject || !map.isStyleLoaded?.()) return false
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false
+  const pin = document.querySelector('[data-waitme-pin-tip]')
+  if (!pin) return false
+  const mapRect = map.getContainer().getBoundingClientRect()
+  const pinRect = pin.getBoundingClientRect()
+  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
+  const targetY = pinRect.bottom - mapRect.top
+  const point = map.project([lng, lat])
+  const centerPx = map.project(map.getCenter())
+  const dx = targetX - point.x
+  const dy = targetY - point.y
+  if (Math.abs(dx) <= 0.25 && Math.abs(dy) <= 0.25) return true
+  const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
+  let newCenter
+  try {
+    newCenter = map.unproject(newCenterPx)
+  } catch {
+    return false
+  }
+  try {
+    map.easeTo({ center: newCenter, duration: 0, essential: true })
+  } catch {
+    return false
+  }
+  return true
+}
+
 export default function Map({
   onSettled,
   readOnly = true,
@@ -178,6 +212,11 @@ export default function Map({
   onSettledRef.current = onSettled
   const readOnlyRef = useRef(readOnly)
   readOnlyRef.current = readOnly
+  const hideViewportCenterPinRef = useRef(hideViewportCenterPin)
+  hideViewportCenterPinRef.current = hideViewportCenterPin
+  /** Home/Login: un solo `easeTo` para alinear GPS bajo la punta del pin del hero. */
+  const homeLoginHeroPinTipEaseDoneRef = useRef(false)
+  const wasHomeLoginMapSessionRef = useRef(false)
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
   followUserGpsRef.current = followUserGps
@@ -226,6 +265,14 @@ export default function Map({
     }
   }, [readOnly, followUserGps, parkingBandPinAdjust, parkingPinMode])
 
+  useEffect(() => {
+    const isHl = readOnly && hideViewportCenterPin && !parkingBandPinAdjust
+    if (isHl && !wasHomeLoginMapSessionRef.current) {
+      homeLoginHeroPinTipEaseDoneRef.current = false
+    }
+    wasHomeLoginMapSessionRef.current = isHl
+  }, [readOnly, hideViewportCenterPin, parkingBandPinAdjust])
+
   const projectSearchPinFromGps = useCallback(() => {
     const map = getGlobalMapInstance()
     if (!map?.project || !map.isStyleLoaded?.()) return
@@ -258,7 +305,11 @@ export default function Map({
       const run = () => {
         requestAnimationFrame(() => {
           const mapContainer = resolveWaitmeMapDomContainer(containerRef)
-          applyWaitmeMapPinAndParkingCamera(pinRef.current, mapContainer, false)
+          const heroTip =
+            typeof document !== 'undefined' ? document.querySelector('[data-waitme-pin-tip]') : null
+          const pinEl =
+            hideViewportCenterPinRef.current && heroTip instanceof HTMLElement ? heroTip : pinRef.current
+          applyWaitmeMapPinAndParkingCamera(pinEl, mapContainer, false)
         })
       }
 
@@ -499,7 +550,10 @@ export default function Map({
           alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
           return
         }
-        if (followUserGpsRef.current) centerMapOnUser(map, loc)
+        if (followUserGpsRef.current) {
+          centerMapOnUser(map, loc)
+          tryScheduleHomeLoginHeroPinTipAlign(map, loc.longitude, loc.latitude)
+        }
       })
     }
     const clearLocationPipe = () => {
@@ -507,6 +561,20 @@ export default function Map({
         unsubscribeLocation()
         unsubscribeLocation = null
       }
+    }
+
+    const tryScheduleHomeLoginHeroPinTipAlign = (m, lng, lat) => {
+      if (import.meta.env?.MODE === 'test') return
+      if (!readOnlyRef.current || !hideViewportCenterPinRef.current || parkingBandPinAdjustRef.current) return
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (homeLoginHeroPinTipEaseDoneRef.current) return
+          if (!m?.isStyleLoaded?.() || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+          if (alignHomeLoginMapOnceToHeroPinTip(m, lng, lat)) {
+            homeLoginHeroPinTipEaseDoneRef.current = true
+          }
+        })
+      })
     }
 
     const existingMap = getGlobalMapInstance()
@@ -517,7 +585,10 @@ export default function Map({
         if (existingLoadCancelled) return
         applyPostLoadStyle(existingMap, readOnlyRef.current)
         const fast = getCurrentLocationFast()
-        if (followUserGpsRef.current && fast) centerMapOnUserImmediate(existingMap, fast)
+        if (followUserGpsRef.current && fast) {
+          centerMapOnUserImmediate(existingMap, fast)
+          tryScheduleHomeLoginHeroPinTipAlign(existingMap, fast.longitude, fast.latitude)
+        }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
           projectSearchPinFromGpsRef.current()
@@ -568,6 +639,7 @@ export default function Map({
         const fast = getCurrentLocationFast()
         if (fast) {
           centerMapOnUserImmediate(map, fast)
+          tryScheduleHomeLoginHeroPinTipAlign(map, fast.longitude, fast.latitude)
         } else {
           getCurrentPosition(
             (validated) => {
@@ -578,6 +650,7 @@ export default function Map({
                 latitude: validated.lat,
                 longitude: validated.lng,
               })
+              tryScheduleHomeLoginHeroPinTipAlign(m, validated.lng, validated.lat)
             },
             () => {}
           )
