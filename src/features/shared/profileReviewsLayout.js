@@ -57,7 +57,7 @@ export const reviewsBadgeLayerStyle = {
 /** Espaciado vertical perfil (centrado fijo, sin scroll): ajuste mínimo para que todo quepa. */
 export const profileHeaderCardMarginBottomPx = 4
 export const profileFormVerticalGapPx = 6
-const profileActionsFooterMarginTopPx = 4
+const profileActionsFooterMarginTopPx = 6
 export const profileCenteredClusterGapPx = 10
 /** Solo pantalla perfil (`scrollBody={false}`): menos hueco entre bloques. */
 export const profileCenteredClusterGapProfilePx = 8
@@ -81,11 +81,10 @@ export const profileFormVerticalSlotStyle = {
   justifyContent: 'flex-start',
 }
 
-/** Profile sin scroll: el formulario ocupa el espacio flexible restante. */
+/** Profile sin scroll: alto natural del formulario (evita hueco vacío entre campos y botones). */
 export const profileFormVerticalSlotStyleNoScroll = {
   ...profileFormVerticalSlotStyle,
-  flex: 1,
-  flexShrink: 1,
+  flex: '0 0 auto',
   minHeight: 0,
   overflow: 'hidden',
 }
@@ -95,6 +94,8 @@ export const profileActionsFooterStyle = {
   flexShrink: 0,
   width: '100%',
   marginTop: profileActionsFooterMarginTopPx,
+  paddingBottom: 2,
+  boxSizing: 'border-box',
 }
 
 /** Sección sin padding extra (formulario o resumen pegado al flujo). */
@@ -113,9 +114,11 @@ export const profileFormSectionLayoutStyle = {
 /** Botones de ancho completo en columna de acciones (perfil). */
 export const profileReviewsFullWidthButtonStyle = {
   width: '100%',
-  height: 42,
-  minHeight: 42,
-  paddingTop: 8,
-  paddingBottom: 8,
+  height: 38,
+  minHeight: 38,
+  maxHeight: 38,
+  paddingTop: 6,
+  paddingBottom: 6,
   marginTop: 0,
+  boxSizing: 'border-box',
 }

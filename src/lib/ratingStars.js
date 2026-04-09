@@ -1,7 +1,17 @@
 /**
- * UI: 4 estrellas visibles. Las valoraciones siguen en escala 1–5 en datos.
+ * UI: 4 estrellas visibles; media global mostrada /10. Datos internos 1–5.
  */
 const RATING_STAR_COUNT = 4
+
+/**
+ * Media en escala 1–5 → puntuación mostrada /10 (misma información, UX clara).
+ * @param {number} avgOn5
+ */
+export function average5ToDisplay10(avgOn5) {
+  const a = Number(avgOn5)
+  if (!Number.isFinite(a)) return 0
+  return +(a * 2).toFixed(1)
+}
 
 /**
  * Media en escala 1–5 → estrellas rellenas en UI (0–4).

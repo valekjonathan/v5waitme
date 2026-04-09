@@ -20,59 +20,63 @@ function hashAnchor(lat, lng) {
   return h >>> 0
 }
 
-/** Nombre y apellidos coherentes (estilo España). */
-const FULL_NAMES = [
+/** Coherente con retratos `women/*` (randomuser). */
+const FEMALE_FULL_NAMES = [
   'Ana García',
-  'Pablo Fernández',
   'Marta López',
-  'Luis Ramírez',
   'Elena Sánchez',
-  'Carlos Martínez',
   'Lucía Rodríguez',
-  'Jorge González',
   'Sara Hernández',
-  'David Pérez',
   'Cristina Díaz',
-  'Iván Moreno',
   'Paula Muñoz',
-  'Sergio Álvarez',
   'Nuria Romero',
-  'Óscar Navarro',
   'Andrea Gutiérrez',
-  'Rubén Ruiz',
   'Clara Iglesias',
-  'Miguel Vázquez',
   'Laura Jiménez',
-  'Alberto Torres',
   'Silvia Molina',
-  'Fernando Castro',
   'Isabel Ortega',
-  'Diego Rubio',
   'Rosa Delgado',
-  'Héctor Ramos',
   'Patricia Gil',
-  'Víctor Serrano',
   'Carmen Blanco',
-  'Javier Suárez',
-  'Teresa Morales',
-  'Francisco Medina',
   'Pilar Castro',
-  'Manuel Vega',
   'Eva Cortés',
-  'Antonio León',
   'Natalia Prieto',
-  'Gonzalo Cabrera',
   'Alicia Fuentes',
-  'Ricardo Peña',
   'Beatriz Calvo',
-  'Álvaro Crespo',
   'Sonia Domínguez',
-  'Roberto Herrera',
   'Mónica Aguilar',
-  'Enrique Vidal',
   'Eva Montero',
-  'Javier Benítez',
+  'Teresa Morales',
   'Teresa Campos',
+]
+
+/** Coherente con retratos `men/*` (randomuser). */
+const MALE_FULL_NAMES = [
+  'Pablo Fernández',
+  'Luis Ramírez',
+  'Carlos Martínez',
+  'Jorge González',
+  'David Pérez',
+  'Iván Moreno',
+  'Sergio Álvarez',
+  'Óscar Navarro',
+  'Rubén Ruiz',
+  'Miguel Vázquez',
+  'Alberto Torres',
+  'Fernando Castro',
+  'Diego Rubio',
+  'Héctor Ramos',
+  'Víctor Serrano',
+  'Francisco Medina',
+  'Manuel Vega',
+  'Antonio León',
+  'Gonzalo Cabrera',
+  'Ricardo Peña',
+  'Álvaro Crespo',
+  'Roberto Herrera',
+  'Enrique Vidal',
+  'Javier Suárez',
+  'Javier Benítez',
 ]
 
 /** Direcciones realistas en Oviedo (texto para UI). */
@@ -228,7 +232,9 @@ export function buildSimulatedUsers(anchorLat, anchorLng) {
 }
 
 function buildOne(index, lat, lng, rng) {
-  const name = FULL_NAMES[index % FULL_NAMES.length]
+  const women = index % 2 === 0
+  const nameList = women ? FEMALE_FULL_NAMES : MALE_FULL_NAMES
+  const name = nameList[index % nameList.length]
   const brand = BRANDS[Math.floor(rng() * BRANDS.length)]
   const model = MODELS[Math.floor(rng() * MODELS.length)]
   const plate = PLATES[index % PLATES.length]
@@ -237,7 +243,6 @@ function buildOne(index, lat, lng, rng) {
   const reviews = generateReviewsForEntityId(id)
   const address = ADDRESSES[index % ADDRESSES.length]
   const portraitIdx = index % 99
-  const women = index % 2 === 0
   const avatarUrl = women
     ? `https://randomuser.me/api/portraits/women/${portraitIdx}.jpg`
     : `https://randomuser.me/api/portraits/men/${portraitIdx}.jpg`

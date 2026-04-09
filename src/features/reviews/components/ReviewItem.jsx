@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { colors } from '../../../design/colors'
 import { renderStars } from '../../../lib/ratingStars'
 
@@ -9,7 +10,7 @@ const fallbackAvatars = [
   'https://i.pravatar.cc/150?img=22',
 ]
 
-const cardOuterStyle = {
+const cardOuterBase = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'stretch',
@@ -22,7 +23,6 @@ const cardOuterStyle = {
   width: '100%',
   boxSizing: 'border-box',
   cursor: 'default',
-  border: '1.5px solid rgba(255,255,255,0.35)',
 }
 
 const reviewRowStyle = {
@@ -83,22 +83,28 @@ const starsStyle = {
 
 const starCharStyle = { fontSize: 14 }
 
-const commentBoxStyle = {
-  fontSize: 13,
-  color: '#ccc',
-  marginTop: 6,
-  lineHeight: 1.4,
-}
-
 export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex = 0 }) {
+  const [expanded, setExpanded] = useState(false)
   const userName = String(review?.name ?? '').trim()
-  const displayName = userName.split(/\s+/)[0] || 'Usuario'
+  const displayName = userName.split(/\s+/)[0] || 'Cliente'
   const comment = String(review?.comment ?? '').trim() || 'Sin comentario.'
   const date = String(review?.date ?? '').trim() || ''
   const rating = Number(review?.rating ?? 0)
   const avatarUrl = String(review?.avatarUrl ?? '').trim()
   const avatarSrc = avatarUrl || fallbackAvatars[avatarIndex % fallbackAvatars.length]
   const starChars = renderStars(rating).split('')
+
+  const commentInteractiveStyle = {
+    fontSize: 13,
+    color: '#ccc',
+    marginTop: 6,
+    lineHeight: 1.4,
+    overflow: expanded ? 'visible' : 'hidden',
+    display: expanded ? 'block' : '-webkit-box',
+    WebkitLineClamp: expanded ? undefined : 2,
+    WebkitBoxOrient: 'vertical',
+    cursor: 'pointer',
+  }
 
   return (
     <article
@@ -108,7 +114,12 @@ export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex =
         animationDelay: `${animationDelayMs}ms`,
       }}
     >
-      <div style={cardOuterStyle}>
+      <div
+        style={{
+          ...cardOuterBase,
+          border: expanded ? '1px solid #8B5CF6' : '1.5px solid rgba(255,255,255,0.35)',
+        }}
+      >
         <div style={reviewRowStyle}>
           <div style={avatarStyle}>
             <img
@@ -131,7 +142,20 @@ export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex =
               </div>
             </div>
 
-            <div style={commentBoxStyle}>{comment}</div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setExpanded((v) => !v)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setExpanded((v) => !v)
+                }
+              }}
+              style={commentInteractiveStyle}
+            >
+              {comment}
+            </div>
           </div>
         </div>
       </div>

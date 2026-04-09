@@ -13,6 +13,8 @@ type Review = {
   date: string
   rating: number
   comment: string
+  /** Opcional: avatar acorde al nombre (mock). */
+  avatarUrl?: string
 }
 
 type RatingBucket = { stars: number; count: number }
@@ -30,6 +32,7 @@ const REVIEWS_TEST_ROW: Review = {
   name: 'Mario',
   rating: 1,
   date: 'hoy',
+  avatarUrl: 'https://randomuser.me/api/portraits/men/51.jpg',
   comment:
     'Muy mala experiencia, tardaron muchísimo en avisarme del sitio.\nCuando llegué ya estaba ocupado.\nEl sistema no es fiable y me hizo perder tiempo.\nNo repetiría ni lo recomendaría.\nDebería mejorar mucho.',
 }
@@ -41,6 +44,7 @@ const MOCK_REVIEWS: Review[] = [
     date: 'hoy',
     rating: 5,
     comment: 'Muy puntual y amable. Todo perfecto.',
+    avatarUrl: 'https://randomuser.me/api/portraits/women/32.jpg',
   },
   {
     id: 'r2',
@@ -48,6 +52,7 @@ const MOCK_REVIEWS: Review[] = [
     date: 'hace 2 días',
     rating: 3,
     comment: 'Buena experiencia, repetiría sin duda.',
+    avatarUrl: 'https://randomuser.me/api/portraits/men/44.jpg',
   },
   {
     id: 'r3',
@@ -55,6 +60,7 @@ const MOCK_REVIEWS: Review[] = [
     date: 'hace 1 semana',
     rating: 4,
     comment: 'Comunicación rápida y excelente trato.',
+    avatarUrl: 'https://randomuser.me/api/portraits/women/65.jpg',
   },
   {
     id: 'r4',
@@ -62,6 +68,7 @@ const MOCK_REVIEWS: Review[] = [
     date: 'hace 2 semanas',
     rating: 3,
     comment: 'Todo bien y muy profesional.',
+    avatarUrl: 'https://randomuser.me/api/portraits/men/22.jpg',
   },
 ]
 
@@ -81,15 +88,26 @@ export function getReviewsForScreen(): Review[] {
   return mergeReviewsWithTestRow(getReviewsMock())
 }
 
-const PROFILE_NAMES = [
+const PROFILE_NAMES_FEMALE = [
   'Ana García',
-  'Pablo Fernández',
   'Marta López',
-  'Luis Ramírez',
   'Elena Sánchez',
-  'Carlos Martínez',
   'Lucía Rodríguez',
+  'Laura Jiménez',
+  'Sofía Herrera',
+  'Carmen Vega',
+  'Isabel Ruiz',
+]
+
+const PROFILE_NAMES_MALE = [
+  'Pablo Fernández',
+  'Luis Ramírez',
+  'Carlos Martínez',
   'Jorge González',
+  'David Pérez',
+  'Iván Moreno',
+  'Sergio López',
+  'Miguel Torres',
 ]
 
 const PROFILE_BRANDS = ['Audi', 'BMW', 'Seat', 'Toyota', 'Peugeot', 'Mercedes', 'Renault', 'Ford']
@@ -113,10 +131,17 @@ const PROFILE_COLORS = ['gris', 'negro', 'blanco', 'azul', 'rojo']
 export function buildMockProfileForUserReviews(userId: string | null) {
   const id = String(userId ?? '').trim() || 'user'
   const h = hashUserId(id)
+  const female = h % 2 === 0
+  const namePool = female ? PROFILE_NAMES_FEMALE : PROFILE_NAMES_MALE
+  const full_name = namePool[h % namePool.length]
+  const portraitIx = h % 99
+  const avatar_url = female
+    ? `https://randomuser.me/api/portraits/women/${portraitIx}.jpg`
+    : `https://randomuser.me/api/portraits/men/${portraitIx}.jpg`
   return {
-    full_name: PROFILE_NAMES[h % PROFILE_NAMES.length],
+    full_name,
     email: '',
-    avatar_url: `https://i.pravatar.cc/150?u=${encodeURIComponent(id)}`,
+    avatar_url,
     brand: PROFILE_BRANDS[h % PROFILE_BRANDS.length],
     model: PROFILE_MODELS[h % PROFILE_MODELS.length],
     plate: PROFILE_PLATES[h % PROFILE_PLATES.length],
@@ -125,7 +150,8 @@ export function buildMockProfileForUserReviews(userId: string | null) {
   }
 }
 
-const REVIEW_AUTHOR_NAMES = ['Laura M.', 'Carlos P.', 'Sofía R.', 'Andrés T.', 'Marta L.', 'Iván R.']
+const REVIEW_AUTHOR_NAMES_F = ['Laura M.', 'Sofía R.', 'Marta L.', 'Elena P.', 'Nuria G.', 'Clara T.']
+const REVIEW_AUTHOR_NAMES_M = ['Carlos P.', 'Andrés T.', 'Iván R.', 'Pablo S.', 'Jorge M.', 'Luis R.']
 
 const REVIEW_DATES = ['hoy', 'hace 2 días', 'hace 1 semana', 'hace 2 semanas', 'hace 3 semanas']
 
@@ -139,13 +165,23 @@ const COMMENT_BY_RATING: Record<number, string> = {
 
 function expandRatingsToReviews(userId: string, ratings: { rating: number }[]): Review[] {
   const h = hashUserId(userId)
-  return ratings.map((r, i) => ({
-    id: `${userId}-rev-${i}`,
-    name: REVIEW_AUTHOR_NAMES[(h + i) % REVIEW_AUTHOR_NAMES.length],
-    date: REVIEW_DATES[(h + i) % REVIEW_DATES.length],
-    rating: r.rating,
-    comment: COMMENT_BY_RATING[r.rating] ?? 'Valoración recibida.',
-  }))
+  return ratings.map((r, i) => {
+    const female = (h + i) % 2 === 0
+    const pool = female ? REVIEW_AUTHOR_NAMES_F : REVIEW_AUTHOR_NAMES_M
+    const name = pool[(h + i) % pool.length]
+    const portraitIx = (h + i) % 99
+    const avatarUrl = female
+      ? `https://randomuser.me/api/portraits/women/${portraitIx}.jpg`
+      : `https://randomuser.me/api/portraits/men/${portraitIx}.jpg`
+    return {
+      id: `${userId}-rev-${i}`,
+      name,
+      date: REVIEW_DATES[(h + i) % REVIEW_DATES.length],
+      rating: r.rating,
+      comment: COMMENT_BY_RATING[r.rating] ?? 'Valoración recibida.',
+      avatarUrl,
+    }
+  })
 }
 
 /** Lista para reseñas de otro usuario — misma forma que `getReviewsForScreen`. */
