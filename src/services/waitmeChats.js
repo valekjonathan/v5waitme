@@ -195,7 +195,8 @@ export function dmThreadToListCard(p) {
   const phoneRaw = String(pr.phone ?? '').trim()
   const peerId = String(p.peerId ?? '')
   const threadId = p.thread.id
-  const reviews = generateReviewsForEntityId(peerId || threadId)
+  /** Solo peer: nunca usar threadId como entidad de reseñas (evita mezcla de IDs). */
+  const reviews = generateReviewsForEntityId(peerId)
   const rating = getAverage(reviews)
   const lastMessage = String(last?.body ?? '')
   const phone = phoneRaw || null

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { colors } from '../../design/colors'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
@@ -36,8 +36,8 @@ export default function ChatsPage() {
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState([])
-  /** Evita mensaje «vacío» antes del primer fetch; el fetch no bloquea el primer paint. */
-  const [threadsReady, setThreadsReady] = useState(false)
+  /** Incrementar para refrescar lista tras RPC (bootstrap / deep link) sin useCallback. */
+  const [listTick, setListTick] = useState(0)
   const [loadError, setLoadError] = useState(null)
   /** Solo ruta sin snapshot de tarjeta (hash/bookmark). */
   const [resolvedBootstrapSummary, setResolvedBootstrapSummary] = useState(null)
@@ -59,33 +59,34 @@ export default function ChatsPage() {
     setThreadId(sid)
   }
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    let cancelled = false
     if (!canLoadChats) {
       setThreads([])
       setLoadError(null)
-      setThreadsReady(true)
       return
     }
     setLoadError(null)
-    const { data, error } = await listDmThreadsForUser(userId)
-    if (error) {
-      setLoadError(error)
-      setThreads([])
-    } else {
-      setThreads(Array.isArray(data) ? data : [])
-      setLoadError(null)
+    void (async () => {
+      const { data, error } = await listDmThreadsForUser(userId)
+      if (cancelled) return
+      if (error) {
+        setLoadError(error)
+        setThreads([])
+      } else {
+        setThreads(Array.isArray(data) ? data : [])
+        setLoadError(null)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
-    setThreadsReady(true)
-  }, [canLoadChats, userId])
+  }, [canLoadChats, userId, listTick])
 
   useEffect(() => {
-    void load()
-  }, [load])
-
-  useEffect(() => {
-    if (!threadsReady || loadError) return
+    if (loadError) return
     nav.syncChatUnreadFromThreads?.(threads)
-  }, [nav, threads, threadsReady, loadError])
+  }, [nav, threads, loadError])
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
@@ -107,12 +108,12 @@ export default function ChatsPage() {
         return
       }
       if (tid) setResolvedDirectThreadId(tid)
-      void load()
+      setListTick((n) => n + 1)
     })()
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, directMatch, hashPeer, load])
+  }, [canLoadChats, directMatch, hashPeer])
 
   /** Hash/pending sin snapshot (p. ej. enlace guardado): relleno tras red. */
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function ChatsPage() {
         threadId: tid,
         /** Siempre peer UUID (reseñas / tarjeta); el hilo va en threadId. */
         id: peer,
+        peer_user_id: peer,
         name: displayName,
         user_name: displayName,
         snapshot_user_name: displayName,
@@ -169,12 +171,12 @@ export default function ChatsPage() {
       }
       setResolvedBootstrapSummary(summary)
       setThreadId(String(tid))
-      void load()
+      setListTick((n) => n + 1)
     })()
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, load, userId, nav.pendingDmVisual])
+  }, [canLoadChats, userId, nav.pendingDmVisual])
 
   const q = listFilter.trim().toLowerCase()
   const filteredThreads = !q
@@ -199,6 +201,7 @@ export default function ChatsPage() {
     directThreadSummary = {
       threadId: tid ?? WAITME_PENDING_THREAD_ID,
       id: hashPeer,
+      peer_user_id: hashPeer,
       name: snap,
       user_name: snap,
       snapshot_user_name: snap,
@@ -298,7 +301,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canLoadChats && loadError && threadsReady && threads.length === 0 ? (
+          {canLoadChats && loadError && threads.length === 0 ? (
             <div
               style={{
                 padding: 16,
@@ -314,7 +317,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {threadsReady && !loadError && filteredThreads.length === 0 ? (
+          {!loadError && filteredThreads.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -347,9 +350,6 @@ export default function ChatsPage() {
           {!loadError && filteredThreads.length > 0
             ? filteredThreads.map((t) => {
                 const threadIdStr = String(t.threadId ?? '').trim()
-                const peerForReviews = String(
-                  t.peer_user_id ?? t.peerUserId ?? t.id ?? ''
-                ).trim()
                 return (
                   <div
                     key={threadIdStr}
@@ -379,7 +379,6 @@ export default function ChatsPage() {
                     <UserAlertCard
                       user={t}
                       isChat
-                      chatReviewUserId={peerForReviews}
                       lastMessage={t.lastMessage}
                       time={t.time}
                       isEmpty={false}

@@ -172,7 +172,7 @@ function UserAlertAvatarBlock({ row, onClick }) {
   useEffect(() => {
     setBrokenPhoto(false)
     setPravatarIx(seed)
-  }, [seed, photo, row?.id])
+  }, [seed, photo, row?.peer_user_id, row?.id])
 
   const useUploaded = Boolean(photo) && !brokenPhoto
   const src = useUploaded ? photo : `https://i.pravatar.cc/150?img=${pravatarIx}`
@@ -239,8 +239,6 @@ function UserAlertCard({
   hideParkingActionsRow = false,
   /** Variante lista Chats: UI distinta sin romper parking/alertas. */
   isChat = false,
-  /** Lista Chats: UUID del peer (mismo valor que `waitmeChats` `peer_user_id`); fuerza reseñas correctas. */
-  chatReviewUserId = '',
   /** Hora mostrada arriba a la derecha (lista Chats). */
   time: chatTimeProp = '',
 }) {
@@ -361,14 +359,8 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const explicitChatPeer = String(chatReviewUserId ?? '').trim()
-  /** Lista Chats: reseñas = peer explícito del padre o campos peer_* en `user` (nunca threadId). */
-  const uid = String(
-    isChat
-      ? explicitChatPeer ||
-          (user?.peer_user_id ?? user?.peerUserId ?? user?.user_id ?? user?.id ?? '')
-      : (user?.id ?? '')
-  ).trim()
+  /** Lista Chats: mapper DM garantiza `user.id === peer_user_id` (peer); el hilo va en `user.threadId`. */
+  const uid = String(user?.id ?? '').trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()
