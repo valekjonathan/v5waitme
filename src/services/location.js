@@ -1,13 +1,12 @@
 import { isDevSafari } from '../lib/isDevSafari.js'
 
 /**
- * GPS en producción (mapa, overlays):
- *   startLocationTracking() → watchPosition → persistAndNotifyLocation() → callbacks de subscribeToLocation().
+ * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni filtros por distancia.
+ * `startLocationTracking()` → cada success del navegador → `notify()` → callbacks de `subscribeToLocation`.
  *
- * En dev Safari (`isDevSafari`): coordenadas fijas (Oviedo), sin geolocalización del navegador.
+ * En dev Safari (`isDevSafari`): coordenadas fijas (Oviedo), sin geolocalización real.
  *
- * createPositionGuard() no forma parte de ese pipeline. Solo tests u opciones futuras explícitas:
- * enlazarlo a persistAndNotifyLocation cambiaría qué puntos ve el mapa (decisión de producto).
+ * `createPositionGuard()` no interviene en este pipeline (tests u observabilidad opcional).
  */
 
 /** Debe coincidir con el centro por defecto del mapa (`mapbox.js` OVIEDO_*). */
@@ -24,8 +23,10 @@ function devMockGeolocationPosition() {
     timestamp: Date.now(),
   }
 }
+
+/** Opciones exigidas por producto: máxima frescura y alta precisión cuando el SO lo permite. */
 const GEO_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-const MAX_REASONABLE_ACCURACY_M = 1500
+
 const MAX_PLAUSIBLE_SPEED_MPS = 75
 const MIN_IMPOSSIBLE_JUMP_M = 120
 
@@ -33,6 +34,21 @@ function isValidGps(lat, lng) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return false
   return true
+}
+
+/** Solo coordenadas válidas; sin umbral de accuracy ni deduplicación. */
+function payloadFromBrowserPosition(pos) {
+  const lat = pos?.coords?.latitude
+  const lng = pos?.coords?.longitude
+  if (!isValidGps(lat, lng)) return null
+  const acc = pos?.coords?.accuracy
+  const ts = Number.isFinite(pos?.timestamp) ? pos.timestamp : Date.now()
+  return {
+    lat,
+    lng,
+    ...(typeof acc === 'number' && Number.isFinite(acc) ? { accuracy: acc } : {}),
+    ts,
+  }
 }
 
 export function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -53,18 +69,6 @@ function clamp(v, min, max) {
 function normalizeGeoError(err) {
   const type = err?.code === 1 ? 'denied' : err?.code === 3 ? 'timeout' : 'error'
   return { type, code: err?.code ?? 0, raw: err }
-}
-
-function validateRawPosition(pos) {
-  const lat = pos?.coords?.latitude
-  const lng = pos?.coords?.longitude
-  if (!isValidGps(lat, lng)) return null
-
-  const acc = typeof pos?.coords?.accuracy === 'number' ? pos.coords.accuracy : 100
-  if (!Number.isFinite(acc) || acc < 0 || acc > MAX_REASONABLE_ACCURACY_M) return null
-
-  const ts = Number.isFinite(pos?.timestamp) ? pos.timestamp : Date.now()
-  return { lat, lng, accuracy: acc, ts }
 }
 
 function normalizeEvent(type, payload = {}) {
@@ -106,8 +110,8 @@ function emit(emitEvent, persistEvent, type, payload) {
 
 export function getCurrentPosition(onSuccess, onError) {
   if (isDevSafari()) {
-    const v = validateRawPosition(devMockGeolocationPosition())
-    if (v) queueMicrotask(() => onSuccess?.(v))
+    const p = payloadFromBrowserPosition(devMockGeolocationPosition())
+    if (p) queueMicrotask(() => onSuccess?.(p))
     else onError?.({ type: 'error', code: 0, raw: null })
     return
   }
@@ -118,15 +122,15 @@ export function getCurrentPosition(onSuccess, onError) {
   }
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => onSuccess?.(validateRawPosition(pos)),
+    (pos) => onSuccess?.(payloadFromBrowserPosition(pos)),
     (err) => onError?.(normalizeGeoError(err)),
     GEO_OPTS
   )
 }
 
-/** Última posición en memoria; también se hidrata desde `localStorage` al cargar el módulo. */
 let currentLocation = null
-const locationSubscribers = new Set()
+/** @type {Array<(loc: { latitude: number, longitude: number }) => void>} */
+let subscribers = []
 let locationTrackingStarted = false
 
 try {
@@ -150,9 +154,15 @@ if (typeof window !== 'undefined' && isDevSafari()) {
   currentLocation = { latitude: DEV_BROWSER_MOCK_LAT, longitude: DEV_BROWSER_MOCK_LNG }
 }
 
-function persistAndNotifyLocation(lat, lng) {
-  if (!isValidGps(lat, lng)) return
-  currentLocation = { latitude: lat, longitude: lng }
+function notify(location) {
+  if (
+    !location ||
+    !Number.isFinite(location.latitude) ||
+    !Number.isFinite(location.longitude)
+  ) {
+    return
+  }
+  currentLocation = location
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('last_location', JSON.stringify(currentLocation))
@@ -160,41 +170,41 @@ function persistAndNotifyLocation(lat, lng) {
   } catch {
     /* */
   }
-  for (const cb of locationSubscribers) {
+  subscribers.forEach((cb) => {
     try {
       cb(currentLocation)
     } catch {
       /* */
     }
-  }
+  })
 }
 
 /**
  * Un único `watchPosition` global para toda la app. Idempotente.
- * Un `getCurrentPosition` inicial acelera la primera posición si no hay caché.
+ * `getCurrentPosition` inicial solo acelera la primera pintura si no hay caché.
  */
 export function startLocationTracking() {
   if (locationTrackingStarted) return
   locationTrackingStarted = true
 
   if (isDevSafari()) {
-    persistAndNotifyLocation(DEV_BROWSER_MOCK_LAT, DEV_BROWSER_MOCK_LNG)
+    notify({ latitude: DEV_BROWSER_MOCK_LAT, longitude: DEV_BROWSER_MOCK_LNG })
     return
   }
 
   if (typeof navigator === 'undefined' || !navigator.geolocation) return
 
   getCurrentPosition(
-    (validated) => {
-      if (validated) persistAndNotifyLocation(validated.lat, validated.lng)
+    (p) => {
+      if (p) notify({ latitude: p.lat, longitude: p.lng })
     },
     () => {}
   )
 
   navigator.geolocation.watchPosition(
     (pos) => {
-      const v = validateRawPosition(pos)
-      if (v) persistAndNotifyLocation(v.lat, v.lng)
+      const p = payloadFromBrowserPosition(pos)
+      if (p) notify({ latitude: p.lat, longitude: p.lng })
     },
     () => {
       /* errores puntuales: el stream sigue vivo */
@@ -203,24 +213,23 @@ export function startLocationTracking() {
   )
 }
 
-export function subscribeToLocation(callback) {
-  if (typeof callback !== 'function') return () => {}
+export function subscribeToLocation(cb) {
+  if (typeof cb !== 'function') return () => {}
 
-  locationSubscribers.add(callback)
+  subscribers.push(cb)
   if (currentLocation) {
     try {
-      callback(currentLocation)
+      cb(currentLocation)
     } catch {
       /* */
     }
   }
 
   return () => {
-    locationSubscribers.delete(callback)
+    subscribers = subscribers.filter((x) => x !== cb)
   }
 }
 
-/** Última posición en caché (misma lectura síncrona para ambos nombres de API). */
 function getCurrentLocation() {
   return currentLocation
 }
