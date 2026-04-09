@@ -187,7 +187,8 @@ export function AuthProvider({ children }) {
   )
 
   useEffect(() => {
-    startLocationTracking()
+    const stop = startLocationTracking()
+    return typeof stop === 'function' ? stop : undefined
   }, [])
 
   useEffect(() => {

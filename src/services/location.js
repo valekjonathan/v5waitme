@@ -189,30 +189,38 @@ function notify(location) {
 /**
  * Un único `watchPosition` global para toda la app. Idempotente.
  * `getCurrentPosition` inicial solo acelera la primera pintura si no hay caché.
+ *
+ * Simulación de deriva GPS (solo dev, opcional): `VITE_SIMULATE_GPS=1` en `.env.local`.
+ * @returns {void | (() => void)} cleanup solo si se activó el simulador (para `clearInterval`).
  */
 export function startLocationTracking() {
   if (locationTrackingStarted) return
   locationTrackingStarted = true
 
-  /** Movimiento GPS falso en dev (Mac/navegador) para validar el mapa; no en tests. */
-  if (
+  const simulateGpsEnabled =
     import.meta.env.DEV &&
-    import.meta.env.MODE !== 'test' &&
+    import.meta.env.VITE_SIMULATE_GPS === '1' &&
     typeof window !== 'undefined'
-  ) {
+
+  if (simulateGpsEnabled) {
     let lat = DEV_BROWSER_MOCK_LAT
     let lng = DEV_BROWSER_MOCK_LNG
-    window.setInterval(() => {
-      lat += 0.00005
-      lng += 0.00005
+    const simulate = () => {
+      lat += 0.00002
+      lng += 0.00002
       notify({
         latitude: lat,
         longitude: lng,
         accuracy: 5,
         timestamp: Date.now(),
       })
-    }, 1000)
-    return
+    }
+    simulate()
+    const interval = window.setInterval(simulate, 1000)
+    return () => {
+      window.clearInterval(interval)
+      locationTrackingStarted = false
+    }
   }
 
   if (isDevSafari()) {
