@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
+import { suggestionDisplayText } from '../../../services/streetSearchService.js'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
@@ -294,7 +294,7 @@ export default function CreateAlertCard({
                     onClick={() => handlePickSuggestion(f)}
                     onKeyDown={(e) => e.key === 'Enter' && handlePickSuggestion(f)}
                   >
-                    {formatSuggestionLabel(f)}
+                    {suggestionDisplayText(f)}
                   </li>
                 ))}
               </ul>

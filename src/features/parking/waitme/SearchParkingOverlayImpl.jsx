@@ -24,7 +24,6 @@ import {
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import { LAYOUT, MAP_SLOT } from '../../../ui/layout/layout'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import { isRealSupabaseAuthUid } from '../../../services/authUid.js'
 
 function countFiltered(users, filters, userLoc) {
   if (!users?.length) return 0
@@ -286,8 +285,8 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
                   userLocation={userLocation}
                   collapsed={false}
                   onChat={(a) => {
-                    const p = a?.peer_user_id
-                    if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                    const p = a?.peer_user_id ?? a?.user_id
+                    if (typeof p === 'string' && p) openChatsWithPeer(p)
                   }}
                 />
               ) : (

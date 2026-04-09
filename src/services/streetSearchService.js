@@ -167,31 +167,14 @@ export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
   return feature || null
 }
 
-export function formatStreet(r) {
-  let name = r?.name != null ? String(r.name) : ''
-  const lower = name.toLowerCase()
-
-  if (lower.includes('calle')) return name.replace(/calle/i, 'C/:')
-  if (lower.includes('avenida')) return name.replace(/avenida/i, 'Av.')
-  if (lower.includes('paseo')) return name.replace(/paseo/i, 'Pso.')
-  if (lower.includes('plaza')) return name.replace(/plaza/i, 'Plz.')
-
-  return name
-}
-
-export function formatSuggestionLabel(suggestion) {
+/**
+ * Texto tal cual Mapbox (sin abreviar ni transformar).
+ */
+export function suggestionDisplayText(suggestion) {
   if (!suggestion || typeof suggestion !== 'object') return ''
   const fa = typeof suggestion.full_address === 'string' ? suggestion.full_address.trim() : ''
-  if (fa) {
-    const n = typeof suggestion.name === 'string' ? suggestion.name.trim() : ''
-    if (n && fa.startsWith(n)) {
-      return formatStreet(suggestion) + fa.slice(n.length)
-    }
-    return fa
-  }
-  const street = formatStreet(suggestion)
-  const pf = typeof suggestion.place_formatted === 'string' ? suggestion.place_formatted.trim() : ''
-  return pf ? `${street}, ${pf}` : street
+  if (fa) return fa
+  return suggestion.name != null ? String(suggestion.name).trim() : ''
 }
 
 /**
@@ -203,8 +186,11 @@ export function selectionPayload(retrievedFeature) {
   const coords = props?.coordinates
   const lat = coords?.latitude
   const lng = coords?.longitude
+  const fa = typeof props?.full_address === 'string' ? props.full_address.trim() : ''
+  const name = props?.name != null ? String(props.name).trim() : ''
+  const address = fa || name || ''
   return {
-    address: formatStreet({ name: props?.name }),
+    address,
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
   }

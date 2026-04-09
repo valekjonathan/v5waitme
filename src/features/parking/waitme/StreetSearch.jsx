@@ -5,7 +5,7 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
+import { suggestionDisplayText } from '../../../services/streetSearchService.js'
 import { OVIEDO_LAT, OVIEDO_LNG } from '../../../features/map/constants/mapbox.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
@@ -197,7 +197,7 @@ export default function StreetSearch({
             onClick={() => handlePick(f)}
             onKeyDown={(e) => e.key === 'Enter' && handlePick(f)}
           >
-            {formatSuggestionLabel(f)}
+            {suggestionDisplayText(f)}
           </li>
         ))}
       </ul>

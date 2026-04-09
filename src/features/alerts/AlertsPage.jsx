@@ -176,8 +176,8 @@ export default function AlertsPage() {
                     hideBuy={false}
                     onBuyAlert={() => {}}
                     onChat={(alert) => {
-                      const p = alert?.peer_user_id
-                      if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                      const p = alert?.peer_user_id ?? alert?.user_id
+                      if (typeof p === 'string' && p) openChatsWithPeer(p)
                     }}
                     onCall={() => {}}
                   />
@@ -202,8 +202,8 @@ export default function AlertsPage() {
                     hideBuy
                     onBuyAlert={() => {}}
                     onChat={(alert) => {
-                      const p = alert?.peer_user_id
-                      if (typeof p === 'string' && isRealSupabaseAuthUid(p)) openChatsWithPeer(p)
+                      const p = alert?.peer_user_id ?? alert?.user_id
+                      if (typeof p === 'string' && p) openChatsWithPeer(p)
                     }}
                     onCall={() => {}}
                   />

@@ -162,7 +162,9 @@ export function AppScreenProvider({ children }) {
     (peerUserId) => {
       clearUserReviewsNav()
       const id = String(peerUserId ?? '')
-      if (isRealSupabaseAuthUid(id)) stashPendingDmPeerUserId(id)
+      if (!id) return
+      const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+      if (isRealSupabaseAuthUid(id) || dev) stashPendingDmPeerUserId(id)
       dispatch({ type: 'openChats' })
     },
     [clearUserReviewsNav]
