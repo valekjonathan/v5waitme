@@ -40,27 +40,6 @@ export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY
   }
 }
 
-let _heroJumpCoalesce = null
-let _heroJumpCoalesceScheduled = false
-
-/**
- * Agrupa varias notificaciones GPS en el mismo turno de tareas en un solo `jumpTo` (misma instancia de mapa).
- */
-export function scheduleJumpMapLngLatUnderHeroPinTip(map, lng, lat) {
-  _heroJumpCoalesce = { map, lng, lat }
-  if (_heroJumpCoalesceScheduled) return
-  _heroJumpCoalesceScheduled = true
-  queueMicrotask(() => {
-    _heroJumpCoalesceScheduled = false
-    const job = _heroJumpCoalesce
-    _heroJumpCoalesce = null
-    if (!job) return
-    const live = getGlobalMapInstance()
-    if (live !== job.map) return
-    jumpMapLngLatUnderHeroPinTip(job.map, job.lng, job.lat)
-  })
-}
-
 /** Home/Login: pin `[data-waitme-pin-tip]` fijo; solo mueve cámara (`jumpTo` con centro calculado). */
 export function jumpMapLngLatUnderHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return

@@ -33,7 +33,6 @@ import {
   isWaitmeParkingLayoutReady,
   jumpMapLngLatUnderHeroPinTip,
   jumpMapToGpsSearch,
-  scheduleJumpMapLngLatUnderHeroPinTip,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 import {
@@ -518,7 +517,7 @@ export default function Map({
           !parkingBandPinAdjustRef.current
 
         if (isHeroHomeLogin) {
-          scheduleJumpMapLngLatUnderHeroPinTip(map, loc.longitude, loc.latitude)
+          jumpMapLngLatUnderHeroPinTip(map, loc.longitude, loc.latitude)
           return
         }
 
