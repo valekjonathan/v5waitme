@@ -151,25 +151,49 @@ function centerMapOnUserImmediate(map, loc) {
   }
 }
 
+const HOME_LOGIN_PIN_ALIGN_MAX_RAF = 12
+const HOME_LOGIN_PIN_ALIGN_EPS_PX = 0.08
+
 /**
- * Home/Login: mueve la cámara una sola vez para que `lng/lat` coincida con la punta del pin del hero
- * (`[data-waitme-pin-tip]`), sin desplazar el pin en el DOM.
+ * Home/Login: desplaza la cámara para que `lng/lat` quede bajo la punta visible del hero
+ * (`[data-waitme-pin-tip]` → `rect.bottom` en coords del contenedor real del mapa).
+ * Devuelve false si el layout aún no es fiable (reintentar en el siguiente rAF).
  */
 function alignHomeLoginMapOnceToHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return false
   if (!map?.project || !map?.unproject || !map.isStyleLoaded?.()) return false
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return false
+  const mapEl = map.getContainer()
+  if (!(mapEl instanceof HTMLElement)) return false
   const pin = document.querySelector('[data-waitme-pin-tip]')
-  if (!pin) return false
-  const mapRect = map.getContainer().getBoundingClientRect()
+  if (!(pin instanceof HTMLElement)) return false
+  const mapRect = mapEl.getBoundingClientRect()
+  if (mapRect.width < 2 || mapRect.height < 2) {
+    try {
+      map.resize()
+    } catch {
+      /* */
+    }
+    return false
+  }
   const pinRect = pin.getBoundingClientRect()
+  if (pinRect.width < 0.5 || pinRect.height < 0.5) return false
   const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
   const targetY = pinRect.bottom - mapRect.top
-  const point = map.project([lng, lat])
-  const centerPx = map.project(map.getCenter())
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return false
+  let point
+  let centerPx
+  try {
+    point = map.project([lng, lat])
+    centerPx = map.project(map.getCenter())
+  } catch {
+    return false
+  }
   const dx = targetX - point.x
   const dy = targetY - point.y
-  if (Math.abs(dx) <= 0.25 && Math.abs(dy) <= 0.25) return true
+  if (Math.abs(dx) <= HOME_LOGIN_PIN_ALIGN_EPS_PX && Math.abs(dy) <= HOME_LOGIN_PIN_ALIGN_EPS_PX) {
+    return true
+  }
   const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
   let newCenter
   try {
@@ -214,8 +238,14 @@ export default function Map({
   readOnlyRef.current = readOnly
   const hideViewportCenterPinRef = useRef(hideViewportCenterPin)
   hideViewportCenterPinRef.current = hideViewportCenterPin
-  /** Home/Login: un solo `easeTo` para alinear GPS bajo la punta del pin del hero. */
-  const homeLoginHeroPinTipEaseDoneRef = useRef(false)
+  /**
+   * Home/Login: 0 = sin alinear, 1 = primera alineación OK, 2 = cierre (2.º pase viewport o bloqueo).
+   * No re-centrados extra tras 2.
+   */
+  const homeLoginHeroPinAlignPassesRef = useRef(0)
+  const homeLoginAlignChainActiveRef = useRef(false)
+  /** Un solo segundo pase tras viewport cuando ya hubo pass 1. */
+  const homeLoginViewportSecondAlignConsumedRef = useRef(false)
   const wasHomeLoginMapSessionRef = useRef(false)
   /** Evita condición de carrera: `setMapFollowUserGps` corre tras el primer paint. */
   const followUserGpsRef = useRef(followUserGps)
@@ -268,9 +298,60 @@ export default function Map({
   useEffect(() => {
     const isHl = readOnly && hideViewportCenterPin && !parkingBandPinAdjust
     if (isHl && !wasHomeLoginMapSessionRef.current) {
-      homeLoginHeroPinTipEaseDoneRef.current = false
+      homeLoginHeroPinAlignPassesRef.current = 0
+      homeLoginViewportSecondAlignConsumedRef.current = false
+      homeLoginAlignChainActiveRef.current = false
     }
     wasHomeLoginMapSessionRef.current = isHl
+  }, [readOnly, hideViewportCenterPin, parkingBandPinAdjust])
+
+  /** Segundo ajuste controlado: un disparo tras cambio de viewport si ya hubo alineación 1. */
+  useEffect(() => {
+    if (import.meta.env?.MODE === 'test') return undefined
+    const isHl = readOnly && hideViewportCenterPin && !parkingBandPinAdjust
+    if (!isHl) return undefined
+    return subscribeWaitmeViewportEvents(() => {
+      if (!readOnlyRef.current || !hideViewportCenterPinRef.current || parkingBandPinAdjustRef.current) {
+        return
+      }
+      if (homeLoginHeroPinAlignPassesRef.current !== 1) return
+      if (homeLoginViewportSecondAlignConsumedRef.current) return
+      if (homeLoginAlignChainActiveRef.current) return
+      const map = getGlobalMapInstance()
+      const fast = getCurrentLocationFast()
+      if (!map?.isStyleLoaded?.() || !fast) return
+      if (!Number.isFinite(fast.longitude) || !Number.isFinite(fast.latitude)) return
+      homeLoginViewportSecondAlignConsumedRef.current = true
+      homeLoginAlignChainActiveRef.current = true
+      let attempt = 0
+      const step = () => {
+        if (!readOnlyRef.current || !hideViewportCenterPinRef.current || parkingBandPinAdjustRef.current) {
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        const m = getGlobalMapInstance()
+        if (!m || m !== map) {
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        attempt++
+        const f = getCurrentLocationFast()
+        const useLng = Number.isFinite(f?.longitude) ? f.longitude : fast.longitude
+        const useLat = Number.isFinite(f?.latitude) ? f.latitude : fast.latitude
+        if (alignHomeLoginMapOnceToHeroPinTip(m, useLng, useLat)) {
+          homeLoginHeroPinAlignPassesRef.current = 2
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        if (attempt >= HOME_LOGIN_PIN_ALIGN_MAX_RAF) {
+          homeLoginHeroPinAlignPassesRef.current = 2
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        requestAnimationFrame(step)
+      }
+      requestAnimationFrame(step)
+    })
   }, [readOnly, hideViewportCenterPin, parkingBandPinAdjust])
 
   const projectSearchPinFromGps = useCallback(() => {
@@ -566,15 +647,37 @@ export default function Map({
     const tryScheduleHomeLoginHeroPinTipAlign = (m, lng, lat) => {
       if (import.meta.env?.MODE === 'test') return
       if (!readOnlyRef.current || !hideViewportCenterPinRef.current || parkingBandPinAdjustRef.current) return
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (homeLoginHeroPinTipEaseDoneRef.current) return
-          if (!m?.isStyleLoaded?.() || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-          if (alignHomeLoginMapOnceToHeroPinTip(m, lng, lat)) {
-            homeLoginHeroPinTipEaseDoneRef.current = true
-          }
-        })
-      })
+      if (homeLoginHeroPinAlignPassesRef.current >= 1) return
+      if (homeLoginAlignChainActiveRef.current) return
+      if (!m?.isStyleLoaded?.() || !Number.isFinite(lng) || !Number.isFinite(lat)) return
+      homeLoginAlignChainActiveRef.current = true
+      let attempt = 0
+      const step = () => {
+        if (!readOnlyRef.current || !hideViewportCenterPinRef.current || parkingBandPinAdjustRef.current) {
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        const map = getGlobalMapInstance()
+        if (!map || map !== m) {
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        attempt++
+        const fast = getCurrentLocationFast()
+        const useLng = Number.isFinite(fast?.longitude) ? fast.longitude : lng
+        const useLat = Number.isFinite(fast?.latitude) ? fast.latitude : lat
+        if (alignHomeLoginMapOnceToHeroPinTip(map, useLng, useLat)) {
+          homeLoginHeroPinAlignPassesRef.current = 1
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        if (attempt >= HOME_LOGIN_PIN_ALIGN_MAX_RAF) {
+          homeLoginAlignChainActiveRef.current = false
+          return
+        }
+        requestAnimationFrame(step)
+      }
+      requestAnimationFrame(step)
     }
 
     const existingMap = getGlobalMapInstance()
