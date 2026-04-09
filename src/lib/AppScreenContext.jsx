@@ -44,7 +44,7 @@ export function AppScreenProvider({ children }) {
     const next = /** @type {Record<string, number>} */ ({})
     for (const t of Array.isArray(list) ? list : []) {
       if (!t || typeof t !== 'object') continue
-      const threadKey = String(t.threadId ?? t.id ?? '')
+      const threadKey = String(t.threadId ?? '')
       if (!threadKey) continue
       next[threadKey] = Math.max(0, Number(t.unreadCount ?? 0))
     }

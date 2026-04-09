@@ -36,7 +36,8 @@ export default function ChatsPage() {
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState([])
-  const [loading, setLoading] = useState(true)
+  /** Evita mensaje «vacío» antes del primer fetch; el fetch no bloquea el primer paint. */
+  const [threadsReady, setThreadsReady] = useState(false)
   const [loadError, setLoadError] = useState(null)
   /** Solo ruta sin snapshot de tarjeta (hash/bookmark). */
   const [resolvedBootstrapSummary, setResolvedBootstrapSummary] = useState(null)
@@ -65,19 +66,19 @@ export default function ChatsPage() {
     if (!canLoadChats) {
       setThreads([])
       setLoadError(null)
-      setLoading(false)
+      setThreadsReady(true)
       return
     }
-    setLoading(true)
     setLoadError(null)
     const { data, error } = await listDmThreadsForUser(userId)
     if (error) {
       setLoadError(error)
+      setThreads([])
     } else {
       setThreads(Array.isArray(data) ? data : [])
       setLoadError(null)
     }
-    setLoading(false)
+    setThreadsReady(true)
   }, [canLoadChats, userId])
 
   useEffect(() => {
@@ -85,9 +86,9 @@ export default function ChatsPage() {
   }, [load])
 
   useEffect(() => {
-    if (loading || loadError) return
+    if (!threadsReady || loadError) return
     nav.syncChatUnreadFromThreads?.(threads)
-  }, [nav, threads, loading, loadError])
+  }, [nav, threads, threadsReady, loadError])
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
@@ -151,7 +152,8 @@ export default function ChatsPage() {
       const bootstrapReviews = generateReviewsForEntityId(peer)
       const summary = {
         threadId: tid,
-        id: tid,
+        /** Siempre peer UUID (reseñas / tarjeta); el hilo va en threadId. */
+        id: peer,
         name: displayName,
         user_name: displayName,
         snapshot_user_name: displayName,
@@ -189,11 +191,7 @@ export default function ChatsPage() {
       threads.find((t) => t.threadId === threadId) ??
       null
     if (fromList) return fromList
-    if (
-      threadId &&
-      resolvedBootstrapSummary &&
-      resolvedBootstrapSummary.id === threadId
-    ) {
+    if (threadId && resolvedBootstrapSummary && resolvedBootstrapSummary.threadId === threadId) {
       return resolvedBootstrapSummary
     }
     return null
@@ -206,7 +204,7 @@ export default function ChatsPage() {
     const directReviews = generateReviewsForEntityId(hashPeer)
     return {
       threadId: tid ?? WAITME_PENDING_THREAD_ID,
-      id: tid ?? WAITME_PENDING_THREAD_ID,
+      id: hashPeer,
       name: snap,
       user_name: snap,
       snapshot_user_name: snap,
@@ -238,7 +236,7 @@ export default function ChatsPage() {
 
   if (showDirectThread || showListThread) {
     const summary = showDirectThread ? directThreadSummary : activeSummary
-    const tid = String(summary?.threadId ?? summary?.id ?? '')
+    const tid = String(summary?.threadId ?? '')
     const localFb = isDmDevFallbackThread(tid)
     return (
       <ChatThreadView
@@ -306,23 +304,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canLoadChats && loading && threads.length === 0 ? (
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                border: `1px dashed ${colors.primaryBorderMuted}`,
-                color: colors.textMuted,
-                fontSize: 14,
-                fontWeight: 600,
-                textAlign: 'center',
-              }}
-            >
-              Cargando…
-            </div>
-          ) : null}
-
-          {canLoadChats && loadError && !loading && threads.length === 0 ? (
+          {canLoadChats && loadError && threadsReady && threads.length === 0 ? (
             <div
               style={{
                 padding: 16,
@@ -338,7 +320,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {!loading && !loadError && filteredThreads.length === 0 ? (
+          {threadsReady && !loadError && filteredThreads.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -372,7 +354,7 @@ export default function ChatsPage() {
             ? filteredThreads.map((t) => {
                 return (
                   <div
-                    key={t.id}
+                    key={String(t.threadId)}
                     role="button"
                     tabIndex={0}
                     onClick={() => openThread(t.threadId)}

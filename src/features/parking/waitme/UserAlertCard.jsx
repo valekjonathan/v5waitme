@@ -354,8 +354,12 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** Siempre id de usuario real (nunca alerta/hilo). */
-  const uid = String(user?.id ?? '').trim()
+  /** En lista Chats, `id` debe ser peer; priorizar peer_* por si el objeto mezcla campos. */
+  const uid = String(
+    isChat
+      ? (user?.peer_user_id ?? user?.peerUserId ?? user?.user_id ?? user?.id ?? '')
+      : (user?.id ?? '')
+  ).trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()

@@ -54,7 +54,7 @@ export function getWaitmeChatsBackendState() {
   return { backendRealOk: _chatsBackendRealOk, devFallbackActive: _chatsDevFallbackActive }
 }
 
-/** Peer desconocido → tarjeta de lista (id = threadId). Clave = peer UUID. */
+/** Peer desconocido → tarjeta dinámica: `threadId` = hilo; `id` = peer UUID. */
 const fallbackDynamicListCards = new Map()
 
 /** @type {Map<string, { id: string, from: 'me' | 'them', text: string, at: string }[]>} */
