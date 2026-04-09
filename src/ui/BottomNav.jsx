@@ -121,7 +121,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                 style={{
                   position: 'absolute',
                   top: 6,
-                  right: 1,
+                  right: -9,
                   width: 18,
                   height: 18,
                   boxSizing: 'border-box',

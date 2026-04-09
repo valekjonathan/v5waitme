@@ -5,7 +5,12 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
-import { IconChevronLeft, IconPhone } from '../parking/waitme/icons.jsx'
+import {
+  IconChevronLeft,
+  IconNavigation,
+  IconPhone,
+  WAITME_GLASS_MAP_CONTROL_36,
+} from '../parking/waitme/icons.jsx'
 import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -30,18 +35,10 @@ const bubbleShared = {
   borderRadius: 16,
 }
 
-const headerActionBtnStyle = {
+const headerGlassBtnStyle = {
+  ...WAITME_GLASS_MAP_CONTROL_36,
   width: 36,
   height: 36,
-  borderRadius: 12,
-  border: 'none',
-  background: 'transparent',
-  color: colors.textPrimary,
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 0,
 }
 
 const inputActionBtnStyle = {
@@ -92,6 +89,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const threadId = String(s.id ?? '')
   const title = String(s.name ?? 'Chat')
   const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title)}`
+  const myAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(userId || 'me')}`
 
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
@@ -100,6 +98,8 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const [sending, setSending] = useState(false)
   const endRef = useRef(null)
   const scrollRef = useRef(null)
+
+  const separatorLabel = 'Hoy'
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -208,6 +208,16 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     setSending(false)
   }, [draft, localFallback, sending, threadId, userId])
 
+  const isReadSimulated = useCallback(
+    (idx) => {
+      for (let i = idx + 1; i < messages.length; i++) {
+        if (messages[i]?.from === 'them') return true
+      }
+      return false
+    },
+    [messages]
+  )
+
   return (
     <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
       <div
@@ -269,9 +279,17 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               type="button"
               aria-label="Llamar"
               onClick={() => {}}
-              style={headerActionBtnStyle}
+              style={headerGlassBtnStyle}
             >
               <IconPhone size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Navegación"
+              onClick={() => {}}
+              style={headerGlassBtnStyle}
+            >
+              <IconNavigation size={18} />
             </button>
           </div>
         </header>
@@ -316,8 +334,24 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               boxSizing: 'border-box',
             }}
           >
-            {messages.map((m) => {
+            {messages.length > 0 ? (
+              <div
+                aria-hidden
+                style={{
+                  textAlign: 'center',
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.4)',
+                  margin: '12px 0',
+                  flexShrink: 0,
+                }}
+              >
+                {separatorLabel}
+              </div>
+            ) : null}
+
+            {messages.map((m, idx) => {
               const mine = m.from === 'me'
+              const read = mine ? isReadSimulated(idx) : false
               return (
                 <div
                   key={m.id}
@@ -351,23 +385,56 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                       backgroundColor: mine ? colors.primaryStrong : colors.surfaceMuted,
                       color: colors.textPrimary,
                       border: mine ? 'none' : `1px solid ${colors.border}`,
+                      position: 'relative',
+                      paddingBottom: mine ? 22 : undefined,
                     }}
                   >
                     {m.text}
                     <div
                       style={{
+                        position: mine ? 'absolute' : 'static',
+                        right: mine ? 10 : undefined,
+                        bottom: mine ? 6 : undefined,
                         fontSize: 11,
                         opacity: 0.75,
-                        marginTop: 4,
+                        marginTop: mine ? 0 : 4,
                         display: 'flex',
                         justifyContent: mine ? 'flex-end' : 'flex-start',
                         gap: 4,
+                        alignItems: 'center',
                       }}
                     >
                       <span>{m.at}</span>
-                      {mine ? <span style={{ opacity: 0.75, color: '#d1d5db' }}>✔</span> : null}
+                      {mine ? (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: read ? '#22c55e' : 'rgba(255,255,255,0.5)',
+                            lineHeight: 1,
+                          }}
+                        >
+                          {read ? '✔✔' : '✔'}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
+                  {mine ? (
+                    <img
+                      src={myAvatar}
+                      alt=""
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        border: '1px solid rgba(139,92,246,0.4)',
+                        flexShrink: 0,
+                        objectFit: 'cover',
+                        boxSizing: 'border-box',
+                        marginLeft: 0,
+                      }}
+                    />
+                  ) : null}
                 </div>
               )
             })}
