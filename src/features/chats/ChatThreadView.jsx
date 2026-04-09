@@ -44,6 +44,22 @@ const headerActionBtnStyle = {
   padding: 0,
 }
 
+const inputActionBtnStyle = {
+  width: 44,
+  height: 44,
+  borderRadius: radius.large,
+  border: `1px solid ${colors.border}`,
+  background: colors.surfaceMuted,
+  color: colors.textPrimary,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  padding: 0,
+  cursor: 'pointer',
+  boxSizing: 'border-box',
+}
+
 function pravatarImgIdFromString(s) {
   let h = 0
   const str = String(s || 'user')
@@ -69,9 +85,12 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const [bootError, setBootError] = useState(null)
   const [sending, setSending] = useState(false)
   const endRef = useRef(null)
+  const scrollRef = useRef(null)
 
   const scrollBottom = useCallback(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollTop = el.scrollHeight
   }, [])
 
   useEffect(() => {
@@ -274,6 +293,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
         >
           <div
             data-waitme-chat-scroll
+            ref={scrollRef}
             style={{
               flex: 1,
               minHeight: 0,
@@ -305,11 +325,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                       src={peerAvatar}
                       alt=""
                       style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: '50%',
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        border: '1px solid rgba(139,92,246,0.4)',
                         flexShrink: 0,
                         objectFit: 'cover',
+                        boxSizing: 'border-box',
                       }}
                     />
                   ) : null}
@@ -333,7 +355,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                       }}
                     >
                       <span>{m.at}</span>
-                      {mine ? <span style={{ opacity: 0.9 }}>✓✓</span> : null}
+                      {mine ? <span style={{ opacity: 0.75, color: '#d1d5db' }}>✔</span> : null}
                     </div>
                   </div>
                 </div>
@@ -356,6 +378,27 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               boxSizing: 'border-box',
             }}
           >
+            <button
+              type="button"
+              aria-label="Adjuntar"
+              onClick={() => {}}
+              style={inputActionBtnStyle}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Cámara"
+              onClick={() => {}}
+              style={inputActionBtnStyle}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            </button>
             <InputBase
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
