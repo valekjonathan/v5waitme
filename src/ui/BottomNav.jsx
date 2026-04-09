@@ -65,7 +65,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
         paddingTop: navPaddingTop,
         backgroundColor: colors.background,
-        borderTop: '1px solid rgba(255,255,255,0.28)',
+        borderTop: '2px solid rgba(255,255,255,0.22)',
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
@@ -121,7 +121,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                 style={{
                   position: 'absolute',
                   top: 6,
-                  right: -9,
+                  right: -19,
                   width: 18,
                   height: 18,
                   boxSizing: 'border-box',

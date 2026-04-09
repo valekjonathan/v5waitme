@@ -5,8 +5,8 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
-import { IconChevronLeft } from '../parking/waitme/icons.jsx'
-import { WaitmeCardNavigateButton, WaitmeCardPhoneButton } from '../parking/waitme/UserAlertCardActions.jsx'
+import { IconChevronLeft, WAITME_GLASS_MAP_CONTROL_36, IconNavigation, IconPhone } from '../parking/waitme/icons.jsx'
+// (no usar botones de tarjeta aquí; header usa control 36x36)
 import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -30,6 +30,12 @@ const bubbleShared = {
   wordBreak: 'break-word',
   boxSizing: 'border-box',
   borderRadius: 16,
+}
+
+const headerGlassBtnStyle = {
+  ...WAITME_GLASS_MAP_CONTROL_36,
+  width: 36,
+  height: 36,
 }
 
 const inputActionBtnStyle = {
@@ -259,8 +265,8 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             src={peerAvatar}
             alt=""
             style={{
-              width: 28,
-              height: 28,
+              width: 36,
+              height: 36,
               borderRadius: 8,
               border: '1px solid rgba(139,92,246,0.4)',
               objectFit: 'cover',
@@ -272,8 +278,12 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <WaitmeCardPhoneButton enabled onClick={() => {}} />
-            <WaitmeCardNavigateButton enabled onClick={() => {}} />
+            <button type="button" aria-label="Llamar" onClick={() => {}} style={headerGlassBtnStyle}>
+              <IconPhone size={18} />
+            </button>
+            <button type="button" aria-label="Navegación" onClick={() => {}} style={headerGlassBtnStyle}>
+              <IconNavigation size={18} />
+            </button>
           </div>
         </header>
 
@@ -390,14 +400,37 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                       <span>{m.at}</span>
                       {mine ? (
                         <span
+                          aria-hidden
                           style={{
-                            fontSize: 11,
-                            fontWeight: 800,
+                            width: 16,
+                            height: 16,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: 2,
                             color: read ? '#22c55e' : 'rgba(255,255,255,0.5)',
-                            lineHeight: 1,
                           }}
                         >
-                          {read ? '✔✔' : '✔'}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden
+                          >
+                            {read ? (
+                              <>
+                                <path d="M3 12l4 4L17 6" />
+                                <path d="M7 12l4 4L21 6" />
+                              </>
+                            ) : (
+                              <path d="M5 12l4 4L19 6" />
+                            )}
+                          </svg>
                         </span>
                       ) : null}
                     </div>

@@ -71,8 +71,9 @@ export default function ChatsPage() {
   }, [load])
 
   useEffect(() => {
+    if (loading || loadError) return
     nav.syncChatUnreadFromThreads?.(threads)
-  }, [nav, threads])
+  }, [nav, threads, loading, loadError])
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return

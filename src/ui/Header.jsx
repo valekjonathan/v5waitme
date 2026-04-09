@@ -52,7 +52,7 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
         zIndex: 60,
         backgroundColor: colors.background,
         // Contraste suave con el mapa / fondo
-        borderBottom: '1px solid rgba(255,255,255,0.28)',
+        borderBottom: '2px solid rgba(255,255,255,0.22)',
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
