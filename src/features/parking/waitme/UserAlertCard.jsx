@@ -548,19 +548,6 @@ function UserAlertCard({
               <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
 
-            {isChat && chatUnread > 0 ? (
-              <span
-                style={{
-                  ...CHAT_UNREAD_BADGE_STYLE,
-                  fontSize: chatUnread > 9 ? 9 : 11,
-                  marginLeft: 8,
-                  alignSelf: 'center',
-                }}
-              >
-                {chatUnread > 99 ? '99+' : chatUnread}
-              </span>
-            ) : null}
-
             {!isChat ? (
               <div
                 style={{
@@ -581,6 +568,23 @@ function UserAlertCard({
               </div>
             ) : null}
           </div>
+
+          {isChat && chatUnread > 0 ? (
+            <span
+              style={{
+                ...CHAT_UNREAD_BADGE_STYLE,
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: chatUnread > 9 ? 9 : 11,
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
+            >
+              {chatUnread > 99 ? '99+' : chatUnread}
+            </span>
+          ) : null}
 
           {isChat ? (
             <p style={CHAT_PREVIEW_TEXT_STYLE}>{lastMessageText}</p>

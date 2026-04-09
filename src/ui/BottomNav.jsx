@@ -120,10 +120,10 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                 aria-hidden
                 style={{
                   position: 'absolute',
-                  top: 0,
-                  right: 0,
-                  width: 18,
-                  height: 18,
+                  top: 4,
+                  right: 4,
+                  width: 28,
+                  height: 28,
                   boxSizing: 'border-box',
                   display: 'flex',
                   alignItems: 'center',
@@ -136,7 +136,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                   fontWeight: 700,
                   lineHeight: 1,
                   overflow: 'hidden',
-                  fontSize: chatUnreadTotal > 9 ? 7 : 9,
+                  fontSize: chatUnreadTotal > 9 ? 9 : 11,
                 }}
               >
                 {chatUnreadTotal > 99 ? '99+' : chatUnreadTotal}

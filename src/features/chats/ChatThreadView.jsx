@@ -5,7 +5,7 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
-import { IconChevronLeft } from '../parking/waitme/icons.jsx'
+import { IconChevronLeft, IconPhone } from '../parking/waitme/icons.jsx'
 import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -30,6 +30,27 @@ const bubbleShared = {
   borderRadius: 16,
 }
 
+const headerActionBtnStyle = {
+  width: 36,
+  height: 36,
+  borderRadius: 12,
+  border: 'none',
+  background: 'transparent',
+  color: colors.textPrimary,
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+}
+
+function pravatarImgIdFromString(s) {
+  let h = 0
+  const str = String(s || 'user')
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
+  return (h % 70) + 1
+}
+
 function nextTempId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -41,6 +62,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const s = summary && typeof summary === 'object' ? summary : {}
   const threadId = String(s.id ?? '')
   const title = String(s.name ?? 'Chat')
+  const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title)}`
 
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
@@ -195,6 +217,34 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <button
+              type="button"
+              aria-label="Llamar"
+              onClick={() => {}}
+              style={headerActionBtnStyle}
+            >
+              <IconPhone size={18} />
+            </button>
+            <button
+              type="button"
+              aria-label="Más opciones"
+              onClick={() => {}}
+              style={headerActionBtnStyle}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden
+              >
+                <circle cx="5" cy="12" r="1.7" />
+                <circle cx="12" cy="12" r="1.7" />
+                <circle cx="19" cy="12" r="1.7" />
+              </svg>
+            </button>
+          </div>
         </header>
 
         {bootError ? (
@@ -244,10 +294,25 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                   style={{
                     display: 'flex',
                     justifyContent: mine ? 'flex-end' : 'flex-start',
+                    alignItems: 'flex-end',
                     width: '100%',
                     flexShrink: 0,
+                    gap: 8,
                   }}
                 >
+                  {!mine ? (
+                    <img
+                      src={peerAvatar}
+                      alt=""
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        objectFit: 'cover',
+                      }}
+                    />
+                  ) : null}
                   <div
                     style={{
                       ...bubbleShared,
@@ -262,10 +327,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                         fontSize: 11,
                         opacity: 0.75,
                         marginTop: 4,
-                        textAlign: mine ? 'right' : 'left',
+                        display: 'flex',
+                        justifyContent: mine ? 'flex-end' : 'flex-start',
+                        gap: 4,
                       }}
                     >
-                      {m.at}
+                      <span>{m.at}</span>
+                      {mine ? <span style={{ opacity: 0.9 }}>✓✓</span> : null}
                     </div>
                   </div>
                 </div>
