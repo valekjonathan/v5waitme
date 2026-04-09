@@ -31,7 +31,12 @@ const ballShadow = {
 
 const stemShadow = { boxShadow: shadows.centerPinStem }
 
-export default function CenterPin() {
+/**
+ * `waitmePinTipAnchor`: solo en el pin cuya punta debe alinear el mapa (hero Login/Home).
+ * El pin del `MapViewportCenterPin` (medición) no debe llevar `data-waitme-pin-tip` o `querySelector`
+ * tomaría el rect equivocado (mapa antes que hero en el DOM).
+ */
+export default function CenterPin({ waitmePinTipAnchor = false } = {}) {
   return (
     <div
       data-center-pin
@@ -121,7 +126,7 @@ export default function CenterPin() {
         />
       </div>
       <div
-        data-waitme-pin-tip
+        {...(waitmePinTipAnchor ? { 'data-waitme-pin-tip': '' } : {})}
         style={{ height: 36, width: 2, background: colors.primary, ...stemShadow }}
       />
     </div>

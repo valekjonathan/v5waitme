@@ -157,7 +157,7 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
                 Aparca donde te <span style={meTextStyle}>avisen!</span>
               </p>
               <div style={heroPinRowStyle} aria-hidden>
-                <CenterPin />
+                <CenterPin waitmePinTipAnchor />
               </div>
             </Section>
             {hasCta ? (
