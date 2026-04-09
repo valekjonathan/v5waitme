@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { formatAddress, rankSpainStreetFeatures, searchSpainStreets } from '../../../services/geocodingSpain.js'
+import { formatAddressForUi, rankSpainStreetFeatures, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
 
@@ -27,7 +27,7 @@ const inputStyle = {
 
 const streetSearchInputClass = 'waitme-street-search-input'
 
-const DEBOUNCE_MS = 185
+const DEBOUNCE_MS = 80
 
 const streetResultLiStyle = {
   padding: '12px 16px',
@@ -170,7 +170,7 @@ export default function StreetSearch({
     if (!Array.isArray(center) || center.length < 2) return
     const [lng, lat] = center
     const formatted =
-      formatAddress(feature) ||
+      formatAddressForUi(feature) ||
       (typeof feature.place_name === 'string' ? feature.place_name : '') ||
       (typeof feature.text === 'string' ? feature.text : '') ||
       ''
@@ -333,7 +333,7 @@ export default function StreetSearch({
                   onClick={() => handleSelect(f)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSelect(f)}
                 >
-                  {formatAddress(f) || f.place_name || f.text || '—'}
+                  {formatAddressForUi(f) || f.place_name || f.text || '—'}
                 </li>
               ))}
         </ul>

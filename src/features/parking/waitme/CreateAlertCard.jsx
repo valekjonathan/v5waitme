@@ -7,7 +7,7 @@ import { radius } from '../../../design/radius'
 import { reverseGeocodeMapbox } from '../../../services/geocodingSpain.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { getLngLatAtParkedPinGap } from '../../map/mapControls.js'
-import { IconClock, IconCoins, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
+import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 const rangeClass = 'waitme-create-alert-range'
 
@@ -16,9 +16,18 @@ const MINUTES_MAX = 60
 const PRICE_MIN = 3
 const PRICE_MAX = 20
 
+const MIN_VISUAL_FILL = 0.15
+
 function rangeGradientPercent(value, min, max) {
   if (max <= min) return 0
   return ((value - min) / (max - min)) * 100
+}
+
+function rangeGradientPercentWithMinVisual(value, min, max) {
+  if (max <= min) return MIN_VISUAL_FILL * 100
+  const normalized = (value - min) / (max - min)
+  const visualFill = Math.max(normalized, MIN_VISUAL_FILL)
+  return visualFill * 100
 }
 
 /** Misma base visual que “Continuar con Apple” en `LoginButtons.jsx`. */
@@ -152,7 +161,10 @@ export default function CreateAlertCard({
     () => rangeGradientPercent(minutes, MINUTES_MIN, MINUTES_MAX),
     [minutes]
   )
-  const pricePct = useMemo(() => rangeGradientPercent(price, PRICE_MIN, PRICE_MAX), [price])
+  const pricePct = useMemo(
+    () => rangeGradientPercentWithMinVisual(price, PRICE_MIN, PRICE_MAX),
+    [price]
+  )
 
   const minutesTrackStyle = useMemo(
     () => ({
@@ -299,7 +311,19 @@ export default function CreateAlertCard({
               top: 2,
             }}
           >
-            <IconCoins size={22} strokeWidth={2} />
+            <span
+              style={{
+                ...WAITME_ROW_ICON_SLOT,
+                position: 'relative',
+                top: 2,
+                fontSize: 22,
+                lineHeight: 1,
+                fontWeight: 600,
+              }}
+              aria-hidden
+            >
+              €
+            </span>
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>

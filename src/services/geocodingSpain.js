@@ -1,6 +1,32 @@
 import { getMapboxAccessToken } from '../features/map/constants/mapbox.js'
 import { distanceMeters } from './location.js'
 
+function foldAscii(s) {
+  return String(s)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Abreviaturas de vía para UI (sugerencias y tarjeta). No muta datos crudos del provider.
+ */
+export function formatStreetName(name) {
+  if (name == null || name === '') return name
+  let s = String(name)
+  const lower = s.toLowerCase()
+  if (lower.includes('avenida')) return s.replace(/avenida/i, 'Avd/')
+  if (lower.includes('paseo')) return s.replace(/paseo/i, 'Pso/')
+  if (lower.includes('plaza')) return s.replace(/plaza/i, 'Plz/')
+  if (lower.includes('camino')) return s.replace(/camino/i, 'Cam/')
+  if (lower.includes('calle')) return s.replace(/calle/i, 'C/')
+  return s
+}
+
 /**
  * Geocodificación inversa (Mapbox): dirección legible a partir de coordenadas.
  * @param {number} lat
@@ -19,7 +45,7 @@ export async function reverseGeocodeMapbox(lat, lng, opts = {}) {
   if (!res.ok) return ''
   const data = await res.json()
   const f = data?.features?.[0]
-  return f ? formatAddress(f) : ''
+  return f ? formatAddressForUi(f) : ''
 }
 
 /**
@@ -41,7 +67,7 @@ export async function searchSpainStreets(query, opts = {}) {
   // Mapbox Geocoding v5 solo admite: country, region, place, district, locality, postcode, neighborhood, address (no "street"; 422 si se incluye).
   params.set('types', 'address')
   params.set('autocomplete', 'true')
-  params.set('limit', '10')
+  params.set('limit', '5')
   if (proximity && Number.isFinite(proximity.lng) && Number.isFinite(proximity.lat)) {
     params.set('proximity', `${proximity.lng},${proximity.lat}`)
   }
@@ -60,59 +86,49 @@ export async function searchSpainStreets(query, opts = {}) {
   return Array.isArray(data.features) ? data.features : []
 }
 
-/**
- * Ordena sugerencias: mejor coincidencia de texto primero; a igualdad, más cercanas al usuario.
- */
-export function rankSpainStreetFeatures(features, query, userLat, userLng) {
-  if (!Array.isArray(features) || features.length === 0) return []
-  const q = (query || '').trim().toLowerCase()
-  if (!q) return features
-  const hasUser = Number.isFinite(userLat) && Number.isFinite(userLng)
-
-  const labelOf = (f) =>
-    (
-      formatAddress(f) ||
-      (typeof f.place_name === 'string' ? f.place_name : '') ||
-      (typeof f.text === 'string' ? f.text : '') ||
-      ''
-    ).toLowerCase()
-
-  const scoreText = (f) => {
-    const label = labelOf(f)
-    if (!label.includes(q)) return 0
-    if (label.startsWith(q)) return 1000
-    return 800 - Math.min(400, label.indexOf(q))
+function classifyStreetRaw(raw) {
+  const s = String(raw || '').trim()
+  if (!s) return { prefix: '', body: '' }
+  const lower = s.toLowerCase()
+  if (/^calle\s+/i.test(s) || /^c\/\s*/i.test(s)) {
+    return { prefix: 'C/', body: s.replace(/^calle\s+/i, '').replace(/^c\/\s*/i, '').trim() }
   }
-
-  const distM = (f) => {
-    const c = f.center
-    if (!Array.isArray(c) || c.length < 2 || !hasUser) return Number.POSITIVE_INFINITY
-    return distanceMeters(userLat, userLng, c[1], c[0])
+  if (/^avenida\s+/i.test(lower) || /^av\.?\s+/i.test(s)) {
+    return { prefix: 'Avd/', body: s.replace(/^avenida\s+/i, '').replace(/^av\.?\s+/i, '').trim() }
   }
-
-  return [...features].sort((a, b) => {
-    const sa = scoreText(a)
-    const sb = scoreText(b)
-    if (sb !== sa) return sb - sa
-    return distM(a) - distM(b)
-  })
+  if (/^paseo\s+/i.test(lower)) {
+    return { prefix: 'Pso/', body: s.replace(/^paseo\s+/i, '').trim() }
+  }
+  if (/^plaza\s+/i.test(lower) || /^pl\.?\s+/i.test(s)) {
+    return { prefix: 'Plz/', body: s.replace(/^plaza\s+/i, '').replace(/^pl\.?\s+/i, '').trim() }
+  }
+  if (/^camino\s+/i.test(lower)) {
+    return { prefix: 'Cam/', body: s.replace(/^camino\s+/i, '').trim() }
+  }
+  const body = coreStreetName(s)
+  return { prefix: '', body: body || s }
 }
 
 /**
- * Formato único: `C/ Muérdago, 9, Oviedo` (nombre de vía sin prefijo duplicado).
- * No devuelve vacío si el feature trae `place_name`, `text` o contexto útil.
+ * Dirección legible desde feature Mapbox (tipos de vía: C/, Avd/, Pso/, Plz/, Cam/; resto sin forzar C/).
  */
 export function formatAddress(result) {
   if (!result || typeof result !== 'object') return ''
   const raw = typeof result.text === 'string' ? result.text.trim() : ''
-  const street = coreStreetName(raw)
   const number = extractStreetNumber(result)
   const city = extractCityFromContext(result)
 
-  if (street && number && city) return `C/ ${street}, ${number}, ${city}`
-  if (street && number) return `C/ ${street}, ${number}`
-  if (street && city) return `C/ ${street}, ${city}`
-  if (street) return `C/ ${street}`
+  if (raw) {
+    const { prefix, body } = classifyStreetRaw(raw)
+    const street = body
+    if (street) {
+      const head = prefix ? `${prefix} ${street}`.trim() : street
+      if (number && city) return `${head}, ${number}, ${city}`
+      if (number) return `${head}, ${number}`
+      if (city) return `${head}, ${city}`
+      return head
+    }
+  }
 
   const pn = typeof result.place_name === 'string' ? result.place_name.trim() : ''
   if (pn) return pn
@@ -135,12 +151,77 @@ export function formatAddress(result) {
   return ''
 }
 
+/** Misma dirección que `formatAddress`, con abreviaturas unificadas para UI (tarjeta y sugerencias). */
+export function formatAddressForUi(result) {
+  const line = formatAddress(result)
+  return line ? formatStreetName(line) : ''
+}
+
+/**
+ * Ordena sugerencias: empieza por texto → cercanía → relevance Mapbox.
+ * Filtra por coincidencia real (sin acentos); si queda vacío, reintenta sin filtrar.
+ */
+export function rankSpainStreetFeatures(features, query, userLat, userLng) {
+  if (!Array.isArray(features) || features.length === 0) return []
+  const qFold = foldAscii((query || '').trim())
+  if (!qFold) return features
+  const hasUser = Number.isFinite(userLat) && Number.isFinite(userLng)
+
+  const labelOf = (f) =>
+    formatAddressForUi(f) ||
+    formatAddress(f) ||
+    (typeof f.place_name === 'string' ? f.place_name : '') ||
+    (typeof f.text === 'string' ? f.text : '') ||
+    ''
+
+  const distM = (f) => {
+    const c = f.center
+    if (!Array.isArray(c) || c.length < 2 || !hasUser) return Number.POSITIVE_INFINITY
+    let d = distanceMeters(userLat, userLng, c[1], c[0])
+    const city = extractCityFromContext(f)
+    const userNearOviedo = distanceMeters(userLat, userLng, 43.3614, -5.8493) < 35_000
+    if (userNearOviedo && foldAscii(city) === 'oviedo') {
+      d *= 0.35
+    }
+    return d
+  }
+
+  const relOf = (f) => (typeof f.relevance === 'number' && Number.isFinite(f.relevance) ? f.relevance : 0)
+
+  const scoreRow = (f) => {
+    const label = labelOf(f)
+    const folded = foldAscii(label)
+    const match = folded.includes(qFold)
+    const starts = folded.startsWith(qFold)
+    const afterSep = new RegExp(`(^|[\\s,.-])${escapeRegExp(qFold)}`, 'i').test(folded)
+    return { f, match, starts, afterSep, dist: distM(f), rel: relOf(f) }
+  }
+
+  const rows = features.map(scoreRow)
+  const matched = rows.filter((r) => r.match)
+  const pool = matched.length ? matched : rows
+
+  pool.sort((a, b) => {
+    if (a.starts !== b.starts) return b.starts ? 1 : -1
+    if (a.afterSep !== b.afterSep) return b.afterSep ? 1 : -1
+    const da = a.dist
+    const db = b.dist
+    if (hasUser && Number.isFinite(da) && Number.isFinite(db) && da !== db) return da - db
+    if (a.rel !== b.rel) return b.rel - a.rel
+    return 0
+  })
+
+  return pool.map((r) => r.f)
+}
+
 function coreStreetName(text) {
   let s = String(text || '').trim()
   if (!s) return ''
   if (/^calle\s+/i.test(s)) return s.replace(/^calle\s+/i, '').trim()
   if (/^(av\.?|avenida)\s+/i.test(s)) return s.replace(/^(av\.?|avenida)\s+/i, '').trim()
+  if (/^paseo\s+/i.test(s)) return s.replace(/^paseo\s+/i, '').trim()
   if (/^(pl\.?|plaza)\s+/i.test(s)) return s.replace(/^(pl\.?|plaza)\s+/i, '').trim()
+  if (/^camino\s+/i.test(s)) return s.replace(/^camino\s+/i, '').trim()
   if (/^C\/\s*/i.test(s)) return s.replace(/^C\/\s*/i, '').trim()
   return s
 }
