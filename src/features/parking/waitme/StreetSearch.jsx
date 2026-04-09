@@ -37,6 +37,12 @@ const streetResultLiStyle = {
   borderBottom: '1px solid rgba(55, 65, 81, 0.5)',
 }
 
+/** Solo lista filtrada local (Chats): texto centrado en la fila. */
+const streetResultLiStyleLocal = {
+  ...streetResultLiStyle,
+  textAlign: 'center',
+}
+
 /**
  * @param {{ id: string, label: string, matchText?: string }[]} [localFilterItems] — si hay ítems, no se llama a Mapbox; filtra en cliente.
  * @param {(item: { id: string, label: string }) => void} [onLocalSelect]
@@ -302,7 +308,7 @@ export default function StreetSearch({
                   key={it.id}
                   role="button"
                   tabIndex={0}
-                  style={streetResultLiStyle}
+                  style={streetResultLiStyleLocal}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleLocalPick(it)}
                   onKeyDown={(e) => e.key === 'Enter' && handleLocalPick(it)}

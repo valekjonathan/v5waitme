@@ -1,7 +1,7 @@
 /**
  * Copia de WaitMe: src/components/cards/UserAlertCard.jsx (sin Tailwind: estilos inline).
  */
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
@@ -97,14 +97,80 @@ const CHAT_PREVIEW_TEXT_STYLE = {
   textOverflow: 'ellipsis',
 }
 
+/** Misma caja 28×28 que badge "Info usuario" (altura); X y badge unread comparten caja. */
+const CHAT_HEADER_ACTION_BOX = {
+  width: 28,
+  height: 28,
+  boxSizing: 'border-box',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 0,
+  flexShrink: 0,
+}
+
+/** Estilo base del botón X lista chats (mismo borde/relleno que sistema rojo tarjeta). */
+const CHAT_DELETE_BTN_STYLE = {
+  ...CHAT_HEADER_ACTION_BOX,
+  borderRadius: 8,
+  border: '1px solid rgba(239, 68, 68, 0.5)',
+  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  color: '#f87171',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+}
+
+/**
+ * Badge no leídos: misma caja/borde que X; solo forma y color verdes.
+ * Mantener en sync con `BottomNav` (copia literal allí).
+ */
+const CHAT_UNREAD_BADGE_STYLE = {
+  ...CHAT_HEADER_ACTION_BOX,
+  borderRadius: '50%',
+  border: '1px solid rgba(34, 197, 94, 0.5)',
+  backgroundColor: 'rgba(34, 197, 94, 0.2)',
+  color: '#fff',
+  fontWeight: 700,
+  lineHeight: 1,
+  overflow: 'hidden',
+}
+
+function pravatarImgIdFromString(s) {
+  let h = 0
+  const str = String(s || 'user')
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
+  return (h % 70) + 1
+}
+
 function UserAlertAvatarBlock({ alert }) {
-  const first = (alert?.user_name || 'Usuario').split(' ')[0]
-  const src =
-    alert?.user_photo ||
-    `https://ui-avatars.com/api/?name=${encodeURIComponent((alert?.user_name || 'U').split(' ')[0].charAt(0))}&background=8b5cf6&color=fff&size=128`
+  const name = String(alert?.user_name || 'Usuario')
+  const photo = alert?.user_photo
+  const seed = useMemo(() => pravatarImgIdFromString(name), [name])
+  const [brokenPhoto, setBrokenPhoto] = useState(false)
+  const [pravatarIx, setPravatarIx] = useState(seed)
+
+  useEffect(() => {
+    setBrokenPhoto(false)
+    setPravatarIx(seed)
+  }, [seed, photo, alert?.id])
+
+  const useUploaded = Boolean(photo) && !brokenPhoto
+  const src = useUploaded ? photo : `https://i.pravatar.cc/150?img=${pravatarIx}`
+
   return (
     <div style={USER_CARD_AVATAR_WRAP}>
-      <img src={src} alt={first} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <img
+        src={src}
+        alt=""
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        onError={() => {
+          if (photo && !brokenPhoto) {
+            setBrokenPhoto(true)
+            return
+          }
+          setPravatarIx((i) => (i >= 70 ? 1 : i + 1))
+        }}
+      />
     </div>
   )
 }
@@ -352,39 +418,64 @@ function UserAlertCard({
         transition: 'transform 0.3s ease',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <div style={{ flexShrink: 0 }}>
-          <div style={badgeBase}>Info usuario</div>
+      {isChat ? (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 8,
+            width: '100%',
+            minWidth: 0,
+          }}
+        >
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ ...badgeBase, boxSizing: 'border-box' }}>Info usuario</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
+          <div style={{ ...CHAT_HEADER_TIME_STYLE, textAlign: 'center' }}>{chatTimeProp || ''}</div>
+          <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
+          <button
+            type="button"
+            onClick={handleDeleteChatClick}
+            style={CHAT_DELETE_BTN_STYLE}
+            aria-label="Eliminar conversación"
+          >
+            <IconX size={16} />
+          </button>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
-        {isChat ? <div style={CHAT_HEADER_TIME_STYLE}>{chatTimeProp || ''}</div> : null}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-          {!isChat && distanceLabel ? (
-            <div
-              style={{
-                background: 'rgba(15, 23, 42, 0.9)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(168, 85, 247, 0.5)',
-                borderRadius: 12,
-                padding: '2px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                height: 28,
-                boxSizing: 'border-box',
-              }}
-            >
-              <span style={{ color: '#c084fc', display: 'flex' }}>
-                <IconNavigation size={12} />
-              </span>
-              <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>
-                {distanceLabel.value}
-                {distanceLabel.unit}
-              </span>
-            </div>
-          ) : null}
-          {!isChat ? (
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={badgeBase}>Info usuario</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+            {distanceLabel ? (
+              <div
+                style={{
+                  background: 'rgba(15, 23, 42, 0.9)',
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(168, 85, 247, 0.5)',
+                  borderRadius: 12,
+                  padding: '2px 8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  height: 28,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <span style={{ color: '#c084fc', display: 'flex' }}>
+                  <IconNavigation size={12} />
+                </span>
+                <span style={{ color: '#fff', fontWeight: 700, fontSize: 12 }}>
+                  {distanceLabel.value}
+                  {distanceLabel.unit}
+                </span>
+              </div>
+            ) : null}
             <div
               style={{
                 backgroundColor: 'rgba(22, 163, 74, 0.2)',
@@ -403,38 +494,24 @@ function UserAlertCard({
                 {priceText.replace('.00', '')} <span style={{ fontSize: 10 }}>↑</span>
               </span>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={handleDeleteChatClick}
-              style={{
-                ...btnIcon,
-                backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.5)',
-                color: '#f87171',
-              }}
-              aria-label="Eliminar conversación"
-            >
-              <IconX size={20} />
-            </button>
-          )}
-          {!isChat && onReject ? (
-            <button
-              type="button"
-              onClick={onReject}
-              style={{
-                ...btnIcon,
-                backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.5)',
-                color: '#f87171',
-              }}
-              aria-label="Cerrar"
-            >
-              <IconX size={20} />
-            </button>
-          ) : null}
+            {onReject ? (
+              <button
+                type="button"
+                onClick={onReject}
+                style={{
+                  ...btnIcon,
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.5)',
+                  color: '#f87171',
+                }}
+                aria-label="Cerrar"
+              >
+                <IconX size={20} />
+              </button>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
@@ -459,22 +536,9 @@ function UserAlertCard({
             {isChat && chatUnread > 0 ? (
               <span
                 style={{
-                  minWidth: chatUnread > 9 ? 22 : 20,
-                  width: chatUnread > 9 ? undefined : 20,
-                  height: 20,
-                  padding: chatUnread > 9 ? '0 5px' : 0,
-                  borderRadius: chatUnread > 9 ? 10 : '50%',
-                  background: '#22c55e',
-                  color: '#fff',
-                  fontSize: chatUnread > 9 ? 10 : 11,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  ...CHAT_UNREAD_BADGE_STYLE,
+                  fontSize: chatUnread > 9 ? 9 : 11,
                   marginLeft: 8,
-                  lineHeight: 1,
-                  boxSizing: 'border-box',
                 }}
               >
                 {chatUnread > 99 ? '99+' : chatUnread}
