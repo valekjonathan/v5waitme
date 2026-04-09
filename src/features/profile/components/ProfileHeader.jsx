@@ -45,7 +45,7 @@ const outerYellowCardStyle = {
   boxSizing: 'border-box',
   overflow: 'visible',
   background: `${colors.accentYellow}10`,
-  cursor: 'pointer',
+  cursor: 'default',
 }
 const emailContainerStyle = {
   position: 'absolute',
@@ -196,6 +196,7 @@ const avatarImgStyle = {
 export default function ProfileHeader({ profile, avatarBorder, averageRating = 0 }) {
   const { openReviews } = useAppScreen()
   if (!profile) return null
+
   const avatarStyle = {
     ...avatarStyleBase,
     border: avatarBorder ?? profileScreenAvatarBorder,
@@ -215,24 +216,13 @@ export default function ProfileHeader({ profile, avatarBorder, averageRating = 0
 
   return (
     <div style={rootStyle}>
-      <div
-        style={outerYellowCardStyle}
-        onClick={() => openReviews?.()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') openReviews?.()
-        }}
-      >
+      <div style={outerYellowCardStyle}>
         <div style={reviewsBadgeLayerStyle}>
           <Button
             type="button"
             variant="reviews"
             style={reviewsButtonStyle}
-            onClick={(event) => {
-              event.stopPropagation()
-              openReviews?.()
-            }}
+            onClick={() => openReviews?.()}
           >
             Reseñas
           </Button>

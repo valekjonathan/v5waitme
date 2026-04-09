@@ -14,6 +14,7 @@ import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
 import UserAlertCardActions, { WAITME_BTN_HEIGHT, waitmeOpenTelDialer } from './UserAlertCardActions.jsx'
+import { resolveReviewsTargetUserId } from '../../../lib/resolveReviewsTargetUserId.js'
 
 /** Mismo morado que el icono del reloj en esta tarjeta. */
 const CLOCK_PURPLE = '#c084fc'
@@ -330,14 +331,18 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const profileUserId = alert?.user_id ?? alert?.peer_user_id
+  const profileUserId = resolveReviewsTargetUserId(alert)
   const goProfile = useCallback(
     (e) => {
-      if (!profileUserId) return
       e?.stopPropagation?.()
-      openUserReviews(profileUserId)
+      const id = resolveReviewsTargetUserId(alert)
+      if (!id) return
+      if (import.meta.env.DEV) {
+        console.log('CLICK USER ID:', id)
+      }
+      openUserReviews(id)
     },
-    [profileUserId, openUserReviews]
+    [alert, openUserReviews]
   )
 
   const badgeBase = {

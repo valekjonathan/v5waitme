@@ -92,7 +92,7 @@ export const profileFormVerticalSlotStyleNoScroll = {
 export const profileActionsFooterStyle = {
   flexShrink: 0,
   width: '100%',
-  marginTop: 0,
+  marginTop: 4,
   paddingBottom: profileReviewsInnerHeaderTopMarginPx,
   boxSizing: 'border-box',
 }
@@ -113,11 +113,11 @@ export const profileFormSectionLayoutStyle = {
 /** Botones de ancho completo en columna de acciones (perfil). */
 export const profileReviewsFullWidthButtonStyle = {
   width: '100%',
-  height: 38,
-  minHeight: 38,
-  maxHeight: 38,
-  paddingTop: 6,
-  paddingBottom: 6,
+  height: 34,
+  minHeight: 34,
+  maxHeight: 34,
+  paddingTop: 4,
+  paddingBottom: 4,
   marginTop: 0,
   boxSizing: 'border-box',
 }

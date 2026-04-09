@@ -4,13 +4,14 @@
 const RATING_STAR_COUNT = 4
 
 /**
- * Media en escala 1–5 → puntuación mostrada /10 (misma información, UX clara).
+ * Media datos 1–5 → escala visual 4★ → /10 (equivalente a (avg5/5)*4 luego *10/4).
  * @param {number} avgOn5
  */
 export function average5ToDisplay10(avgOn5) {
-  const a = Number(avgOn5)
-  if (!Number.isFinite(a)) return 0
-  return +(a * 2).toFixed(1)
+  const avg5 = Number(avgOn5)
+  if (!Number.isFinite(avg5)) return 0
+  const avg4 = (avg5 / 5) * 4
+  return +((avg4 / 4) * 10).toFixed(1)
 }
 
 /**
