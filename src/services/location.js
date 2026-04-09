@@ -1,6 +1,6 @@
 /**
  * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
- * Cada lectura válida → low-pass (α dinámico por accuracy) + velocidad + predicción adaptativa → `notify()`.
+ * Cada lectura válida → low-pass (α dinámico por accuracy) + velocidad (deg/s→m/s) + predicción solo en movimiento → `notify()`.
  * Sin batching: un tick GPS procesado → una emisión.
  *
  * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
@@ -152,8 +152,22 @@ function getAlpha(accuracy) {
   return 0.35
 }
 
+/** Velocidad escalar (m/s) desde componentes en grados/s a la latitud dada (coherente con `speed` del API). */
+function speedMetersPerSecondFromDegVelocity(velLatDegS, velLngDegS, latDeg) {
+  if (!Number.isFinite(velLatDegS) || !Number.isFinite(velLngDegS) || !Number.isFinite(latDeg)) return 0
+  const φ = (latDeg * Math.PI) / 180
+  const mPerDegLat = 111320
+  const mPerDegLng = 111320 * Math.cos(φ)
+  const vn = velLatDegS * mPerDegLat
+  const ve = velLngDegS * mPerDegLng
+  return Math.sqrt(vn * vn + ve * ve)
+}
+
+/** Por debajo de esto se considera quieto: sin lookahead (evita “respirar” el mapa con ruido estático). */
+const STATIONARY_SPEED_MPS = 0.35
+
 /**
- * Low-pass (α por accuracy) + velocidad + predicción adaptativa; un tick → una emisión vía `notify`.
+ * Low-pass (α por accuracy) + velocidad + predicción solo si hay movimiento real; un tick → una emisión vía `notify`.
  */
 function emitSmoothedLocation(raw) {
   if (
@@ -182,8 +196,25 @@ function emitSmoothedLocation(raw) {
   velocity.lat = (filteredLat - (lastFiltered?.latitude ?? filteredLat)) / dt
   velocity.lng = (filteredLng - (lastFiltered?.longitude ?? filteredLng)) / dt
 
-  const speedForPrediction = raw.speed ?? Math.sqrt(velocity.lat ** 2 + velocity.lng ** 2)
-  const predictionTime = speedForPrediction > 2 ? 0.6 : speedForPrediction > 1 ? 0.4 : 0.2
+  const derivedMps = speedMetersPerSecondFromDegVelocity(velocity.lat, velocity.lng, raw.latitude)
+  const speedForPrediction =
+    raw.speed != null && Number.isFinite(raw.speed) && raw.speed >= 0 ? raw.speed : derivedMps
+
+  let predictionTime = 0
+  if (speedForPrediction > STATIONARY_SPEED_MPS) {
+    if (speedForPrediction > 2.5) predictionTime = 0.42
+    else if (speedForPrediction > 1.2) predictionTime = 0.25
+    else predictionTime = 0.1
+  }
+
+  if (
+    predictionTime > 0 &&
+    typeof raw.accuracy === 'number' &&
+    Number.isFinite(raw.accuracy) &&
+    raw.accuracy > 40
+  ) {
+    predictionTime *= Math.max(0, 1 - (raw.accuracy - 40) / 120)
+  }
 
   const predictedLat = filteredLat + velocity.lat * predictionTime
   const predictedLng = filteredLng + velocity.lng * predictionTime
