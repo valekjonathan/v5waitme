@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-09T17:42:08.227Z
-Git revision: d111e937fac68e9e549989b18611dd0fd6a0d6b0
+Generated: 2026-04-09T19:43:46.420Z
+Git revision: b0269c4b750b6586d493afb79cb1a9f84684f3e4
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -163,6 +163,7 @@ src/
         StreetSearch.jsx
         UserAlertCard.jsx
         UserAlertCardActions.jsx
+        useStreetSearchMapbox.js
     profile/
       components/
         Plate.jsx
@@ -179,6 +180,7 @@ src/
         ReviewsSummary.jsx
       pages/
         ReviewsPage.jsx
+      UserReviewsPage.jsx
     shared/
       components/
         MainLayout.jsx
@@ -204,10 +206,10 @@ src/
   services/
     auth.js
     authUid.js
-    geocodingSpain.js
     location.js
     profile.js
     reviews.ts
+    streetSearchService.js
     supabase.js
     waitmeAlerts.js
     waitmeChats.js
@@ -273,7 +275,7 @@ runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @s
 dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, ngrok, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
-auth.js, authUid.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js, waitmeAlerts.js, waitmeChats.js
+auth.js, authUid.js, location.js, profile.js, reviews.ts, streetSearchService.js, supabase.js, waitmeAlerts.js, waitmeChats.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
@@ -288,7 +290,7 @@ src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext
 src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
 src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
 src/services/reviews.ts  ← 0 import(s) relativos (muestra): —
-Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 5, map 10
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 6, map 10
 
 === ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
 ninguno

@@ -1,16 +1,13 @@
 /**
  * Copia de WaitMe: src/components/StreetSearch.jsx (Input → input nativo, mismos estilos).
- * Sugerencias: solo vía `streetSearchService.search` (una fuente).
+ * Sugerencias: Mapbox Search Box (`streetSearchService.search`) + hook compartido.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import {
-  formatSuggestionLabel,
-  search as streetSearch,
-  selectionPayload,
-} from '../../../services/streetSearchService.js'
+import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
+import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
 
 const inputStyle = {
   background: 'transparent',
@@ -62,8 +59,6 @@ export default function StreetSearch({
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
-  const abortRef = useRef(null)
-  const requestIdRef = useRef(0)
 
   const proximity = useMemo(() => {
     const lat = userLocation?.latitude
@@ -76,51 +71,26 @@ export default function StreetSearch({
     return null
   }, [userLocation?.latitude, userLocation?.longitude])
 
-  const runSearch = useCallback(
-    async (q) => {
-      if (!enableSuggestions) return
-      const trimmed = typeof q === 'string' ? q.trim() : ''
-      if (trimmed.length < 2) {
-        setResults([])
-        return
-      }
+  const { runSearch, abortAndNewSession, pickSuggestion } = useStreetSearchMapbox({
+    proximity,
+    enableSuggestions,
+  })
 
-      if (abortRef.current) abortRef.current.abort()
-      const controller = new AbortController()
-      abortRef.current = controller
-      const id = ++requestIdRef.current
-
-      try {
-        const list = await streetSearch(trimmed, {
-          signal: controller.signal,
-          proximity,
-        })
-        if (id !== requestIdRef.current) return
-        setResults(Array.isArray(list) ? list : [])
-      } catch {
-        if (id !== requestIdRef.current) return
-      } finally {
-        if (id === requestIdRef.current) abortRef.current = null
-      }
-    },
-    [enableSuggestions, proximity]
-  )
+  const applyResults = useCallback((list) => {
+    setResults(list)
+  }, [])
 
   useEffect(() => {
     if (!enableSuggestions) return
     const q = (query || '').trim()
     if (q.length < 2) {
-      requestIdRef.current += 1
-      if (abortRef.current) {
-        abortRef.current.abort()
-        abortRef.current = null
-      }
+      abortAndNewSession()
       const t = window.setTimeout(() => setResults([]), 0)
       return () => window.clearTimeout(t)
     }
-    const t = window.setTimeout(() => runSearch(q), DEBOUNCE_MS)
+    const t = window.setTimeout(() => runSearch(q, applyResults), DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [query, runSearch, enableSuggestions])
+  }, [query, runSearch, enableSuggestions, abortAndNewSession, applyResults])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -136,13 +106,13 @@ export default function StreetSearch({
     }
   }, [])
 
-  const handlePick = (feature) => {
-    const label = formatSuggestionLabel(feature)
-    const payload = selectionPayload(feature, label)
-    setQuery(payload.address)
-    setResults([])
-    setOpen(false)
-    onSelect?.(payload)
+  const handlePick = async (suggestion) => {
+    await pickSuggestion(suggestion, (payload) => {
+      setQuery(payload.address)
+      setResults([])
+      setOpen(false)
+      onSelect?.(payload)
+    })
   }
 
   const showList =
@@ -263,7 +233,7 @@ export default function StreetSearch({
         >
           {results.map((f, idx) => (
             <li
-              key={String(f.id ?? f.place_name ?? idx)}
+              key={String(f.mapbox_id ?? idx)}
               role="button"
               tabIndex={0}
               style={streetResultLiStyle}

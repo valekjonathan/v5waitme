@@ -5,13 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import {
-  formatSuggestionLabel,
-  search as streetSearch,
-  selectionPayload,
-} from '../../../services/streetSearchService.js'
+import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
+import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
 
 const rangeClass = 'waitme-create-alert-range'
 
@@ -70,8 +67,6 @@ export default function CreateAlertCard({
   const [publishPressed, setPublishPressed] = useState(false)
   const [suggestions, setSuggestions] = useState([])
   const [suggestOpen, setSuggestOpen] = useState(false)
-  const abortRef = useRef(null)
-  const requestIdRef = useRef(0)
   const addressRowRef = useRef(null)
 
   const proximity = useMemo(() => {
@@ -85,44 +80,25 @@ export default function CreateAlertCard({
     return null
   }, [userLocation?.latitude, userLocation?.longitude])
 
-  const runAddressSearch = useCallback(
-    async (q) => {
-      const trimmed = typeof q === 'string' ? q.trim() : ''
-      if (trimmed.length < 2) {
-        setSuggestions([])
-        return
-      }
-      if (abortRef.current) abortRef.current.abort()
-      const controller = new AbortController()
-      abortRef.current = controller
-      const id = ++requestIdRef.current
-      try {
-        const list = await streetSearch(trimmed, { signal: controller.signal, proximity })
-        if (id !== requestIdRef.current) return
-        setSuggestions(Array.isArray(list) ? list : [])
-      } catch {
-        if (id !== requestIdRef.current) return
-      } finally {
-        if (id === requestIdRef.current) abortRef.current = null
-      }
-    },
-    [proximity]
-  )
+  const { runSearch, abortAndNewSession, pickSuggestion } = useStreetSearchMapbox({
+    proximity,
+    enableSuggestions: true,
+  })
+
+  const applySuggestions = useCallback((list) => {
+    setSuggestions(list)
+  }, [])
 
   useEffect(() => {
     const q = (address || '').trim()
     if (q.length < 2) {
-      requestIdRef.current += 1
-      if (abortRef.current) {
-        abortRef.current.abort()
-        abortRef.current = null
-      }
+      abortAndNewSession()
       setSuggestions([])
       return undefined
     }
-    const t = window.setTimeout(() => runAddressSearch(address), DEBOUNCE_MS)
+    const t = window.setTimeout(() => runSearch(address, applySuggestions), DEBOUNCE_MS)
     return () => window.clearTimeout(t)
-  }, [address, runAddressSearch])
+  }, [address, runSearch, abortAndNewSession, applySuggestions])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -138,13 +114,13 @@ export default function CreateAlertCard({
     }
   }, [])
 
-  const handlePickSuggestion = (feature) => {
-    const label = formatSuggestionLabel(feature)
-    const payload = selectionPayload(feature, label)
-    onAddressChange(payload.address)
-    onAddressResolved?.(payload)
-    setSuggestions([])
-    setSuggestOpen(false)
+  const handlePickSuggestion = async (suggestion) => {
+    await pickSuggestion(suggestion, (payload) => {
+      onAddressChange(payload.address)
+      onAddressResolved?.(payload)
+      setSuggestions([])
+      setSuggestOpen(false)
+    })
   }
 
   const handleCreate = () => {
@@ -310,7 +286,7 @@ export default function CreateAlertCard({
               >
                 {suggestions.map((f, idx) => (
                   <li
-                    key={String(f.id ?? f.place_name ?? idx)}
+                    key={String(f.mapbox_id ?? idx)}
                     role="button"
                     tabIndex={0}
                     style={suggestLiStyle}

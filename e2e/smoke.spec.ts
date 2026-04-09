@@ -23,12 +23,12 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
   page,
 }) => {
   /** Prueba runtime: peticiones reales a Mapbox (console con objetos no siempre llega a `msg.text()`). */
-  const mapboxForwardUrls: string[] = []
+  const mapboxSuggestUrls: string[] = []
 
   page.on('request', (req) => {
     const u = req.url()
-    if (u.includes('api.mapbox.com/geocoding/v5/mapbox.places') && u.includes('.json')) {
-      mapboxForwardUrls.push(u)
+    if (u.includes('api.mapbox.com/search/searchbox/v1/suggest')) {
+      mapboxSuggestUrls.push(u)
     }
   })
 
@@ -59,12 +59,12 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
   await expect(input).toBeVisible()
 
   for (const q of ['muer', 'muerd', 'muerdago']) {
-    const nBefore = mapboxForwardUrls.length
+    const nBefore = mapboxSuggestUrls.length
     await input.fill('')
     await input.fill(q)
     await expect.poll(async () => input.inputValue(), { timeout: 5000 }).toBe(q)
-    await expect.poll(() => mapboxForwardUrls.length, { timeout: 12_000 }).toBeGreaterThan(nBefore)
-    const lastUrl = mapboxForwardUrls[mapboxForwardUrls.length - 1]
+    await expect.poll(() => mapboxSuggestUrls.length, { timeout: 12_000 }).toBeGreaterThan(nBefore)
+    const lastUrl = mapboxSuggestUrls[mapboxSuggestUrls.length - 1]
     expect(lastUrl).toContain(encodeURIComponent(q))
 
     const list = page.locator('[data-waitme-street-results]')
@@ -93,7 +93,7 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
     expect(hitOk.ok, JSON.stringify(hitOk)).toBeTruthy()
   }
 
-  expect(mapboxForwardUrls.length).toBeGreaterThanOrEqual(3)
+  expect(mapboxSuggestUrls.length).toBeGreaterThanOrEqual(3)
 })
 
 test('park here: placeholder modo aparcado y shell fullBleed (dev auth)', async ({ page }) => {

@@ -4,138 +4,91 @@ import {
   OVIEDO_LNG,
 } from '../features/map/constants/mapbox.js'
 
+const SUGGEST_BASE = 'https://api.mapbox.com/search/searchbox/v1/suggest'
+
 /**
- * Normalización única para matching (no usar en UI final).
+ * Token de sesión Search Box (UUID recomendado); agrupa suggest + retrieve para facturación.
  */
-export function normalize(text) {
-  return String(text ?? '')
+export function newSearchSessionToken() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`
+}
+
+function normalize(text) {
+  return (text || '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-    .replace(/\s+/g, ' ')
     .trim()
 }
 
-/**
- * Distancia en metros (fórmula indicada en producto).
- * @param {{ lat: number, lng: number }} a
- * @param {{ lat: number, lng: number }} b
- */
-export function distanceMeters(a, b) {
-  const R = 6371000
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180
+function rankResults(query, results) {
+  const q = normalize(query)
 
-  const lat1 = (a.lat * Math.PI) / 180
-  const lat2 = (b.lat * Math.PI) / 180
+  return results
+    .map((r) => {
+      const name = normalize(r.name || '')
+      const full = normalize(r.full_address || '')
 
-  const x = dLng * Math.cos((lat1 + lat2) / 2)
-  const y = dLat
+      const starts = name.startsWith(q)
+      const contains = name.includes(q) || full.includes(q)
 
-  return Math.sqrt(x * x + y * y) * R
+      let dist = 999999
+      if (typeof r.distance === 'number' && Number.isFinite(r.distance)) {
+        dist = r.distance
+      }
+
+      let score = 0
+
+      if (starts) score += 1000
+      if (contains) score += 500
+
+      score -= dist * 0.5
+
+      const rel = Number(r.relevance)
+      score += (Number.isFinite(rel) ? rel : 0) * 100
+
+      return { ...r, score }
+    })
+    .sort((a, b) => b.score - a.score)
 }
 
 /**
- * Solo UI: abreviaturas sobre `feature.text` (nunca para matching).
- */
-export function formatStreet(feature) {
-  const name = feature?.text != null ? String(feature.text) : ''
-  const lower = name.toLowerCase()
-
-  if (lower.includes('calle')) return name.replace(/calle/gi, 'C/:')
-  if (lower.includes('avenida')) return name.replace(/avenida/gi, 'Av.')
-  if (lower.includes('paseo')) return name.replace(/paseo/gi, 'Pso.')
-  if (lower.includes('plaza')) return name.replace(/plaza/gi, 'Plz.')
-
-  return name
-}
-
-/**
- * Línea de sugerencia: calle formateada + localidad desde `place_name`.
- */
-export function formatSuggestionLabel(feature) {
-  const streetUi = formatStreet(feature)
-  const pn = typeof feature.place_name === 'string' ? feature.place_name.trim() : ''
-  if (!pn) return streetUi
-  const parts = pn
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)
-  if (parts.length < 2) return streetUi
-  let city = parts[1]
-  city = city.replace(/^\d{5}\s*/, '').trim()
-  if (city && /[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(city)) return `${streetUi}, ${city}`
-  return streetUi
-}
-
-function scoreFeature(feature, query, userPoint) {
-  const name = feature.text || ''
-  const normalizedName = normalize(name)
-  const normalizedQuery = normalize(query)
-
-  const startsWith = normalizedName.startsWith(normalizedQuery)
-  const contains = normalizedName.includes(normalizedQuery)
-
-  let dist = 0
-  const c = feature.center
-  if (
-    Array.isArray(c) &&
-    c.length >= 2 &&
-    userPoint &&
-    Number.isFinite(userPoint.lat) &&
-    Number.isFinite(userPoint.lng)
-  ) {
-    const featPt = { lat: c[1], lng: c[0] }
-    dist = distanceMeters(userPoint, featPt)
-  }
-
-  let score = 0
-  if (startsWith) score += 1000
-  if (contains) score += 500
-  score -= dist * 0.5
-  const rel = Number(feature.relevance)
-  score += (Number.isFinite(rel) ? rel : 0) * 100
-
-  return { score, dist }
-}
-
-/**
- * Búsqueda única Mapbox → score → orden.
  * @param {string} query
- * @param {{ signal?: AbortSignal, proximity?: { lat: number, lng: number } | null }} [options]
- * @returns {Promise<Array<Record<string, unknown> & { score: number, dist: number }>>}
+ * @param {{ latitude?: number, longitude?: number, sessionToken: string }} userLocation
+ * @param {AbortSignal} [signal]
  */
-export async function search(query, options = {}) {
+export async function searchStreets(query, userLocation, signal) {
   const token = getMapboxAccessToken()
   if (!token) return []
 
-  const raw = typeof query === 'string' ? query.trim() : ''
-  if (raw.length < 2) return []
+  if (!query || String(query).trim().length < 2) return []
 
-  const { signal, proximity } = options
+  const raw = String(query).trim()
+  const sessionToken = userLocation?.sessionToken
+  if (!sessionToken) return []
 
-  let userPoint = null
-  if (
-    proximity &&
-    Number.isFinite(proximity.lat) &&
-    Number.isFinite(proximity.lng)
-  ) {
-    userPoint = { lat: proximity.lat, lng: proximity.lng }
-  } else {
-    userPoint = { lat: OVIEDO_LAT, lng: OVIEDO_LNG }
+  let latitude = userLocation?.latitude
+  let longitude = userLocation?.longitude
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    latitude = OVIEDO_LAT
+    longitude = OVIEDO_LNG
   }
 
   const params = new URLSearchParams({
-    access_token: token,
-    types: 'address',
-    country: 'es',
+    q: raw,
     language: 'es',
+    country: 'es',
     limit: '8',
-    proximity: `${userPoint.lng},${userPoint.lat}`,
+    proximity: `${longitude},${latitude}`,
+    types: 'address',
+    session_token: sessionToken,
+    access_token: token,
   })
 
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(raw)}.json?${params.toString()}`
+  const url = `${SUGGEST_BASE}?${params.toString()}`
 
   let res
   try {
@@ -151,28 +104,104 @@ export async function search(query, options = {}) {
   } catch {
     return []
   }
-  const features = Array.isArray(data.features) ? data.features : []
 
-  const scored = features.map((f) => {
-    const { score, dist } = scoreFeature(f, raw, userPoint)
-    return { ...f, score, dist }
-  })
-
-  scored.sort((a, b) => b.score - a.score)
-  return scored
+  const suggestions = data.suggestions || []
+  return rankResults(raw, suggestions)
 }
 
 /**
- * Payload al elegir una sugerencia (sin reverse geocode).
+ * @param {string} mapboxId
+ * @param {string} sessionToken — mismo token que en los suggest previos
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<object | null>}
  */
-export function selectionPayload(feature, label) {
-  const c = feature?.center
-  const lng = Array.isArray(c) && c.length >= 2 ? Number(c[0]) : NaN
-  const lat = Array.isArray(c) && c.length >= 2 ? Number(c[1]) : NaN
-  const address = typeof label === 'string' && label.trim() ? label.trim() : formatSuggestionLabel(feature)
+export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
+  const token = getMapboxAccessToken()
+  if (!token || mapboxId == null || mapboxId === '' || !sessionToken) return null
+
+  const id = encodeURIComponent(String(mapboxId))
+  const params = new URLSearchParams({
+    session_token: sessionToken,
+    access_token: token,
+  })
+  const url = `https://api.mapbox.com/search/searchbox/v1/retrieve/${id}?${params.toString()}`
+
+  let res
+  try {
+    res = await fetch(url, { signal })
+  } catch {
+    return null
+  }
+  if (!res.ok) return null
+
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    return null
+  }
+
+  const feature = Array.isArray(data.features) ? data.features[0] : null
+  return feature || null
+}
+
+export function formatStreet(r) {
+  let name = r?.name != null ? String(r.name) : ''
+  const lower = name.toLowerCase()
+
+  if (lower.includes('calle')) return name.replace(/calle/i, 'C/:')
+  if (lower.includes('avenida')) return name.replace(/avenida/i, 'Av.')
+  if (lower.includes('paseo')) return name.replace(/paseo/i, 'Pso.')
+  if (lower.includes('plaza')) return name.replace(/plaza/i, 'Plz.')
+
+  return name
+}
+
+export function formatSuggestionLabel(suggestion) {
+  if (!suggestion || typeof suggestion !== 'object') return ''
+  const fa = typeof suggestion.full_address === 'string' ? suggestion.full_address.trim() : ''
+  if (fa) {
+    const n = typeof suggestion.name === 'string' ? suggestion.name.trim() : ''
+    if (n && fa.startsWith(n)) {
+      return formatStreet(suggestion) + fa.slice(n.length)
+    }
+    return fa
+  }
+  const street = formatStreet(suggestion)
+  const pf = typeof suggestion.place_formatted === 'string' ? suggestion.place_formatted.trim() : ''
+  return pf ? `${street}, ${pf}` : street
+}
+
+/**
+ * Payload tras `/retrieve` (coordenadas en `properties.coordinates`).
+ * @param {object | null | undefined} retrievedFeature
+ */
+export function selectionPayload(retrievedFeature) {
+  const props = retrievedFeature?.properties
+  const coords = props?.coordinates
+  const lat = coords?.latitude
+  const lng = coords?.longitude
   return {
-    address,
+    address: formatStreet({ name: props?.name }),
     lat: Number.isFinite(lat) ? lat : null,
     lng: Number.isFinite(lng) ? lng : null,
   }
+}
+
+/**
+ * @param {string} query
+ * @param {{ signal?: AbortSignal, proximity?: { lat: number, lng: number } | null, sessionToken?: string }} [options]
+ */
+export async function search(query, options = {}) {
+  const { signal, proximity, sessionToken } = options
+  if (!sessionToken) return []
+  return searchStreets(
+    query,
+    {
+      latitude: proximity?.lat,
+      longitude: proximity?.lng,
+      sessionToken,
+    },
+    signal
+  )
 }
