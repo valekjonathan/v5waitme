@@ -163,7 +163,7 @@ export default function AlertsPage() {
                   .map((r) => {
                     const user = parkingAlertRowToCard(r)
                     if (import.meta.env.DEV) {
-                      console.log('SOURCE USER:', user.id, user.name)
+                      console.log('RENDER USER:', user.id, user.name)
                     }
                     return (
                       <UserAlertCard
@@ -196,7 +196,7 @@ export default function AlertsPage() {
                   .map((r) => {
                     const user = parkingAlertRowToCard(r, { clearTimers: true })
                     if (import.meta.env.DEV) {
-                      console.log('SOURCE USER:', user.id, user.name)
+                      console.log('RENDER USER:', user.id, user.name)
                     }
                     return (
                       <UserAlertCard

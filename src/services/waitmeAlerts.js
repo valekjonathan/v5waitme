@@ -140,14 +140,14 @@ export function parkingAlertRowToCard(row, options) {
   const r = row && typeof row === 'object' ? row : {}
   const rowId = typeof r.id === 'string' ? r.id : ''
   const peerId = typeof r.peer_user_id === 'string' ? r.peer_user_id : ''
-  /** Identidad estable para key/React y reseñas: peer; si no hay peer, fila de alerta. */
-  const id = peerId || rowId
+  /** `id` = únicamente usuario (peer). Nunca id de fila de alerta. */
+  const id = peerId
   const avail = r.available_in_minutes
   const waitUntil = r.wait_until
   const displayName = String(r.peer_display_name ?? '').trim() || 'Usuario'
   return {
     id,
-    alertRowId: rowId,
+    alertId: rowId,
     name: displayName,
     user_name: displayName,
     rating: Number(r.peer_rating ?? 4),

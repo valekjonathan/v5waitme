@@ -201,8 +201,8 @@ export function dmThreadToListCard(p) {
   const phone = phoneRaw || null
   return {
     threadId,
-    /** Identidad estable (peer) para key y UserAlertCard; no confundir con threadId. */
-    id: peerId || threadId,
+    /** Usuario (peer). Nunca usar threadId aquí. */
+    id: peerId,
     name,
     user_name: name,
     peerUserId: peerId,

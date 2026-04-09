@@ -120,7 +120,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   }, [])
 
   if (import.meta.env.DEV && user) {
-    console.log('SOURCE USER:', user.id, user.name)
+    console.log('RENDER USER:', user.id, user.name)
   }
 
   const handleStreetResolved = useCallback((payload) => {

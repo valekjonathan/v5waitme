@@ -221,7 +221,7 @@ export default function ProfileHeader({
   /** Id del usuario mostrado en cabecera (sesión en perfil; peer id en reseñas de otro). */
   subjectUserId = '',
 }) {
-  const { openReviews } = useAppScreen()
+  const { openUserReviews } = useAppScreen()
   const { user: currentUser } = useAuth()
   if (!profile) return null
 
@@ -249,7 +249,9 @@ export default function ProfileHeader({
 
   const handleYellowCardNav = () => {
     if (!yellowCardNavigates) return
-    openReviews?.()
+    const uid = String(currentUser?.id ?? '').trim()
+    if (!uid) return
+    openUserReviews?.(uid)
   }
 
   return (
@@ -278,7 +280,8 @@ export default function ProfileHeader({
               style={reviewsButtonStyle}
               onClick={(e) => {
                 e.stopPropagation()
-                openReviews?.()
+                const uid = String(currentUser?.id ?? '').trim()
+                if (uid) openUserReviews?.(uid)
               }}
             >
               Reseñas

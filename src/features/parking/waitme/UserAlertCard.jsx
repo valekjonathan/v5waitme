@@ -357,15 +357,16 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const peerReviewId = typeof user?.id === 'string' ? user.id.trim() : ''
+  /** Siempre id de usuario real (nunca alerta/hilo). */
+  const uid = String(user?.id ?? '').trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()
-    if (!peerReviewId) return
+    if (!uid) return
     if (import.meta.env.DEV) {
-      console.log('CLICK USER:', peerReviewId, user.name ?? user.user_name)
+      console.log('CLICK USER:', user.id, user.name ?? user.user_name)
     }
-    openUserReviews(peerReviewId)
+    openUserReviews(uid)
   }
 
   const badgeBase = {
@@ -592,7 +593,7 @@ function UserAlertCard({
       <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
         <UserAlertAvatarBlock
           row={display}
-          onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+          onClick={uid ? handleOpenPeerReviews : undefined}
         />
 
         <div
@@ -626,13 +627,13 @@ function UserAlertCard({
               <span
                 style={{
                   ...USER_CARD_NAME_STYLE,
-                  cursor: peerReviewId ? 'pointer' : undefined,
+                  cursor: uid ? 'pointer' : undefined,
                 }}
-                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
-                role={peerReviewId ? 'button' : undefined}
-                tabIndex={peerReviewId ? 0 : undefined}
+                onClick={uid ? handleOpenPeerReviews : undefined}
+                role={uid ? 'button' : undefined}
+                tabIndex={uid ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!peerReviewId) return
+                  if (!uid) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -655,13 +656,13 @@ function UserAlertCard({
                   alignItems: 'center',
                   flexShrink: 0,
                   transform: 'translateX(-12px)',
-                  cursor: peerReviewId ? 'pointer' : undefined,
+                  cursor: uid ? 'pointer' : undefined,
                 }}
-                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
-                role={peerReviewId ? 'button' : undefined}
-                tabIndex={peerReviewId ? 0 : undefined}
+                onClick={uid ? handleOpenPeerReviews : undefined}
+                role={uid ? 'button' : undefined}
+                tabIndex={uid ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!peerReviewId) return
+                  if (!uid) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -706,13 +707,13 @@ function UserAlertCard({
                   lineHeight: 1,
                   margin: 0,
                   marginTop: 4,
-                  cursor: peerReviewId ? 'pointer' : undefined,
+                  cursor: uid ? 'pointer' : undefined,
                 }}
-                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
-                role={peerReviewId ? 'button' : undefined}
-                tabIndex={peerReviewId ? 0 : undefined}
+                onClick={uid ? handleOpenPeerReviews : undefined}
+                role={uid ? 'button' : undefined}
+                tabIndex={uid ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!peerReviewId) return
+                  if (!uid) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -724,11 +725,11 @@ function UserAlertCard({
 
               <div
                 style={{ position: 'relative', marginTop: 4 }}
-                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
-                role={peerReviewId ? 'button' : undefined}
-                tabIndex={peerReviewId ? 0 : undefined}
+                onClick={uid ? handleOpenPeerReviews : undefined}
+                role={uid ? 'button' : undefined}
+                tabIndex={uid ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!peerReviewId) return
+                  if (!uid) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
