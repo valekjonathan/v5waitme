@@ -60,6 +60,19 @@ const inputActionBtnStyle = {
   boxSizing: 'border-box',
 }
 
+const attachMenuItemStyle = {
+  width: '100%',
+  textAlign: 'left',
+  padding: '10px 12px',
+  borderRadius: 10,
+  border: 'none',
+  background: 'transparent',
+  color: colors.textPrimary,
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: 'pointer',
+}
+
 function pravatarImgIdFromString(s) {
   let h = 0
   const str = String(s || 'user')
@@ -82,6 +95,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
 
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
+  const [attachOpen, setAttachOpen] = useState(false)
   const [bootError, setBootError] = useState(null)
   const [sending, setSending] = useState(false)
   const endRef = useRef(null)
@@ -173,6 +187,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     if (!localFallback && !isRealSupabaseAuthUid(userId)) return
     setDraft('')
     setSending(true)
+    setAttachOpen(false)
     const optimistic = {
       id: nextTempId(),
       from: 'me',
@@ -233,6 +248,19 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           >
             <IconChevronLeft size={22} />
           </button>
+          <img
+            src={peerAvatar}
+            alt=""
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              border: '1px solid rgba(139,92,246,0.4)',
+              objectFit: 'cover',
+              flexShrink: 0,
+              boxSizing: 'border-box',
+            }}
+          />
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
@@ -244,24 +272,6 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               style={headerActionBtnStyle}
             >
               <IconPhone size={18} />
-            </button>
-            <button
-              type="button"
-              aria-label="Más opciones"
-              onClick={() => {}}
-              style={headerActionBtnStyle}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden
-              >
-                <circle cx="5" cy="12" r="1.7" />
-                <circle cx="12" cy="12" r="1.7" />
-                <circle cx="19" cy="12" r="1.7" />
-              </svg>
             </button>
           </div>
         </header>
@@ -376,29 +386,54 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               borderTop: `1px solid ${colors.border}`,
               backgroundColor: BG,
               boxSizing: 'border-box',
+              position: 'relative',
             }}
           >
             <button
               type="button"
               aria-label="Adjuntar"
-              onClick={() => {}}
+              onClick={() => setAttachOpen((v) => !v)}
               style={inputActionBtnStyle}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
               </svg>
             </button>
-            <button
-              type="button"
-              aria-label="Cámara"
-              onClick={() => {}}
-              style={inputActionBtnStyle}
+            <div
+              aria-hidden={!attachOpen}
+              style={{
+                position: 'absolute',
+                left: 12,
+                bottom: 8 + 44 + 8,
+                width: 220,
+                padding: 8,
+                borderRadius: 12,
+                border: `1px solid ${colors.border}`,
+                background: 'rgba(17, 24, 39, 0.95)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                boxSizing: 'border-box',
+                opacity: attachOpen ? 1 : 0,
+                transform: attachOpen ? 'translateY(0)' : 'translateY(6px)',
+                transition: 'opacity 140ms ease, transform 140ms ease',
+                pointerEvents: attachOpen ? 'auto' : 'none',
+              }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </button>
+              <button
+                type="button"
+                onClick={() => setAttachOpen(false)}
+                style={attachMenuItemStyle}
+              >
+                Hacer foto
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttachOpen(false)}
+                style={attachMenuItemStyle}
+              >
+                Elegir de galería
+              </button>
+            </div>
             <InputBase
               value={draft}
               onChange={(e) => setDraft(e.target.value)}

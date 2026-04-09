@@ -41,11 +41,9 @@ export default function ChatsPage() {
     (id) => {
       const sid = String(id ?? '')
       if (!sid) return
-      nav.clearChatThreadUnread?.(sid)
-      setThreads((prev) => prev.map((x) => (x.id === sid ? { ...x, unreadCount: 0 } : x)))
       setThreadId(sid)
     },
-    [nav]
+    []
   )
 
   const load = useCallback(async () => {
@@ -75,6 +73,12 @@ export default function ChatsPage() {
   useEffect(() => {
     nav.syncChatUnreadFromThreads?.(threads)
   }, [nav, threads])
+
+  useEffect(() => {
+    if (!nav?.chatsListResetGeneration) return
+    setPeerBootstrap(null)
+    setThreadId(null)
+  }, [nav?.chatsListResetGeneration])
 
   useEffect(() => {
     if (!canLoadChats) return

@@ -101,7 +101,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
           type="button"
           variant={isChatActive ? 'navActive' : 'nav'}
           aria-current={isChatActive ? 'page' : undefined}
-          onClick={guardOr(() => nav?.openChats?.())}
+          onClick={guardOr(() => nav?.openChatsRoot?.())}
         >
           <span
             style={{
@@ -121,7 +121,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                 style={{
                   position: 'absolute',
                   top: 6,
-                  right: 6,
+                  right: 1,
                   width: 18,
                   height: 18,
                   boxSizing: 'border-box',

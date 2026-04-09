@@ -15,6 +15,7 @@ const AppScreenContext = createContext(null)
 export function AppScreenProvider({ children }) {
   const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
+  const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
   const [chatUnreadByThread, setChatUnreadByThread] = useState(
     /** @type {Record<string, number>} */ ({})
   )
@@ -68,6 +69,12 @@ export function AppScreenProvider({ children }) {
     dispatch({ type: 'openChats' })
   }, [])
 
+  /** Siempre abre chats y fuerza volver a lista (sin toggles). */
+  const openChatsRoot = useCallback(() => {
+    dispatch({ type: 'openChats' })
+    setChatsListResetGeneration((g) => g + 1)
+  }, [])
+
   const openChatsWithPeer = useCallback((peerUserId) => {
     const id = String(peerUserId ?? '')
     if (isRealSupabaseAuthUid(id)) stashPendingDmPeerUserId(id)
@@ -84,8 +91,10 @@ export function AppScreenProvider({ children }) {
       openParkHere,
       openAlerts,
       openChats,
+      openChatsRoot,
       openChatsWithPeer,
       mapFocusGeneration,
+      chatsListResetGeneration,
       chatUnreadByThread,
       chatUnreadTotal,
       syncChatUnreadFromThreads,
@@ -98,8 +107,10 @@ export function AppScreenProvider({ children }) {
       openParkHere,
       openAlerts,
       openChats,
+      openChatsRoot,
       openChatsWithPeer,
       mapFocusGeneration,
+      chatsListResetGeneration,
       chatUnreadByThread,
       chatUnreadTotal,
       syncChatUnreadFromThreads,
