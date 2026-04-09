@@ -194,6 +194,27 @@ export function startLocationTracking() {
   if (locationTrackingStarted) return
   locationTrackingStarted = true
 
+  /** Movimiento GPS falso en dev (Mac/navegador) para validar el mapa; no en tests. */
+  if (
+    import.meta.env.DEV &&
+    import.meta.env.MODE !== 'test' &&
+    typeof window !== 'undefined'
+  ) {
+    let lat = DEV_BROWSER_MOCK_LAT
+    let lng = DEV_BROWSER_MOCK_LNG
+    window.setInterval(() => {
+      lat += 0.00005
+      lng += 0.00005
+      notify({
+        latitude: lat,
+        longitude: lng,
+        accuracy: 5,
+        timestamp: Date.now(),
+      })
+    }, 1000)
+    return
+  }
+
   if (isDevSafari()) {
     notify({
       latitude: DEV_BROWSER_MOCK_LAT,
