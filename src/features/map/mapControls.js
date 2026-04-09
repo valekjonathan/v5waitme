@@ -13,15 +13,13 @@ export { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
 /**
  * Núcleo único WaitMe: `(lng,lat)` bajo el píxel `(targetX, targetY)` en coords del contenedor Mapbox.
- * `project` → delta respecto a la punta objetivo → `unproject` desde el centro del viewport (`clientWidth/Height`).
- * Sin epsilon: cada lectura válida puede mover la cámara (parking + hero comparten la misma matemática).
+ * Delta desde el punto GPS proyectado al objetivo; el nuevo centro se obtiene desplazando desde
+ * `map.project(map.getCenter())` (no `clientWidth/2`), coherente con el transform interno de Mapbox.
  */
 export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY) {
-  if (!map?.project || !map?.unproject) return null
+  if (!map?.project || !map?.unproject || typeof map.getCenter !== 'function') return null
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return null
-  const wrap = map.getContainer()
-  if (!(wrap instanceof HTMLElement)) return null
   let projected
   try {
     projected = map.project([lng, lat])
@@ -31,9 +29,10 @@ export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY
   const dx = projected.x - targetX
   const dy = projected.y - targetY
   try {
+    const centerProjected = map.project(map.getCenter())
     return map.unproject({
-      x: wrap.clientWidth / 2 + dx,
-      y: wrap.clientHeight / 2 + dy,
+      x: centerProjected.x + dx,
+      y: centerProjected.y + dy,
     })
   } catch {
     return null
