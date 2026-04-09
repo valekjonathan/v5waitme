@@ -33,6 +33,13 @@ function openMapsDirections(alert) {
   }
 }
 
+/** Abre el marcador `tel:` del sistema (móvil / escritorio). No hace nada si no hay número. */
+export function waitmeOpenTelDialer(phone) {
+  const p = String(phone ?? '').trim()
+  if (!p) return
+  window.location.href = `tel:${p}`
+}
+
 /** Misma altura que el botón morado WaitMe! en la fila principal (y botón premium inferior). */
 export const WAITME_BTN_HEIGHT = 32
 
@@ -109,9 +116,13 @@ const phoneStyleRowEnabled = {
   cursor: 'pointer',
 }
 
-export function WaitmeCardPhoneButton({ enabled, onClick }) {
+export function WaitmeCardPhoneButton({ enabled, phone, onClick }) {
+  const handlePhoneClick = () => {
+    waitmeOpenTelDialer(phone)
+    if (!String(phone ?? '').trim()) onClick?.()
+  }
   return enabled ? (
-    <WaitmeCardActionIconButton ariaLabel="Llamar" style={phoneStyleRowEnabled} onClick={onClick}>
+    <WaitmeCardActionIconButton ariaLabel="Llamar" style={phoneStyleRowEnabled} onClick={handlePhoneClick}>
       <IconPhone size={16} />
     </WaitmeCardActionIconButton>
   ) : (

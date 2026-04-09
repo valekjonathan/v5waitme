@@ -28,6 +28,7 @@ import {
   profileFormSectionLayoutStyle,
   profileFormVerticalSlotStyle,
   profileReviewsFullWidthButtonStyle,
+  profileScreenAvatarBorder,
 } from '../../shared/profileReviewsLayout'
 
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
@@ -388,7 +389,9 @@ export default function ProfilePage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
+      <ProfileReviewsLayout
+        header={<ProfileHeader profile={headerProfile} avatarBorder={profileScreenAvatarBorder} />}
+      >
         <div style={profileFormVerticalSlotStyle}>
           <Section style={profileFormSectionLayoutStyle}>
             <ProfileForm

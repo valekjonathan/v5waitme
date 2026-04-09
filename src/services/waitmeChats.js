@@ -5,7 +5,7 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
 import { isRealSupabaseAuthUid } from './authUid.js'
 
-const PROFILE_MIN = 'id,name,car_brand,car_model,plate,avatar_url'
+const PROFILE_MIN = 'id,name,phone,car_brand,car_model,plate,avatar_url'
 
 const FB_THREAD_1 = '11111111-1111-4111-8111-111111111111'
 const FB_THREAD_2 = '22222222-2222-4222-8222-222222222222'
@@ -88,6 +88,8 @@ function seedFallbackDmIfNeeded() {
       peerUserId: FB_PEER_1,
       user_photo: null,
       unreadCount: 2,
+      phone: '+34600000000',
+      allow_phone_calls: true,
     },
     {
       id: FB_THREAD_2,
@@ -101,6 +103,8 @@ function seedFallbackDmIfNeeded() {
       peerUserId: FB_PEER_2,
       user_photo: null,
       unreadCount: 0,
+      phone: '+34600111222',
+      allow_phone_calls: true,
     },
   ]
 }
@@ -164,6 +168,7 @@ export function dmThreadToListCard(p) {
   const pr = p.profile && typeof p.profile === 'object' ? p.profile : {}
   const name = String(pr.name ?? '').trim() || 'Usuario'
   const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
+  const phoneRaw = String(pr.phone ?? '').trim()
   return {
     id: p.thread.id,
     name,
@@ -176,6 +181,8 @@ export function dmThreadToListCard(p) {
     peerUserId: p.peerId,
     user_photo: pr.avatar_url ?? null,
     unreadCount: 0,
+    phone: phoneRaw || null,
+    allow_phone_calls: phoneRaw.length > 0,
   }
 }
 
@@ -274,6 +281,7 @@ export async function listDmThreadsForUser(userId) {
  */
 export function dmListCardToAlert(t) {
   const c = t && typeof t === 'object' ? t : {}
+  const phone = c.phone != null && String(c.phone).trim() ? String(c.phone).trim() : null
   return {
     id: c.id,
     user_name: String(c.name ?? ''),
@@ -284,6 +292,8 @@ export function dmListCardToAlert(t) {
     chatLastMessage: c.lastMessage,
     user_photo: c.user_photo ?? null,
     chatUnreadCount: Math.max(0, Number(c.unreadCount ?? 0)),
+    phone,
+    allow_phone_calls: c.allow_phone_calls !== false && Boolean(phone),
   }
 }
 

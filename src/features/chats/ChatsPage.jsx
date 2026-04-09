@@ -132,6 +132,8 @@ export default function ChatsPage() {
         peerUserId: peerBootstrap,
         user_photo: null,
         unreadCount: 0,
+        phone: null,
+        allow_phone_calls: false,
       }
     }
     return null

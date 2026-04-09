@@ -11,7 +11,7 @@ import { VehicleIcon } from '../../profile/components/VehicleIcons.jsx'
 import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
-import UserAlertCardActions, { WAITME_BTN_HEIGHT } from './UserAlertCardActions.jsx'
+import UserAlertCardActions, { WAITME_BTN_HEIGHT, waitmeOpenTelDialer } from './UserAlertCardActions.jsx'
 
 /** Mismo morado que el icono del reloj en esta tarjeta. */
 const CLOCK_PURPLE = '#c084fc'
@@ -275,6 +275,7 @@ function UserAlertCard({
     onChat?.(alert)
   }
   const handleCall = () => {
+    waitmeOpenTelDialer(alert?.phone)
     onCall?.(alert)
   }
   const handleBuy = () => {

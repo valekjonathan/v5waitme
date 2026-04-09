@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useAppScreen } from '../../lib/AppScreenContext'
 import { colors } from '../../design/colors'
 import { radius } from '../../design/radius'
 import ScreenShell from '../../ui/layout/ScreenShell'
@@ -80,6 +81,9 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const threadId = String(s.id ?? '')
   const title = String(s.name ?? 'Chat')
   const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title)}`
+  const peerPhone = String(s.phone ?? '').trim()
+  const headerCallEnabled = Boolean(peerPhone && s.allow_phone_calls !== false)
+  const { openReviews } = useAppScreen()
   const auth = useAuth()
   const meta =
     auth?.user?.user_metadata && typeof auth.user.user_metadata === 'object' ? auth.user.user_metadata : {}
@@ -91,10 +95,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
   const [attachOpen, setAttachOpen] = useState(false)
+  const [attachPreviewUrl, setAttachPreviewUrl] = useState(null)
   const [bootError, setBootError] = useState(null)
   const [sending, setSending] = useState(false)
   const endRef = useRef(null)
   const scrollRef = useRef(null)
+  const cameraInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
 
   const separatorLabel = 'Hoy'
 
@@ -107,6 +114,31 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   useEffect(() => {
     scrollBottom()
   }, [messages, scrollBottom])
+
+  useEffect(() => {
+    return () => {
+      if (attachPreviewUrl) URL.revokeObjectURL(attachPreviewUrl)
+    }
+  }, [attachPreviewUrl])
+
+  const onAttachImageChosen = useCallback((e) => {
+    const input = e.target
+    const f = input.files?.[0]
+    input.value = ''
+    if (!f || !String(f.type ?? '').startsWith('image/')) return
+    setAttachPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(f)
+    })
+    setAttachOpen(false)
+  }, [])
+
+  const clearAttachPreview = useCallback(() => {
+    setAttachPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return null
+    })
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -255,24 +287,39 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           >
             <IconChevronLeft size={22} />
           </button>
-          <img
-            src={peerAvatar}
-            alt=""
+          <button
+            type="button"
+            aria-label="Ver reseñas"
+            onClick={() => openReviews?.()}
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              border: '1px solid rgba(139,92,246,0.5)',
-              objectFit: 'cover',
+              padding: 0,
+              margin: 0,
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
               flexShrink: 0,
-              boxSizing: 'border-box',
+              lineHeight: 0,
             }}
-          />
+          >
+            <img
+              src={peerAvatar}
+              alt=""
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: '1px solid rgba(139,92,246,0.5)',
+                objectFit: 'cover',
+                boxSizing: 'border-box',
+                display: 'block',
+              }}
+            />
+          </button>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <WaitmeCardPhoneButton enabled onClick={() => {}} />
+            <WaitmeCardPhoneButton enabled={headerCallEnabled} phone={peerPhone} />
             <WaitmeCardNavigateButton enabled onClick={() => {}} />
           </div>
         </header>
@@ -453,15 +500,73 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               width: '100%',
               padding: '8px 12px',
               display: 'flex',
-              flexDirection: 'row',
+              flexDirection: 'column',
               gap: 8,
-              alignItems: 'center',
               borderTop: `1px solid ${colors.border}`,
               backgroundColor: BG,
               boxSizing: 'border-box',
               position: 'relative',
             }}
           >
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={onAttachImageChosen}
+              style={{ display: 'none' }}
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              onChange={onAttachImageChosen}
+              style={{ display: 'none' }}
+            />
+            {attachPreviewUrl ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '6px 8px',
+                  borderRadius: 10,
+                  border: `1px solid ${colors.border}`,
+                  background: colors.surfaceMuted,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <img
+                  src={attachPreviewUrl}
+                  alt=""
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 8,
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={clearAttachPreview}
+                  style={{
+                    marginLeft: 'auto',
+                    padding: '6px 10px',
+                    borderRadius: 8,
+                    border: `1px solid ${colors.border}`,
+                    background: colors.surfaceElevated,
+                    color: colors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', flexDirection: 'row', gap: 8, alignItems: 'center', width: '100%' }}>
             <button
               type="button"
               aria-label="Adjuntar"
@@ -494,14 +599,20 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             >
               <button
                 type="button"
-                onClick={() => setAttachOpen(false)}
+                onClick={() => {
+                  setAttachOpen(false)
+                  cameraInputRef.current?.click()
+                }}
                 style={attachMenuItemStyle}
               >
                 Hacer foto
               </button>
               <button
                 type="button"
-                onClick={() => setAttachOpen(false)}
+                onClick={() => {
+                  setAttachOpen(false)
+                  galleryInputRef.current?.click()
+                }}
                 style={attachMenuItemStyle}
               >
                 Elegir de galería
@@ -535,6 +646,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             >
               Enviar
             </Button>
+            </div>
           </div>
         </div>
       </div>

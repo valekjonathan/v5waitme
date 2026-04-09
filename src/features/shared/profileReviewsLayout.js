@@ -10,6 +10,9 @@ const s = LAYOUT.spacing
 /** Ancho máximo compartido perfil / reseñas (coincide con tarjeta amarilla). */
 export const PROFILE_REVIEWS_MAX_WIDTH = 360
 
+/** Borde del avatar en pantalla perfil (header compartido con reseñas). */
+export const profileScreenAvatarBorder = '2px solid rgba(139,92,246,0.6)'
+
 /**
  * Único contenedor del header (ProfileHeader) en perfil y reseñas — misma referencia, sin duplicar.
  * Ancho máximo alineado con la tarjeta amarilla (PROFILE_REVIEWS_MAX_WIDTH).

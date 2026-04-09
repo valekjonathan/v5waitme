@@ -17,6 +17,7 @@ import {
   innerPurplePaddingX,
   outerCardTopPadding,
   profileHeaderCardMarginBottomPx,
+  profileScreenAvatarBorder,
   reviewsAvatarWidth,
   reviewsBadgeLayerStyle,
 } from '../../shared/profileReviewsLayout'
@@ -82,12 +83,11 @@ const innerPurpleCardStyle = {
   border: `1.5px solid ${colors.primary}`,
   background: colors.background,
 }
-const avatarStyle = {
+const avatarStyleBase = {
   width: reviewsAvatarWidth,
   height: 128,
   borderRadius: radius.xl,
   overflow: 'hidden',
-  border: `1px solid ${colors.primary}`,
   background: colors.surfaceMuted,
   flexShrink: 0,
   display: 'flex',
@@ -193,9 +193,13 @@ const avatarImgStyle = {
  * Tarjeta amarilla única (Perfil y Reseñas montan este mismo componente).
  * Estructura: tokens `reviewsBadgeLayerStyle` + email en esquina + bloque morado con nombre único.
  */
-export default function ProfileHeader({ profile }) {
+export default function ProfileHeader({ profile, avatarBorder }) {
   const { openReviews } = useAppScreen()
   if (!profile) return null
+  const avatarStyle = {
+    ...avatarStyleBase,
+    border: avatarBorder ?? profileScreenAvatarBorder,
+  }
   const displayName = profileDisplayFirstName(profile?.full_name)
   const carText =
     String(
