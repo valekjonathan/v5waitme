@@ -44,9 +44,9 @@ export function AppScreenProvider({ children }) {
     const next = /** @type {Record<string, number>} */ ({})
     for (const t of Array.isArray(list) ? list : []) {
       if (!t || typeof t !== 'object') continue
-      const id = String(t.id ?? '')
-      if (!id) continue
-      next[id] = Math.max(0, Number(t.unreadCount ?? 0))
+      const threadKey = String(t.threadId ?? t.id ?? '')
+      if (!threadKey) continue
+      next[threadKey] = Math.max(0, Number(t.unreadCount ?? 0))
     }
     setChatUnreadByThread(next)
   }, [])

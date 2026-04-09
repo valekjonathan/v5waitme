@@ -87,8 +87,12 @@ function seedFallbackDmIfNeeded() {
   const fbReviews2 = generateReviewsForEntityId(FB_PEER_2)
   fallbackStaticListCards = [
     {
-      id: FB_THREAD_1,
+      threadId: FB_THREAD_1,
+      id: FB_PEER_1,
       name: 'Carlos',
+      user_name: 'Carlos',
+      peer_user_id: FB_PEER_1,
+      user_id: FB_PEER_1,
       reviews: fbReviews1,
       rating: getAverage(fbReviews1),
       lastMessage: lm1?.text ?? '',
@@ -97,14 +101,20 @@ function seedFallbackDmIfNeeded() {
       model: 'Corsa',
       plate: '2145 BCD',
       peerUserId: FB_PEER_1,
+      chatLastMessage: lm1?.text ?? '',
+      chatUnreadCount: 2,
       user_photo: null,
       unreadCount: 2,
       phone: '+34600000000',
       allow_phone_calls: true,
     },
     {
-      id: FB_THREAD_2,
+      threadId: FB_THREAD_2,
+      id: FB_PEER_2,
       name: 'Lucía',
+      user_name: 'Lucía',
+      peer_user_id: FB_PEER_2,
+      user_id: FB_PEER_2,
       reviews: fbReviews2,
       rating: getAverage(fbReviews2),
       lastMessage: lm2?.text ?? '',
@@ -113,6 +123,8 @@ function seedFallbackDmIfNeeded() {
       model: 'Yaris',
       plate: '9012 XYZ',
       peerUserId: FB_PEER_2,
+      chatLastMessage: lm2?.text ?? '',
+      chatUnreadCount: 0,
       user_photo: null,
       unreadCount: 0,
       phone: '+34600111222',
@@ -145,7 +157,7 @@ function mergeFallbackListCards() {
 function touchFallbackListPreview(threadId, text, at) {
   seedFallbackDmIfNeeded()
   for (const c of [...fallbackStaticListCards, ...fallbackDynamicListCards.values()]) {
-    if (c.id === threadId) {
+    if (c.threadId === threadId) {
       c.lastMessage = text
       c.time = at
       return
@@ -182,21 +194,32 @@ export function dmThreadToListCard(p) {
   const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
   const phoneRaw = String(pr.phone ?? '').trim()
   const peerId = String(p.peerId ?? '')
-  const reviews = generateReviewsForEntityId(peerId || p.thread.id)
+  const threadId = p.thread.id
+  const reviews = generateReviewsForEntityId(peerId || threadId)
+  const rating = getAverage(reviews)
+  const lastMessage = String(last?.body ?? '')
+  const phone = phoneRaw || null
   return {
-    id: p.thread.id,
+    threadId,
+    /** Identidad estable (peer) para key y UserAlertCard; no confundir con threadId. */
+    id: peerId || threadId,
     name,
+    user_name: name,
+    peerUserId: peerId,
+    peer_user_id: peerId || null,
+    user_id: peerId || null,
     reviews,
-    rating: getAverage(reviews),
-    lastMessage: String(last?.body ?? ''),
+    rating,
+    lastMessage,
+    chatLastMessage: lastMessage,
     time: formatDmMsgTime(last?.created_at ? String(last.created_at) : ''),
     brand: String(pr.car_brand ?? ''),
     model: String(pr.car_model ?? ''),
     plate: String(pr.plate ?? ''),
-    peerUserId: p.peerId,
     user_photo: pr.avatar_url ?? null,
     unreadCount: 0,
-    phone: phoneRaw || null,
+    chatUnreadCount: 0,
+    phone,
     allow_phone_calls: phoneRaw.length > 0,
   }
 }
@@ -289,32 +312,6 @@ export async function listDmThreadsForUser(userId) {
 
   setChatsRealOk(true, false)
   return { data: cards, error: null, usedDevFallback: false }
-}
-
-/**
- * @param {Record<string, unknown>} t
- */
-export function dmListCardToAlert(t) {
-  const c = t && typeof t === 'object' ? t : {}
-  const phone = c.phone != null && String(c.phone).trim() ? String(c.phone).trim() : null
-  const reviews = Array.isArray(c.reviews) ? c.reviews : []
-  const rating =
-    reviews.length > 0 ? getAverage(reviews) : Number(c.rating ?? 0)
-  return {
-    id: c.id,
-    peer_user_id: typeof c.peerUserId === 'string' ? c.peerUserId : null,
-    user_name: String(c.name ?? ''),
-    rating,
-    reviews,
-    brand: c.brand,
-    model: c.model,
-    plate: c.plate,
-    chatLastMessage: c.lastMessage,
-    user_photo: c.user_photo ?? null,
-    chatUnreadCount: Math.max(0, Number(c.unreadCount ?? 0)),
-    phone,
-    allow_phone_calls: c.allow_phone_calls !== false && Boolean(phone),
-  }
 }
 
 /**
@@ -447,7 +444,7 @@ export async function getOrCreateDmThread(otherUserId) {
     if (peer === FB_PEER_1) return { data: FB_THREAD_1, error: null, usedDevFallback: true }
     if (peer === FB_PEER_2) return { data: FB_THREAD_2, error: null, usedDevFallback: true }
     const existing = fallbackDynamicListCards.get(peer)
-    if (existing) return { data: existing.id, error: null, usedDevFallback: true }
+    if (existing) return { data: existing.threadId, error: null, usedDevFallback: true }
     const tid = crypto.randomUUID()
     const at = formatDmMsgTime(new Date().toISOString())
     const dynReviews = generateReviewsForEntityId(peer)
@@ -460,11 +457,16 @@ export async function getOrCreateDmThread(otherUserId) {
       },
     ])
     const card = {
-      id: tid,
+      threadId: tid,
+      id: peer,
       name: '',
+      user_name: '',
+      peer_user_id: peer,
+      user_id: peer,
       reviews: dynReviews,
       rating: getAverage(dynReviews),
       lastMessage: 'Hola, escribe cuando quieras.',
+      chatLastMessage: 'Hola, escribe cuando quieras.',
       time: at,
       brand: '',
       model: '',
@@ -472,6 +474,7 @@ export async function getOrCreateDmThread(otherUserId) {
       peerUserId: peer,
       user_photo: null,
       unreadCount: 0,
+      chatUnreadCount: 0,
     }
     fallbackDynamicListCards.set(peer, card)
     return { data: tid, error: null, usedDevFallback: true }

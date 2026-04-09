@@ -133,15 +133,23 @@ function buildDevFallbackAlertRows(ownerId, listingType) {
 
 /**
  * @param {Record<string, unknown>} row
+ * @param {{ clearTimers?: boolean }} [options]
  */
-export function parkingAlertRowToCard(row) {
+export function parkingAlertRowToCard(row, options) {
+  const clearTimers = options?.clearTimers === true
   const r = row && typeof row === 'object' ? row : {}
-  const id = typeof r.id === 'string' ? r.id : ''
+  const rowId = typeof r.id === 'string' ? r.id : ''
+  const peerId = typeof r.peer_user_id === 'string' ? r.peer_user_id : ''
+  /** Identidad estable para key/React y reseñas: peer; si no hay peer, fila de alerta. */
+  const id = peerId || rowId
   const avail = r.available_in_minutes
   const waitUntil = r.wait_until
+  const displayName = String(r.peer_display_name ?? '').trim() || 'Usuario'
   return {
     id,
-    user_name: String(r.peer_display_name ?? '').trim() || 'Usuario',
+    alertRowId: rowId,
+    name: displayName,
+    user_name: displayName,
     rating: Number(r.peer_rating ?? 4),
     brand: r.brand ?? '',
     model: r.model ?? '',
@@ -153,8 +161,8 @@ export function parkingAlertRowToCard(row) {
     color: r.vehicle_color ?? 'gris',
     vehicleType: r.vehicle_type ?? 'car',
     address: String(r.address ?? '').trim() || '—',
-    available_in_minutes: avail != null ? Number(avail) : null,
-    wait_until: typeof waitUntil === 'string' ? waitUntil : null,
+    available_in_minutes: clearTimers ? null : avail != null ? Number(avail) : null,
+    wait_until: clearTimers ? null : typeof waitUntil === 'string' ? waitUntil : null,
     created_date: r.created_at ? new Date(String(r.created_at)).getTime() : Date.now(),
     phone: r.phone ?? null,
     allow_phone_calls: Boolean(r.allow_phone_calls),

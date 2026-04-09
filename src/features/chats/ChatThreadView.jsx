@@ -79,7 +79,7 @@ function nextTempId() {
  */
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
-  const threadId = String(s.id ?? '')
+  const threadId = String(s.threadId ?? s.id ?? '')
   const threadPending = isWaitmePendingThreadId(threadId)
   const peerIdStr = String(s.peerUserId ?? '').trim()
   const displayName = String(s.snapshot_user_name ?? s.user_name ?? s.name ?? '').trim()

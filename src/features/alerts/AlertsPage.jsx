@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
@@ -111,17 +111,6 @@ export default function AlertsPage() {
     void load()
   }, [load])
 
-  const { activeCards, doneCards } = useMemo(() => {
-    const active = []
-    const done = []
-    for (const r of rows) {
-      const card = parkingAlertRowToCard(r)
-      if (String(r.status) === 'active') active.push(card)
-      else done.push(card)
-    }
-    return { activeCards: active, doneCards: done }
-  }, [rows])
-
   const offlineHint = !hasRealSupabaseSession && !dev ? (
       <DashedHint>
         Conecta Supabase e inicia sesión para cargar tu historial de alertas y reservas.
@@ -162,27 +151,31 @@ export default function AlertsPage() {
 
           <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
           {scope === 'alerts' ? (
-            activeCards.length === 0 && !loading && !loadError && canLoadAlerts ? (
+            rows.filter((r) => String(r.status) === 'active').length === 0 &&
+            !loading &&
+            !loadError &&
+            canLoadAlerts ? (
               <DashedHint>No tienes alertas activas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {activeCards.map((a) => {
-                  const peerId = String(a.peer_user_id ?? a.user_id ?? '').trim()
-                  if (import.meta.env.DEV) {
-                    console.log('RENDER USER:', peerId, a.user_name)
-                  }
-                  return (
-                  <UserAlertCard
-                    key={a.id}
-                    reviewUser={{ id: peerId, name: a.user_name }}
-                    alert={a}
-                    isEmpty={false}
-                    hideBuy={false}
-                    onBuyAlert={() => {}}
-                    onCall={() => {}}
-                  />
-                  )
-                })}
+                {rows
+                  .filter((r) => String(r.status) === 'active')
+                  .map((r) => {
+                    const user = parkingAlertRowToCard(r)
+                    if (import.meta.env.DEV) {
+                      console.log('SOURCE USER:', user.id, user.name)
+                    }
+                    return (
+                      <UserAlertCard
+                        key={user.id}
+                        user={user}
+                        isEmpty={false}
+                        hideBuy={false}
+                        onBuyAlert={() => {}}
+                        onCall={() => {}}
+                      />
+                    )
+                  })}
               </div>
             )
           ) : (
@@ -191,28 +184,31 @@ export default function AlertsPage() {
 
           <h2 style={sectionTitle}>Finalizadas</h2>
           {scope === 'alerts' ? (
-            doneCards.length === 0 && !loading && !loadError && canLoadAlerts ? (
+            rows.filter((r) => String(r.status) !== 'active').length === 0 &&
+            !loading &&
+            !loadError &&
+            canLoadAlerts ? (
               <DashedHint>No hay alertas finalizadas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
-                {doneCards.map((a) => {
-                  const card = { ...a, available_in_minutes: null, wait_until: null }
-                  const peerId = String(card.peer_user_id ?? card.user_id ?? '').trim()
-                  if (import.meta.env.DEV) {
-                    console.log('RENDER USER:', peerId, card.user_name)
-                  }
-                  return (
-                  <UserAlertCard
-                    key={card.id}
-                    reviewUser={{ id: peerId, name: card.user_name }}
-                    alert={card}
-                    isEmpty={false}
-                    hideBuy
-                    onBuyAlert={() => {}}
-                    onCall={() => {}}
-                  />
-                  )
-                })}
+                {rows
+                  .filter((r) => String(r.status) !== 'active')
+                  .map((r) => {
+                    const user = parkingAlertRowToCard(r, { clearTimers: true })
+                    if (import.meta.env.DEV) {
+                      console.log('SOURCE USER:', user.id, user.name)
+                    }
+                    return (
+                      <UserAlertCard
+                        key={user.id}
+                        user={user}
+                        isEmpty={false}
+                        hideBuy
+                        onBuyAlert={() => {}}
+                        onCall={() => {}}
+                      />
+                    )
+                  })}
               </div>
             )
           ) : (

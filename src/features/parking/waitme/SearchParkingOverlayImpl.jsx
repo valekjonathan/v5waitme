@@ -21,7 +21,6 @@ import {
   IconSlidersHorizontal,
   WAITME_GLASS_MAP_CONTROL_36,
 } from './icons.jsx'
-import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import { LAYOUT, MAP_SLOT } from '../../../ui/layout/layout'
 
 function countFiltered(users, filters, userLoc) {
@@ -93,26 +92,22 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     const ulat = userLocation?.latitude
     const ulng = userLocation?.longitude
     const hasLoc = Number.isFinite(ulat) && Number.isFinite(ulng)
+    const copy = [...allUsers]
     if (!hasLoc) {
-      return [...allUsers].sort((a, b) => a.id.localeCompare(b.id))
+      copy.sort((a, b) => a.id.localeCompare(b.id))
+      return copy
     }
-    return [...allUsers]
-      .map((u) => ({
-        ...u,
-        _distanceM: distanceMeters(ulat, ulng, u.lat, u.lng),
-      }))
-      .sort((a, b) => a._distanceM - b._distanceM)
+    copy.sort((a, b) => {
+      const da = distanceMeters(ulat, ulng, a.lat, a.lng)
+      const db = distanceMeters(ulat, ulng, b.lat, b.lng)
+      return da - db
+    })
+    return copy
   }, [allUsers, userLocation])
 
   const closestUser = usersSortedByDistance[0] ?? null
-
-  const displayUser = useMemo(() => {
-    if (selectedUserId) {
-      const picked = allUsers.find((u) => u.id === selectedUserId)
-      if (picked) return picked
-    }
-    return closestUser
-  }, [selectedUserId, allUsers, closestUser])
+  const pickedUser = selectedUserId ? allUsers.find((u) => u.id === selectedUserId) : null
+  const user = pickedUser ?? closestUser
 
   useEffect(() => {
     if (selectedUserId && !allUsers.some((u) => u.id === selectedUserId)) {
@@ -124,18 +119,9 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     setSelectedUserId(userId)
   }, [])
 
-  const alert = useMemo(() => {
-    const a = simulatedUserToAlert(displayUser)
-    if (!a || !displayUser) return a
-    if (streetPick?.address) return { ...a, address: streetPick.address }
-    return a
-  }, [displayUser, streetPick])
-
-  useEffect(() => {
-    if (import.meta.env.DEV && displayUser) {
-      console.log('RENDER USER:', displayUser.id, displayUser.name)
-    }
-  }, [displayUser])
+  if (import.meta.env.DEV && user) {
+    console.log('SOURCE USER:', user.id, user.name)
+  }
 
   const handleStreetResolved = useCallback((payload) => {
     if (!payload || typeof payload.address !== 'string') return
@@ -158,7 +144,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [isSearch, alert, address, isCardVisible, displayUser])
+  }, [isSearch, address, isCardVisible, user])
 
   const parkingCardSlideY = isCardVisible ? 0 : Math.max(0, parkingCardStackH - MAP_SLOT.cardPeek)
 
@@ -246,7 +232,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
           enabled
           users={allUsers}
           onSelectUser={onSelectUser}
-          highlightUserId={selectedUserId ?? displayUser?.id}
+          highlightUserId={selectedUserId ?? user?.id}
         />
       ) : null}
 
@@ -283,11 +269,9 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
               />
               {isSearch ? (
                 <UserAlertCard
-                  reviewUser={
-                    displayUser ? { id: displayUser.id, name: displayUser.name } : undefined
-                  }
-                  alert={alert}
-                  isEmpty={!displayUser}
+                  user={user ?? undefined}
+                  streetPickAddress={streetPick?.address}
+                  isEmpty={!user}
                   userLocation={userLocation}
                   collapsed={false}
                 />

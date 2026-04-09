@@ -13,7 +13,6 @@ import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import { getProfile } from '../../services/profile.js'
 import {
-  dmListCardToAlert,
   getOrCreateDmThread,
   isDmDevFallbackThread,
   listDmThreadsForUser,
@@ -143,7 +142,7 @@ export default function ChatsPage() {
       if (!displayName) {
         const listResult = await listDmThreadsForUser(userId)
         const list = Array.isArray(listResult.data) ? listResult.data : []
-        const row = list.find((t) => t.id === tid)
+        const row = list.find((t) => t.threadId === tid)
         displayName = String(row?.name ?? '').trim()
         if (!userPhoto && row?.user_photo) userPhoto = String(row.user_photo).trim() || null
       }
@@ -151,6 +150,7 @@ export default function ChatsPage() {
 
       const bootstrapReviews = generateReviewsForEntityId(peer)
       const summary = {
+        threadId: tid,
         id: tid,
         name: displayName,
         user_name: displayName,
@@ -185,7 +185,9 @@ export default function ChatsPage() {
 
   const activeSummary = useMemo(() => {
     const fromList =
-      filteredThreads.find((t) => t.id === threadId) ?? threads.find((t) => t.id === threadId) ?? null
+      filteredThreads.find((t) => t.threadId === threadId) ??
+      threads.find((t) => t.threadId === threadId) ??
+      null
     if (fromList) return fromList
     if (
       threadId &&
@@ -203,6 +205,7 @@ export default function ChatsPage() {
     const snap = String(pendingVis.userName ?? pendingVis.displayName ?? '').trim()
     const directReviews = generateReviewsForEntityId(hashPeer)
     return {
+      threadId: tid ?? WAITME_PENDING_THREAD_ID,
       id: tid ?? WAITME_PENDING_THREAD_ID,
       name: snap,
       user_name: snap,
@@ -235,7 +238,7 @@ export default function ChatsPage() {
 
   if (showDirectThread || showListThread) {
     const summary = showDirectThread ? directThreadSummary : activeSummary
-    const tid = String(summary?.id ?? '')
+    const tid = String(summary?.threadId ?? summary?.id ?? '')
     const localFb = isDmDevFallbackThread(tid)
     return (
       <ChatThreadView
@@ -367,36 +370,34 @@ export default function ChatsPage() {
 
           {!loadError && filteredThreads.length > 0
             ? filteredThreads.map((t) => {
-                const peerId = String(t.peerUserId ?? '').trim()
                 if (import.meta.env.DEV) {
-                  console.log('RENDER USER:', peerId, t.name)
+                  console.log('SOURCE USER:', t.id, t.name)
                 }
                 return (
-                <div
-                  key={t.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openThread(t.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      openThread(t.id)
-                    }
-                  }}
-                  style={{ cursor: 'pointer', flexShrink: 0 }}
-                >
-                  <UserAlertCard
-                    reviewUser={{ id: peerId, name: t.name }}
-                    alert={dmListCardToAlert(t)}
-                    isChat
-                    lastMessage={t.lastMessage}
-                    time={t.time}
-                    isEmpty={false}
-                    onBuyAlert={() => {}}
-                    onChat={() => openThread(t.id)}
-                    onCall={() => {}}
-                  />
-                </div>
+                  <div
+                    key={t.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openThread(t.threadId)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        openThread(t.threadId)
+                      }
+                    }}
+                    style={{ cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    <UserAlertCard
+                      user={t}
+                      isChat
+                      lastMessage={t.lastMessage}
+                      time={t.time}
+                      isEmpty={false}
+                      onBuyAlert={() => {}}
+                      onChat={() => openThread(t.threadId)}
+                      onCall={() => {}}
+                    />
+                  </div>
                 )
               })
             : null}

@@ -1,7 +1,7 @@
 /**
  * Copia de WaitMe: src/components/cards/UserAlertCard.jsx (sin Tailwind: estilos inline).
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
@@ -14,6 +14,25 @@ import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
 import UserAlertCardActions, { WAITME_BTN_HEIGHT, waitmeOpenTelDialer } from './UserAlertCardActions.jsx'
+import { simulatedUserToAlert } from './simulatedUserToAlert.js'
+
+/**
+ * Mapa: fila de UI a partir del `user` del padre (referencia estable). Opcional dirección de búsqueda.
+ * @param {Record<string, unknown> | null | undefined} user
+ * @param {string | undefined} streetPickAddress
+ */
+function resolveDisplayRow(user, streetPickAddress) {
+  if (!user || typeof user !== 'object') return null
+  const row =
+    Number.isFinite(Number(user.lat)) && user.latitude == null
+      ? simulatedUserToAlert(user)
+      : user
+  const addr = typeof streetPickAddress === 'string' ? streetPickAddress.trim() : ''
+  if (addr && row && typeof row === 'object') {
+    return { ...row, address: addr }
+  }
+  return row
+}
 
 /** Mismo morado que el icono del reloj en esta tarjeta. */
 const CLOCK_PURPLE = '#c084fc'
@@ -143,9 +162,9 @@ function pravatarImgIdFromString(s) {
   return (h % 70) + 1
 }
 
-function UserAlertAvatarBlock({ alert, onClick }) {
-  const name = String(alert?.user_name ?? '').trim() || String(alert?.id ?? 'user')
-  const photo = alert?.user_photo
+function UserAlertAvatarBlock({ row, onClick }) {
+  const name = String(row?.user_name ?? '').trim() || String(row?.id ?? 'user')
+  const photo = row?.user_photo
   const seed = useMemo(() => pravatarImgIdFromString(name), [name])
   const [brokenPhoto, setBrokenPhoto] = useState(false)
   const [pravatarIx, setPravatarIx] = useState(seed)
@@ -153,7 +172,7 @@ function UserAlertAvatarBlock({ alert, onClick }) {
   useEffect(() => {
     setBrokenPhoto(false)
     setPravatarIx(seed)
-  }, [seed, photo, alert?.id])
+  }, [seed, photo, row?.id])
 
   const useUploaded = Boolean(photo) && !brokenPhoto
   const src = useUploaded ? photo : `https://i.pravatar.cc/150?img=${pravatarIx}`
@@ -192,9 +211,10 @@ function UserAlertAvatarBlock({ alert, onClick }) {
 }
 
 function UserAlertCard({
-  /** Usuario cuyas reseñas se abren al pulsar avatar/foto; debe ser el peer real (nunca derivado de índices). */
-  reviewUser,
-  alert,
+  /** Fila de lista / mapa: misma referencia que en el `.map` del padre; `id` es el peer (reseñas). */
+  user,
+  /** Solo mapa: dirección elegida en búsqueda (no forma parte del user). */
+  streetPickAddress,
   onBuyAlert,
   onChat,
   onCall,
@@ -217,6 +237,11 @@ function UserAlertCard({
   /** Hora mostrada arriba a la derecha (lista Chats). */
   time: chatTimeProp = '',
 }) {
+  const display = resolveDisplayRow(user, streetPickAddress)
+  if (import.meta.env.DEV && user) {
+    console.log('CARD USER:', user.id, user.name ?? user.user_name)
+  }
+
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
 
@@ -271,7 +296,7 @@ function UserAlertCard({
     [normalizedUserLocation]
   )
 
-  const waitUntilTs = alert?.wait_until ? toMs(alert.wait_until) : null
+  const waitUntilTs = display?.wait_until ? toMs(display.wait_until) : null
   const waitUntilLabel = useMemo(() => {
     if (!waitUntilTs) return '--:--'
     try {
@@ -282,74 +307,66 @@ function UserAlertCard({
   }, [waitUntilTs])
 
   const priceText = useMemo(() => {
-    const n = Number(alert?.price)
+    const n = Number(display?.price)
     if (!Number.isFinite(n)) return '--'
     return `${n} €`
-  }, [alert?.price])
+  }, [display?.price])
 
-  const phoneEnabled = Boolean(alert?.phone && alert?.allow_phone_calls !== false)
+  const phoneEnabled = Boolean(display?.phone && display?.allow_phone_calls !== false)
 
   const { openUserReviews, openChatsWithPeer } = useAppScreen()
 
   const handleChat = () => {
     if (isChat) {
-      onChat?.(alert)
+      onChat?.(user)
       return
     }
-    const id = alert?.peer_user_id ?? alert?.user_id
+    const id = user?.peer_user_id ?? user?.user_id ?? user?.id
     if (typeof id === 'string' && id) {
       openChatsWithPeer(id, {
-        user_name: alert?.user_name,
-        user_photo: alert?.user_photo,
-        phone: alert?.phone,
-        allow_phone_calls: alert?.allow_phone_calls,
+        user_name: display?.user_name,
+        user_photo: display?.user_photo,
+        phone: display?.phone,
+        allow_phone_calls: display?.allow_phone_calls,
       })
     }
   }
   const handleCall = () => {
-    waitmeOpenTelDialer(alert?.phone)
-    onCall?.(alert)
+    waitmeOpenTelDialer(display?.phone)
+    onCall?.(user)
   }
   const handleBuy = () => {
     if (isLoading) return
-    onBuyAlert?.(alert)
+    onBuyAlert?.(user)
   }
 
   const handleDeleteChatClick = (e) => {
     e.stopPropagation()
     if (window.confirm('¿Quieres eliminar la conversación?')) {
-      console.log('[UserAlertCard] delete conversation', alert?.id)
+      console.log('[UserAlertCard] delete conversation', user?.threadId)
     }
   }
 
-  const carLabel = `${alert?.brand || ''} ${alert?.model || ''}`.trim() || 'Coche'
+  const carLabel = `${display?.brand || ''} ${display?.model || ''}`.trim() || 'Coche'
 
   const distanceLabel = useMemo(
-    () => calculateDistanceLabel(alert?.latitude, alert?.longitude),
-    [alert?.latitude, alert?.longitude, calculateDistanceLabel]
+    () => calculateDistanceLabel(display?.latitude, display?.longitude),
+    [display?.latitude, display?.longitude, calculateDistanceLabel]
   )
 
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const reviewTargetId =
-    reviewUser && typeof reviewUser === 'object' && typeof reviewUser.id === 'string'
-      ? reviewUser.id.trim()
-      : ''
+  const peerReviewId = typeof user?.id === 'string' ? user.id.trim() : ''
 
-  const openPeerReviews = useCallback(
-    (e) => {
-      e?.stopPropagation?.()
-      const id = reviewTargetId
-      if (!id) return
-      if (import.meta.env.DEV) {
-        const name = reviewUser && typeof reviewUser === 'object' ? reviewUser.name : ''
-        console.log('CLICK USER:', id, name)
-      }
-      openUserReviews(id)
-    },
-    [openUserReviews, reviewTargetId, reviewUser]
-  )
+  function handleOpenPeerReviews(e) {
+    e?.stopPropagation?.()
+    if (!peerReviewId) return
+    if (import.meta.env.DEV) {
+      console.log('CLICK USER:', peerReviewId, user.name ?? user.user_name)
+    }
+    openUserReviews(peerReviewId)
+  }
 
   const badgeBase = {
     backgroundColor: 'rgba(168, 85, 247, 0.2)',
@@ -370,12 +387,12 @@ function UserAlertCard({
   }
 
   const headerStarAvg = useMemo(() => {
-    const list = alert?.reviews
+    const list = display?.reviews
     if (Array.isArray(list) && list.length) return getAverage(list)
-    return Number(alert?.rating ?? 0)
-  }, [alert?.reviews, alert?.rating])
+    return Number(display?.rating ?? 0)
+  }, [display?.reviews, display?.rating])
 
-  if (isEmpty || !alert) {
+  if (isEmpty || !user || !display) {
     return (
       <div
         data-waitme-parking-gap-card-top
@@ -407,9 +424,9 @@ function UserAlertCard({
   const lastMessageText =
     typeof lastMessage === 'string' && lastMessage.trim() !== ''
       ? lastMessage
-      : (alert?.chatLastMessage ?? '')
+      : (display?.chatLastMessage ?? '')
 
-  const chatUnread = Math.max(0, Number(alert?.chatUnreadCount ?? 0))
+  const chatUnread = Math.max(0, Number(display?.chatUnreadCount ?? 0))
 
   const btnIcon = {
     width: 32,
@@ -457,7 +474,7 @@ function UserAlertCard({
   }
 
   const vehicleIconNode = (
-    <VehicleIcon type={alert?.vehicleType} color={getCarFill(alert?.color)} size="header" />
+    <VehicleIcon type={display?.vehicleType} color={getCarFill(display?.color)} size="header" />
   )
 
   return (
@@ -573,7 +590,10 @@ function UserAlertCard({
       <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
       <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
-        <UserAlertAvatarBlock alert={alert} onClick={reviewTargetId ? openPeerReviews : undefined} />
+        <UserAlertAvatarBlock
+          row={display}
+          onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+        />
 
         <div
           style={{
@@ -606,20 +626,20 @@ function UserAlertCard({
               <span
                 style={{
                   ...USER_CARD_NAME_STYLE,
-                  cursor: reviewTargetId ? 'pointer' : undefined,
+                  cursor: peerReviewId ? 'pointer' : undefined,
                 }}
-                onClick={reviewTargetId ? openPeerReviews : undefined}
-                role={reviewTargetId ? 'button' : undefined}
-                tabIndex={reviewTargetId ? 0 : undefined}
+                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+                role={peerReviewId ? 'button' : undefined}
+                tabIndex={peerReviewId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!reviewTargetId) return
+                  if (!peerReviewId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    openPeerReviews(e)
+                    handleOpenPeerReviews(e)
                   }
                 }}
               >
-                {String(alert?.user_name ?? '')
+                {String(display?.user_name ?? '')
                   .trim()
                   .split(/\s+/)[0] || ''}
               </span>
@@ -635,16 +655,16 @@ function UserAlertCard({
                   alignItems: 'center',
                   flexShrink: 0,
                   transform: 'translateX(-12px)',
-                  cursor: reviewTargetId ? 'pointer' : undefined,
+                  cursor: peerReviewId ? 'pointer' : undefined,
                 }}
-                onClick={reviewTargetId ? openPeerReviews : undefined}
-                role={reviewTargetId ? 'button' : undefined}
-                tabIndex={reviewTargetId ? 0 : undefined}
+                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+                role={peerReviewId ? 'button' : undefined}
+                tabIndex={peerReviewId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!reviewTargetId) return
+                  if (!peerReviewId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    openPeerReviews(e)
+                    handleOpenPeerReviews(e)
                   }
                 }}
               >
@@ -686,16 +706,16 @@ function UserAlertCard({
                   lineHeight: 1,
                   margin: 0,
                   marginTop: 4,
-                  cursor: reviewTargetId ? 'pointer' : undefined,
+                  cursor: peerReviewId ? 'pointer' : undefined,
                 }}
-                onClick={reviewTargetId ? openPeerReviews : undefined}
-                role={reviewTargetId ? 'button' : undefined}
-                tabIndex={reviewTargetId ? 0 : undefined}
+                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+                role={peerReviewId ? 'button' : undefined}
+                tabIndex={peerReviewId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!reviewTargetId) return
+                  if (!peerReviewId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    openPeerReviews(e)
+                    handleOpenPeerReviews(e)
                   }
                 }}
               >
@@ -704,18 +724,18 @@ function UserAlertCard({
 
               <div
                 style={{ position: 'relative', marginTop: 4 }}
-                onClick={reviewTargetId ? openPeerReviews : undefined}
-                role={reviewTargetId ? 'button' : undefined}
-                tabIndex={reviewTargetId ? 0 : undefined}
+                onClick={peerReviewId ? handleOpenPeerReviews : undefined}
+                role={peerReviewId ? 'button' : undefined}
+                tabIndex={peerReviewId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!reviewTargetId) return
+                  if (!peerReviewId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    openPeerReviews(e)
+                    handleOpenPeerReviews(e)
                   }
                 }}
               >
-                <Plate value={alert?.plate} width={140} />
+                <Plate value={display?.plate} width={140} />
 
                 <div
                   style={{
@@ -744,7 +764,7 @@ function UserAlertCard({
               marginLeft: 8,
             }}
           >
-            {alert?.address ? (
+            {display?.address ? (
             <span
               style={{
                 display: 'flex',
@@ -780,12 +800,12 @@ function UserAlertCard({
                   minWidth: 0,
                 }}
               >
-                {alert.address}
+                {display.address}
               </span>
             </span>
           ) : null}
 
-          {alert?.available_in_minutes != null ? (
+          {display?.available_in_minutes != null ? (
             <span
               style={{
                 display: 'flex',
@@ -820,14 +840,14 @@ function UserAlertCard({
                 }}
               >
                 <span style={{ color: CLOCK_PURPLE, fontWeight: 600 }}>
-                  {alert.isIncomingRequest ? 'Te vas en ' : 'Se va en '}
+                  {display.isIncomingRequest ? 'Te vas en ' : 'Se va en '}
                 </span>
                 <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15 }}>
-                  {alert.available_in_minutes} min
+                  {display.available_in_minutes} min
                 </span>
                 <span style={{ color: '#FFFFFF', fontWeight: 700, margin: '0 4px' }}>·</span>
                 <span style={{ color: CLOCK_PURPLE, fontWeight: 600 }}>
-                  {alert.isIncomingRequest ? 'Debes esperar hasta las ' : 'Te espera hasta las '}
+                  {display.isIncomingRequest ? 'Debes esperar hasta las ' : 'Te espera hasta las '}
                 </span>
                 <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15 }}>
                   {waitUntilLabel}
@@ -846,7 +866,7 @@ function UserAlertCard({
             phoneEnabled={phoneEnabled}
             handleChat={handleChat}
             handleCall={handleCall}
-            alert={alert}
+            alert={display}
             handleBuy={handleBuy}
             isLoading={isLoading}
             buyLabel={buyLabel}
@@ -893,4 +913,4 @@ function UserAlertCard({
   )
 }
 
-export default React.memo(UserAlertCard)
+export default UserAlertCard
