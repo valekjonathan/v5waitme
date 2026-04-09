@@ -10,7 +10,7 @@ import { Stack } from '../../../ui/primitives/Stack'
 import { Row } from '../../../ui/primitives/Row'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import { renderHeaderStarSlots } from '../../../lib/ratingStars'
+import { filledStarsFromAverage5, renderHeaderStarSlots } from '../../../lib/ratingStars'
 import { profileDisplayFirstName } from '../../../services/profile.js'
 import {
   PROFILE_REVIEWS_MAX_WIDTH,
@@ -211,7 +211,7 @@ export default function ProfileHeader({ profile, avatarBorder, averageRating = 0
   const colorKey = String(profile?.color || 'gris').toLowerCase()
   const vehicleType = profile?.vehicle_type || 'car'
   const fallbackLetter = (displayName || profile?.email || 'U').charAt(0)
-  const avgStars = Math.max(0, Math.min(5, Math.round(Number(averageRating) || 0)))
+  const headerStarFill = filledStarsFromAverage5(averageRating)
 
   return (
     <div style={rootStyle}>
@@ -262,7 +262,7 @@ export default function ProfileHeader({ profile, avatarBorder, averageRating = 0
             <Row gap={s.sm} align="flex-start" style={nameRowStyle}>
               <p style={nameTextStyle}>{displayName}</p>
               <div style={starsWrapStyle}>
-                {renderHeaderStarSlots(avgStars).map((star, i) => (
+                {renderHeaderStarSlots(headerStarFill).map((star, i) => (
                   <span key={i} style={star === '★' ? starStyle : starEmptyStyle}>
                     {star}
                   </span>

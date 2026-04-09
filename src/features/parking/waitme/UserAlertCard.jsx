@@ -6,7 +6,7 @@ import { useAppScreen } from '../../../lib/AppScreenContext'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
-import { renderHeaderStarSlots } from '../../../lib/ratingStars'
+import { filledStarsFromAverage5, renderHeaderStarSlots } from '../../../lib/ratingStars'
 import { getAverage } from '../../../lib/reviewsModel'
 import Plate from '../../profile/components/Plate.jsx'
 import { VehicleIcon } from '../../profile/components/VehicleIcons.jsx'
@@ -637,7 +637,7 @@ function UserAlertCard({
                   }
                 }}
               >
-                {renderHeaderStarSlots(Math.round(headerStarAvg)).map((star, i) => (
+                {renderHeaderStarSlots(filledStarsFromAverage5(headerStarAvg)).map((star, i) => (
                   <span key={i} style={star === '★' ? profileStarFilled : profileStarEmpty}>
                     {star}
                   </span>

@@ -1,6 +1,5 @@
 import { colors } from '../../../design/colors'
 import { renderStars } from '../../../lib/ratingStars'
-import { useAppScreen } from '../../../lib/AppScreenContext'
 
 const fallbackAvatars = [
   'https://i.pravatar.cc/150?img=12',
@@ -22,7 +21,8 @@ const cardOuterStyle = {
   transition: 'border 0.2s ease',
   width: '100%',
   boxSizing: 'border-box',
-  cursor: 'pointer',
+  cursor: 'default',
+  border: '1.5px solid rgba(255,255,255,0.35)',
 }
 
 const reviewRowStyle = {
@@ -43,7 +43,8 @@ const avatarStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   background: colors.surfaceMuted,
-  cursor: 'pointer',
+  cursor: 'default',
+  pointerEvents: 'none',
 }
 
 const contentStyle = {
@@ -82,27 +83,14 @@ const starsStyle = {
 
 const starCharStyle = { fontSize: 14 }
 
-function commentBoxStyle(isExpanded) {
-  return {
-    fontSize: 13,
-    color: '#ccc',
-    marginTop: 6,
-    lineHeight: 1.4,
-    overflow: isExpanded ? 'visible' : 'hidden',
-    display: isExpanded ? 'block' : '-webkit-box',
-    WebkitLineClamp: isExpanded ? undefined : 2,
-    WebkitBoxOrient: 'vertical',
-  }
+const commentBoxStyle = {
+  fontSize: 13,
+  color: '#ccc',
+  marginTop: 6,
+  lineHeight: 1.4,
 }
 
-export default function ReviewItem({
-  review,
-  animationDelayMs = 0,
-  avatarIndex = 0,
-  isSelected = false,
-  onSelect = () => {},
-}) {
-  const { openProfile } = useAppScreen()
+export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex = 0 }) {
   const userName = String(review?.name ?? '').trim()
   const displayName = userName.split(/\s+/)[0] || 'Usuario'
   const comment = String(review?.comment ?? '').trim() || 'Sin comentario.'
@@ -112,15 +100,6 @@ export default function ReviewItem({
   const avatarSrc = avatarUrl || fallbackAvatars[avatarIndex % fallbackAvatars.length]
   const starChars = renderStars(rating).split('')
 
-  const handleAvatarClick = (e) => {
-    e.stopPropagation()
-    openProfile?.()
-  }
-
-  const handleClick = () => {
-    onSelect()
-  }
-
   return (
     <article
       style={{
@@ -129,26 +108,12 @@ export default function ReviewItem({
         animationDelay: `${animationDelayMs}ms`,
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleClick()
-          }
-        }}
-        style={{
-          ...cardOuterStyle,
-          border: isSelected ? '2px solid #7C3AED' : '1.5px solid rgba(255,255,255,0.35)',
-        }}
-      >
+      <div style={cardOuterStyle}>
         <div style={reviewRowStyle}>
-          <div style={avatarStyle} onClick={handleAvatarClick}>
+          <div style={avatarStyle}>
             <img
               src={avatarSrc}
-              alt={`Avatar de ${displayName}`}
+              alt=""
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
@@ -166,7 +131,7 @@ export default function ReviewItem({
               </div>
             </div>
 
-            <div style={commentBoxStyle(isSelected)}>{comment}</div>
+            <div style={commentBoxStyle}>{comment}</div>
           </div>
         </div>
       </div>

@@ -7,15 +7,18 @@ import {
 const SUGGEST_BASE = 'https://api.mapbox.com/search/searchbox/v1/suggest'
 
 /**
- * Quita CP (5 dígitos) y normaliza comas/espacios para UI tipo mapas.
+ * Quita CP (5 dígitos), región/país redundantes y normaliza comas para UI tipo mapas.
  * @param {string} text
  */
 export function cleanAddress(text) {
   if (!text) return ''
   return String(text)
     .replace(/\b\d{5}\b/g, '')
+    .replace(/Asturias/gi, '')
+    .replace(/España/gi, '')
     .replace(/\s+,/g, ',')
     .replace(/,\s*,/g, ',')
+    .replace(/,\s*$/g, '')
     .trim()
 }
 
