@@ -13,6 +13,7 @@ import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
   dmListCardToAlert,
   getOrCreateDmThread,
+  isDmDevFallbackThread,
   listDmThreadsForUser,
 } from '../../services/waitmeChats.js'
 
@@ -30,10 +31,12 @@ export default function ChatsPage() {
   const [peerBootstrap, setPeerBootstrap] = useState(null)
 
   const userId = user?.id ?? ''
-  const canUseRemote = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+  const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  const hasRealSupabaseSession = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+  const canLoadChats = Boolean(dev || hasRealSupabaseSession)
 
   const load = useCallback(async () => {
-    if (!canUseRemote) {
+    if (!canLoadChats) {
       setThreads([])
       setLoadError(null)
       setLoading(false)
@@ -50,14 +53,14 @@ export default function ChatsPage() {
       setLoadError(null)
     }
     setLoading(false)
-  }, [canUseRemote, userId])
+  }, [canLoadChats, userId])
 
   useEffect(() => {
     void load()
   }, [load])
 
   useEffect(() => {
-    if (!canUseRemote) return
+    if (!canLoadChats) return
     const peer = takePendingDmPeerUserId()
     if (!peer) return
     void (async () => {
@@ -72,7 +75,7 @@ export default function ChatsPage() {
         setThreadId(tid)
       }
     })()
-  }, [canUseRemote, load])
+  }, [canLoadChats, load])
 
   const localItems = useMemo(
     () =>
@@ -116,6 +119,7 @@ export default function ChatsPage() {
       <ChatThreadView
         summary={activeSummary}
         userId={userId}
+        localFallback={isDmDevFallbackThread(String(threadId ?? ''))}
         onBack={() => {
           setPeerBootstrap(null)
           setThreadId(null)
@@ -141,7 +145,7 @@ export default function ChatsPage() {
           boxSizing: 'border-box',
         }}
       >
-        {!canUseRemote ? (
+        {!hasRealSupabaseSession && !dev ? (
           <div style={{ flexShrink: 0, marginBottom: 8 }}>
             <div
               style={{
@@ -180,7 +184,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canUseRemote && loading ? (
+          {canLoadChats && loading ? (
             <div
               style={{
                 padding: 16,
@@ -196,7 +200,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {canUseRemote && loadError && !loading ? (
+          {canLoadChats && loadError && !loading ? (
             <div
               style={{
                 padding: 16,

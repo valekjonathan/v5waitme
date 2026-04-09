@@ -82,10 +82,12 @@ export default function AlertsPage() {
   const [loadError, setLoadError] = useState(null)
 
   const userId = user?.id ?? ''
-  const canUseRemote = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+  const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  const hasRealSupabaseSession = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+  const canLoadAlerts = Boolean(dev || hasRealSupabaseSession)
 
   const load = useCallback(async () => {
-    if (!canUseRemote) {
+    if (!canLoadAlerts) {
       setRows([])
       setLoadError(null)
       setLoading(false)
@@ -105,7 +107,7 @@ export default function AlertsPage() {
       setLoadError(null)
     }
     setLoading(false)
-  }, [canUseRemote, userId, scope])
+  }, [canLoadAlerts, userId, scope])
 
   useEffect(() => {
     void load()
@@ -122,11 +124,11 @@ export default function AlertsPage() {
     return { activeCards: active, doneCards: done }
   }, [rows])
 
-  const offlineHint = !canUseRemote ? (
-    <DashedHint>
-      Conecta Supabase e inicia sesión para cargar tu historial de alertas y reservas.
-    </DashedHint>
-  ) : null
+  const offlineHint = !hasRealSupabaseSession && !dev ? (
+      <DashedHint>
+        Conecta Supabase e inicia sesión para cargar tu historial de alertas y reservas.
+      </DashedHint>
+    ) : null
 
   return (
     <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="auto">
@@ -152,17 +154,17 @@ export default function AlertsPage() {
         <div style={{ paddingTop: 56, paddingLeft: 16, paddingRight: 16 }}>
           {offlineHint}
 
-          {canUseRemote && loading ? (
+          {canLoadAlerts && loading ? (
             <DashedHint>Cargando…</DashedHint>
           ) : null}
 
-          {canUseRemote && loadError && !loading ? (
+          {canLoadAlerts && loadError && !loading ? (
             <DashedHint>No se pudieron cargar los datos. Revisa la conexión y el proyecto Supabase.</DashedHint>
           ) : null}
 
           <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
           {scope === 'alerts' ? (
-            activeCards.length === 0 && !loading && !loadError && canUseRemote ? (
+            activeCards.length === 0 && !loading && !loadError && canLoadAlerts ? (
               <DashedHint>No tienes alertas activas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -188,7 +190,7 @@ export default function AlertsPage() {
 
           <h2 style={sectionTitle}>Finalizadas</h2>
           {scope === 'alerts' ? (
-            doneCards.length === 0 && !loading && !loadError && canUseRemote ? (
+            doneCards.length === 0 && !loading && !loadError && canLoadAlerts ? (
               <DashedHint>No hay alertas finalizadas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>

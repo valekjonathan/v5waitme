@@ -22,9 +22,9 @@ function nextTempId() {
 }
 
 /**
- * @param {{ summary: Record<string, unknown>, userId: string, onBack: () => void }} props
+ * @param {{ summary: Record<string, unknown>, userId: string, onBack: () => void, localFallback?: boolean }} props
  */
-export default function ChatThreadView({ summary, userId, onBack }) {
+export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
   const threadId = String(s.id ?? '')
   const title = String(s.name ?? 'Chat')
@@ -45,7 +45,12 @@ export default function ChatThreadView({ summary, userId, onBack }) {
 
   useEffect(() => {
     let cancelled = false
-    if (!threadId || !isRealSupabaseAuthUid(userId)) {
+    if (!threadId) {
+      setMessages([])
+      setBootError(null)
+      return undefined
+    }
+    if (!localFallback && !isRealSupabaseAuthUid(userId)) {
       setMessages([])
       setBootError(null)
       return undefined
@@ -64,10 +69,16 @@ export default function ChatThreadView({ summary, userId, onBack }) {
     return () => {
       cancelled = true
     }
-  }, [threadId, userId])
+  }, [threadId, userId, localFallback])
 
   useEffect(() => {
-    if (!isSupabaseConfigured() || !supabase || !threadId || !isRealSupabaseAuthUid(userId)) {
+    if (
+      localFallback ||
+      !isSupabaseConfigured() ||
+      !supabase ||
+      !threadId ||
+      !isRealSupabaseAuthUid(userId)
+    ) {
       return undefined
     }
     const filter = `thread_id=eq.${threadId}`
@@ -100,11 +111,12 @@ export default function ChatThreadView({ summary, userId, onBack }) {
     return () => {
       void supabase.removeChannel(ch)
     }
-  }, [threadId, userId])
+  }, [threadId, userId, localFallback])
 
   const sendMine = useCallback(async () => {
     const t = draft.trim()
-    if (!t || sending || !threadId || !isRealSupabaseAuthUid(userId)) return
+    if (!t || sending || !threadId) return
+    if (!localFallback && !isRealSupabaseAuthUid(userId)) return
     setDraft('')
     setSending(true)
     const optimistic = {
@@ -125,7 +137,7 @@ export default function ChatThreadView({ summary, userId, onBack }) {
       )
     }
     setSending(false)
-  }, [draft, sending, threadId, userId])
+  }, [draft, localFallback, sending, threadId, userId])
 
   const bubbleBase = {
     maxWidth: '78%',
