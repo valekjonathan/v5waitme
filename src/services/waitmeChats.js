@@ -284,6 +284,7 @@ export function dmListCardToAlert(t) {
   const phone = c.phone != null && String(c.phone).trim() ? String(c.phone).trim() : null
   return {
     id: c.id,
+    peer_user_id: typeof c.peerUserId === 'string' ? c.peerUserId : null,
     user_name: String(c.name ?? ''),
     rating: c.rating,
     brand: c.brand,

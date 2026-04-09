@@ -27,7 +27,7 @@ const inputStyle = {
 
 const streetSearchInputClass = 'waitme-street-search-input'
 
-const DEBOUNCE_MS = 80
+const DEBOUNCE_MS = 50
 
 const streetResultLiStyle = {
   padding: '12px 16px',

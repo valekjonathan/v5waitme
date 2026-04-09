@@ -1,19 +1,31 @@
 import { getMapboxAccessToken } from '../features/map/constants/mapbox.js'
-import { distanceMeters } from './location.js'
 
-function foldAscii(s) {
-  return String(s)
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
+/**
+ * Normalización para coincidencia (minúsculas, sin acentos).
+ */
+export function normalize(text) {
+  return String(text ?? '')
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+function distanceSq(a, b) {
+  const dx = a.lng - b.lng
+  const dy = a.lat - b.lat
+  return dx * dx + dy * dy
+}
+
+function streetNameForMatchNormalized(labelNorm) {
+  return labelNorm
+    .replace(/^c\/:\s*/i, '')
+    .replace(/^c\/\s*/i, '')
+    .replace(/^calle\s+/, '')
+    .trim()
 }
 
 /**
- * Abreviaturas de vía para UI (sugerencias y tarjeta). No muta datos crudos del provider.
+ * Abreviaturas de vía para UI (sugerencias y tarjeta).
  */
 export function formatStreetName(name) {
   if (name == null || name === '') return name
@@ -23,7 +35,7 @@ export function formatStreetName(name) {
   if (lower.includes('paseo')) return s.replace(/paseo/i, 'Pso/')
   if (lower.includes('plaza')) return s.replace(/plaza/i, 'Plz/')
   if (lower.includes('camino')) return s.replace(/camino/i, 'Cam/')
-  if (lower.includes('calle')) return s.replace(/calle/i, 'C/')
+  if (lower.includes('calle')) return s.replace(/calle/i, 'C/:')
   return s
 }
 
@@ -64,7 +76,6 @@ export async function searchSpainStreets(query, opts = {}) {
   params.set('access_token', token)
   params.set('country', 'es')
   params.set('language', 'es')
-  // Mapbox Geocoding v5 solo admite: country, region, place, district, locality, postcode, neighborhood, address (no "street"; 422 si se incluye).
   params.set('types', 'address')
   params.set('autocomplete', 'true')
   params.set('limit', '10')
@@ -90,8 +101,15 @@ function classifyStreetRaw(raw) {
   const s = String(raw || '').trim()
   if (!s) return { prefix: '', body: '' }
   const lower = s.toLowerCase()
-  if (/^calle\s+/i.test(s) || /^c\/\s*/i.test(s)) {
-    return { prefix: 'C/', body: s.replace(/^calle\s+/i, '').replace(/^c\/\s*/i, '').trim() }
+  if (/^calle\s+/i.test(s) || /^c\/\s*/i.test(s) || /^c\/:\s*/i.test(s)) {
+    return {
+      prefix: 'C/:',
+      body: s
+        .replace(/^calle\s+/i, '')
+        .replace(/^c\/:\s*/i, '')
+        .replace(/^c\/\s*/i, '')
+        .trim(),
+    }
   }
   if (/^avenida\s+/i.test(lower) || /^av\.?\s+/i.test(s)) {
     return { prefix: 'Avd/', body: s.replace(/^avenida\s+/i, '').replace(/^av\.?\s+/i, '').trim() }
@@ -110,7 +128,7 @@ function classifyStreetRaw(raw) {
 }
 
 /**
- * Dirección legible desde feature Mapbox (tipos de vía: C/, Avd/, Pso/, Plz/, Cam/; resto sin forzar C/).
+ * Dirección legible desde feature Mapbox.
  */
 export function formatAddress(result) {
   if (!result || typeof result !== 'object') return ''
@@ -157,63 +175,19 @@ export function formatAddressForUi(result) {
   return line ? formatStreetName(line) : ''
 }
 
-const OVIEDO_CENTER_LAT = 43.3614
-const OVIEDO_CENTER_LNG = -5.8493
-const USER_NEAR_OVIEDO_M = 35_000
-
-/** Parte “nombre de vía” aproximada para acertar “fray” aunque la etiqueta empiece por C/. */
-function streetNameForMatchFolded(foldedFull) {
-  let s = foldedFull
-  s = s.replace(/^c\/\s*/i, '')
-  s = s.replace(/^calle\s+/, '')
-  return s.trim()
-}
-
 /**
- * Puntuación de texto: varias palabras deben aparecer; prioriza nombre de vía (no solo “empieza por query”).
- * @returns {number} -1 si no cumple tokens obligatorios
- */
-function textMatchScore(foldedLabel, qFold) {
-  const tokens = qFold.split(/\s+/).filter(Boolean)
-  if (tokens.length === 0) return 0
-  const allPresent = tokens.every((t) => foldedLabel.includes(t))
-  if (!allPresent) return -1
-
-  let score = 10_000
-  const streetPart = streetNameForMatchFolded(foldedLabel)
-  const first = tokens[0]
-
-  if (streetPart.startsWith(first)) score += 5000
-  else {
-    const idx = streetPart.indexOf(first)
-    if (idx === 0) score += 4500
-    else if (idx > 0) score += Math.max(0, 3500 - Math.min(idx, 80) * 40)
-  }
-
-  if (tokens.length > 1 && foldedLabel.includes(qFold.replace(/\s+/g, ' '))) {
-    score += 3000
-  }
-
-  if (new RegExp(`(^|[\\s,.-])${escapeRegExp(first)}`, 'i').test(streetPart)) {
-    score += 1500
-  }
-
-  const early = foldedLabel.indexOf(qFold)
-  if (early >= 0) score += Math.max(0, 800 - early)
-
-  return score
-}
-
-/**
- * Orden: (a) coincidencia de texto fuerte (b) distancia real (c) Oviedo si el usuario está cerca (d) relevance.
+ * Orden local: score = texto − distancia²×100000 (sin confiar en el orden Mapbox).
  */
 export function rankSpainStreetFeatures(features, query, userLat, userLng) {
   if (!Array.isArray(features) || features.length === 0) return []
-  const qFold = foldAscii((query || '').trim())
-  if (!qFold) return features
-  const hasUser = Number.isFinite(userLat) && Number.isFinite(userLng)
-  const userNearOviedo =
-    hasUser && distanceMeters(userLat, userLng, OVIEDO_CENTER_LAT, OVIEDO_CENTER_LNG) < USER_NEAR_OVIEDO_M
+  const queryNorm = normalize(query).trim()
+  if (queryNorm.length < 2) return features
+
+  const words = queryNorm.split(/\s+/).filter(Boolean)
+  const userPos =
+    Number.isFinite(userLat) && Number.isFinite(userLng)
+      ? { lng: userLng, lat: userLat }
+      : null
 
   const labelOf = (f) =>
     formatAddressForUi(f) ||
@@ -222,46 +196,51 @@ export function rankSpainStreetFeatures(features, query, userLat, userLng) {
     (typeof f.text === 'string' ? f.text : '') ||
     ''
 
-  const distM = (f) => {
-    const c = f.center
-    if (!Array.isArray(c) || c.length < 2 || !hasUser) return Number.POSITIVE_INFINITY
-    return distanceMeters(userLat, userLng, c[1], c[0])
-  }
-
-  const relOf = (f) => (typeof f.relevance === 'number' && Number.isFinite(f.relevance) ? f.relevance : 0)
-
-  const scoreRow = (f) => {
+  const scoreFeature = (f, loose) => {
     const label = labelOf(f)
-    const folded = foldAscii(label)
-    let textScore = textMatchScore(folded, qFold)
-    if (textScore < 0) {
-      if (folded.includes(qFold)) textScore = 1000
-      else textScore = -1
+    const labelNorm = normalize(label)
+
+    const allWordsMatch = words.length > 0 && words.every((w) => labelNorm.includes(w))
+    const substringStrong = labelNorm.includes(queryNorm)
+    if (!loose && !allWordsMatch && !substringStrong) return null
+    if (loose && !labelNorm.includes(words[0] || queryNorm)) return null
+
+    const empiezaPorTexto =
+      labelNorm.startsWith(queryNorm) ||
+      streetNameForMatchNormalized(labelNorm).startsWith(queryNorm) ||
+      (words[0] && streetNameForMatchNormalized(labelNorm).startsWith(words[0]))
+
+    const contieneTexto = substringStrong || allWordsMatch
+
+    const c = f.center
+    let distSq = 1e6
+    if (userPos && Array.isArray(c) && c.length >= 2 && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
+      distSq = distanceSq({ lng: c[0], lat: c[1] }, userPos)
     }
-    const city = extractCityFromContext(f)
-    const oviedoTier = userNearOviedo && foldAscii(city) === 'oviedo' ? 1 : 0
-    return { f, textScore, dist: distM(f), oviedoTier, rel: relOf(f) }
+
+    const score =
+      (empiezaPorTexto ? 1000 : 0) + (contieneTexto ? 500 : 0) - distSq * 100000
+
+    return { f, score }
   }
 
-  const rows = features.map(scoreRow)
-  const matched = rows.filter((r) => r.textScore >= 0)
-  const pool = matched.length ? matched : rows
+  const scored = []
+  for (const f of features) {
+    const row = scoreFeature(f, false)
+    if (row) scored.push(row)
+  }
 
-  pool.sort((a, b) => {
-    if (b.textScore !== a.textScore) return b.textScore - a.textScore
-    const da = a.dist
-    const db = b.dist
-    if (hasUser && Number.isFinite(da) && Number.isFinite(db)) {
-      if (da !== db) return da - db
-    } else if (Number.isFinite(da) !== Number.isFinite(db)) {
-      return Number.isFinite(da) ? -1 : 1
+  if (scored.length === 0) {
+    for (const f of features) {
+      const row = scoreFeature(f, true)
+      if (row) scored.push(row)
     }
-    if (b.oviedoTier !== a.oviedoTier) return b.oviedoTier - a.oviedoTier
-    if (b.rel !== a.rel) return b.rel - a.rel
-    return 0
-  })
+  }
 
-  return pool.map((r) => r.f)
+  if (scored.length === 0) return []
+
+  scored.sort((a, b) => b.score - a.score)
+  return scored.map((s) => s.f)
 }
 
 function coreStreetName(text) {
@@ -272,6 +251,7 @@ function coreStreetName(text) {
   if (/^paseo\s+/i.test(s)) return s.replace(/^paseo\s+/i, '').trim()
   if (/^(pl\.?|plaza)\s+/i.test(s)) return s.replace(/^(pl\.?|plaza)\s+/i, '').trim()
   if (/^camino\s+/i.test(s)) return s.replace(/^camino\s+/i, '').trim()
+  if (/^C\/:\s*/i.test(s)) return s.replace(/^C\/:\s*/i, '').trim()
   if (/^C\/\s*/i.test(s)) return s.replace(/^C\/\s*/i, '').trim()
   return s
 }

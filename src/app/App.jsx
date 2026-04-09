@@ -9,6 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReviewsPage from '../features/reviews/pages/ReviewsPage'
+import UserReviewsPage from '../features/reviews/UserReviewsPage'
 import MapParkingPage from '../features/parking/MapParkingPage'
 import AlertsPage from '../features/alerts/AlertsPage'
 import ChatsPage from '../features/chats/ChatsPage'
@@ -26,6 +27,7 @@ import {
   APP_SCREEN_PROFILE,
   APP_SCREEN_REVIEWS,
   APP_SCREEN_SEARCH_PARKING,
+  APP_SCREEN_USER_REVIEWS,
 } from '../lib/appScreenState.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
@@ -204,6 +206,7 @@ function AuthenticatedMainChrome() {
   const { screen } = useAppScreen()
   if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
   if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
+  if (screen === APP_SCREEN_USER_REVIEWS) return <UserReviewsPage />
   if (screen === APP_SCREEN_SEARCH_PARKING || screen === APP_SCREEN_PARK_HERE)
     return <MapParkingPage />
   if (screen === APP_SCREEN_ALERTS) return <AlertsPage />

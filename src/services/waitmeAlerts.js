@@ -160,6 +160,7 @@ export function parkingAlertRowToCard(row) {
     allow_phone_calls: Boolean(r.allow_phone_calls),
     isIncomingRequest: Boolean(r.is_incoming_request),
     peer_user_id: typeof r.peer_user_id === 'string' ? r.peer_user_id : null,
+    user_id: typeof r.peer_user_id === 'string' ? r.peer_user_id : null,
   }
 }
 

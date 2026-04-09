@@ -6,6 +6,7 @@ export const APP_SCREEN_SEARCH_PARKING = 'searchParking'
 export const APP_SCREEN_PARK_HERE = 'parkHere'
 export const APP_SCREEN_ALERTS = 'alerts'
 export const APP_SCREEN_CHATS = 'chats'
+export const APP_SCREEN_USER_REVIEWS = 'userReviews'
 
 /**
  * Reductor puro para navegación interna (testeable sin React).
@@ -28,6 +29,8 @@ export function reduceAppScreen(state, action) {
       return APP_SCREEN_ALERTS
     case 'openChats':
       return APP_SCREEN_CHATS
+    case 'openUserReviews':
+      return APP_SCREEN_USER_REVIEWS
     default:
       return state
   }

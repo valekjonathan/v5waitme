@@ -19,6 +19,7 @@ const AppScreenContext = createContext(null)
 export function AppScreenProvider({ children }) {
   const { user } = useAuth()
   const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
+  const [viewingUserReviewsId, setViewingUserReviewsId] = useState(/** @type {string | null} */ (null))
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
   const [chatUnreadByThread, setChatUnreadByThread] = useState(
@@ -78,8 +79,17 @@ export function AppScreenProvider({ children }) {
     }
   }, [user?.id, syncChatUnreadFromThreads])
 
+  const clearUserReviewsNav = useCallback(() => {
+    setViewingUserReviewsId(null)
+    if (typeof window !== 'undefined' && window.location.hash.startsWith('#/user/')) {
+      const { pathname, search } = window.location
+      window.history.replaceState(null, '', pathname + search)
+    }
+  }, [])
+
   const mapFocusActions = useMemo(() => {
     const go = (type) => () => {
+      clearUserReviewsNav()
       dispatch({ type })
       setMapFocusGeneration((g) => g + 1)
     }
@@ -88,43 +98,83 @@ export function AppScreenProvider({ children }) {
       openSearchParking: go('openSearchParking'),
       openParkHere: go('openParkHere'),
     }
-  }, [])
+  }, [clearUserReviewsNav])
 
   const { openHome, openSearchParking, openParkHere } = mapFocusActions
 
   /** Acciones que solo despachan un tipo (evita bloques duplicados en quality-gate). */
   const simpleScreenActions = useMemo(
     () => ({
-      openAlerts: () => dispatch({ type: 'openAlerts' }),
-      openChats: () => dispatch({ type: 'openChats' }),
-      openProfile: () => dispatch({ type: 'openProfile' }),
-      openReviews: () => dispatch({ type: 'openReviews' }),
+      openAlerts: () => {
+        clearUserReviewsNav()
+        dispatch({ type: 'openAlerts' })
+      },
+      openChats: () => {
+        clearUserReviewsNav()
+        dispatch({ type: 'openChats' })
+      },
+      openProfile: () => {
+        clearUserReviewsNav()
+        dispatch({ type: 'openProfile' })
+      },
+      openReviews: () => {
+        clearUserReviewsNav()
+        dispatch({ type: 'openReviews' })
+      },
     }),
-    []
+    [clearUserReviewsNav]
   )
 
   const { openAlerts, openChats, openProfile, openReviews } = simpleScreenActions
 
+  const openUserReviews = useCallback((userId) => {
+    const id = String(userId ?? '').trim()
+    if (!id) return
+    setViewingUserReviewsId(id)
+    dispatch({ type: 'openUserReviews' })
+    const next = `#/user/${encodeURIComponent(id)}`
+    if (typeof window !== 'undefined' && window.location.hash !== next) {
+      window.location.hash = next
+    }
+  }, [])
+
+  useEffect(() => {
+    const onHash = () => {
+      const m = window.location.hash.match(/^#\/user\/([^/?#]+)/)
+      if (!m) return
+      const id = decodeURIComponent(m[1])
+      setViewingUserReviewsId(id)
+      dispatch({ type: 'openUserReviews' })
+    }
+    onHash()
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
   /** Siempre abre chats y fuerza volver a lista (sin toggles). */
   const openChatsRoot = useCallback(() => {
-    simpleScreenActions.openChats()
+    clearUserReviewsNav()
+    dispatch({ type: 'openChats' })
     setChatsListResetGeneration((g) => g + 1)
-  }, [simpleScreenActions])
+  }, [clearUserReviewsNav])
 
   const openChatsWithPeer = useCallback(
     (peerUserId) => {
+      clearUserReviewsNav()
       const id = String(peerUserId ?? '')
       if (isRealSupabaseAuthUid(id)) stashPendingDmPeerUserId(id)
-      simpleScreenActions.openChats()
+      dispatch({ type: 'openChats' })
     },
-    [simpleScreenActions]
+    [clearUserReviewsNav]
   )
 
   const value = useMemo(
     () => ({
       screen,
+      viewingUserReviewsId,
       openProfile,
       openReviews,
+      openUserReviews,
       openHome,
       openSearchParking,
       openParkHere,
@@ -141,7 +191,7 @@ export function AppScreenProvider({ children }) {
     }),
     // Una línea: evita bloque duplicado vs el objeto (quality-gate DUPLICATE_BLOCK_SAME_FILE).
     [
-      screen, openProfile, openReviews, openHome, openSearchParking, openParkHere, openAlerts, openChats, openChatsRoot, openChatsWithPeer, mapFocusGeneration, chatsListResetGeneration, chatUnreadByThread, chatUnreadTotal, syncChatUnreadFromThreads, clearChatThreadUnread,
+      screen, viewingUserReviewsId, openProfile, openReviews, openUserReviews, openHome, openSearchParking, openParkHere, openAlerts, openChats, openChatsRoot, openChatsWithPeer, mapFocusGeneration, chatsListResetGeneration, chatUnreadByThread, chatUnreadTotal, syncChatUnreadFromThreads, clearChatThreadUnread,
     ]
   )
 

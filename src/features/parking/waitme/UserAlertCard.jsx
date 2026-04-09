@@ -2,6 +2,7 @@
  * Copia de WaitMe: src/components/cards/UserAlertCard.jsx (sin Tailwind: estilos inline).
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAppScreen } from '../../../lib/AppScreenContext'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { shadows } from '../../../design/shadows'
@@ -141,7 +142,7 @@ function pravatarImgIdFromString(s) {
   return (h % 70) + 1
 }
 
-function UserAlertAvatarBlock({ alert }) {
+function UserAlertAvatarBlock({ alert, onClick }) {
   const name = String(alert?.user_name || 'Usuario')
   const photo = alert?.user_photo
   const seed = useMemo(() => pravatarImgIdFromString(name), [name])
@@ -157,7 +158,22 @@ function UserAlertAvatarBlock({ alert }) {
   const src = useUploaded ? photo : `https://i.pravatar.cc/150?img=${pravatarIx}`
 
   return (
-    <div style={USER_CARD_AVATAR_WRAP}>
+    <div
+      style={{
+        ...USER_CARD_AVATAR_WRAP,
+        cursor: onClick ? 'pointer' : undefined,
+      }}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!onClick) return
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick(e)
+        }
+      }}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+    >
       <img
         src={src}
         alt=""
@@ -299,6 +315,17 @@ function UserAlertCard({
 
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
+
+  const { openUserReviews } = useAppScreen()
+  const profileUserId = alert?.user_id ?? alert?.peer_user_id
+  const goProfile = useCallback(
+    (e) => {
+      if (!profileUserId) return
+      e?.stopPropagation?.()
+      openUserReviews(profileUserId)
+    },
+    [profileUserId, openUserReviews]
+  )
 
   const badgeBase = {
     backgroundColor: 'rgba(168, 85, 247, 0.2)',
@@ -516,7 +543,7 @@ function UserAlertCard({
       <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
       <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
-        <UserAlertAvatarBlock alert={alert} />
+        <UserAlertAvatarBlock alert={alert} onClick={profileUserId ? goProfile : undefined} />
 
         <div
           style={{
@@ -546,7 +573,24 @@ function UserAlertCard({
                 minHeight: 28,
               }}
             >
-              <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
+              <span
+                style={{
+                  ...USER_CARD_NAME_STYLE,
+                  cursor: profileUserId ? 'pointer' : undefined,
+                }}
+                onClick={profileUserId ? goProfile : undefined}
+                role={profileUserId ? 'button' : undefined}
+                tabIndex={profileUserId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (!profileUserId) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goProfile(e)
+                  }
+                }}
+              >
+                {(alert?.user_name || 'Usuario').split(' ')[0]}
+              </span>
             </div>
 
             {!isChat ? (
@@ -559,6 +603,17 @@ function UserAlertCard({
                   alignItems: 'center',
                   flexShrink: 0,
                   transform: 'translateX(-12px)',
+                  cursor: profileUserId ? 'pointer' : undefined,
+                }}
+                onClick={profileUserId ? goProfile : undefined}
+                role={profileUserId ? 'button' : undefined}
+                tabIndex={profileUserId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (!profileUserId) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goProfile(e)
+                  }
                 }}
               >
                 {renderHeaderStarSlots(Number(alert?.rating ?? 0)).map((star, i) => (
@@ -599,12 +654,35 @@ function UserAlertCard({
                   lineHeight: 1,
                   margin: 0,
                   marginTop: 4,
+                  cursor: profileUserId ? 'pointer' : undefined,
+                }}
+                onClick={profileUserId ? goProfile : undefined}
+                role={profileUserId ? 'button' : undefined}
+                tabIndex={profileUserId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (!profileUserId) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goProfile(e)
+                  }
                 }}
               >
                 {carLabel}
               </p>
 
-              <div style={{ position: 'relative', marginTop: 4 }}>
+              <div
+                style={{ position: 'relative', marginTop: 4 }}
+                onClick={profileUserId ? goProfile : undefined}
+                role={profileUserId ? 'button' : undefined}
+                tabIndex={profileUserId ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (!profileUserId) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goProfile(e)
+                  }
+                }}
+              >
                 <Plate value={alert?.plate} width={140} />
 
                 <div

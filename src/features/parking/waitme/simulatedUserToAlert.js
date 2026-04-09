@@ -7,6 +7,7 @@ export function simulatedUserToAlert(u) {
   const now = Date.now()
   const avail = 10 + (String(u.id).length % 20)
   return {
+    user_id: u.id,
     user_name: u.name,
     brand: u.brand,
     model: u.model,

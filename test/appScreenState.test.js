@@ -7,6 +7,7 @@ import {
   APP_SCREEN_PARK_HERE,
   APP_SCREEN_PROFILE,
   APP_SCREEN_SEARCH_PARKING,
+  APP_SCREEN_USER_REVIEWS,
   reduceAppScreen,
 } from '../src/lib/appScreenState.js'
 
@@ -43,4 +44,8 @@ test('reduceAppScreen: openAlerts', () => {
 
 test('reduceAppScreen: openChats', () => {
   assert.equal(reduceAppScreen(APP_SCREEN_HOME, { type: 'openChats' }), APP_SCREEN_CHATS)
+})
+
+test('reduceAppScreen: openUserReviews', () => {
+  assert.equal(reduceAppScreen(APP_SCREEN_HOME, { type: 'openUserReviews' }), APP_SCREEN_USER_REVIEWS)
 })
