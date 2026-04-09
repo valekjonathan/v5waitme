@@ -1,10 +1,37 @@
 import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapbox.js'
-import { getMapFollowUserGps, getParkingMapPinMode, setSearchFollowUserGps } from './mapSession.js'
+import {
+  getMapFollowUserGps,
+  getParkingMapPinMode,
+  getWaitmePinOffsetYSuppressed,
+  setSearchFollowUserGps,
+} from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
 import { getCurrentLocationFast, getCurrentPosition } from '../../services/location.js'
 import { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
 export { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
+
+const MAP_ALIGN_EPS_PX = 0.5
+
+/**
+ * Núcleo único: centro del mapa (LngLat) para que `[lng,lat]` quede bajo el pixel (targetX, targetY)
+ * en coords del contenedor Mapbox. null si ya alineado dentro de epsilon o error.
+ */
+export function computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, epsilon = MAP_ALIGN_EPS_PX) {
+  if (!map?.project || !map?.unproject) return null
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null
+  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return null
+  try {
+    const point = map.project([lng, lat])
+    const centerPx = map.project(map.getCenter())
+    const dx = targetX - point.x
+    const dy = targetY - point.y
+    if (Math.abs(dx) <= epsilon && Math.abs(dy) <= epsilon) return null
+    return map.unproject({ x: centerPx.x - dx, y: centerPx.y - dy })
+  } catch {
+    return null
+  }
+}
 
 export function isWaitmeParkingLayoutReady() {
   if (typeof document === 'undefined') return false
@@ -62,16 +89,8 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   const targetY = (searchBottom + cardTop) / 2
   const targetX = mapRect.width / 2
 
-  const point = map.project([lng, lat])
-  const centerPx = map.project(map.getCenter())
-  const dx = targetX - point.x
-  const dy = targetY - point.y
-
-  const newCenterPx = { x: centerPx.x - dx, y: centerPx.y - dy }
-
-  if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) return
-
-  const newCenter = map.unproject(newCenterPx)
+  const newCenter = computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, MAP_ALIGN_EPS_PX)
+  if (!newCenter) return
 
   map.easeTo({
     center: newCenter,
@@ -80,9 +99,12 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   })
 }
 
-/** Home/Login: solo offset punta del pin vs centro vertical del mapa. */
+/** Home/Login con pin hero: sin offset Y global (la cámara va por punta + `computeMapCenterAligningLngLatToPixel`). */
 export function getWaitmeMapCameraOptions() {
   if (typeof window === 'undefined') {
+    return { offset: [0, 0] }
+  }
+  if (getWaitmePinOffsetYSuppressed()) {
     return { offset: [0, 0] }
   }
   const oy = window.__WAITME_PIN_OFFSET_Y__ || 0

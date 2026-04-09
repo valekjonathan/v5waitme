@@ -193,9 +193,8 @@ export function startLocationTracking() {
 
   navigator.geolocation.watchPosition(
     (pos) => {
-      const lat = pos?.coords?.latitude
-      const lng = pos?.coords?.longitude
-      persistAndNotifyLocation(lat, lng)
+      const v = validateRawPosition(pos)
+      if (v) persistAndNotifyLocation(v.lat, v.lng)
     },
     () => {
       /* errores puntuales: el stream sigue vivo */

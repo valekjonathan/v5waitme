@@ -16,6 +16,7 @@ import {
   setMapReadOnlySession,
   setParkingMapPinMode,
   setSearchFollowUserGps,
+  setWaitmePinOffsetYSuppressed,
 } from '../mapSession.js'
 import { getGlobalMapInstance, setGlobalMapInstance } from '../mapInstance.js'
 import {
@@ -26,6 +27,7 @@ import {
 import {
   alignParkedGpsMarkerToGap,
   centerParkingMapOnGpsLikeParked,
+  computeMapCenterAligningLngLatToPixel,
   GAP_CARD_TOP,
   GAP_SEARCH_BOTTOM,
   getWaitmeMapCameraOptions,
@@ -151,13 +153,15 @@ function centerMapOnUserImmediate(map, loc) {
   }
 }
 
+const HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX = 1
+
 /**
- * Home/Login (readOnly + hideViewportCenterPin): pin fijo, mapa bajo él.
- * En cada actualización de GPS: `jumpTo` instantáneo para que la ubicación quede bajo la punta del pin.
+ * Home/Login: pin fijo; mapa bajo la punta `[data-waitme-pin-tip]`.
+ * Misma matemática que parking gap (`computeMapCenterAligningLngLatToPixel`) + hasta 2 `jumpTo` si el error en px > 1.
  */
 function jumpHomeLoginMapUnderHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return
-  if (!map?.jumpTo || !map?.project || !map?.unproject || !map.isStyleLoaded?.()) return
+  if (!map?.jumpTo || !map?.project || !map.isStyleLoaded?.()) return
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
   const wrap = map.getContainer()
   if (!(wrap instanceof HTMLElement)) return
@@ -169,26 +173,31 @@ function jumpHomeLoginMapUnderHeroPinTip(map, lng, lat) {
   const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
   const targetY = pinRect.bottom - mapRect.top
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return
-  let projected
+
+  const applyIfNeeded = (epsilon) => {
+    const nc = computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, epsilon)
+    if (!nc) return false
+    try {
+      map.jumpTo({ center: nc })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  applyIfNeeded(0.5)
+
+  let p
   try {
-    projected = map.project([lng, lat])
+    p = map.project([lng, lat])
   } catch {
     return
   }
-  const dx = projected.x - targetX
-  const dy = projected.y - targetY
-  const cx = wrap.clientWidth / 2 + dx
-  const cy = wrap.clientHeight / 2 + dy
-  let newCenter
-  try {
-    newCenter = map.unproject({ x: cx, y: cy })
-  } catch {
-    return
-  }
-  try {
-    map.jumpTo({ center: newCenter })
-  } catch {
-    /* */
+  const errOk =
+    Math.abs(p.x - targetX) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX &&
+    Math.abs(p.y - targetY) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX
+  if (!errOk) {
+    applyIfNeeded(0)
   }
 }
 
@@ -268,6 +277,15 @@ export default function Map({
       }
     }
   }, [readOnly, followUserGps, parkingBandPinAdjust, parkingPinMode])
+
+  useEffect(() => {
+    const suppress =
+      readOnly && hideViewportCenterPin && !parkingBandPinAdjust
+    setWaitmePinOffsetYSuppressed(suppress)
+    return () => {
+      setWaitmePinOffsetYSuppressed(false)
+    }
+  }, [readOnly, hideViewportCenterPin, parkingBandPinAdjust])
 
   const projectSearchPinFromGps = useCallback(() => {
     const map = getGlobalMapInstance()

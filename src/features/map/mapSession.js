@@ -10,6 +10,20 @@ let searchFollowUserGps = false
 /** `search` | `parked` cuando `Map` usa `parkingBandPinAdjust`; null si no aplica. */
 let parkingMapPinMode = null
 
+/**
+ * Home/Login (readOnly + pin hero): el centro se ajusta con la punta `[data-waitme-pin-tip]`.
+ * Evita mezclar `__WAITME_PIN_OFFSET_Y__` en `jumpTo`/`flyTo` genéricos (`recenterGlobalMapOnUser`, etc.).
+ */
+let waitmePinOffsetYSuppressed = false
+
+export function setWaitmePinOffsetYSuppressed(value) {
+  waitmePinOffsetYSuppressed = Boolean(value)
+}
+
+export function getWaitmePinOffsetYSuppressed() {
+  return waitmePinOffsetYSuppressed
+}
+
 export function setMapReadOnlySession(value) {
   readOnly = Boolean(value)
 }
