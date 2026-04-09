@@ -162,7 +162,14 @@ function notify(location) {
   ) {
     return
   }
-  currentLocation = location
+  const lat = location.latitude
+  const lng = location.longitude
+  const accuracy = Number.isFinite(location.accuracy) ? location.accuracy : null
+  const timestamp = Number.isFinite(location.timestamp) ? location.timestamp : Date.now()
+  if (import.meta.env.DEV) {
+    console.log('GPS UPDATE:', lat, lng, accuracy, timestamp)
+  }
+  currentLocation = { latitude: lat, longitude: lng }
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('last_location', JSON.stringify(currentLocation))
@@ -188,7 +195,12 @@ export function startLocationTracking() {
   locationTrackingStarted = true
 
   if (isDevSafari()) {
-    notify({ latitude: DEV_BROWSER_MOCK_LAT, longitude: DEV_BROWSER_MOCK_LNG })
+    notify({
+      latitude: DEV_BROWSER_MOCK_LAT,
+      longitude: DEV_BROWSER_MOCK_LNG,
+      accuracy: 12,
+      timestamp: Date.now(),
+    })
     return
   }
 
@@ -196,7 +208,13 @@ export function startLocationTracking() {
 
   getCurrentPosition(
     (p) => {
-      if (p) notify({ latitude: p.lat, longitude: p.lng })
+      if (p)
+        notify({
+          latitude: p.lat,
+          longitude: p.lng,
+          accuracy: p.accuracy,
+          timestamp: p.ts,
+        })
     },
     () => {}
   )
@@ -204,7 +222,13 @@ export function startLocationTracking() {
   navigator.geolocation.watchPosition(
     (pos) => {
       const p = payloadFromBrowserPosition(pos)
-      if (p) notify({ latitude: p.lat, longitude: p.lng })
+      if (p)
+        notify({
+          latitude: p.lat,
+          longitude: p.lng,
+          accuracy: p.accuracy,
+          timestamp: p.ts,
+        })
     },
     () => {
       /* errores puntuales: el stream sigue vivo */
