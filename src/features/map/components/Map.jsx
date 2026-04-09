@@ -31,7 +31,9 @@ import {
   GAP_SEARCH_BOTTOM,
   getWaitmeMapCameraOptions,
   isWaitmeParkingLayoutReady,
+  jumpMapLngLatUnderHeroPinTip,
   jumpMapToGpsSearch,
+  scheduleJumpMapLngLatUnderHeroPinTip,
 } from '../mapControls.js'
 import MapViewportCenterPin from './MapViewportCenterPin.jsx'
 import {
@@ -146,58 +148,6 @@ function centerMapOnUserImmediate(map, loc) {
       zoom: DEFAULT_ZOOM,
       pitch: DEFAULT_PITCH,
       ...getWaitmeMapCameraOptions(),
-    })
-  } catch {
-    /* */
-  }
-}
-
-/**
- * Home/Login (`readOnly` + `hideViewportCenterPin` + sin parking): pin fijo; el mapa se mueve en cada GPS.
- * Un `jumpTo` por actualización; sin ease, sin verificación en dos pasos, sin límites de repeticiones.
- */
-function jumpHomeLoginMapUnderHeroPinTip(map, lng, lat) {
-  if (typeof document === 'undefined') return
-  if (!map?.jumpTo || !map?.project || !map?.unproject) return
-  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
-
-  const pin = document.querySelector('[data-waitme-pin-tip]')
-  if (!pin) return
-
-  const wrap = map.getContainer()
-  if (!(wrap instanceof HTMLElement)) return
-
-  const pinRect = pin.getBoundingClientRect()
-  const mapRect = wrap.getBoundingClientRect()
-
-  if (mapRect.width === 0 || mapRect.height === 0) return
-
-  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
-  const targetY = pinRect.bottom - mapRect.top
-
-  let projected
-  try {
-    projected = map.project([lng, lat])
-  } catch {
-    return
-  }
-
-  const dx = projected.x - targetX
-  const dy = projected.y - targetY
-
-  let newCenter
-  try {
-    newCenter = map.unproject({
-      x: wrap.clientWidth / 2 + dx,
-      y: wrap.clientHeight / 2 + dy,
-    })
-  } catch {
-    return
-  }
-
-  try {
-    map.jumpTo({
-      center: newCenter,
     })
   } catch {
     /* */
@@ -568,7 +518,7 @@ export default function Map({
           !parkingBandPinAdjustRef.current
 
         if (isHeroHomeLogin) {
-          jumpHomeLoginMapUnderHeroPinTip(map, loc.longitude, loc.latitude)
+          scheduleJumpMapLngLatUnderHeroPinTip(map, loc.longitude, loc.latitude)
           return
         }
 
@@ -602,7 +552,7 @@ export default function Map({
           hideViewportCenterPinRef.current &&
           !parkingBandPinAdjustRef.current
         if (isHeroHomeLogin && fast) {
-          jumpHomeLoginMapUnderHeroPinTip(existingMap, fast.longitude, fast.latitude)
+          jumpMapLngLatUnderHeroPinTip(existingMap, fast.longitude, fast.latitude)
         } else if (followUserGpsRef.current && fast) {
           centerMapOnUserImmediate(existingMap, fast)
         }
@@ -660,14 +610,14 @@ export default function Map({
       if (isHeroHomeLogin) {
         const fast = getCurrentLocationFast()
         if (fast) {
-          jumpHomeLoginMapUnderHeroPinTip(map, fast.longitude, fast.latitude)
+          jumpMapLngLatUnderHeroPinTip(map, fast.longitude, fast.latitude)
         } else {
           getCurrentPosition(
             (validated) => {
               if (!validated) return
               const m = getGlobalMapInstance()
               if (!m) return
-              jumpHomeLoginMapUnderHeroPinTip(m, validated.lng, validated.lat)
+              jumpMapLngLatUnderHeroPinTip(m, validated.lng, validated.lat)
             },
             () => {}
           )

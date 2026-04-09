@@ -11,25 +11,76 @@ import { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
 export { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
 
-const MAP_ALIGN_EPS_PX = 0.5
-
 /**
- * Núcleo único: centro del mapa (LngLat) para que `[lng,lat]` quede bajo el pixel (targetX, targetY)
- * en coords del contenedor Mapbox. null si ya alineado dentro de epsilon o error.
+ * Núcleo único WaitMe: `(lng,lat)` bajo el píxel `(targetX, targetY)` en coords del contenedor Mapbox.
+ * `project` → delta respecto a la punta objetivo → `unproject` desde el centro del viewport (`clientWidth/Height`).
+ * Sin epsilon: cada lectura válida puede mover la cámara (parking + hero comparten la misma matemática).
  */
-export function computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, epsilon = MAP_ALIGN_EPS_PX) {
+export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY) {
   if (!map?.project || !map?.unproject) return null
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return null
+  const wrap = map.getContainer()
+  if (!(wrap instanceof HTMLElement)) return null
+  let projected
   try {
-    const point = map.project([lng, lat])
-    const centerPx = map.project(map.getCenter())
-    const dx = targetX - point.x
-    const dy = targetY - point.y
-    if (Math.abs(dx) <= epsilon && Math.abs(dy) <= epsilon) return null
-    return map.unproject({ x: centerPx.x - dx, y: centerPx.y - dy })
+    projected = map.project([lng, lat])
   } catch {
     return null
+  }
+  const dx = projected.x - targetX
+  const dy = projected.y - targetY
+  try {
+    return map.unproject({
+      x: wrap.clientWidth / 2 + dx,
+      y: wrap.clientHeight / 2 + dy,
+    })
+  } catch {
+    return null
+  }
+}
+
+let _heroJumpCoalesce = null
+let _heroJumpCoalesceScheduled = false
+
+/**
+ * Agrupa varias notificaciones GPS en el mismo turno de tareas en un solo `jumpTo` (misma instancia de mapa).
+ */
+export function scheduleJumpMapLngLatUnderHeroPinTip(map, lng, lat) {
+  _heroJumpCoalesce = { map, lng, lat }
+  if (_heroJumpCoalesceScheduled) return
+  _heroJumpCoalesceScheduled = true
+  queueMicrotask(() => {
+    _heroJumpCoalesceScheduled = false
+    const job = _heroJumpCoalesce
+    _heroJumpCoalesce = null
+    if (!job) return
+    const live = getGlobalMapInstance()
+    if (live !== job.map) return
+    jumpMapLngLatUnderHeroPinTip(job.map, job.lng, job.lat)
+  })
+}
+
+/** Home/Login: pin `[data-waitme-pin-tip]` fijo; solo mueve cámara (`jumpTo` con centro calculado). */
+export function jumpMapLngLatUnderHeroPinTip(map, lng, lat) {
+  if (typeof document === 'undefined') return
+  if (!map?.jumpTo) return
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+  const pin = document.querySelector('[data-waitme-pin-tip]')
+  if (!pin) return
+  const wrap = map.getContainer()
+  if (!(wrap instanceof HTMLElement)) return
+  const pinRect = pin.getBoundingClientRect()
+  const mapRect = wrap.getBoundingClientRect()
+  if (mapRect.width === 0 || mapRect.height === 0) return
+  const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
+  const targetY = pinRect.bottom - mapRect.top
+  const newCenter = computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY)
+  if (!newCenter) return
+  try {
+    map.jumpTo({ center: newCenter })
+  } catch {
+    /* */
   }
 }
 
@@ -89,7 +140,7 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   const targetY = (searchBottom + cardTop) / 2
   const targetX = mapRect.width / 2
 
-  const newCenter = computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, MAP_ALIGN_EPS_PX)
+  const newCenter = computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY)
   if (!newCenter) return
 
   map.easeTo({
@@ -99,7 +150,7 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   })
 }
 
-/** Home/Login con pin hero: sin offset Y global (la cámara va por punta + `computeMapCenterAligningLngLatToPixel`). */
+/** Home/Login con pin hero: sin offset Y global (cámara por punta + `computeMapCenterUnderPixelTarget`). */
 export function getWaitmeMapCameraOptions() {
   if (typeof window === 'undefined') {
     return { offset: [0, 0] }
