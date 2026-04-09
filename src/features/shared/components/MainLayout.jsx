@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
 import CenterPin from '../../home/components/CenterPin'
@@ -9,7 +8,6 @@ import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
 const s = LAYOUT.spacing
-const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
 const rootStyle = {
   position: 'relative',
   flex: '1 1 0%',
@@ -69,14 +67,20 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
-/** Pin entre subtítulo y CTA; encima del overlay del mapa (columna content). */
-const heroPinWrapStyle = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginTop: 12,
-  marginBottom: 10,
-  flexShrink: 0,
+/** Mismo anclaje que `MapViewportCenterPin` (centro del mapa = GPS con `followUserGps`). */
+const homeMapPinLayerStyle = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: LAYOUT.z.homeMapPin,
+  pointerEvents: 'none',
+  overflow: 'visible',
+}
+const homeMapPinPositionStyle = {
+  position: 'absolute',
+  left: '50%',
+  top: '50%',
+  transform: 'translate(-50%, -100%)',
+  zIndex: 1,
 }
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {
@@ -92,6 +96,7 @@ const heroTitleStyle = {
 const heroSubtitleStyle = {
   margin: 0,
   marginTop: '8px',
+  marginBottom: s.lg,
   padding: 0,
   fontSize: 18,
   fontWeight: 600,
@@ -111,50 +116,19 @@ const heroLogoBoxStyle = {
 /** No altera el gap del Section; permite medir `[data-home-cta-region] button` en Home. */
 const homeCtaRegionWrapStyle = { display: 'contents' }
 
-function withLoginEntrance(baseStyle, isLoginLayout, visible) {
-  if (!isLoginLayout) return baseStyle
-  return {
-    ...baseStyle,
-    opacity: visible ? 1 : 0,
-    transform: visible ? 'translateY(0)' : 'translateY(20px)',
-    transition: loginEntranceEase,
-  }
-}
-
 function overlayLayerStyle(background) {
   return { ...overlayStyleBase, background }
 }
 
 /**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título). Pin en Map.jsx.
- * `loginEntrance`: solo Login; Home puede tener children (botones) sin animación escalonada.
- * @param {object} props
- * @param {import('react').ReactNode} [props.children]
- * @param {boolean} [props.loginEntrance]
+ * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título).
+ * Pin visible en `homeMapPin` (centro = misma referencia que mapa+GPS); medición sigue en `Map`.
+ * `loginEntrance` (Login) se acepta por compatibilidad; la entrada es instantánea.
  */
-export default function MainLayout({ children = null, loginEntrance = false }) {
+export default function MainLayout({ children = null }) {
   const simulatedUsers = useSimulatedParkingUsers()
   const hasCta = children != null
-  const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
-  const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
 
-  useEffect(() => {
-    if (!loginEntrance) {
-      setLoginHeroIn(true)
-      setLoginCtaIn(true)
-      return
-    }
-    setLoginHeroIn(false)
-    setLoginCtaIn(false)
-    const raf = requestAnimationFrame(() => setLoginHeroIn(true))
-    const t = window.setTimeout(() => setLoginCtaIn(true), 120)
-    return () => {
-      cancelAnimationFrame(raf)
-      window.clearTimeout(t)
-    }
-  }, [loginEntrance])
-
-  /** Mismo tratamiento que Login: Home queda idéntico salvo el bloque CTA (children). */
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 
@@ -167,14 +141,16 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
 
       <div style={overlayLayerStyle(overlayBackground)} />
 
+      <div style={homeMapPinLayerStyle} data-waitme-home-map-pin aria-hidden>
+        <div style={homeMapPinPositionStyle}>
+          <CenterPin />
+        </div>
+      </div>
+
       <div style={centeredLayerStyle}>
         <div style={contentViewportStyle}>
           <div style={contentColumnStyle}>
-            <Section
-              gap={0}
-              align="center"
-              style={withLoginEntrance(heroSectionBaseStyle, loginEntrance, loginHeroIn)}
-            >
+            <Section gap={0} align="center" style={heroSectionBaseStyle}>
               <div style={heroLogoOuterStyle}>
                 <div style={heroLogoBoxStyle}>
                   <img
@@ -192,15 +168,9 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
               <p data-home-subtitle style={heroSubtitleStyle}>
                 Aparca donde te <span style={meTextStyle}>avisen!</span>
               </p>
-              <div style={heroPinWrapStyle} aria-hidden>
-                <CenterPin />
-              </div>
             </Section>
             {hasCta ? (
-              <Section
-                gap={s.md}
-                style={withLoginEntrance(ctaSectionBaseStyle, loginEntrance, loginCtaIn)}
-              >
+              <Section gap={s.md} style={ctaSectionBaseStyle}>
                 <div data-home-cta-region style={homeCtaRegionWrapStyle}>
                   {children}
                 </div>

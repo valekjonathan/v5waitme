@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, memo } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
 import {
   APP_SCREEN_ALERTS,
@@ -28,7 +28,8 @@ const labelStyle = {
 
 const divider = <div style={{ height: 32, width: 1, background: colors.border }} aria-hidden />
 
-const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
+const BottomNav = memo(
+  forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
   const { screen, chatUnreadTotal = 0 } = nav
   const { status, isProfileComplete } = useAuth()
@@ -148,7 +149,8 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       </div>
     </nav>
   )
-})
+  })
+)
 
 BottomNav.displayName = 'BottomNav'
 

@@ -14,7 +14,11 @@ function assertNotIncludes(haystack, needle, message) {
 test('LoginPage: MainLayout envuelve LoginButtons', () => {
   const code = read('src/features/auth/components/LoginPage.jsx')
   assert.match(code, /<MainLayout\b/i, 'LoginPage debe usar MainLayout')
-  assert.match(code, /loginEntrance/i, 'Login mantiene animación de entrada en MainLayout')
+  assert.match(
+    code,
+    /loginEntrance/i,
+    'LoginPage sigue pasando loginEntrance (MainLayout lo acepta; entrada instantánea)'
+  )
   assert.match(code, /<LoginButtons\s*\/?>/i, 'LoginPage debe renderizar LoginButtons')
   assert.match(
     code,

@@ -57,7 +57,6 @@ export default function ChatsPage() {
     setLoadError(null)
     const { data, error } = await listDmThreadsForUser(userId)
     if (error) {
-      setThreads([])
       setLoadError(error)
     } else {
       setThreads(Array.isArray(data) ? data : [])
@@ -212,7 +211,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canLoadChats && loading ? (
+          {canLoadChats && loading && threads.length === 0 ? (
             <div
               style={{
                 padding: 16,
@@ -228,7 +227,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {canLoadChats && loadError && !loading ? (
+          {canLoadChats && loadError && !loading && threads.length === 0 ? (
             <div
               style={{
                 padding: 16,
@@ -274,7 +273,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {!loading && !loadError
+          {!loadError && filteredThreads.length > 0
             ? filteredThreads.map((t) => (
                 <div
                   key={t.id}

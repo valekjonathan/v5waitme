@@ -52,7 +52,7 @@ test('ButtonBase: icono y texto comparten el mismo contenedor directo', () => {
   )
 })
 
-test('MainLayout: hero WaitMe!->subtítulo; CenterPin en hero + MapViewportCenterPin medición; HomePage delega en MainLayout', () => {
+test('MainLayout: hero WaitMe!->subtítulo; CenterPin capa mapa+GPS + MapViewportPin medición; HomePage delega en MainLayout', () => {
   const main = read('src/features/shared/components/MainLayout.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
   const map = read('src/features/map/components/Map.jsx')
@@ -71,6 +71,7 @@ test('MainLayout: hero WaitMe!->subtítulo; CenterPin en hero + MapViewportCente
     /<p\s+data-home-subtitle\s+style=\{heroSubtitleStyle\}>[\s\S]*Aparca[\s\S]*donde\s+te[\s\S]*<span\s+style=\{meTextStyle\}>avisen!<\/span>[\s\S]*<\/p>/
   )
   assert.match(map, /MapViewportCenterPin/)
+  assert.match(main, /data-waitme-home-map-pin/)
   assert.match(main, /<CenterPin\b/)
   assert.match(main, /hideViewportCenterPin/)
   assert.match(main, /\{hasCta \?/)

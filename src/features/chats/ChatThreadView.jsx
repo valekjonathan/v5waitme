@@ -593,7 +593,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                 boxSizing: 'border-box',
                 opacity: attachOpen ? 1 : 0,
                 transform: attachOpen ? 'translateY(0)' : 'translateY(6px)',
-                transition: 'opacity 140ms ease, transform 140ms ease',
+                transition: 'none',
                 pointerEvents: attachOpen ? 'auto' : 'none',
               }}
             >

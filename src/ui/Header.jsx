@@ -1,4 +1,4 @@
-import { forwardRef, useLayoutEffect, useRef, useState } from 'react'
+import { forwardRef, memo, useLayoutEffect, useRef, useState } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
 import { colors } from '../design/colors'
 import { radius } from '../design/radius'
@@ -14,7 +14,8 @@ const HEADER_PADDING_X = s.lg
 const BALANCE_PILL_PADDING_Y = s.sm - 2
 const BALANCE_PILL_PADDING_X = s.md
 
-const Header = forwardRef(function Header({ interactive = true }, ref) {
+const Header = memo(
+  forwardRef(function Header({ interactive = true }, ref) {
   const nav = useAppScreen()
   const innerRef = useRef(null)
   const logoRef = useRef(null)
@@ -155,7 +156,8 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
       </div>
     </header>
   )
-})
+  })
+)
 
 Header.displayName = 'Header'
 
