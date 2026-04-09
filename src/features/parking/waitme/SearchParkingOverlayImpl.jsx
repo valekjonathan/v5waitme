@@ -131,6 +131,12 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     return a
   }, [displayUser, streetPick])
 
+  useEffect(() => {
+    if (import.meta.env.DEV && displayUser) {
+      console.log('RENDER USER:', displayUser.id, displayUser.name)
+    }
+  }, [displayUser])
+
   const handleStreetResolved = useCallback((payload) => {
     if (!payload || typeof payload.address !== 'string') return
     setStreetPick(payload)
@@ -277,6 +283,9 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
               />
               {isSearch ? (
                 <UserAlertCard
+                  reviewUser={
+                    displayUser ? { id: displayUser.id, name: displayUser.name } : undefined
+                  }
                   alert={alert}
                   isEmpty={!displayUser}
                   userLocation={userLocation}

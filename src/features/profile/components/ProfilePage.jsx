@@ -400,6 +400,8 @@ export default function ProfilePage() {
             profile={headerProfile}
             avatarBorder={profileScreenAvatarBorder}
             averageRating={profileHeaderReviewsAvg}
+            surface="profile"
+            subjectUserId={sessionUser?.id ?? ''}
           />
         }
       >

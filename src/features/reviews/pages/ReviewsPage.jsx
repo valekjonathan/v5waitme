@@ -17,7 +17,7 @@ import { getAverage } from '../../../lib/reviewsModel'
 const shellStyle = { backgroundColor: colors.background }
 
 export default function ReviewsPage() {
-  const { headerProfile } = useAuth()
+  const { headerProfile, user } = useAuth()
   const reviews = useMemo(() => getReviewsForScreen(), [])
   const headerAverage = useMemo(() => getAverage(reviews), [reviews])
 
@@ -29,7 +29,14 @@ export default function ReviewsPage() {
       mainOverflow="hidden"
     >
       <ProfileReviewsLayout
-        header={<ProfileHeader profile={headerProfile} averageRating={headerAverage} />}
+        header={
+          <ProfileHeader
+            profile={headerProfile}
+            averageRating={headerAverage}
+            surface="reviews"
+            subjectUserId={user?.id ?? ''}
+          />
+        }
       >
         <Section style={profileReviewsSectionFlushStyle}>
           <ReviewsSummary reviews={reviews} />

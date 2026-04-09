@@ -366,7 +366,12 @@ export default function ChatsPage() {
           ) : null}
 
           {!loadError && filteredThreads.length > 0
-            ? filteredThreads.map((t) => (
+            ? filteredThreads.map((t) => {
+                const peerId = String(t.peerUserId ?? '').trim()
+                if (import.meta.env.DEV) {
+                  console.log('RENDER USER:', peerId, t.name)
+                }
+                return (
                 <div
                   key={t.id}
                   role="button"
@@ -381,6 +386,7 @@ export default function ChatsPage() {
                   style={{ cursor: 'pointer', flexShrink: 0 }}
                 >
                   <UserAlertCard
+                    reviewUser={{ id: peerId, name: t.name }}
                     alert={dmListCardToAlert(t)}
                     isChat
                     lastMessage={t.lastMessage}
@@ -391,7 +397,8 @@ export default function ChatsPage() {
                     onCall={() => {}}
                   />
                 </div>
-              ))
+                )
+              })
             : null}
         </div>
       </div>

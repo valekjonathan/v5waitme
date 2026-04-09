@@ -14,7 +14,6 @@ import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
 import UserAlertCardActions, { WAITME_BTN_HEIGHT, waitmeOpenTelDialer } from './UserAlertCardActions.jsx'
-import { resolveReviewsTargetUserId } from '../../../lib/resolveReviewsTargetUserId.js'
 
 /** Mismo morado que el icono del reloj en esta tarjeta. */
 const CLOCK_PURPLE = '#c084fc'
@@ -193,6 +192,8 @@ function UserAlertAvatarBlock({ alert, onClick }) {
 }
 
 function UserAlertCard({
+  /** Usuario cuyas reseñas se abren al pulsar avatar/foto; debe ser el peer real (nunca derivado de índices). */
+  reviewUser,
   alert,
   onBuyAlert,
   onChat,
@@ -331,18 +332,23 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  const profileUserId = resolveReviewsTargetUserId(alert)
-  const goProfile = useCallback(
+  const reviewTargetId =
+    reviewUser && typeof reviewUser === 'object' && typeof reviewUser.id === 'string'
+      ? reviewUser.id.trim()
+      : ''
+
+  const openPeerReviews = useCallback(
     (e) => {
       e?.stopPropagation?.()
-      const id = resolveReviewsTargetUserId(alert)
+      const id = reviewTargetId
       if (!id) return
       if (import.meta.env.DEV) {
-        console.log('CLICK USER ID:', id)
+        const name = reviewUser && typeof reviewUser === 'object' ? reviewUser.name : ''
+        console.log('CLICK USER:', id, name)
       }
       openUserReviews(id)
     },
-    [alert, openUserReviews]
+    [openUserReviews, reviewTargetId, reviewUser]
   )
 
   const badgeBase = {
@@ -567,7 +573,7 @@ function UserAlertCard({
       <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
       <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
-        <UserAlertAvatarBlock alert={alert} onClick={profileUserId ? goProfile : undefined} />
+        <UserAlertAvatarBlock alert={alert} onClick={reviewTargetId ? openPeerReviews : undefined} />
 
         <div
           style={{
@@ -600,16 +606,16 @@ function UserAlertCard({
               <span
                 style={{
                   ...USER_CARD_NAME_STYLE,
-                  cursor: profileUserId ? 'pointer' : undefined,
+                  cursor: reviewTargetId ? 'pointer' : undefined,
                 }}
-                onClick={profileUserId ? goProfile : undefined}
-                role={profileUserId ? 'button' : undefined}
-                tabIndex={profileUserId ? 0 : undefined}
+                onClick={reviewTargetId ? openPeerReviews : undefined}
+                role={reviewTargetId ? 'button' : undefined}
+                tabIndex={reviewTargetId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!profileUserId) return
+                  if (!reviewTargetId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    goProfile(e)
+                    openPeerReviews(e)
                   }
                 }}
               >
@@ -629,16 +635,16 @@ function UserAlertCard({
                   alignItems: 'center',
                   flexShrink: 0,
                   transform: 'translateX(-12px)',
-                  cursor: profileUserId ? 'pointer' : undefined,
+                  cursor: reviewTargetId ? 'pointer' : undefined,
                 }}
-                onClick={profileUserId ? goProfile : undefined}
-                role={profileUserId ? 'button' : undefined}
-                tabIndex={profileUserId ? 0 : undefined}
+                onClick={reviewTargetId ? openPeerReviews : undefined}
+                role={reviewTargetId ? 'button' : undefined}
+                tabIndex={reviewTargetId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!profileUserId) return
+                  if (!reviewTargetId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    goProfile(e)
+                    openPeerReviews(e)
                   }
                 }}
               >
@@ -680,16 +686,16 @@ function UserAlertCard({
                   lineHeight: 1,
                   margin: 0,
                   marginTop: 4,
-                  cursor: profileUserId ? 'pointer' : undefined,
+                  cursor: reviewTargetId ? 'pointer' : undefined,
                 }}
-                onClick={profileUserId ? goProfile : undefined}
-                role={profileUserId ? 'button' : undefined}
-                tabIndex={profileUserId ? 0 : undefined}
+                onClick={reviewTargetId ? openPeerReviews : undefined}
+                role={reviewTargetId ? 'button' : undefined}
+                tabIndex={reviewTargetId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!profileUserId) return
+                  if (!reviewTargetId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    goProfile(e)
+                    openPeerReviews(e)
                   }
                 }}
               >
@@ -698,14 +704,14 @@ function UserAlertCard({
 
               <div
                 style={{ position: 'relative', marginTop: 4 }}
-                onClick={profileUserId ? goProfile : undefined}
-                role={profileUserId ? 'button' : undefined}
-                tabIndex={profileUserId ? 0 : undefined}
+                onClick={reviewTargetId ? openPeerReviews : undefined}
+                role={reviewTargetId ? 'button' : undefined}
+                tabIndex={reviewTargetId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!profileUserId) return
+                  if (!reviewTargetId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
-                    goProfile(e)
+                    openPeerReviews(e)
                   }
                 }}
               >

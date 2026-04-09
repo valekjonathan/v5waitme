@@ -38,7 +38,16 @@ export default function UserReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={profile} averageRating={headerAverage} />}>
+      <ProfileReviewsLayout
+        header={
+          <ProfileHeader
+            profile={profile}
+            averageRating={headerAverage}
+            surface="reviews"
+            subjectUserId={String(viewingUserReviewsId ?? '')}
+          />
+        }
+      >
         <Section style={profileReviewsSectionFlushStyle}>
           <ReviewsSummary reviews={reviews} />
         </Section>

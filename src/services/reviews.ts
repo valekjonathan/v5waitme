@@ -139,6 +139,7 @@ export function buildMockProfileForUserReviews(userId: string | null) {
     ? `https://randomuser.me/api/portraits/women/${portraitIx}.jpg`
     : `https://randomuser.me/api/portraits/men/${portraitIx}.jpg`
   return {
+    id,
     full_name,
     email: '',
     avatar_url,

@@ -166,16 +166,23 @@ export default function AlertsPage() {
               <DashedHint>No tienes alertas activas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {activeCards.map((a) => (
+                {activeCards.map((a) => {
+                  const peerId = String(a.peer_user_id ?? a.user_id ?? '').trim()
+                  if (import.meta.env.DEV) {
+                    console.log('RENDER USER:', peerId, a.user_name)
+                  }
+                  return (
                   <UserAlertCard
                     key={a.id}
+                    reviewUser={{ id: peerId, name: a.user_name }}
                     alert={a}
                     isEmpty={false}
                     hideBuy={false}
                     onBuyAlert={() => {}}
                     onCall={() => {}}
                   />
-                ))}
+                  )
+                })}
               </div>
             )
           ) : (
@@ -188,16 +195,24 @@ export default function AlertsPage() {
               <DashedHint>No hay alertas finalizadas.</DashedHint>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
-                {doneCards.map((a) => (
+                {doneCards.map((a) => {
+                  const card = { ...a, available_in_minutes: null, wait_until: null }
+                  const peerId = String(card.peer_user_id ?? card.user_id ?? '').trim()
+                  if (import.meta.env.DEV) {
+                    console.log('RENDER USER:', peerId, card.user_name)
+                  }
+                  return (
                   <UserAlertCard
-                    key={a.id}
-                    alert={{ ...a, available_in_minutes: null, wait_until: null }}
+                    key={card.id}
+                    reviewUser={{ id: peerId, name: card.user_name }}
+                    alert={card}
                     isEmpty={false}
                     hideBuy
                     onBuyAlert={() => {}}
                     onCall={() => {}}
                   />
-                ))}
+                  )
+                })}
               </div>
             )
           ) : (
