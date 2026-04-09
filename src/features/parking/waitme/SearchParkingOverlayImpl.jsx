@@ -10,6 +10,7 @@ import {
   subscribeToLocation,
 } from '../../../services/location.js'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
+import { flyGlobalMapTo } from '../../map/mapControls.js'
 import CreateAlertCard from './CreateAlertCard.jsx'
 import MapFilters, { WAITME_DEFAULT_SEARCH_FILTERS } from './MapFilters.jsx'
 import MapZoomControls from './MapZoomControls.jsx'
@@ -53,6 +54,10 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const { openChatsWithPeer } = useAppScreen()
   const isSearch = mode === 'search'
   const [address, setAddress] = useState('')
+  /** Dirección elegida en autocompletado (sin reverse geocode). */
+  const [streetPick, setStreetPick] = useState(
+    /** @type {{ address: string, lat: number | null, lng: number | null } | null} */ (null)
+  )
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState(WAITME_DEFAULT_SEARCH_FILTERS)
   const [isCardVisible, setIsCardVisible] = useState(true)
@@ -125,8 +130,19 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const alert = useMemo(() => {
     const a = simulatedUserToAlert(displayUser)
     if (!a || !displayUser) return a
-    return { ...a, rating: displayUser.stars ?? a.rating }
-  }, [displayUser])
+    const withRating = { ...a, rating: displayUser.stars ?? a.rating }
+    if (streetPick?.address) return { ...withRating, address: streetPick.address }
+    return withRating
+  }, [displayUser, streetPick])
+
+  const handleStreetResolved = useCallback((payload) => {
+    if (!payload || typeof payload.address !== 'string') return
+    setStreetPick(payload)
+    setAddress(payload.address)
+    if (Number.isFinite(payload.lng) && Number.isFinite(payload.lat)) {
+      flyGlobalMapTo(payload.lng, payload.lat)
+    }
+  }, [])
   const alertsCount = useMemo(
     () => countFiltered(allUsers, filters, userLocation),
     [allUsers, filters, userLocation]
@@ -182,7 +198,11 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
           }}
         >
           <div style={{ flex: 1, minWidth: 0, overflow: 'visible' }} role="search">
-            <StreetSearch placeholder={streetPlaceholder} />
+            <StreetSearch
+              placeholder={streetPlaceholder}
+              userLocation={userLocation}
+              onSelect={handleStreetResolved}
+            />
           </div>
         </div>
       </div>
@@ -275,6 +295,8 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
                 <CreateAlertCard
                   address={address}
                   onAddressChange={setAddress}
+                  userLocation={userLocation}
+                  onAddressResolved={handleStreetResolved}
                   onRecenter={() => {}}
                   onCreateAlert={() => {}}
                   isLoading={false}

@@ -180,7 +180,12 @@ export default function ChatsPage() {
         ) : null}
 
         <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
-          <StreetSearch placeholder="Buscar..." placeholderMuted onQueryChange={(q) => setListFilter(q)} />
+          <StreetSearch
+            placeholder="Buscar..."
+            placeholderMuted
+            enableSuggestions={false}
+            onQueryChange={(q) => setListFilter(q)}
+          />
         </div>
 
         <div

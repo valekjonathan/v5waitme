@@ -1,9 +1,16 @@
 /**
  * Copia de WaitMe: src/components/cards/CreateAlertCard.jsx (input nativo + sliders nativos).
  */
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
+import { getCurrentLocationFast } from '../../../services/location.js'
+import {
+  formatSuggestionLabel,
+  search as streetSearch,
+  selectionPayload,
+} from '../../../services/streetSearchService.js'
+import { LAYOUT } from '../../../ui/layout/layout'
 import { IconClock, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 const rangeClass = 'waitme-create-alert-range'
@@ -37,9 +44,21 @@ const oauthButtonBase = {
   border: '1px solid rgba(255, 255, 255, 0.12)',
 }
 
+const DEBOUNCE_MS = 80
+
+const suggestLiStyle = {
+  padding: '10px 12px',
+  color: '#fff',
+  fontSize: 12,
+  cursor: 'pointer',
+  borderBottom: '1px solid rgba(55, 65, 81, 0.5)',
+}
+
 export default function CreateAlertCard({
   address,
   onAddressChange,
+  onAddressResolved,
+  userLocation = null,
   onRecenter: _onRecenter,
   onCreateAlert,
   isLoading = false,
@@ -49,6 +68,84 @@ export default function CreateAlertCard({
   const [minutes, setMinutes] = useState(10)
   const [publishHover, setPublishHover] = useState(false)
   const [publishPressed, setPublishPressed] = useState(false)
+  const [suggestions, setSuggestions] = useState([])
+  const [suggestOpen, setSuggestOpen] = useState(false)
+  const abortRef = useRef(null)
+  const requestIdRef = useRef(0)
+  const addressRowRef = useRef(null)
+
+  const proximity = useMemo(() => {
+    const lat = userLocation?.latitude
+    const lng = userLocation?.longitude
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
+    const fast = getCurrentLocationFast()
+    if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
+      return { lat: fast.latitude, lng: fast.longitude }
+    }
+    return null
+  }, [userLocation?.latitude, userLocation?.longitude])
+
+  const runAddressSearch = useCallback(
+    async (q) => {
+      const trimmed = typeof q === 'string' ? q.trim() : ''
+      if (trimmed.length < 2) {
+        setSuggestions([])
+        return
+      }
+      if (abortRef.current) abortRef.current.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+      const id = ++requestIdRef.current
+      try {
+        const list = await streetSearch(trimmed, { signal: controller.signal, proximity })
+        if (id !== requestIdRef.current) return
+        setSuggestions(Array.isArray(list) ? list : [])
+      } catch {
+        if (id !== requestIdRef.current) return
+      } finally {
+        if (id === requestIdRef.current) abortRef.current = null
+      }
+    },
+    [proximity]
+  )
+
+  useEffect(() => {
+    const q = (address || '').trim()
+    if (q.length < 2) {
+      requestIdRef.current += 1
+      if (abortRef.current) {
+        abortRef.current.abort()
+        abortRef.current = null
+      }
+      setSuggestions([])
+      return undefined
+    }
+    const t = window.setTimeout(() => runAddressSearch(address), DEBOUNCE_MS)
+    return () => window.clearTimeout(t)
+  }, [address, runAddressSearch])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (addressRowRef.current && !addressRowRef.current.contains(e.target)) {
+        setSuggestOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [])
+
+  const handlePickSuggestion = (feature) => {
+    const label = formatSuggestionLabel(feature)
+    const payload = selectionPayload(feature, label)
+    onAddressChange(payload.address)
+    onAddressResolved?.(payload)
+    setSuggestions([])
+    setSuggestOpen(false)
+  }
 
   const handleCreate = () => {
     onCreateAlert?.({ price, minutes })
@@ -161,28 +258,72 @@ export default function CreateAlertCard({
           gap: 24,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          ref={addressRowRef}
+          style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, zIndex: 2 }}
+        >
           <span style={{ color: '#c084fc', flexShrink: 0, display: 'flex' }}>
             <IconMapPin size={22} />
           </span>
-          <input
-            value={address}
-            onChange={(e) => onAddressChange(e.target.value)}
-            placeholder="Calle Ejemplo, 13"
-            autoComplete="off"
-            style={{
-              flex: 1,
-              height: 32,
-              fontSize: 12,
-              backgroundColor: '#1f2937',
-              border: '1px solid #374151',
-              borderRadius: 6,
-              color: '#fff',
-              padding: '0 10px',
-              fontFamily: 'inherit',
-              outline: 'none',
-            }}
-          />
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <input
+              value={address}
+              onChange={(e) => {
+                onAddressChange(e.target.value)
+                setSuggestOpen(true)
+              }}
+              onFocus={() => setSuggestOpen(true)}
+              placeholder="Calle Ejemplo, 13"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                height: 32,
+                fontSize: 12,
+                backgroundColor: '#1f2937',
+                border: '1px solid #374151',
+                borderRadius: 6,
+                color: '#fff',
+                padding: '0 10px',
+                fontFamily: 'inherit',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            {suggestOpen && (address || '').trim().length >= 2 && suggestions.length > 0 ? (
+              <ul
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: 4,
+                  backgroundColor: 'rgba(17, 24, 39, 0.98)',
+                  border: '1px solid rgba(168, 85, 247, 0.45)',
+                  borderRadius: 8,
+                  zIndex: LAYOUT.z.streetSearchResults,
+                  maxHeight: 180,
+                  overflowY: 'auto',
+                  listStyle: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                {suggestions.map((f, idx) => (
+                  <li
+                    key={String(f.id ?? f.place_name ?? idx)}
+                    role="button"
+                    tabIndex={0}
+                    style={suggestLiStyle}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePickSuggestion(f)}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePickSuggestion(f)}
+                  >
+                    {formatSuggestionLabel(f)}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
