@@ -132,8 +132,9 @@ export function AppScreenProvider({ children }) {
 
   const { openAlerts, openChats, openProfile, openReviews } = simpleScreenActions
 
-  const openUserReviews = useCallback((userId) => {
-    const id = String(userId ?? '').trim()
+  const openUserReviews = useCallback((incomingUserId) => {
+    if (incomingUserId == null || incomingUserId === '') return
+    const id = String(incomingUserId).trim()
     if (!id) return
     setViewingUserReviewsId(id)
     dispatch({ type: 'openUserReviews' })
@@ -175,7 +176,8 @@ export function AppScreenProvider({ children }) {
   const openChatsWithPeer = useCallback(
     (peerUserId, fromCard = null) => {
       clearUserReviewsNav()
-      const id = String(peerUserId ?? '')
+      if (peerUserId == null || peerUserId === '') return
+      const id = String(peerUserId)
       if (!id) return
       if (fromCard && typeof fromCard === 'object') {
         const dn = String(fromCard.displayName ?? fromCard.user_name ?? '').trim()

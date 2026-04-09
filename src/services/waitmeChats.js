@@ -93,6 +93,7 @@ function seedFallbackDmIfNeeded() {
       user_name: 'Carlos',
       peer_user_id: FB_PEER_1,
       user_id: FB_PEER_1,
+      avatar: '',
       reviews: fbReviews1,
       rating: getAverage(fbReviews1),
       lastMessage: lm1?.text ?? '',
@@ -100,10 +101,9 @@ function seedFallbackDmIfNeeded() {
       brand: 'Opel',
       model: 'Corsa',
       plate: '2145 BCD',
-      peerUserId: FB_PEER_1,
       chatLastMessage: lm1?.text ?? '',
       chatUnreadCount: 2,
-      user_photo: null,
+      user_photo: '',
       unreadCount: 2,
       phone: '+34600000000',
       allow_phone_calls: true,
@@ -115,6 +115,7 @@ function seedFallbackDmIfNeeded() {
       user_name: 'Lucía',
       peer_user_id: FB_PEER_2,
       user_id: FB_PEER_2,
+      avatar: '',
       reviews: fbReviews2,
       rating: getAverage(fbReviews2),
       lastMessage: lm2?.text ?? '',
@@ -122,10 +123,9 @@ function seedFallbackDmIfNeeded() {
       brand: 'Toyota',
       model: 'Yaris',
       plate: '9012 XYZ',
-      peerUserId: FB_PEER_2,
       chatLastMessage: lm2?.text ?? '',
       chatUnreadCount: 0,
-      user_photo: null,
+      user_photo: '',
       unreadCount: 0,
       phone: '+34600111222',
       allow_phone_calls: true,
@@ -189,38 +189,38 @@ export function formatDmMsgTime(iso) {
  * }} p
  */
 export function dmThreadToListCard(p) {
-  const pr = p.profile && typeof p.profile === 'object' ? p.profile : {}
-  const name = String(pr.name ?? '').trim()
-  const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
-  const phoneRaw = String(pr.phone ?? '').trim()
-  const peerId = String(p.peerId ?? '')
   const threadId = p.thread.id
-  /** Solo peer: nunca usar threadId como entidad de reseñas (evita mezcla de IDs). */
+  const peerId = String(p.peerId)
+  const pr = p.profile && typeof p.profile === 'object' ? p.profile : {}
+  const name = String(pr.name != null ? pr.name : '').trim()
+  const last = p.lastMessage && typeof p.lastMessage === 'object' ? p.lastMessage : null
+  const lastBody = last && last.body != null ? String(last.body) : ''
+  const phoneRaw = String(pr.phone != null ? pr.phone : '').trim()
+  const avatarRaw = pr.avatar_url != null ? String(pr.avatar_url).trim() : ''
+  const avatar = avatarRaw
   const reviews = generateReviewsForEntityId(peerId)
   const rating = getAverage(reviews)
-  const lastMessage = String(last?.body ?? '')
-  const phone = phoneRaw || null
+  const timeIso = last && last.created_at != null ? String(last.created_at) : ''
   return {
     threadId,
-    /** Usuario (peer). Nunca usar threadId aquí. */
     id: peerId,
-    name,
-    user_name: name,
-    peerUserId: peerId,
     peer_user_id: peerId,
     user_id: peerId,
+    name,
+    user_name: name,
+    avatar,
+    user_photo: avatar,
     reviews,
     rating,
-    lastMessage,
-    chatLastMessage: lastMessage,
-    time: formatDmMsgTime(last?.created_at ? String(last.created_at) : ''),
-    brand: String(pr.car_brand ?? ''),
-    model: String(pr.car_model ?? ''),
-    plate: String(pr.plate ?? ''),
-    user_photo: pr.avatar_url ?? null,
+    lastMessage: lastBody,
+    chatLastMessage: lastBody,
+    time: formatDmMsgTime(timeIso),
+    brand: String(pr.car_brand != null ? pr.car_brand : ''),
+    model: String(pr.car_model != null ? pr.car_model : ''),
+    plate: String(pr.plate != null ? pr.plate : ''),
     unreadCount: 0,
     chatUnreadCount: 0,
-    phone,
+    phone: phoneRaw.length > 0 ? phoneRaw : '',
     allow_phone_calls: phoneRaw.length > 0,
   }
 }
@@ -464,6 +464,7 @@ export async function getOrCreateDmThread(otherUserId) {
       user_name: '',
       peer_user_id: peer,
       user_id: peer,
+      avatar: '',
       reviews: dynReviews,
       rating: getAverage(dynReviews),
       lastMessage: 'Hola, escribe cuando quieras.',
@@ -472,8 +473,7 @@ export async function getOrCreateDmThread(otherUserId) {
       brand: '',
       model: '',
       plate: '',
-      peerUserId: peer,
-      user_photo: null,
+      user_photo: '',
       unreadCount: 0,
       chatUnreadCount: 0,
     }

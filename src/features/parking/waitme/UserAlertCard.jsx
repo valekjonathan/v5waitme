@@ -324,8 +324,8 @@ function UserAlertCard({
       onChat?.(user)
       return
     }
-    const id = user?.peer_user_id ?? user?.user_id ?? user?.id
-    if (typeof id === 'string' && id) {
+    const id = String(user.id != null ? user.id : '').trim()
+    if (id !== '') {
       openChatsWithPeer(id, {
         user_name: display?.user_name,
         user_photo: display?.user_photo,
@@ -360,8 +360,10 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** Reseñas: solo peer del mapper (`peer_user_id`); el hilo es `user.threadId`. */
-  const uid = String(user?.peer_user_id ?? '').trim()
+  /** Lista chats: `user.id` es peer_user_id del mapper. Mapa: peer explícito. */
+  const uid = isChat
+    ? String(user.id != null ? user.id : '').trim()
+    : String(user.peer_user_id != null ? user.peer_user_id : '').trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()

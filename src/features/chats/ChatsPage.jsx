@@ -27,10 +27,11 @@ function clearChatHashFromUrl() {
   }
 }
 
-async function fetchThreadsForUser(uid) {
-  const { data, error } = await listDmThreadsForUser(uid)
-  if (error) return { list: [], error }
-  return { list: Array.isArray(data) ? data : [], error: null }
+function fetchThreads(uid) {
+  return listDmThreadsForUser(uid).then(({ data, error }) => {
+    if (error) return []
+    return Array.isArray(data) ? data : []
+  })
 }
 
 /**
@@ -39,7 +40,6 @@ async function fetchThreadsForUser(uid) {
  *   userId: string
  *   listFetchSeqRef: { current: number }
  *   setThreads: (v: unknown[]) => void
- *   setFetchError: (v: unknown) => void
  *   openThreadById: (tid: string) => void
  *   logTag: string
  *   isCancelled: () => boolean
@@ -53,16 +53,10 @@ async function runGetOrCreateThenList(p) {
     console.error(`[WaitMe][Chats] getOrCreateDmThread (${p.logTag})`, error)
     return
   }
-  if (!tid) return
-  const { list, error: listErr } = await fetchThreadsForUser(p.userId)
+  if (tid == null || tid === '') return
+  const list = await fetchThreads(p.userId)
   if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
-  if (listErr) {
-    p.setFetchError(listErr)
-    p.setThreads([])
-    return
-  }
   p.setThreads(list)
-  p.setFetchError(null)
   p.openThreadById(String(tid))
 }
 
@@ -72,8 +66,6 @@ export default function ChatsPage() {
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState([])
-  const [fetchError, setFetchError] = useState(null)
-  /** Evita que dos `listDmThreadsForUser` concurrentes pisen la lista (orden de respuesta). */
   const listFetchSeqRef = useRef(0)
 
   const userId = user?.id ?? ''
@@ -86,40 +78,29 @@ export default function ChatsPage() {
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
   function openThreadById(tid) {
-    const s = String(tid ?? '').trim()
-    if (!s) return
-    setThreadId(s)
+    if (tid == null || tid === '') return
+    setThreadId(String(tid))
   }
 
   useEffect(() => {
     let cancelled = false
     if (!canLoadChats) {
       setThreads([])
-      setFetchError(null)
       return undefined
     }
-    setFetchError(null)
     const seq = ++listFetchSeqRef.current
-    void (async () => {
-      const { list, error } = await fetchThreadsForUser(userId)
+    void fetchThreads(userId).then((list) => {
       if (cancelled || seq !== listFetchSeqRef.current) return
-      if (error) {
-        setFetchError(error)
-        setThreads([])
-      } else {
-        setThreads(list)
-        setFetchError(null)
-      }
-    })()
+      setThreads(list)
+    })
     return () => {
       cancelled = true
     }
   }, [canLoadChats, userId])
 
   useEffect(() => {
-    if (fetchError) return
     nav.syncChatUnreadFromThreads?.(threads)
-  }, [nav, threads, fetchError])
+  }, [nav, threads])
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
@@ -127,7 +108,6 @@ export default function ChatsPage() {
     nav.clearPendingDmVisual?.()
   }, [nav?.chatsListResetGeneration, nav])
 
-  /** Si el hilo ya no está en la lista (datos reales), no dejar threadId colgado. */
   useEffect(() => {
     if (!threadId) return
     if (threads.length === 0) return
@@ -135,7 +115,6 @@ export default function ChatsPage() {
     if (!ok) setThreadId(null)
   }, [threadId, threads])
 
-  /** Mapa → chat con snapshot: un RPC y lista actualizada; fila activa sale del mapper. */
   useEffect(() => {
     if (!canLoadChats || !directMatch || !hashPeer) return undefined
     let cancelled = false
@@ -144,7 +123,6 @@ export default function ChatsPage() {
       userId,
       listFetchSeqRef,
       setThreads,
-      setFetchError,
       openThreadById,
       logTag: 'direct',
       isCancelled: () => cancelled,
@@ -154,12 +132,11 @@ export default function ChatsPage() {
     }
   }, [canLoadChats, directMatch, hashPeer, userId])
 
-  /** Hash o peer pendiente en sessionStorage: mismo flujo — lista del mapper, sin objetos armados aquí. */
   useEffect(() => {
     if (!canLoadChats) return undefined
     const peerFromHash = parseChatPeerFromHash()
     const peer = peerFromHash ?? takePendingDmPeerUserId()
-    if (!peer) return undefined
+    if (peer == null || peer === '') return undefined
     if (nav.pendingDmVisual?.peerId === peer) return undefined
 
     let cancelled = false
@@ -168,7 +145,6 @@ export default function ChatsPage() {
       userId,
       listFetchSeqRef,
       setThreads,
-      setFetchError,
       openThreadById,
       logTag: 'bootstrap',
       isCancelled: () => cancelled,
@@ -264,23 +240,49 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canLoadChats && fetchError && threads.length === 0 ? (
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                border: `1px dashed ${colors.primaryBorderMuted}`,
-                color: colors.textMuted,
-                fontSize: 14,
-                fontWeight: 600,
-                textAlign: 'center',
-              }}
-            >
-              No se pudieron cargar las conversaciones. Revisa Supabase y la migración 0003.
-            </div>
-          ) : null}
+          {filteredThreads.map((t) => {
+            const threadKey = String(t.threadId).trim()
+            return (
+              <div
+                key={threadKey}
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  if (
+                    e.target.closest(
+                      '[data-waitme-chat-avatar-reviews], [data-waitme-chat-name-reviews]'
+                    )
+                  ) {
+                    return
+                  }
+                  if (e.target.closest('[data-waitme-chat-delete]')) return
+                  if (threadKey === '') return
+                  openThreadById(threadKey)
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (threadKey === '') return
+                    openThreadById(threadKey)
+                  }
+                }}
+                style={{ cursor: 'pointer', flexShrink: 0 }}
+              >
+                <UserAlertCard
+                  user={t}
+                  isChat
+                  lastMessage={t.lastMessage}
+                  time={t.time}
+                  isEmpty={false}
+                  onBuyAlert={() => {}}
+                  onChat={() => openThreadById(threadKey)}
+                  onCall={() => {}}
+                />
+              </div>
+            )
+          })}
 
-          {!fetchError && filteredThreads.length === 0 ? (
+          {filteredThreads.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -309,50 +311,6 @@ export default function ChatsPage() {
               </p>
             </div>
           ) : null}
-
-          {!fetchError && filteredThreads.length > 0
-            ? filteredThreads.map((t) => {
-                const threadKey = String(t.threadId).trim()
-                return (
-                  <div
-                    key={threadKey}
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      if (
-                        e.target.closest(
-                          '[data-waitme-chat-avatar-reviews], [data-waitme-chat-name-reviews]'
-                        )
-                      ) {
-                        return
-                      }
-                      if (e.target.closest('[data-waitme-chat-delete]')) return
-                      if (!threadKey) return
-                      openThreadById(threadKey)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        if (!threadKey) return
-                        openThreadById(threadKey)
-                      }
-                    }}
-                    style={{ cursor: 'pointer', flexShrink: 0 }}
-                  >
-                    <UserAlertCard
-                      user={t}
-                      isChat
-                      lastMessage={t.lastMessage}
-                      time={t.time}
-                      isEmpty={false}
-                      onBuyAlert={() => {}}
-                      onChat={() => openThreadById(threadKey)}
-                      onCall={() => {}}
-                    />
-                  </div>
-                )
-              })
-            : null}
         </div>
       </div>
     </ScreenShell>

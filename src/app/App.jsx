@@ -109,11 +109,12 @@ const modalTextStyle = {
 }
 
 function IncompleteProfileModal({ open, onClose, onConfirm }) {
-  if (!open) return null
   return (
     <div
       role="dialog"
-      aria-modal="true"
+      aria-modal={open}
+      aria-hidden={!open}
+      hidden={!open}
       aria-labelledby="waitme-incomplete-profile-title"
       style={modalOverlayStyle}
       onClick={onClose}
