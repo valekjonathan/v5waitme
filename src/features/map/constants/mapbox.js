@@ -113,7 +113,7 @@ export function createMap(container, { token, interactive = true }) {
   }
 
   mapboxgl.accessToken = tokenStr
-  return new mapboxgl.Map({
+  const map = new mapboxgl.Map({
     container,
     style: DARK_STYLE,
     center: OVIEDO_CENTER,
@@ -128,4 +128,10 @@ export function createMap(container, { token, interactive = true }) {
     scrollZoom: interactive,
     doubleClickZoom: interactive,
   })
+  try {
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
+  } catch {
+    /* */
+  }
+  return map
 }

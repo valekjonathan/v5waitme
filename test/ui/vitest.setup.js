@@ -42,6 +42,7 @@ vi.mock('mapbox-gl', () => {
     remove() {}
     resize() {}
     easeTo() {}
+    addControl() {}
     getCenter() {
       return { lat: 43.3619, lng: -5.8494 }
     }
@@ -49,10 +50,14 @@ vi.mock('mapbox-gl', () => {
       return false
     }
   }
+  class MockAttributionControl {
+    constructor() {}
+  }
   return {
     default: {
       accessToken: '',
       Map: MockMap,
+      AttributionControl: MockAttributionControl,
     },
   }
 })

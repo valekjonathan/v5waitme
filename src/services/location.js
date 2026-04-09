@@ -1,6 +1,6 @@
 /**
  * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
- * Cada lectura válida → capa interna low-pass (α=0.2) + velocidad + predicción 0.5s → `notify()` → suscriptores.
+ * Cada lectura válida → low-pass (α dinámico por accuracy) + velocidad + predicción adaptativa → `notify()`.
  * Sin batching: un tick GPS procesado → una emisión.
  *
  * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
@@ -145,13 +145,15 @@ let lastRaw = null
 let lastFiltered = null
 let velocity = { lat: 0, lng: 0 }
 
-const SMOOTH_ALPHA = 0.2
-const PREDICTION_TIME_S = 0.5
-/** Evita división por dt≈0 en velocidad (sin cambiar frecuencia de emisión). */
-const MIN_DT_VELOCITY_S = 1e-3
+function getAlpha(accuracy) {
+  if (!accuracy) return 0.2
+  if (accuracy < 10) return 0.15
+  if (accuracy < 30) return 0.25
+  return 0.35
+}
 
 /**
- * Low-pass + predicción corta; cada tick válido emite una vez vía `notify`.
+ * Low-pass (α por accuracy) + velocidad + predicción adaptativa; un tick → una emisión vía `notify`.
  */
 function emitSmoothedLocation(raw) {
   if (
@@ -163,26 +165,28 @@ function emitSmoothedLocation(raw) {
     return
   }
 
+  const alpha = getAlpha(raw.accuracy)
+
   const filteredLat = lastFiltered
-    ? lastFiltered.latitude + SMOOTH_ALPHA * (raw.latitude - lastFiltered.latitude)
+    ? lastFiltered.latitude + alpha * (raw.latitude - lastFiltered.latitude)
     : raw.latitude
   const filteredLng = lastFiltered
-    ? lastFiltered.longitude + SMOOTH_ALPHA * (raw.longitude - lastFiltered.longitude)
+    ? lastFiltered.longitude + alpha * (raw.longitude - lastFiltered.longitude)
     : raw.longitude
 
-  let dt = 0
-  if (lastRaw && Number.isFinite(raw.timestamp) && Number.isFinite(lastRaw.timestamp)) {
-    dt = (raw.timestamp - lastRaw.timestamp) / 1000
-  }
+  const dt = Math.max(
+    (raw.timestamp - (lastRaw?.timestamp ?? raw.timestamp)) / 1000,
+    0.016
+  )
 
-  if (lastFiltered && dt > 0) {
-    const dtUse = Math.max(dt, MIN_DT_VELOCITY_S)
-    velocity.lat = (filteredLat - lastFiltered.latitude) / dtUse
-    velocity.lng = (filteredLng - lastFiltered.longitude) / dtUse
-  }
+  velocity.lat = (filteredLat - (lastFiltered?.latitude ?? filteredLat)) / dt
+  velocity.lng = (filteredLng - (lastFiltered?.longitude ?? filteredLng)) / dt
 
-  const predictedLat = filteredLat + velocity.lat * PREDICTION_TIME_S
-  const predictedLng = filteredLng + velocity.lng * PREDICTION_TIME_S
+  const speedForPrediction = raw.speed ?? Math.sqrt(velocity.lat ** 2 + velocity.lng ** 2)
+  const predictionTime = speedForPrediction > 2 ? 0.6 : speedForPrediction > 1 ? 0.4 : 0.2
+
+  const predictedLat = filteredLat + velocity.lat * predictionTime
+  const predictedLng = filteredLng + velocity.lng * predictionTime
 
   const finalLocation = {
     latitude: predictedLat,
