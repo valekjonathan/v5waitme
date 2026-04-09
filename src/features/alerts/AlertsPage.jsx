@@ -1,8 +1,15 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
+import { useAuth } from '../../lib/AuthContext'
+import { isSupabaseConfigured } from '../../services/supabase.js'
+import { isRealSupabaseAuthUid } from '../../services/authUid.js'
+import {
+  fetchParkingAlertsForUser,
+  parkingAlertRowToCard,
+} from '../../services/waitmeAlerts.js'
 
 const PURPLE = colors.primary
 const BG = colors.background
@@ -65,70 +72,59 @@ function ScopeTab({ active, onClick, side, children }) {
   )
 }
 
-function mkAlert(over) {
-  const now = Date.now()
-  const avail = over.available_in_minutes ?? 15
-  return {
-    user_name: over.user_name,
-    rating: over.rating ?? 4,
-    brand: over.brand,
-    model: over.model,
-    plate: over.plate,
-    price: over.price ?? 5,
-    latitude: over.latitude ?? 43.36234,
-    longitude: over.longitude ?? -5.84998,
-    user_photo: over.user_photo ?? null,
-    color: over.color ?? 'gris',
-    vehicleType: over.vehicleType ?? 'car',
-    address: over.address ?? 'Calle Uría, Oviedo',
-    available_in_minutes: avail,
-    wait_until: new Date(now + avail * 60 * 1000).toISOString(),
-    created_date: now,
-    phone: over.phone ?? null,
-    allow_phone_calls: over.allow_phone_calls ?? false,
-    isIncomingRequest: false,
-    ...over,
-  }
-}
-
-const MOCK_ALERTS_ACTIVE = [
-  mkAlert({
-    user_name: 'Sofía',
-    rating: 5,
-    brand: 'Peugeot',
-    model: '208',
-    plate: '3489 KHT',
-    price: 6,
-    address: 'Calle Gascona, Oviedo',
-    available_in_minutes: 12,
-  }),
-  mkAlert({
-    user_name: 'Marcos',
-    rating: 4,
-    brand: 'Hyundai',
-    model: 'i20',
-    plate: '7821 LMN',
-    price: 4,
-    address: 'Plaza Mayor, Gijón',
-    available_in_minutes: 22,
-  }),
-]
-
-const MOCK_ALERTS_DONE = [
-  mkAlert({
-    user_name: 'Elena',
-    rating: 5,
-    brand: 'Fiat',
-    model: '500',
-    plate: '1100 ABC',
-    price: 5,
-    address: 'Calle Palacio Valdés, Avilés',
-    available_in_minutes: 0,
-  }),
-]
-
 export default function AlertsPage() {
+  const { user } = useAuth()
   const [scope, setScope] = useState('alerts')
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+
+  const userId = user?.id ?? ''
+  const canUseRemote = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+
+  const load = useCallback(async () => {
+    if (!canUseRemote) {
+      setRows([])
+      setLoadError(null)
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setLoadError(null)
+    const { data, error } = await fetchParkingAlertsForUser({
+      userId,
+      listingScope: scope === 'reservations' ? 'reservations' : 'alerts',
+    })
+    if (error) {
+      setRows([])
+      setLoadError(error)
+    } else {
+      setRows(Array.isArray(data) ? data : [])
+      setLoadError(null)
+    }
+    setLoading(false)
+  }, [canUseRemote, userId, scope])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const { activeCards, doneCards } = useMemo(() => {
+    const active = []
+    const done = []
+    for (const r of rows) {
+      const card = parkingAlertRowToCard(r)
+      if (String(r.status) === 'active') active.push(card)
+      else done.push(card)
+    }
+    return { activeCards: active, doneCards: done }
+  }, [rows])
+
+  const offlineHint = !canUseRemote ? (
+    <DashedHint>
+      Conecta Supabase e inicia sesión para cargar tu historial de alertas y reservas.
+    </DashedHint>
+  ) : null
 
   return (
     <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="auto">
@@ -152,40 +148,58 @@ export default function AlertsPage() {
         </ScopeTab>
 
         <div style={{ paddingTop: 56, paddingLeft: 16, paddingRight: 16 }}>
+          {offlineHint}
+
+          {canUseRemote && loading ? (
+            <DashedHint>Cargando…</DashedHint>
+          ) : null}
+
+          {canUseRemote && loadError && !loading ? (
+            <DashedHint>No se pudieron cargar los datos. Revisa la conexión y el proyecto Supabase.</DashedHint>
+          ) : null}
+
           <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
           {scope === 'alerts' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {MOCK_ALERTS_ACTIVE.map((a, i) => (
-                <UserAlertCard
-                  key={`a-${i}`}
-                  alert={a}
-                  isEmpty={false}
-                  hideBuy={false}
-                  onBuyAlert={() => {}}
-                  onChat={() => {}}
-                  onCall={() => {}}
-                />
-              ))}
-            </div>
+            activeCards.length === 0 && !loading && !loadError && canUseRemote ? (
+              <DashedHint>No tienes alertas activas.</DashedHint>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {activeCards.map((a) => (
+                  <UserAlertCard
+                    key={a.id}
+                    alert={a}
+                    isEmpty={false}
+                    hideBuy={false}
+                    onBuyAlert={() => {}}
+                    onChat={() => {}}
+                    onCall={() => {}}
+                  />
+                ))}
+              </div>
+            )
           ) : (
             <DashedHint>No tienes reservas activas.</DashedHint>
           )}
 
           <h2 style={sectionTitle}>Finalizadas</h2>
           {scope === 'alerts' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
-              {MOCK_ALERTS_DONE.map((a, i) => (
-                <UserAlertCard
-                  key={`d-${i}`}
-                  alert={{ ...a, available_in_minutes: null, wait_until: null }}
-                  isEmpty={false}
-                  hideBuy
-                  onBuyAlert={() => {}}
-                  onChat={() => {}}
-                  onCall={() => {}}
-                />
-              ))}
-            </div>
+            doneCards.length === 0 && !loading && !loadError && canUseRemote ? (
+              <DashedHint>No hay alertas finalizadas.</DashedHint>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: 0.9 }}>
+                {doneCards.map((a) => (
+                  <UserAlertCard
+                    key={a.id}
+                    alert={{ ...a, available_in_minutes: null, wait_until: null }}
+                    isEmpty={false}
+                    hideBuy
+                    onBuyAlert={() => {}}
+                    onChat={() => {}}
+                    onCall={() => {}}
+                  />
+                ))}
+              </div>
+            )
           ) : (
             <DashedHint>Aquí verás reservas pasadas.</DashedHint>
           )}

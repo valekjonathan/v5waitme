@@ -1,45 +1,77 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { colors } from '../../design/colors'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import MessageCircleIcon from '../../ui/icons/MessageCircleIcon'
 import StreetSearch from '../parking/waitme/StreetSearch.jsx'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
-import { CHAT_MOCK_THREADS, threadToChatAlert } from './chatMockData.js'
 import ChatThreadView from './ChatThreadView.jsx'
+import { useAuth } from '../../lib/AuthContext'
+import { isSupabaseConfigured } from '../../services/supabase.js'
+import { isRealSupabaseAuthUid } from '../../services/authUid.js'
+import { dmListCardToAlert, listDmThreadsForUser } from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
 
 export default function ChatsPage() {
+  const { user } = useAuth()
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
+  const [threads, setThreads] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+
+  const userId = user?.id ?? ''
+  const canUseRemote = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
+
+  const load = useCallback(async () => {
+    if (!canUseRemote) {
+      setThreads([])
+      setLoadError(null)
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setLoadError(null)
+    const { data, error } = await listDmThreadsForUser(userId)
+    if (error) {
+      setThreads([])
+      setLoadError(error)
+    } else {
+      setThreads(Array.isArray(data) ? data : [])
+      setLoadError(null)
+    }
+    setLoading(false)
+  }, [canUseRemote, userId])
+
+  useEffect(() => {
+    void load()
+  }, [load])
 
   const localItems = useMemo(
     () =>
-      CHAT_MOCK_THREADS.map((t) => ({
+      threads.map((t) => ({
         id: t.id,
         label: t.name,
         matchText: `${t.name} ${t.lastMessage}`.toLowerCase(),
       })),
-    []
+    [threads]
   )
 
   const filteredThreads = useMemo(() => {
     const q = listFilter.trim().toLowerCase()
-    if (!q) return CHAT_MOCK_THREADS
-    return CHAT_MOCK_THREADS.filter((t) =>
-      `${t.name} ${t.lastMessage}`.toLowerCase().includes(q)
-    )
-  }, [listFilter])
+    if (!q) return threads
+    return threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
+  }, [listFilter, threads])
 
-  const activeThread = useMemo(
-    () => CHAT_MOCK_THREADS.find((t) => t.id === threadId) ?? null,
-    [threadId]
+  const activeSummary = useMemo(
+    () => filteredThreads.find((t) => t.id === threadId) ?? threads.find((t) => t.id === threadId) ?? null,
+    [filteredThreads, threads, threadId]
   )
 
-  if (activeThread) {
-    return <ChatThreadView thread={activeThread} onBack={() => setThreadId(null)} />
+  if (activeSummary && threadId) {
+    return <ChatThreadView summary={activeSummary} userId={userId} onBack={() => setThreadId(null)} />
   }
 
   return (
@@ -59,6 +91,24 @@ export default function ChatsPage() {
           boxSizing: 'border-box',
         }}
       >
+        {!canUseRemote ? (
+          <div style={{ flexShrink: 0, marginBottom: 8 }}>
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                border: `1px dashed ${colors.primaryBorderMuted}`,
+                color: colors.textMuted,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+            >
+              Conecta Supabase e inicia sesión para ver tus conversaciones.
+            </div>
+          </div>
+        ) : null}
+
         <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
           <StreetSearch
             placeholder="Buscar..."
@@ -80,7 +130,39 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {filteredThreads.length === 0 ? (
+          {canUseRemote && loading ? (
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                border: `1px dashed ${colors.primaryBorderMuted}`,
+                color: colors.textMuted,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+            >
+              Cargando…
+            </div>
+          ) : null}
+
+          {canUseRemote && loadError && !loading ? (
+            <div
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                border: `1px dashed ${colors.primaryBorderMuted}`,
+                color: colors.textMuted,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: 'center',
+              }}
+            >
+              No se pudieron cargar las conversaciones. Revisa Supabase y la migración 0003.
+            </div>
+          ) : null}
+
+          {!loading && !loadError && filteredThreads.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -108,34 +190,36 @@ export default function ChatsPage() {
                 No hay conversaciones que coincidan
               </p>
             </div>
-          ) : (
-            filteredThreads.map((t) => (
-              <div
-                key={t.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => setThreadId(t.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setThreadId(t.id)
-                  }
-                }}
-                style={{ cursor: 'pointer', flexShrink: 0 }}
-              >
-                <UserAlertCard
-                  alert={threadToChatAlert(t)}
-                  isChat
-                  lastMessage={t.lastMessage}
-                  time={t.time}
-                  isEmpty={false}
-                  onBuyAlert={() => {}}
-                  onChat={() => setThreadId(t.id)}
-                  onCall={() => {}}
-                />
-              </div>
-            ))
-          )}
+          ) : null}
+
+          {!loading && !loadError
+            ? filteredThreads.map((t) => (
+                <div
+                  key={t.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setThreadId(t.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setThreadId(t.id)
+                    }
+                  }}
+                  style={{ cursor: 'pointer', flexShrink: 0 }}
+                >
+                  <UserAlertCard
+                    alert={dmListCardToAlert(t)}
+                    isChat
+                    lastMessage={t.lastMessage}
+                    time={t.time}
+                    isEmpty={false}
+                    onBuyAlert={() => {}}
+                    onChat={() => setThreadId(t.id)}
+                    onCall={() => {}}
+                  />
+                </div>
+              ))
+            : null}
         </div>
       </div>
     </ScreenShell>

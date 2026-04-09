@@ -6,30 +6,34 @@ import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
 import { IconChevronLeft } from '../parking/waitme/icons.jsx'
+import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
+import { isRealSupabaseAuthUid } from '../../services/authUid.js'
+import {
+  fetchDmMessages,
+  formatDmMsgTime,
+  sendDmMessage,
+} from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
 
-const AUTO_REPLIES = [
-  'Vale, gracias por avisar.',
-  'Perfecto, quedo pendiente.',
-  'Entendido 👍',
-  'Ok, nos leemos.',
-]
-
-function nextId() {
-  return `m-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+function nextTempId() {
+  return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
 /**
- * @param {{ thread: import('./chatMockData.js').ChatThread, onBack: () => void }} props
+ * @param {{ summary: Record<string, unknown>, userId: string, onBack: () => void }} props
  */
-export default function ChatThreadView({ thread, onBack }) {
-  const [messages, setMessages] = useState(() => [...thread.messages])
+export default function ChatThreadView({ summary, userId, onBack }) {
+  const s = summary && typeof summary === 'object' ? summary : {}
+  const threadId = String(s.id ?? '')
+  const title = String(s.name ?? 'Chat')
+
+  const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
-  const [pendingBot, setPendingBot] = useState(false)
+  const [bootError, setBootError] = useState(null)
+  const [sending, setSending] = useState(false)
   const endRef = useRef(null)
-  const replyTimerRef = useRef(null)
 
   const scrollBottom = useCallback(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -40,27 +44,88 @@ export default function ChatThreadView({ thread, onBack }) {
   }, [messages, scrollBottom])
 
   useEffect(() => {
-    return () => {
-      if (replyTimerRef.current) window.clearTimeout(replyTimerRef.current)
+    let cancelled = false
+    if (!threadId || !isRealSupabaseAuthUid(userId)) {
+      setMessages([])
+      setBootError(null)
+      return undefined
     }
-  }, [])
+    void (async () => {
+      const { data, error } = await fetchDmMessages(userId, threadId)
+      if (cancelled) return
+      if (error) {
+        setMessages([])
+        setBootError(error)
+        return
+      }
+      setBootError(null)
+      setMessages(Array.isArray(data) ? data : [])
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [threadId, userId])
 
-  const sendMine = useCallback(() => {
+  useEffect(() => {
+    if (!isSupabaseConfigured() || !supabase || !threadId || !isRealSupabaseAuthUid(userId)) {
+      return undefined
+    }
+    const filter = `thread_id=eq.${threadId}`
+    const ch = supabase
+      .channel(`waitme-dm-${threadId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'waitme_dm_messages', filter },
+        (payload) => {
+          const row = payload.new
+          if (!row || row.thread_id !== threadId) return
+          setMessages((prev) => {
+            const mid = row.id
+            if (prev.some((m) => m.id === mid)) return prev
+            const mine = row.sender_id === userId
+            return [
+              ...prev,
+              {
+                id: mid,
+                from: mine ? 'me' : 'them',
+                text: String(row.body ?? ''),
+                at: formatDmMsgTime(row.created_at ? String(row.created_at) : ''),
+              },
+            ]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(ch)
+    }
+  }, [threadId, userId])
+
+  const sendMine = useCallback(async () => {
     const t = draft.trim()
-    if (!t || pendingBot) return
+    if (!t || sending || !threadId || !isRealSupabaseAuthUid(userId)) return
     setDraft('')
-    const at = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-    setMessages((prev) => [...prev, { id: nextId(), from: 'me', text: t, at }])
-    setPendingBot(true)
-    const delay = 700 + Math.floor(Math.random() * 900)
-    replyTimerRef.current = window.setTimeout(() => {
-      const botAt = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-      const line = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)]
-      setMessages((prev) => [...prev, { id: nextId(), from: 'them', text: line, at: botAt }])
-      setPendingBot(false)
-      replyTimerRef.current = null
-    }, delay)
-  }, [draft, pendingBot])
+    setSending(true)
+    const optimistic = {
+      id: nextTempId(),
+      from: 'me',
+      text: t,
+      at: formatDmMsgTime(new Date().toISOString()),
+    }
+    setMessages((prev) => [...prev, optimistic])
+    const { data, error } = await sendDmMessage(userId, threadId, t)
+    if (error) {
+      console.error('[WaitMe][ChatThreadView] send', error)
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+      setDraft(t)
+    } else if (data) {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimistic.id ? { ...data, id: data.id } : m))
+      )
+    }
+    setSending(false)
+  }, [draft, sending, threadId, userId])
 
   const bubbleBase = {
     maxWidth: '78%',
@@ -110,10 +175,24 @@ export default function ChatThreadView({ thread, onBack }) {
             <IconChevronLeft size={22} />
           </button>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{thread.name}</div>
-            <div style={{ fontSize: 12, color: colors.textMuted }}>Chat simulado</div>
+            <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
+            <div style={{ fontSize: 12, color: colors.textMuted }}>{'\u00A0'}</div>
           </div>
         </div>
+
+        {bootError ? (
+          <div
+            style={{
+              padding: 12,
+              fontSize: 13,
+              fontWeight: 600,
+              color: colors.textMuted,
+              textAlign: 'center',
+            }}
+          >
+            No se pudieron cargar los mensajes.
+          </div>
+        ) : null}
 
         <div
           data-waitme-chat-scroll
@@ -177,7 +256,7 @@ export default function ChatThreadView({ thread, onBack }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                sendMine()
+                void sendMine()
               }
             }}
           />
@@ -185,8 +264,8 @@ export default function ChatThreadView({ thread, onBack }) {
             type="button"
             variant="primary"
             style={{ minHeight: 44, height: 44, width: 'auto', padding: '0 16px' }}
-            onClick={sendMine}
-            disabled={!draft.trim() || pendingBot}
+            onClick={() => void sendMine()}
+            disabled={!draft.trim() || sending || Boolean(bootError)}
           >
             Enviar
           </Button>

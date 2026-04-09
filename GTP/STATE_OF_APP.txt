@@ -1,26 +1,8 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-08T20:11:45.079Z
-Git revision: b2b143e06c31f5a02c4bdfc001416aa091371a6a
+Generated: 2026-04-09T07:41:28.116Z
+Git revision: 7c59726c66db9d4b527764cdeaab42daecd688bb
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
-Git source: local HEAD (working tree clean al generar; `git status` vacío).
-
-=== RESUMEN SESIÓN (manual) ===
-ESTADO ACTUAL:
-- layout estable
-- IphoneFrame usando maxWidth / maxHeight
-- ScreenShell corregido (flex real)
-- mapa ocupando ancho completo
-- login estable (NO tocar)
-- flujo OAuth limpio (NO tocar)
-
-SIGUIENTE PASO:
-- continuar SOLO con pantalla Chats
-
-PENDIENTE CHATS:
-1. botón rojo X eliminar conversación
-2. reemplazar info coche por mensaje
-3. eliminar línea gris
-4. añadir hora arriba derecha
+Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -146,7 +128,6 @@ src/
         LoginButtons.jsx
         LoginPage.jsx
     chats/
-      chatMockData.js
       ChatsPage.jsx
       ChatThreadView.jsx
     home/
@@ -222,11 +203,14 @@ src/
     waitmeWebAuth.js
   services/
     auth.js
+    authUid.js
     geocodingSpain.js
     location.js
     profile.js
     reviews.ts
     supabase.js
+    waitmeAlerts.js
+    waitmeChats.js
   styles/
     global.css
   ui/
@@ -263,6 +247,7 @@ supabase/
   migrations/
     0001_init_profiles.sql
     0002_profiles_avatar_email.sql
+    0003_waitme_alerts_and_dm.sql
 test/
   appScreenState.test.js
   authService.test.js
@@ -288,7 +273,7 @@ runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @s
 dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, ngrok, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
-auth.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js
+auth.js, authUid.js, geocodingSpain.js, location.js, profile.js, reviews.ts, supabase.js, waitmeAlerts.js, waitmeChats.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
@@ -303,7 +288,7 @@ src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext
 src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
 src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
 src/services/reviews.ts  ← 0 import(s) relativos (muestra): —
-Módulos en grafo alcanzable (aprox. por ruta): auth-path 4, layout 4, reviews 5, map 10
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 5, map 10
 
 === ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
 ninguno
