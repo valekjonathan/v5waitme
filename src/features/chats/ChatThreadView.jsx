@@ -5,8 +5,8 @@ import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
-import { IconChevronLeft, WAITME_GLASS_MAP_CONTROL_36, IconNavigation, IconPhone } from '../parking/waitme/icons.jsx'
-// (no usar botones de tarjeta aquí; header usa control 36x36)
+import { IconChevronLeft } from '../parking/waitme/icons.jsx'
+import { WaitmeCardNavigateButton, WaitmeCardPhoneButton } from '../parking/waitme/UserAlertCardActions.jsx'
 import { supabase, isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -30,12 +30,6 @@ const bubbleShared = {
   wordBreak: 'break-word',
   boxSizing: 'border-box',
   borderRadius: 16,
-}
-
-const headerGlassBtnStyle = {
-  ...WAITME_GLASS_MAP_CONTROL_36,
-  width: 36,
-  height: 36,
 }
 
 const inputActionBtnStyle = {
@@ -268,7 +262,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               width: 36,
               height: 36,
               borderRadius: 8,
-              border: '1px solid rgba(139,92,246,0.4)',
+              border: '1px solid rgba(139,92,246,0.5)',
               objectFit: 'cover',
               flexShrink: 0,
               boxSizing: 'border-box',
@@ -278,12 +272,8 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-            <button type="button" aria-label="Llamar" onClick={() => {}} style={headerGlassBtnStyle}>
-              <IconPhone size={18} />
-            </button>
-            <button type="button" aria-label="Navegación" onClick={() => {}} style={headerGlassBtnStyle}>
-              <IconNavigation size={18} />
-            </button>
+            <WaitmeCardPhoneButton enabled onClick={() => {}} />
+            <WaitmeCardNavigateButton enabled onClick={() => {}} />
           </div>
         </header>
 
@@ -365,7 +355,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                         width: 28,
                         height: 28,
                         borderRadius: 8,
-                        border: '1px solid rgba(139,92,246,0.4)',
+                        border: '1px solid rgba(139,92,246,0.5)',
                         flexShrink: 0,
                         objectFit: 'cover',
                         boxSizing: 'border-box',
@@ -443,7 +433,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                         width: 28,
                         height: 28,
                         borderRadius: 8,
-                        border: '1px solid rgba(139,92,246,0.4)',
+                        border: '1px solid rgba(139,92,246,0.5)',
                         flexShrink: 0,
                         objectFit: 'cover',
                         boxSizing: 'border-box',
