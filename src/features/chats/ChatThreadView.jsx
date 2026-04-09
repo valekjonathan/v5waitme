@@ -17,6 +17,19 @@ import {
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
 
+/** Gap entre burbujas (8–12px). */
+const MESSAGE_GAP = 10
+
+const bubbleShared = {
+  maxWidth: '70%',
+  padding: '10px 14px',
+  fontSize: 15,
+  lineHeight: 1.35,
+  wordBreak: 'break-word',
+  boxSizing: 'border-box',
+  borderRadius: 16,
+}
+
 function nextTempId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -139,15 +152,6 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     setSending(false)
   }, [draft, localFallback, sending, threadId, userId])
 
-  const bubbleBase = {
-    maxWidth: '78%',
-    padding: '10px 14px',
-    borderRadius: radius.medium,
-    fontSize: 15,
-    lineHeight: 1.35,
-    wordBreak: 'break-word',
-  }
-
   return (
     <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
       <div
@@ -157,16 +161,18 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           height: '100%',
           minHeight: 0,
           width: '100%',
+          backgroundColor: BG,
         }}
       >
-        <div
+        <header
           style={{
             flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '8px 4px 12px',
+            padding: '8px 4px 10px',
             borderBottom: `1px solid ${colors.border}`,
+            backgroundColor: BG,
           }}
         >
           <button
@@ -188,13 +194,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           </button>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontWeight: 800, fontSize: 17, color: colors.textPrimary }}>{title}</div>
-            <div style={{ fontSize: 12, color: colors.textMuted }}>{'\u00A0'}</div>
           </div>
-        </div>
+        </header>
 
         {bootError ? (
           <div
             style={{
+              flexShrink: 0,
               padding: 12,
               fontSize: 13,
               fontWeight: 600,
@@ -206,81 +212,111 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           </div>
         ) : null}
 
+        {/* Cuerpo: lista scroll + barra fija abajo (tipo WhatsApp) */}
         <div
-          data-waitme-chat-scroll
           style={{
             flex: 1,
             minHeight: 0,
-            overflowY: 'auto',
-            padding: '12px 12px 8px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            width: '100%',
           }}
         >
-          {messages.map((m) => {
-            const mine = m.from === 'me'
-            return (
-              <div
-                key={m.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: mine ? 'flex-end' : 'flex-start',
-                }}
-              >
+          <div
+            data-waitme-chat-scroll
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: MESSAGE_GAP,
+              padding: '8px 12px 12px',
+              boxSizing: 'border-box',
+            }}
+          >
+            {messages.map((m) => {
+              const mine = m.from === 'me'
+              return (
                 <div
+                  key={m.id}
                   style={{
-                    ...bubbleBase,
-                    backgroundColor: mine ? colors.primaryStrong : colors.surfaceMuted,
-                    color: colors.textPrimary,
-                    border: mine ? 'none' : `1px solid ${colors.primaryBorderMuted}`,
-                    borderBottomRightRadius: mine ? 4 : radius.medium,
-                    borderBottomLeftRadius: mine ? radius.medium : 4,
+                    display: 'flex',
+                    justifyContent: mine ? 'flex-end' : 'flex-start',
+                    width: '100%',
+                    flexShrink: 0,
                   }}
                 >
-                  {m.text}
-                  <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4, textAlign: mine ? 'right' : 'left' }}>
-                    {m.at}
+                  <div
+                    style={{
+                      ...bubbleShared,
+                      backgroundColor: mine ? colors.primaryStrong : colors.surfaceMuted,
+                      color: colors.textPrimary,
+                      border: mine ? 'none' : `1px solid ${colors.border}`,
+                    }}
+                  >
+                    {m.text}
+                    <div
+                      style={{
+                        fontSize: 11,
+                        opacity: 0.75,
+                        marginTop: 4,
+                        textAlign: mine ? 'right' : 'left',
+                      }}
+                    >
+                      {m.at}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
-          <div ref={endRef} />
-        </div>
+              )
+            })}
+            <div ref={endRef} style={{ flexShrink: 0, width: '100%', height: 1 }} aria-hidden />
+          </div>
 
-        <div
-          style={{
-            flexShrink: 0,
-            padding: '10px 12px 12px',
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            borderTop: `1px solid ${colors.border}`,
-          }}
-        >
-          <InputBase
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Escribe un mensaje…"
-            aria-label="Mensaje"
-            style={{ flex: 1, textAlign: 'left', height: 44, borderRadius: radius.large }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void sendMine()
-              }
+          <div
+            style={{
+              flexShrink: 0,
+              width: '100%',
+              padding: '8px 12px',
+              display: 'flex',
+              flexDirection: 'row',
+              gap: 8,
+              alignItems: 'center',
+              borderTop: `1px solid ${colors.border}`,
+              backgroundColor: BG,
+              boxSizing: 'border-box',
             }}
-          />
-          <Button
-            type="button"
-            variant="primary"
-            style={{ minHeight: 44, height: 44, width: 'auto', padding: '0 16px' }}
-            onClick={() => void sendMine()}
-            disabled={!draft.trim() || sending || Boolean(bootError)}
           >
-            Enviar
-          </Button>
+            <InputBase
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Escribe un mensaje…"
+              aria-label="Mensaje"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                textAlign: 'left',
+                height: 44,
+                borderRadius: radius.large,
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void sendMine()
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="primary"
+              style={{ flexShrink: 0, minHeight: 44, height: 44, width: 'auto', padding: '0 16px' }}
+              onClick={() => void sendMine()}
+              disabled={!draft.trim() || sending || Boolean(bootError)}
+            >
+              Enviar
+            </Button>
+          </div>
         </div>
       </div>
     </ScreenShell>

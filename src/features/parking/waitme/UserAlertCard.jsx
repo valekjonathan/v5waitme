@@ -122,7 +122,6 @@ const CHAT_DELETE_BTN_STYLE = {
 
 /**
  * Badge no leídos: misma caja/borde que X; solo forma y color verdes.
- * Mantener en sync con `BottomNav` (copia literal allí).
  */
 const CHAT_UNREAD_BADGE_STYLE = {
   ...CHAT_HEADER_ACTION_BOX,
@@ -528,8 +527,24 @@ function UserAlertCard({
             position: 'relative',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+              minWidth: 0,
+              minHeight: 28,
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                minWidth: 0,
+                display: 'flex',
+                alignItems: 'center',
+                minHeight: 28,
+              }}
+            >
               <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
 
@@ -539,6 +554,7 @@ function UserAlertCard({
                   ...CHAT_UNREAD_BADGE_STYLE,
                   fontSize: chatUnread > 9 ? 9 : 11,
                   marginLeft: 8,
+                  alignSelf: 'center',
                 }}
               >
                 {chatUnread > 99 ? '99+' : chatUnread}

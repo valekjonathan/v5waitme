@@ -103,17 +103,27 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
           aria-current={isChatActive ? 'page' : undefined}
           onClick={guardOr(() => nav?.openChats?.())}
         >
-          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+          <span
+            style={{
+              position: 'relative',
+              width: 40,
+              height: 40,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
             <MessageCircleIcon />
             {chatUnreadTotal > 0 ? (
               <span
                 aria-hidden
                 style={{
                   position: 'absolute',
-                  top: -2,
-                  right: -2,
-                  width: 28,
-                  height: 28,
+                  top: 0,
+                  right: 0,
+                  width: 18,
+                  height: 18,
                   boxSizing: 'border-box',
                   display: 'flex',
                   alignItems: 'center',
@@ -126,7 +136,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
                   fontWeight: 700,
                   lineHeight: 1,
                   overflow: 'hidden',
-                  fontSize: chatUnreadTotal > 9 ? 9 : 11,
+                  fontSize: chatUnreadTotal > 9 ? 7 : 9,
                 }}
               >
                 {chatUnreadTotal > 99 ? '99+' : chatUnreadTotal}
