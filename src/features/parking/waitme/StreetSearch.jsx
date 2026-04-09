@@ -1,18 +1,15 @@
 /**
  * Copia de WaitMe: src/components/StreetSearch.jsx (Input → input nativo, mismos estilos).
- * Sugerencias: `searchStreets` + sesión Mapbox (misma fuente que CreateAlertCard vía servicio).
+ * Una tubería: `useStreetSearchMapbox` → `searchStreets`; lista en portal para no quedar recortada por overflow del shell.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import {
-  fetchSelectionPayloadForSuggestion,
-  formatStreet,
-  newSearchSessionToken,
-  searchStreets,
-} from '../../../services/streetSearchService.js'
+import { formatSuggestionLabel } from '../../../services/streetSearchService.js'
 import { OVIEDO_LAT, OVIEDO_LNG } from '../../../features/map/constants/mapbox.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
+import { useStreetSearchMapbox } from './useStreetSearchMapbox.js'
 
 const inputStyle = {
   background: 'transparent',
@@ -63,60 +60,90 @@ export default function StreetSearch({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [open, setOpen] = useState(false)
+  const [menuRect, setMenuRect] = useState(
+    /** @type {{ top: number, left: number, width: number } | null} */ (null)
+  )
   const containerRef = useRef(null)
-  const sessionRef = useRef(newSearchSessionToken())
+  const listRef = useRef(null)
 
-  const searchCoords = useMemo(() => {
+  const proximity = useMemo(() => {
     const lat = locationProp?.latitude
     const lng = locationProp?.longitude
-    if (Number.isFinite(lat) && Number.isFinite(lng)) return { latitude: lat, longitude: lng }
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng }
     const fast = getCurrentLocationFast()
     if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
-      return { latitude: fast.latitude, longitude: fast.longitude }
+      return { lat: fast.latitude, lng: fast.longitude }
     }
-    return { latitude: OVIEDO_LAT, longitude: OVIEDO_LNG }
+    return { lat: OVIEDO_LAT, lng: OVIEDO_LNG }
   }, [locationProp?.latitude, locationProp?.longitude])
+
+  const { runSearch, abortAndNewSession, pickSuggestion } = useStreetSearchMapbox({
+    proximity,
+    enableSuggestions,
+  })
+
+  const applyResults = useCallback((list) => {
+    const arr = Array.isArray(list) ? list : []
+    if (import.meta.env.DEV) {
+      console.log('[StreetSearch] setResults', arr.length)
+    }
+    setResults(arr)
+  }, [])
 
   useEffect(() => {
     if (!enableSuggestions) return
 
     const q = (query || '').trim()
-    if (!q || q.length < 2) {
-      setResults([])
-      sessionRef.current = newSearchSessionToken()
-      return undefined
+    if (q.length < 2) {
+      abortAndNewSession()
+      const t = window.setTimeout(() => setResults([]), 0)
+      return () => window.clearTimeout(t)
     }
 
-    let cancelled = false
-    const controller = new AbortController()
-    const t = window.setTimeout(() => {
-      searchStreets(
-        q,
-        {
-          latitude: searchCoords.latitude,
-          longitude: searchCoords.longitude,
-          sessionToken: sessionRef.current,
-        },
-        controller.signal
-      )
-        .then((res) => {
-          if (!cancelled) setResults(Array.isArray(res) ? res : [])
-        })
-        .catch(() => {})
-    }, DEBOUNCE_MS)
+    const t = window.setTimeout(() => runSearch(q, applyResults), DEBOUNCE_MS)
+    return () => window.clearTimeout(t)
+  }, [query, runSearch, enableSuggestions, abortAndNewSession, applyResults])
 
+  const updateMenuPosition = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width })
+  }, [])
+
+  const showList =
+    enableSuggestions && open && (query || '').trim().length >= 2 && results.length > 0
+
+  useLayoutEffect(() => {
+    if (!showList) {
+      setMenuRect(null)
+      return
+    }
+    updateMenuPosition()
+  }, [showList, query, results, updateMenuPosition])
+
+  useEffect(() => {
+    if (!showList) return undefined
+    window.addEventListener('scroll', updateMenuPosition, true)
+    window.addEventListener('resize', updateMenuPosition)
     return () => {
-      cancelled = true
-      controller.abort()
-      window.clearTimeout(t)
+      window.removeEventListener('scroll', updateMenuPosition, true)
+      window.removeEventListener('resize', updateMenuPosition)
     }
-  }, [query, searchCoords.latitude, searchCoords.longitude, enableSuggestions])
+  }, [showList, updateMenuPosition])
+
+  useEffect(() => {
+    if (import.meta.env.DEV && showList) {
+      console.log('[StreetSearch] render dropdown', results.length)
+    }
+  }, [showList, results.length])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      const t = e.target
+      if (containerRef.current?.contains(t)) return
+      if (listRef.current?.contains(t)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('touchstart', handleClickOutside)
@@ -127,27 +154,54 @@ export default function StreetSearch({
   }, [])
 
   const handlePick = async (suggestion) => {
-    if (!suggestion?.mapbox_id) return
-    const controller = new AbortController()
-    try {
-      const payload = await fetchSelectionPayloadForSuggestion(
-        suggestion.mapbox_id,
-        sessionRef.current,
-        controller.signal
-      )
-      if (!payload) return
-      sessionRef.current = newSearchSessionToken()
+    await pickSuggestion(suggestion, (payload) => {
       setQuery(payload.address)
       setResults([])
       setOpen(false)
       onSelect?.(payload)
-    } catch (e) {
-      if (e?.name === 'AbortError') return
-    }
+    })
   }
 
-  const showList =
-    enableSuggestions && open && (query || '').trim().length >= 2 && results.length > 0
+  const listEl =
+    showList && menuRect ? (
+      <ul
+        ref={listRef}
+        data-waitme-street-results
+        style={{
+          position: 'fixed',
+          top: menuRect.top,
+          left: menuRect.left,
+          width: menuRect.width,
+          boxSizing: 'border-box',
+          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '2px solid rgba(168, 85, 247, 0.5)',
+          borderRadius: 12,
+          zIndex: LAYOUT.z.streetSearchResults,
+          maxHeight: 220,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          listStyle: 'none',
+          margin: 0,
+          padding: 0,
+        }}
+      >
+        {results.map((f, idx) => (
+          <li
+            key={String(f.mapbox_id ?? idx)}
+            role="button"
+            tabIndex={0}
+            style={streetResultLiStyle}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handlePick(f)}
+            onKeyDown={(e) => e.key === 'Enter' && handlePick(f)}
+          >
+            {formatSuggestionLabel(f)}
+          </li>
+        ))}
+      </ul>
+    ) : null
 
   return (
     <div
@@ -238,44 +292,7 @@ export default function StreetSearch({
         </div>
       </div>
 
-      {showList ? (
-        <ul
-          data-waitme-street-results
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: 4,
-            backgroundColor: 'rgba(17, 24, 39, 0.95)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '2px solid rgba(168, 85, 247, 0.5)',
-            borderRadius: 12,
-            zIndex: LAYOUT.z.streetSearchResults,
-            maxHeight: 220,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
-          }}
-        >
-          {results.map((f, idx) => (
-            <li
-              key={String(f.mapbox_id ?? idx)}
-              role="button"
-              tabIndex={0}
-              style={streetResultLiStyle}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handlePick(f)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePick(f)}
-            >
-              {formatStreet(f)}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {listEl && typeof document !== 'undefined' ? createPortal(listEl, document.body) : null}
     </div>
   )
 }

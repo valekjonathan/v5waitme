@@ -54,30 +54,8 @@ function EuroIconCreateAlertStyle() {
   )
 }
 
-const valueValueStyle = {
-  color: '#c084fc',
-  fontWeight: 700,
-  fontSize: 22,
-  lineHeight: 1,
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  whiteSpace: 'nowrap',
-}
-
-/** Una fila = mismo layout y estilo de slider que CreateAlertCard (un solo lugar). */
-function FilterRangeBlock({
-  icon,
-  title,
-  valueEl,
-  valueMarginLeft = 8,
-  titleValueRow = false,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-}) {
+/** Una fila: icono + label a la izquierda del bloque, valor a la derecha; slider debajo (CreateAlertCard / filtros). */
+function FilterRangeBlock({ icon, title, valueEl, min, max, step, value, onChange }) {
   const pct = useMemo(() => rangeGradientPercent(value, min, max), [value, min, max])
   const trackStyle = useMemo(
     () => ({
@@ -108,60 +86,40 @@ function FilterRangeBlock({
           boxSizing: 'border-box',
         }}
       >
-        {titleValueRow ? (
-          <>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                width: '100%',
-              }}
-            >
-              <span style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>{title}</span>
-              <span
-                style={{
-                  display: 'flex',
-                  gap: 6,
-                  whiteSpace: 'nowrap',
-                  fontWeight: 700,
-                  color: '#c084fc',
-                  fontSize: 22,
-                  lineHeight: 1,
-                }}
-              >
-                {valueEl}
-              </span>
-            </div>
-            <input
-              type="range"
-              className={rangeClass}
-              min={min}
-              max={max}
-              step={step}
-              value={value}
-              onChange={onChange}
-              style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
-            />
-          </>
-        ) : (
-          <>
-            <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>
-              {title}
-              <span style={{ ...valueValueStyle, marginLeft: valueMarginLeft }}>{valueEl}</span>
-            </label>
-            <input
-              type="range"
-              className={rangeClass}
-              min={min}
-              max={max}
-              step={step}
-              value={value}
-              onChange={onChange}
-              style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
-            />
-          </>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            gap: 8,
+          }}
+        >
+          <span style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>{title}</span>
+          <span
+            style={{
+              display: 'flex',
+              gap: 6,
+              whiteSpace: 'nowrap',
+              fontWeight: 700,
+              color: '#c084fc',
+              fontSize: 22,
+              lineHeight: 1,
+            }}
+          >
+            {valueEl}
+          </span>
+        </div>
+        <input
+          type="range"
+          className={rangeClass}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={onChange}
+          style={{ ...trackStyle, width: '100%', maxWidth: '100%' }}
+        />
       </div>
     </div>
   )
@@ -317,7 +275,6 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
             <FilterRangeBlock
               icon={<EuroIconCreateAlertStyle />}
               title="Precio máximo:"
-              titleValueRow
               valueEl={
                 <>
                   <span>{Math.round(filters.maxPrice)}</span>
@@ -333,8 +290,12 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
             <FilterRangeBlock
               icon={<IconClock size={22} strokeWidth={2} />}
               title="Disponible en:"
-              valueEl={<>{filters.maxMinutes} min</>}
-              valueMarginLeft={8}
+              valueEl={
+                <>
+                  <span>{filters.maxMinutes}</span>
+                  <span>min</span>
+                </>
+              }
               min={MINUTES_MIN}
               max={MINUTES_MAX}
               step={5}
@@ -344,8 +305,7 @@ function MapFilters({ filters, onFilterChange, onClose, alertsCount }) {
             <FilterRangeBlock
               icon={<IconNavigation size={22} strokeWidth={2} />}
               title="Distancia máxima:"
-              valueEl={<>{distLabel}</>}
-              valueMarginLeft={8}
+              valueEl={<span>{distLabel}</span>}
               min={DIST_MIN}
               max={DIST_MAX}
               step={0.1}

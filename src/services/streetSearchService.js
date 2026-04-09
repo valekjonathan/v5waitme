@@ -27,32 +27,38 @@ function normalize(text) {
 function rankResults(query, results) {
   const q = normalize(query)
 
-  return results
-    .map((r) => {
-      const name = normalize(r.name || '')
-      const full = normalize(r.full_address || '')
+  const scored = results.map((r, sortIdx) => {
+    const name = normalize(r.name || '')
+    const full = normalize(r.full_address || '')
 
-      const starts = name.startsWith(q)
-      const contains = name.includes(q) || full.includes(q)
+    const starts = name.startsWith(q)
+    const contains = name.includes(q) || full.includes(q)
 
-      let dist = 999999
-      if (typeof r.distance === 'number' && Number.isFinite(r.distance)) {
-        dist = r.distance
-      }
+    let dist = 999999
+    if (typeof r.distance === 'number' && Number.isFinite(r.distance)) {
+      dist = r.distance
+    }
 
-      let score = 0
+    let score = 0
 
-      if (starts) score += 1000
-      if (contains) score += 500
+    if (starts) score += 1000
+    if (contains) score += 500
 
-      score -= dist * 0.5
+    score -= dist * 0.5
 
-      const rel = Number(r.relevance)
-      score += (Number.isFinite(rel) ? rel : 0) * 100
+    const rel = Number(r.relevance)
+    score += (Number.isFinite(rel) ? rel : 0) * 100
 
-      return { ...r, score }
-    })
-    .sort((a, b) => b.score - a.score)
+    return { ...r, score, _sortIdx: sortIdx }
+  })
+
+  scored.sort((a, b) => {
+    const d = b.score - a.score
+    if (d !== 0) return d
+    return a._sortIdx - b._sortIdx
+  })
+
+  return scored.map(({ _sortIdx, ...rest }) => rest)
 }
 
 /**
@@ -83,7 +89,8 @@ export async function searchStreets(query, userLocation, signal) {
     country: 'es',
     limit: '8',
     proximity: `${longitude},${latitude}`,
-    types: 'address',
+    /** Calles + direcciones; solo `address` devolvía demasiado vacío en autocompletado parcial. */
+    types: 'street,address',
     session_token: sessionToken,
     access_token: token,
   })
@@ -105,9 +112,14 @@ export async function searchStreets(query, userLocation, signal) {
     return []
   }
 
-  console.log('SEARCH RESULTS', data)
-
   const suggestions = Array.isArray(data.suggestions) ? data.suggestions : []
+  if (import.meta.env.DEV) {
+    console.log('[streetSearch] pipeline', {
+      query: raw,
+      suggestionCount: suggestions.length,
+      first: suggestions[0]?.name,
+    })
+  }
   if (suggestions.length === 0) return []
 
   return rankResults(raw, suggestions)

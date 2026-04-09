@@ -172,14 +172,13 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         overflow: 'visible',
       }}
     >
-      <div
-        style={{
-          position: 'relative',
-          zIndex: LAYOUT.z.mapFiltersPanel,
-          isolation: 'isolate',
-          overflow: 'visible',
-        }}
-      >
+        <div
+          style={{
+            position: 'relative',
+            zIndex: LAYOUT.z.mapFiltersPanel,
+            overflow: 'visible',
+          }}
+        >
         <div
           style={{
             position: 'absolute',

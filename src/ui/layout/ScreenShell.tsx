@@ -21,6 +21,8 @@ type ScreenShellProps = {
   interactive?: boolean
   style?: CSSProperties
   contentStyle?: CSSProperties
+  /** Se fusiona en `<main>` (p. ej. `overflow: 'visible'` en mapa fullBleed para dropdowns). */
+  screenMainStyle?: CSSProperties
   mainMode?: ScreenShellMainMode
   /** En modo inset: si `auto`, el scroll vive en el slot de contenido. */
   mainOverflow?: 'auto' | 'hidden'
@@ -33,6 +35,7 @@ export default function ScreenShell({
   interactive = true,
   style = {},
   contentStyle = {},
+  screenMainStyle = {},
   mainMode = SCREEN_SHELL_MAIN_MODE.INSET,
   mainOverflow = 'auto',
   fullBleedMainOverflow: _fullBleedMainOverflow = 'auto',
@@ -67,7 +70,7 @@ export default function ScreenShell({
   return (
     <div data-waitme-screen-shell={mainMode} style={rootStyleMerged}>
       <Header interactive={interactive} />
-      <main data-waitme-main={mainMode} style={mainStyle}>
+      <main data-waitme-main={mainMode} style={{ ...mainStyle, ...screenMainStyle }}>
         <div data-waitme-content-slot style={{ ...contentSlotStyle, ...contentStyle }}>
           {children}
         </div>

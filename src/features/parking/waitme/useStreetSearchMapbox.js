@@ -43,7 +43,11 @@ export function useStreetSearchMapbox({ proximity, enableSuggestions = true }) {
           sessionToken: sessionRef.current,
         })
         if (id !== requestIdRef.current) return
-        applyResults(Array.isArray(list) ? list : [])
+        const arr = Array.isArray(list) ? list : []
+        if (import.meta.env.DEV) {
+          console.log('[useStreetSearchMapbox] suggestions', arr.length)
+        }
+        applyResults(arr)
       } catch {
         if (id !== requestIdRef.current) return
       } finally {
