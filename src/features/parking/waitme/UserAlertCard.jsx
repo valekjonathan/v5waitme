@@ -295,7 +295,14 @@ function UserAlertCard({
       return
     }
     const id = alert?.peer_user_id ?? alert?.user_id
-    if (typeof id === 'string' && id) openChatsWithPeer(id)
+    if (typeof id === 'string' && id) {
+      openChatsWithPeer(id, {
+        user_name: alert?.user_name,
+        user_photo: alert?.user_photo,
+        phone: alert?.phone,
+        allow_phone_calls: alert?.allow_phone_calls,
+      })
+    }
   }
   const handleCall = () => {
     waitmeOpenTelDialer(alert?.phone)

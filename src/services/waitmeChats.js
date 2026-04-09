@@ -5,6 +5,13 @@
 import { supabase, isSupabaseConfigured } from './supabase.js'
 import { isRealSupabaseAuthUid } from './authUid.js'
 
+/** Hilo aún sin UUID real: UI ya montada; mensajes esperan `getOrCreateDmThread`. */
+export const WAITME_PENDING_THREAD_ID = '__waitme_pending_thread__'
+
+export function isWaitmePendingThreadId(id) {
+  return String(id ?? '') === WAITME_PENDING_THREAD_ID
+}
+
 const PROFILE_MIN = 'id,name,phone,car_brand,car_model,plate,avatar_url'
 
 const FB_THREAD_1 = '11111111-1111-4111-8111-111111111111'

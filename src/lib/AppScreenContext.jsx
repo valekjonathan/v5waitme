@@ -21,6 +21,12 @@ export function AppScreenProvider({ children }) {
   const [viewingUserReviewsId, setViewingUserReviewsId] = useState(/** @type {string | null} */ (null))
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
+  /** Snapshot visual desde tarjeta (mapa) para abrir DM sin flash de lista ni header vacío. */
+  const [pendingDmVisual, setPendingDmVisual] = useState(
+    /** @type {null | { peerId: string, displayName: string, userPhoto: string | null, phone: string | null, allowPhoneCalls: boolean }} */ (
+      null
+    )
+  )
   const [chatUnreadByThread, setChatUnreadByThread] = useState(
     /** @type {Record<string, number>} */ ({})
   )
@@ -153,15 +159,38 @@ export function AppScreenProvider({ children }) {
   /** Siempre abre chats y fuerza volver a lista (sin toggles). */
   const openChatsRoot = useCallback(() => {
     clearUserReviewsNav()
+    setPendingDmVisual(null)
     dispatch({ type: 'openChats' })
     setChatsListResetGeneration((g) => g + 1)
   }, [clearUserReviewsNav])
 
+  const clearPendingDmVisual = useCallback(() => {
+    setPendingDmVisual(null)
+  }, [])
+
+  /**
+   * @param {string} peerUserId
+   * @param {null | { displayName?: string, user_name?: string, userPhoto?: string | null, user_photo?: string | null, phone?: string | null, allow_phone_calls?: boolean }} [fromCard]
+   */
   const openChatsWithPeer = useCallback(
-    (peerUserId) => {
+    (peerUserId, fromCard = null) => {
       clearUserReviewsNav()
       const id = String(peerUserId ?? '')
       if (!id) return
+      if (fromCard && typeof fromCard === 'object') {
+        const dn = String(fromCard.displayName ?? fromCard.user_name ?? '').trim()
+        const photo = fromCard.userPhoto ?? fromCard.user_photo ?? null
+        const ph = fromCard.phone != null ? String(fromCard.phone).trim() : null
+        setPendingDmVisual({
+          peerId: id,
+          displayName: dn,
+          userPhoto: typeof photo === 'string' && photo.trim() ? photo.trim() : null,
+          phone: ph && ph.length > 0 ? ph : null,
+          allowPhoneCalls: fromCard.allow_phone_calls !== false,
+        })
+      } else {
+        setPendingDmVisual(null)
+      }
       const next = `#/chat/${encodeURIComponent(id)}`
       if (typeof window !== 'undefined' && window.location.hash !== next) {
         window.location.hash = next
@@ -198,6 +227,8 @@ export function AppScreenProvider({ children }) {
       openChats,
       openChatsRoot,
       openChatsWithPeer,
+      pendingDmVisual,
+      clearPendingDmVisual,
       mapFocusGeneration,
       chatsListResetGeneration,
       chatUnreadByThread,
@@ -207,7 +238,7 @@ export function AppScreenProvider({ children }) {
     }),
     // Una línea: evita bloque duplicado vs el objeto (quality-gate DUPLICATE_BLOCK_SAME_FILE).
     [
-      screen, viewingUserReviewsId, openProfile, openReviews, openUserReviews, openHome, openSearchParking, openParkHere, openAlerts, openChats, openChatsRoot, openChatsWithPeer, mapFocusGeneration, chatsListResetGeneration, chatUnreadByThread, chatUnreadTotal, syncChatUnreadFromThreads, clearChatThreadUnread,
+      screen, viewingUserReviewsId, openProfile, openReviews, openUserReviews, openHome, openSearchParking, openParkHere, openAlerts, openChats, openChatsRoot, openChatsWithPeer, pendingDmVisual, clearPendingDmVisual, mapFocusGeneration, chatsListResetGeneration, chatUnreadByThread, chatUnreadTotal, syncChatUnreadFromThreads, clearChatThreadUnread,
     ]
   )
 

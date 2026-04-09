@@ -17,10 +17,18 @@ import {
   getOrCreateDmThread,
   isDmDevFallbackThread,
   listDmThreadsForUser,
+  WAITME_PENDING_THREAD_ID,
 } from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
+
+function clearChatHashFromUrl() {
+  if (typeof window !== 'undefined' && window.location.hash.startsWith('#/chat/')) {
+    const { pathname, search } = window.location
+    window.history.replaceState(null, '', pathname + search)
+  }
+}
 
 export default function ChatsPage() {
   const nav = useAppScreen()
@@ -30,13 +38,19 @@ export default function ChatsPage() {
   const [threads, setThreads] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
-  /** Resumen del hilo abierto desde hash/pending, solo tras resolver nombre (sin flash). */
+  /** Solo ruta sin snapshot de tarjeta (hash/bookmark). */
   const [resolvedBootstrapSummary, setResolvedBootstrapSummary] = useState(null)
+  /** UUID real del hilo cuando abrimos desde tarjeta (tras RPC). */
+  const [resolvedDirectThreadId, setResolvedDirectThreadId] = useState(null)
 
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
   const hasRealSupabaseSession = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
   const canLoadChats = Boolean(dev || hasRealSupabaseSession)
+
+  const hashPeer = parseChatPeerFromHash()
+  const pendingVis = nav.pendingDmVisual
+  const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
   const openThread = useCallback(
     (id) => {
@@ -78,15 +92,41 @@ export default function ChatsPage() {
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
     setResolvedBootstrapSummary(null)
+    setResolvedDirectThreadId(null)
     setThreadId(null)
-  }, [nav?.chatsListResetGeneration])
+    nav.clearPendingDmVisual?.()
+  }, [nav?.chatsListResetGeneration, nav])
 
+  /** Desde tarjeta mapa: un solo RPC en segundo plano; el hilo ya se muestra con snapshot. */
+  useEffect(() => {
+    if (!canLoadChats || !directMatch || !hashPeer) return
+    let cancelled = false
+    void (async () => {
+      const { data: tid, error } = await getOrCreateDmThread(hashPeer)
+      if (cancelled) return
+      if (error) {
+        console.error('[WaitMe][Chats] getOrCreateDmThread (direct)', error)
+        return
+      }
+      if (tid) setResolvedDirectThreadId(tid)
+      void load()
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [canLoadChats, directMatch, hashPeer, load])
+
+  /** Hash/pending sin snapshot (p. ej. enlace guardado): relleno tras red. */
   useEffect(() => {
     if (!canLoadChats) return
     const peer = parseChatPeerFromHash() ?? takePendingDmPeerUserId()
     if (!peer) return
+    if (nav.pendingDmVisual?.peerId === peer) return
+
+    let cancelled = false
     void (async () => {
       const { data: tid, error } = await getOrCreateDmThread(peer)
+      if (cancelled) return
       if (error) {
         console.error('[WaitMe][Chats] getOrCreateDmThread', error)
         return
@@ -94,14 +134,19 @@ export default function ChatsPage() {
       if (!tid) return
 
       let displayName = ''
+      let userPhoto = null
       const { data: prof } = await getProfile(peer)
-      displayName = String(prof?.name ?? '').trim()
+      if (cancelled) return
+      displayName = String(prof?.full_name ?? '').trim()
+      userPhoto = prof?.avatar_url != null ? String(prof.avatar_url).trim() || null : null
       if (!displayName) {
         const listResult = await listDmThreadsForUser(userId)
         const list = Array.isArray(listResult.data) ? listResult.data : []
         const row = list.find((t) => t.id === tid)
         displayName = String(row?.name ?? '').trim()
+        if (!userPhoto && row?.user_photo) userPhoto = String(row.user_photo).trim() || null
       }
+      if (cancelled) return
 
       const summary = {
         id: tid,
@@ -113,7 +158,7 @@ export default function ChatsPage() {
         model: '',
         plate: '',
         peerUserId: peer,
-        user_photo: null,
+        user_photo: userPhoto,
         unreadCount: 0,
         phone: null,
         allow_phone_calls: false,
@@ -122,7 +167,10 @@ export default function ChatsPage() {
       openThread(tid)
       void load()
     })()
-  }, [canLoadChats, load, openThread, userId])
+    return () => {
+      cancelled = true
+    }
+  }, [canLoadChats, load, openThread, userId, nav.pendingDmVisual])
 
   const filteredThreads = useMemo(() => {
     const q = listFilter.trim().toLowerCase()
@@ -144,17 +192,46 @@ export default function ChatsPage() {
     return null
   }, [filteredThreads, resolvedBootstrapSummary, threadId, threads])
 
+  const directThreadSummary = useMemo(() => {
+    if (!directMatch || !pendingVis || !hashPeer) return null
+    const tid = resolvedDirectThreadId
+    return {
+      id: tid ?? WAITME_PENDING_THREAD_ID,
+      name: pendingVis.displayName,
+      peerUserId: hashPeer,
+      user_photo: pendingVis.userPhoto,
+      phone: pendingVis.phone,
+      allow_phone_calls: pendingVis.allowPhoneCalls,
+      rating: 4,
+      lastMessage: '',
+      time: '',
+      brand: '',
+      model: '',
+      plate: '',
+      unreadCount: 0,
+    }
+  }, [directMatch, pendingVis, hashPeer, resolvedDirectThreadId])
+
   const handleBackFromThread = useCallback(() => {
     setResolvedBootstrapSummary(null)
+    setResolvedDirectThreadId(null)
     setThreadId(null)
-  }, [])
+    nav.clearPendingDmVisual?.()
+    clearChatHashFromUrl()
+  }, [nav])
 
-  if (activeSummary && threadId) {
+  const showDirectThread = Boolean(directMatch && directThreadSummary)
+  const showListThread = Boolean(!showDirectThread && activeSummary && threadId)
+
+  if (showDirectThread || showListThread) {
+    const summary = showDirectThread ? directThreadSummary : activeSummary
+    const tid = String(summary?.id ?? '')
+    const localFb = isDmDevFallbackThread(tid)
     return (
       <ChatThreadView
-        summary={activeSummary}
+        summary={summary}
         userId={userId}
-        localFallback={isDmDevFallbackThread(String(threadId ?? ''))}
+        localFallback={localFb}
         onBack={handleBackFromThread}
       />
     )

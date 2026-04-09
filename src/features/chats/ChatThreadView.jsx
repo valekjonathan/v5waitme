@@ -13,6 +13,7 @@ import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
   fetchDmMessages,
   formatDmMsgTime,
+  isWaitmePendingThreadId,
   sendDmMessage,
 } from '../../services/waitmeChats.js'
 import { useAuth } from '../../lib/AuthContext'
@@ -79,9 +80,13 @@ function nextTempId() {
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
   const threadId = String(s.id ?? '')
+  const threadPending = isWaitmePendingThreadId(threadId)
   const peerIdStr = String(s.peerUserId ?? '').trim()
   const title = String(s.name ?? '').trim()
-  const peerAvatar = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title || peerIdStr || threadId)}`
+  const peerPhotoUploaded = String(s.user_photo ?? '').trim()
+  const peerAvatar =
+    peerPhotoUploaded ||
+    `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(title || peerIdStr || threadId)}`
   const peerPhone = String(s.phone ?? '').trim()
   const headerCallEnabled = Boolean(peerPhone && s.allow_phone_calls !== false)
   const { openUserReviews } = useAppScreen()
@@ -148,6 +153,11 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
       setBootError(null)
       return undefined
     }
+    if (isWaitmePendingThreadId(threadId)) {
+      setMessages([])
+      setBootError(null)
+      return undefined
+    }
     if (!localFallback && !isRealSupabaseAuthUid(userId)) {
       setMessages([])
       setBootError(null)
@@ -172,6 +182,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   useEffect(() => {
     if (
       localFallback ||
+      isWaitmePendingThreadId(threadId) ||
       !isSupabaseConfigured() ||
       !supabase ||
       !threadId ||
@@ -213,7 +224,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
 
   const sendMine = useCallback(async () => {
     const t = draft.trim()
-    if (!t || sending || !threadId) return
+    if (!t || sending || !threadId || isWaitmePendingThreadId(threadId)) return
     if (!localFallback && !isRealSupabaseAuthUid(userId)) return
     setDraft('')
     setSending(true)
@@ -628,6 +639,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Escribe un mensaje…"
               aria-label="Mensaje"
+              disabled={threadPending}
               style={{
                 flex: 1,
                 minWidth: 0,
@@ -647,7 +659,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               variant="primary"
               style={{ flexShrink: 0, minHeight: 44, height: 44, width: 'auto', padding: '0 16px' }}
               onClick={() => void sendMine()}
-              disabled={!draft.trim() || sending || Boolean(bootError)}
+              disabled={!draft.trim() || sending || Boolean(bootError) || threadPending}
             >
               Enviar
             </Button>
