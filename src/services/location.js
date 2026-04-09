@@ -1,6 +1,7 @@
 /**
- * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni filtros por distancia.
- * `startLocationTracking()` → cada success del navegador → `notify()` → callbacks de `subscribeToLocation`.
+ * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
+ * Cada lectura válida → capa interna low-pass (α=0.2) + velocidad + predicción 0.5s → `notify()` → suscriptores.
+ * Sin batching: un tick GPS procesado → una emisión.
  *
  * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
  * Mac / PWA / WebView iOS: mismo código; `navigator.geolocation` (permisos del sistema / navegador).
@@ -138,6 +139,66 @@ try {
   /* */
 }
 
+/** Raw GPS ya validado (antes del low-pass). */
+let lastRaw = null
+/** Última posición emitida (tras filtro + predicción); base del siguiente low-pass. */
+let lastFiltered = null
+let velocity = { lat: 0, lng: 0 }
+
+const SMOOTH_ALPHA = 0.2
+const PREDICTION_TIME_S = 0.5
+/** Evita división por dt≈0 en velocidad (sin cambiar frecuencia de emisión). */
+const MIN_DT_VELOCITY_S = 1e-3
+
+/**
+ * Low-pass + predicción corta; cada tick válido emite una vez vía `notify`.
+ */
+function emitSmoothedLocation(raw) {
+  if (
+    !raw ||
+    !Number.isFinite(raw.latitude) ||
+    !Number.isFinite(raw.longitude) ||
+    !isValidGps(raw.latitude, raw.longitude)
+  ) {
+    return
+  }
+
+  const filteredLat = lastFiltered
+    ? lastFiltered.latitude + SMOOTH_ALPHA * (raw.latitude - lastFiltered.latitude)
+    : raw.latitude
+  const filteredLng = lastFiltered
+    ? lastFiltered.longitude + SMOOTH_ALPHA * (raw.longitude - lastFiltered.longitude)
+    : raw.longitude
+
+  let dt = 0
+  if (lastRaw && Number.isFinite(raw.timestamp) && Number.isFinite(lastRaw.timestamp)) {
+    dt = (raw.timestamp - lastRaw.timestamp) / 1000
+  }
+
+  if (lastFiltered && dt > 0) {
+    const dtUse = Math.max(dt, MIN_DT_VELOCITY_S)
+    velocity.lat = (filteredLat - lastFiltered.latitude) / dtUse
+    velocity.lng = (filteredLng - lastFiltered.longitude) / dtUse
+  }
+
+  const predictedLat = filteredLat + velocity.lat * PREDICTION_TIME_S
+  const predictedLng = filteredLng + velocity.lng * PREDICTION_TIME_S
+
+  const finalLocation = {
+    latitude: predictedLat,
+    longitude: predictedLng,
+    accuracy: raw.accuracy,
+    heading: raw.heading ?? null,
+    speed: raw.speed ?? null,
+    timestamp: raw.timestamp,
+  }
+
+  notify(finalLocation)
+
+  lastRaw = raw
+  lastFiltered = finalLocation
+}
+
 /**
  * Única escritura de `currentLocation` desde el stream GPS / simulación.
  * Forma canónica: lat/lng obligatorios; resto opcional pero estable (null si no aplica).
@@ -197,7 +258,7 @@ export function startLocationTracking() {
     const simulate = () => {
       lat += 0.00002
       lng += 0.00002
-      notify({
+      emitSmoothedLocation({
         latitude: lat,
         longitude: lng,
         accuracy: 5,
@@ -229,7 +290,7 @@ export function startLocationTracking() {
     (pos) => {
       const p = payloadFromBrowserPosition(pos)
       if (p)
-        notify({
+        emitSmoothedLocation({
           latitude: p.lat,
           longitude: p.lng,
           accuracy: p.accuracy,
