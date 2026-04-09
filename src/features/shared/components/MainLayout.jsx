@@ -1,5 +1,6 @@
 import Map from '../../map/components/Map.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
+import CenterPin from '../../home/components/CenterPin'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
@@ -86,6 +87,16 @@ const heroSubtitleStyle = {
   lineHeight: 1,
   color: colors.textPrimary,
 }
+/** Pin entre frase y CTAs: encima del velo (z content); medición/ancla real sigue en MapViewportCenterPin (opacity 0). */
+const heroPinRowStyle = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  width: '100%',
+  paddingTop: s.lg,
+  paddingBottom: s.lg,
+  pointerEvents: 'none',
+}
 const ctaSectionBaseStyle = { marginTop: s.lg }
 const heroLogoOuterStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const heroLogoBoxStyle = {
@@ -104,8 +115,8 @@ function overlayLayerStyle(background) {
 }
 
 /**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título).
- * Pin visible en la capa del mapa (`MapViewportCenterPin`: punta del palito en el centro / GPS).
+ * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, frase, pin, CTAs).
+ * Ancla GPS: `MapViewportCenterPin` en Map (medición, punta en centro); pin visible en columna (mismo CenterPin).
  * `loginEntrance` se acepta por compatibilidad con LoginPage; la entrada es instantánea.
  */
 export default function MainLayout({ children = null, loginEntrance: _loginEntrance = false }) {
@@ -118,7 +129,7 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Map readOnly />
+        <Map readOnly hideViewportCenterPin />
         <SimulatedCarsOnMap enabled users={simulatedUsers} />
       </div>
 
@@ -145,6 +156,9 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
               <p data-home-subtitle style={heroSubtitleStyle}>
                 Aparca donde te <span style={meTextStyle}>avisen!</span>
               </p>
+              <div style={heroPinRowStyle} aria-hidden>
+                <CenterPin />
+              </div>
             </Section>
             {hasCta ? (
               <Section gap={s.md} style={ctaSectionBaseStyle}>
