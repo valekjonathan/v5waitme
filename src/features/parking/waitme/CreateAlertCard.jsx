@@ -4,6 +4,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
+import { getLngLatAtParkedPinGap } from '../../map/mapControls.js'
+import { getGlobalMapInstance } from '../../map/mapInstance.js'
 import { getCurrentLocationFast } from '../../../services/location.js'
 import { reverseGeocode, suggestionDisplayText } from '../../../services/streetSearchService.js'
 import { LAYOUT } from '../../../ui/layout/layout'
@@ -68,6 +70,12 @@ export default function CreateAlertCard({
   const [suggestions, setSuggestions] = useState([])
   const [suggestOpen, setSuggestOpen] = useState(false)
   const addressRowRef = useRef(null)
+  /**
+   * `pin`: la dirección debe seguir la punta del palito (misma referencia que `alignParkedGpsMarkerToGap`).
+   * `manual`: el usuario escribió o eligió sugerencia; no sobrescribir al mover el mapa.
+   */
+  const addressSyncModeRef = useRef(/** @type {'pin' | 'manual'} */ ('pin'))
+  const reverseGeocodeAbortRef = useRef(/** @type {AbortController | null} */ (null))
 
   const proximity = useMemo(() => {
     const lat = userLocation?.latitude
@@ -114,19 +122,104 @@ export default function CreateAlertCard({
     }
   }, [])
 
-  useEffect(() => {
-    const lat = userLocation?.latitude
-    const lng = userLocation?.longitude
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
-    if ((address || '').trim() !== '') return
+  const syncAddressFromParkedPin = useCallback(() => {
+    if (addressSyncModeRef.current !== 'pin') return
+    const map = getGlobalMapInstance()
+    if (!map?.isStyleLoaded?.()) return
+    const parkedPinCoords = getLngLatAtParkedPinGap(map)
+    if (
+      !parkedPinCoords ||
+      !Number.isFinite(parkedPinCoords.lat) ||
+      !Number.isFinite(parkedPinCoords.lng)
+    ) {
+      return
+    }
+    reverseGeocodeAbortRef.current?.abort()
     const ac = new AbortController()
-    reverseGeocode(lat, lng, ac.signal).then((placeName) => {
-      if (placeName) onAddressChange(placeName)
-    })
-    return () => ac.abort()
-  }, [userLocation?.latitude, userLocation?.longitude, address, onAddressChange])
+    reverseGeocodeAbortRef.current = ac
+    const { lat, lng } = parkedPinCoords
+    reverseGeocode(lat, lng, ac.signal)
+      .then((placeName) => {
+        if (ac.signal.aborted) return
+        if (addressSyncModeRef.current !== 'pin') return
+        if (placeName) onAddressChange(placeName)
+      })
+      .catch(() => {})
+  }, [onAddressChange])
+
+  /** Primera dirección y cualquier cambio de cámara en modo pin: coords = `getLngLatAtParkedPinGap` (no GPS). */
+  useEffect(() => {
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 150
+    const tick = () => {
+      if (cancelled) return
+      const map = getGlobalMapInstance()
+      if (!map?.isStyleLoaded?.()) {
+        if (attempts++ < maxAttempts) requestAnimationFrame(tick)
+        return
+      }
+      const ll = getLngLatAtParkedPinGap(map)
+      if (!ll) {
+        if (attempts++ < maxAttempts) requestAnimationFrame(tick)
+        return
+      }
+      syncAddressFromParkedPin()
+    }
+    requestAnimationFrame(tick)
+    return () => {
+      cancelled = true
+    }
+  }, [syncAddressFromParkedPin])
+
+  useEffect(() => {
+    let cancelled = false
+    let pollId = /** @type {ReturnType<typeof setInterval> | null} */ (null)
+    let detachMoveEnd = () => {}
+
+    const attach = (m) => {
+      const handler = () => syncAddressFromParkedPin()
+      m.on('moveend', handler)
+      return () => {
+        try {
+          m.off('moveend', handler)
+        } catch {
+          /* */
+        }
+      }
+    }
+
+    const tryAttach = () => {
+      if (cancelled) return
+      const m = getGlobalMapInstance()
+      if (m?.on) {
+        if (pollId != null) {
+          clearInterval(pollId)
+          pollId = null
+        }
+        detachMoveEnd = attach(m)
+        return
+      }
+      if (pollId == null) {
+        pollId = setInterval(tryAttach, 100)
+      }
+    }
+    tryAttach()
+    return () => {
+      cancelled = true
+      if (pollId != null) clearInterval(pollId)
+      detachMoveEnd()
+    }
+  }, [syncAddressFromParkedPin])
+
+  useEffect(() => {
+    return () => {
+      reverseGeocodeAbortRef.current?.abort()
+    }
+  }, [])
 
   const handlePickSuggestion = (suggestion) => {
+    addressSyncModeRef.current = 'manual'
     const label = suggestionDisplayText(suggestion)
     onAddressChange(label)
     setSuggestions([])
@@ -259,8 +352,13 @@ export default function CreateAlertCard({
             <input
               value={address}
               onChange={(e) => {
-                onAddressChange(e.target.value)
+                const v = e.target.value
+                addressSyncModeRef.current = v.trim() === '' ? 'pin' : 'manual'
+                onAddressChange(v)
                 setSuggestOpen(true)
+                if (v.trim() === '') {
+                  queueMicrotask(() => syncAddressFromParkedPin())
+                }
               }}
               onFocus={() => setSuggestOpen(true)}
               placeholder="Calle Ejemplo, 13"
