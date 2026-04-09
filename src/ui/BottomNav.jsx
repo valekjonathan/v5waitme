@@ -30,7 +30,7 @@ const divider = <div style={{ height: 32, width: 1, background: colors.border }}
 
 const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
-  const { screen } = nav
+  const { screen, chatUnreadTotal = 0 } = nav
   const { status, isProfileComplete } = useAuth()
   const notice = useProfileIncompleteNotice()
 
@@ -103,7 +103,34 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
           aria-current={isChatActive ? 'page' : undefined}
           onClick={guardOr(() => nav?.openChats?.())}
         >
-          <MessageCircleIcon />
+          <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+            <MessageCircleIcon />
+            {chatUnreadTotal > 0 ? (
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  minWidth: 14,
+                  height: 14,
+                  padding: chatUnreadTotal > 9 ? '0 3px' : 0,
+                  borderRadius: chatUnreadTotal > 9 ? 7 : '50%',
+                  background: '#22c55e',
+                  color: '#fff',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                  boxSizing: 'border-box',
+                }}
+              >
+                {chatUnreadTotal > 99 ? '99+' : chatUnreadTotal}
+              </span>
+            ) : null}
+          </span>
           <span style={labelStyle}>Chats</span>
         </Button>
       </div>

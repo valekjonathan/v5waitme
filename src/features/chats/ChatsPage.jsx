@@ -8,6 +8,7 @@ import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import ChatThreadView from './ChatThreadView.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
+import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -21,6 +22,7 @@ const BG = colors.background
 const shellStyle = { backgroundColor: BG }
 
 export default function ChatsPage() {
+  const nav = useAppScreen()
   const { user } = useAuth()
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
@@ -34,6 +36,17 @@ export default function ChatsPage() {
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
   const hasRealSupabaseSession = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
   const canLoadChats = Boolean(dev || hasRealSupabaseSession)
+
+  const openThread = useCallback(
+    (id) => {
+      const sid = String(id ?? '')
+      if (!sid) return
+      nav.clearChatThreadUnread?.(sid)
+      setThreads((prev) => prev.map((x) => (x.id === sid ? { ...x, unreadCount: 0 } : x)))
+      setThreadId(sid)
+    },
+    [nav]
+  )
 
   const load = useCallback(async () => {
     if (!canLoadChats) {
@@ -60,6 +73,10 @@ export default function ChatsPage() {
   }, [load])
 
   useEffect(() => {
+    nav.syncChatUnreadFromThreads?.(threads)
+  }, [nav, threads])
+
+  useEffect(() => {
     if (!canLoadChats) return
     const peer = takePendingDmPeerUserId()
     if (!peer) return
@@ -72,10 +89,10 @@ export default function ChatsPage() {
       await load()
       if (tid) {
         setPeerBootstrap(peer)
-        setThreadId(tid)
+        openThread(tid)
       }
     })()
-  }, [canLoadChats, load])
+  }, [canLoadChats, load, openThread])
 
   const localItems = useMemo(
     () =>
@@ -109,10 +126,16 @@ export default function ChatsPage() {
         plate: '',
         peerUserId: peerBootstrap,
         user_photo: null,
+        unreadCount: 0,
       }
     }
     return null
   }, [filteredThreads, peerBootstrap, threadId, threads])
+
+  const handleBackFromThread = useCallback(() => {
+    setPeerBootstrap(null)
+    setThreadId(null)
+  }, [])
 
   if (activeSummary && threadId) {
     return (
@@ -120,10 +143,7 @@ export default function ChatsPage() {
         summary={activeSummary}
         userId={userId}
         localFallback={isDmDevFallbackThread(String(threadId ?? ''))}
-        onBack={() => {
-          setPeerBootstrap(null)
-          setThreadId(null)
-        }}
+        onBack={handleBackFromThread}
       />
     )
   }
@@ -166,8 +186,9 @@ export default function ChatsPage() {
         <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
           <StreetSearch
             placeholder="Buscar..."
+            placeholderMuted
             localFilterItems={localItems}
-            onLocalSelect={(item) => setThreadId(item.id)}
+            onLocalSelect={(item) => openThread(item.id)}
             onQueryChange={(q) => setListFilter(q)}
           />
         </div>
@@ -252,11 +273,11 @@ export default function ChatsPage() {
                   key={t.id}
                   role="button"
                   tabIndex={0}
-                  onClick={() => setThreadId(t.id)}
+                  onClick={() => openThread(t.id)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
-                      setThreadId(t.id)
+                      openThread(t.id)
                     }
                   }}
                   style={{ cursor: 'pointer', flexShrink: 0 }}
@@ -268,7 +289,7 @@ export default function ChatsPage() {
                     time={t.time}
                     isEmpty={false}
                     onBuyAlert={() => {}}
-                    onChat={() => setThreadId(t.id)}
+                    onChat={() => openThread(t.id)}
                     onCall={() => {}}
                   />
                 </div>

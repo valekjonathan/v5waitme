@@ -87,6 +87,7 @@ function seedFallbackDmIfNeeded() {
       plate: '2145 BCD',
       peerUserId: FB_PEER_1,
       user_photo: null,
+      unreadCount: 2,
     },
     {
       id: FB_THREAD_2,
@@ -99,6 +100,7 @@ function seedFallbackDmIfNeeded() {
       plate: '9012 XYZ',
       peerUserId: FB_PEER_2,
       user_photo: null,
+      unreadCount: 0,
     },
   ]
 }
@@ -173,6 +175,7 @@ export function dmThreadToListCard(p) {
     plate: String(pr.plate ?? ''),
     peerUserId: p.peerId,
     user_photo: pr.avatar_url ?? null,
+    unreadCount: 0,
   }
 }
 
@@ -280,6 +283,7 @@ export function dmListCardToAlert(t) {
     plate: c.plate,
     chatLastMessage: c.lastMessage,
     user_photo: c.user_photo ?? null,
+    chatUnreadCount: Math.max(0, Number(c.unreadCount ?? 0)),
   }
 }
 
@@ -435,6 +439,7 @@ export async function getOrCreateDmThread(otherUserId) {
       plate: '',
       peerUserId: peer,
       user_photo: null,
+      unreadCount: 0,
     }
     fallbackDynamicListCards.set(peer, card)
     return { data: tid, error: null, usedDevFallback: true }

@@ -73,6 +73,30 @@ const USER_CARD_NAME_STYLE = {
   textOverflow: 'ellipsis',
 }
 
+/** Lista Chats: hora en cabecera (misma fila que Info usuario). */
+const CHAT_HEADER_TIME_STYLE = {
+  fontSize: 15,
+  fontWeight: 500,
+  color: 'rgba(255,255,255,0.4)',
+  lineHeight: 1,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+}
+
+const CHAT_PREVIEW_TEXT_STYLE = {
+  fontSize: 14,
+  fontWeight: 500,
+  color: '#e5e7eb',
+  lineHeight: 1.35,
+  margin: 0,
+  marginTop: 6,
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+}
+
 function UserAlertAvatarBlock({ alert }) {
   const first = (alert?.user_name || 'Usuario').split(' ')[0]
   const src =
@@ -262,6 +286,8 @@ function UserAlertCard({
       ? lastMessage
       : (alert?.chatLastMessage ?? '')
 
+  const chatUnread = Math.max(0, Number(alert?.chatUnreadCount ?? 0))
+
   const btnIcon = {
     width: 32,
     height: 32,
@@ -331,6 +357,7 @@ function UserAlertCard({
           <div style={badgeBase}>Info usuario</div>
         </div>
         <div style={{ flex: 1, minWidth: 0 }} aria-hidden />
+        {isChat ? <div style={CHAT_HEADER_TIME_STYLE}>{chatTimeProp || ''}</div> : null}
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
           {!isChat && distanceLabel ? (
             <div
@@ -377,22 +404,19 @@ function UserAlertCard({
               </span>
             </div>
           ) : (
-            <>
-              <div style={{ fontSize: 12, opacity: 0.6 }}>{chatTimeProp || '12:45'}</div>
-              <button
-                type="button"
-                onClick={handleDeleteChatClick}
-                style={{
-                  ...btnIcon,
-                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                  border: '1px solid rgba(239, 68, 68, 0.5)',
-                  color: '#f87171',
-                }}
-                aria-label="Eliminar conversación"
-              >
-                <IconX size={20} />
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleDeleteChatClick}
+              style={{
+                ...btnIcon,
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                color: '#f87171',
+              }}
+              aria-label="Eliminar conversación"
+            >
+              <IconX size={20} />
+            </button>
           )}
           {!isChat && onReject ? (
             <button
@@ -412,17 +436,15 @@ function UserAlertCard({
         </div>
       </div>
 
-      {!isChat ? (
-        <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
-      ) : null}
+      <div style={{ borderTop: '1px solid rgba(55, 65, 81, 0.8)', marginBottom: 4 }} />
 
-      <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
         <UserAlertAvatarBlock alert={alert} />
 
         <div
           style={{
             flex: 1,
-            height: 85,
+            ...(isChat ? { minHeight: 85 } : { height: 85 }),
             minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -433,6 +455,31 @@ function UserAlertCard({
             <div style={{ flex: 1, minWidth: 0 }}>
               <span style={USER_CARD_NAME_STYLE}>{(alert?.user_name || 'Usuario').split(' ')[0]}</span>
             </div>
+
+            {isChat && chatUnread > 0 ? (
+              <span
+                style={{
+                  minWidth: chatUnread > 9 ? 22 : 20,
+                  width: chatUnread > 9 ? undefined : 20,
+                  height: 20,
+                  padding: chatUnread > 9 ? '0 5px' : 0,
+                  borderRadius: chatUnread > 9 ? 10 : '50%',
+                  background: '#22c55e',
+                  color: '#fff',
+                  fontSize: chatUnread > 9 ? 10 : 11,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginLeft: 8,
+                  lineHeight: 1,
+                  boxSizing: 'border-box',
+                }}
+              >
+                {chatUnread > 99 ? '99+' : chatUnread}
+              </span>
+            ) : null}
 
             {!isChat ? (
               <div
@@ -456,18 +503,7 @@ function UserAlertCard({
           </div>
 
           {isChat ? (
-            <p
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: '#e5e7eb',
-                lineHeight: 1,
-                margin: 0,
-                marginTop: 4,
-              }}
-            >
-              {lastMessageText}
-            </p>
+            <p style={CHAT_PREVIEW_TEXT_STYLE}>{lastMessageText}</p>
           ) : (
             <>
               <p

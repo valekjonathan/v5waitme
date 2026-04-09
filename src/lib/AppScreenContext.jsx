@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useMemo, useReducer, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react'
 import { isRealSupabaseAuthUid } from '../services/authUid.js'
 import { stashPendingDmPeerUserId } from './waitmeDmPending.js'
 import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
@@ -8,6 +15,35 @@ const AppScreenContext = createContext(null)
 export function AppScreenProvider({ children }) {
   const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
+  const [chatUnreadByThread, setChatUnreadByThread] = useState(
+    /** @type {Record<string, number>} */ ({})
+  )
+
+  const chatUnreadTotal = useMemo(
+    () =>
+      Object.values(chatUnreadByThread).reduce(
+        (sum, n) => sum + Math.max(0, Number(n) || 0),
+        0
+      ),
+    [chatUnreadByThread]
+  )
+
+  const syncChatUnreadFromThreads = useCallback((list) => {
+    const next = /** @type {Record<string, number>} */ ({})
+    for (const t of Array.isArray(list) ? list : []) {
+      if (!t || typeof t !== 'object') continue
+      const id = String(t.id ?? '')
+      if (!id) continue
+      next[id] = Math.max(0, Number(t.unreadCount ?? 0))
+    }
+    setChatUnreadByThread(next)
+  }, [])
+
+  const clearChatThreadUnread = useCallback((threadId) => {
+    const id = String(threadId ?? '')
+    if (!id) return
+    setChatUnreadByThread((prev) => ({ ...prev, [id]: 0 }))
+  }, [])
 
   const openHome = useCallback(() => {
     dispatch({ type: 'openHome' })
@@ -50,6 +86,10 @@ export function AppScreenProvider({ children }) {
       openChats,
       openChatsWithPeer,
       mapFocusGeneration,
+      chatUnreadByThread,
+      chatUnreadTotal,
+      syncChatUnreadFromThreads,
+      clearChatThreadUnread,
     }),
     [
       screen,
@@ -60,6 +100,10 @@ export function AppScreenProvider({ children }) {
       openChats,
       openChatsWithPeer,
       mapFocusGeneration,
+      chatUnreadByThread,
+      chatUnreadTotal,
+      syncChatUnreadFromThreads,
+      clearChatThreadUnread,
     ]
   )
 

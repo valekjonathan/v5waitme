@@ -41,6 +41,7 @@ const streetResultLiStyle = {
  * @param {{ id: string, label: string, matchText?: string }[]} [localFilterItems] — si hay ítems, no se llama a Mapbox; filtra en cliente.
  * @param {(item: { id: string, label: string }) => void} [onLocalSelect]
  * @param {(q: string) => void} [onQueryChange]
+ * @param {boolean} [placeholderMuted] — placeholder tipo input muted (solo Chats).
  */
 export default function StreetSearch({
   onSelect,
@@ -49,6 +50,7 @@ export default function StreetSearch({
   localFilterItems,
   onLocalSelect,
   onQueryChange,
+  placeholderMuted = false,
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -197,6 +199,17 @@ export default function StreetSearch({
           opacity: 0.82;
           -webkit-text-fill-color: #FFFFFF;
           text-align: center;
+        }
+        ${
+          placeholderMuted
+            ? `
+        .${streetSearchInputClass}::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+          opacity: 1;
+          -webkit-text-fill-color: rgba(255, 255, 255, 0.4);
+        }
+        `
+            : ''
         }
       `}</style>
       <div
