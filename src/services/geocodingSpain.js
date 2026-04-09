@@ -67,7 +67,7 @@ export async function searchSpainStreets(query, opts = {}) {
   // Mapbox Geocoding v5 solo admite: country, region, place, district, locality, postcode, neighborhood, address (no "street"; 422 si se incluye).
   params.set('types', 'address')
   params.set('autocomplete', 'true')
-  params.set('limit', '5')
+  params.set('limit', '10')
   if (proximity && Number.isFinite(proximity.lng) && Number.isFinite(proximity.lat)) {
     params.set('proximity', `${proximity.lng},${proximity.lat}`)
   }
@@ -157,15 +157,63 @@ export function formatAddressForUi(result) {
   return line ? formatStreetName(line) : ''
 }
 
+const OVIEDO_CENTER_LAT = 43.3614
+const OVIEDO_CENTER_LNG = -5.8493
+const USER_NEAR_OVIEDO_M = 35_000
+
+/** Parte “nombre de vía” aproximada para acertar “fray” aunque la etiqueta empiece por C/. */
+function streetNameForMatchFolded(foldedFull) {
+  let s = foldedFull
+  s = s.replace(/^c\/\s*/i, '')
+  s = s.replace(/^calle\s+/, '')
+  return s.trim()
+}
+
 /**
- * Ordena sugerencias: empieza por texto → cercanía → relevance Mapbox.
- * Filtra por coincidencia real (sin acentos); si queda vacío, reintenta sin filtrar.
+ * Puntuación de texto: varias palabras deben aparecer; prioriza nombre de vía (no solo “empieza por query”).
+ * @returns {number} -1 si no cumple tokens obligatorios
+ */
+function textMatchScore(foldedLabel, qFold) {
+  const tokens = qFold.split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return 0
+  const allPresent = tokens.every((t) => foldedLabel.includes(t))
+  if (!allPresent) return -1
+
+  let score = 10_000
+  const streetPart = streetNameForMatchFolded(foldedLabel)
+  const first = tokens[0]
+
+  if (streetPart.startsWith(first)) score += 5000
+  else {
+    const idx = streetPart.indexOf(first)
+    if (idx === 0) score += 4500
+    else if (idx > 0) score += Math.max(0, 3500 - Math.min(idx, 80) * 40)
+  }
+
+  if (tokens.length > 1 && foldedLabel.includes(qFold.replace(/\s+/g, ' '))) {
+    score += 3000
+  }
+
+  if (new RegExp(`(^|[\\s,.-])${escapeRegExp(first)}`, 'i').test(streetPart)) {
+    score += 1500
+  }
+
+  const early = foldedLabel.indexOf(qFold)
+  if (early >= 0) score += Math.max(0, 800 - early)
+
+  return score
+}
+
+/**
+ * Orden: (a) coincidencia de texto fuerte (b) distancia real (c) Oviedo si el usuario está cerca (d) relevance.
  */
 export function rankSpainStreetFeatures(features, query, userLat, userLng) {
   if (!Array.isArray(features) || features.length === 0) return []
   const qFold = foldAscii((query || '').trim())
   if (!qFold) return features
   const hasUser = Number.isFinite(userLat) && Number.isFinite(userLng)
+  const userNearOviedo =
+    hasUser && distanceMeters(userLat, userLng, OVIEDO_CENTER_LAT, OVIEDO_CENTER_LNG) < USER_NEAR_OVIEDO_M
 
   const labelOf = (f) =>
     formatAddressForUi(f) ||
@@ -177,13 +225,7 @@ export function rankSpainStreetFeatures(features, query, userLat, userLng) {
   const distM = (f) => {
     const c = f.center
     if (!Array.isArray(c) || c.length < 2 || !hasUser) return Number.POSITIVE_INFINITY
-    let d = distanceMeters(userLat, userLng, c[1], c[0])
-    const city = extractCityFromContext(f)
-    const userNearOviedo = distanceMeters(userLat, userLng, 43.3614, -5.8493) < 35_000
-    if (userNearOviedo && foldAscii(city) === 'oviedo') {
-      d *= 0.35
-    }
-    return d
+    return distanceMeters(userLat, userLng, c[1], c[0])
   }
 
   const relOf = (f) => (typeof f.relevance === 'number' && Number.isFinite(f.relevance) ? f.relevance : 0)
@@ -191,23 +233,31 @@ export function rankSpainStreetFeatures(features, query, userLat, userLng) {
   const scoreRow = (f) => {
     const label = labelOf(f)
     const folded = foldAscii(label)
-    const match = folded.includes(qFold)
-    const starts = folded.startsWith(qFold)
-    const afterSep = new RegExp(`(^|[\\s,.-])${escapeRegExp(qFold)}`, 'i').test(folded)
-    return { f, match, starts, afterSep, dist: distM(f), rel: relOf(f) }
+    let textScore = textMatchScore(folded, qFold)
+    if (textScore < 0) {
+      if (folded.includes(qFold)) textScore = 1000
+      else textScore = -1
+    }
+    const city = extractCityFromContext(f)
+    const oviedoTier = userNearOviedo && foldAscii(city) === 'oviedo' ? 1 : 0
+    return { f, textScore, dist: distM(f), oviedoTier, rel: relOf(f) }
   }
 
   const rows = features.map(scoreRow)
-  const matched = rows.filter((r) => r.match)
+  const matched = rows.filter((r) => r.textScore >= 0)
   const pool = matched.length ? matched : rows
 
   pool.sort((a, b) => {
-    if (a.starts !== b.starts) return b.starts ? 1 : -1
-    if (a.afterSep !== b.afterSep) return b.afterSep ? 1 : -1
+    if (b.textScore !== a.textScore) return b.textScore - a.textScore
     const da = a.dist
     const db = b.dist
-    if (hasUser && Number.isFinite(da) && Number.isFinite(db) && da !== db) return da - db
-    if (a.rel !== b.rel) return b.rel - a.rel
+    if (hasUser && Number.isFinite(da) && Number.isFinite(db)) {
+      if (da !== db) return da - db
+    } else if (Number.isFinite(da) !== Number.isFinite(db)) {
+      return Number.isFinite(da) ? -1 : 1
+    }
+    if (b.oviedoTier !== a.oviedoTier) return b.oviedoTier - a.oviedoTier
+    if (b.rel !== a.rel) return b.rel - a.rel
     return 0
   })
 

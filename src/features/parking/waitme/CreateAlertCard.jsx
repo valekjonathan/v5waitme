@@ -16,18 +16,9 @@ const MINUTES_MAX = 60
 const PRICE_MIN = 3
 const PRICE_MAX = 20
 
-const MIN_VISUAL_FILL = 0.15
-
 function rangeGradientPercent(value, min, max) {
   if (max <= min) return 0
   return ((value - min) / (max - min)) * 100
-}
-
-function rangeGradientPercentWithMinVisual(value, min, max) {
-  if (max <= min) return MIN_VISUAL_FILL * 100
-  const normalized = (value - min) / (max - min)
-  const visualFill = Math.max(normalized, MIN_VISUAL_FILL)
-  return visualFill * 100
 }
 
 /** Misma base visual que “Continuar con Apple” en `LoginButtons.jsx`. */
@@ -161,10 +152,7 @@ export default function CreateAlertCard({
     () => rangeGradientPercent(minutes, MINUTES_MIN, MINUTES_MAX),
     [minutes]
   )
-  const pricePct = useMemo(
-    () => rangeGradientPercentWithMinVisual(price, PRICE_MIN, PRICE_MAX),
-    [price]
-  )
+  const pricePct = useMemo(() => rangeGradientPercent(price, PRICE_MIN, PRICE_MAX), [price])
 
   const minutesTrackStyle = useMemo(
     () => ({
