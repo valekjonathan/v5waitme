@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { reverseGeocodeMapbox } from '../../../services/geocodingSpain.js'
-import { getCurrentLocationFast, getCurrentPosition } from '../../../services/location.js'
 import { getGlobalMapInstance } from '../../map/mapInstance.js'
-import { IconClock, IconEuro, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
+import { getLngLatAtParkedPinGap } from '../../map/mapControls.js'
+import { IconClock, IconCoins, IconMapPin, WAITME_ROW_ICON_SLOT } from './icons.jsx'
 
 const rangeClass = 'waitme-create-alert-range'
 
@@ -64,31 +64,6 @@ export default function CreateAlertCard({
 
   useEffect(() => {
     let cancelled = false
-    const applyAddr = async (lat, lng) => {
-      const line = await reverseGeocodeMapbox(lat, lng)
-      if (!cancelled && line) setAddressSafe(line)
-    }
-    const fast = getCurrentLocationFast()
-    if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
-      void applyAddr(fast.latitude, fast.longitude)
-      return () => {
-        cancelled = true
-      }
-    }
-    getCurrentPosition(
-      (v) => {
-        if (cancelled || !v) return
-        void applyAddr(v.lat, v.lng)
-      },
-      () => {}
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [setAddressSafe])
-
-  useEffect(() => {
-    let cancelled = false
     let pollId = null
     const throttleMs = 450
 
@@ -106,15 +81,16 @@ export default function CreateAlertCard({
       if (!map?.on || moveEndHandlerRef.current) return
       const handler = () => {
         try {
-          const c = map.getCenter?.()
-          if (!c || !Number.isFinite(c.lat) || !Number.isFinite(c.lng)) return
-          scheduleReverse(c.lat, c.lng)
+          const ll = getLngLatAtParkedPinGap(map)
+          if (!ll || !Number.isFinite(ll.lat) || !Number.isFinite(ll.lng)) return
+          scheduleReverse(ll.lat, ll.lng)
         } catch {
           /* */
         }
       }
       moveEndHandlerRef.current = handler
       map.on('moveend', handler)
+      handler()
     }
 
     const tryMap = getGlobalMapInstance()
@@ -323,7 +299,7 @@ export default function CreateAlertCard({
               top: 2,
             }}
           >
-            <IconEuro size={22} strokeWidth={2} />
+            <IconCoins size={22} strokeWidth={2} />
           </span>
           <div style={{ flex: 1, marginTop: 8 }}>
             <label style={{ color: '#fff', fontSize: 12, fontWeight: 500, display: 'block' }}>

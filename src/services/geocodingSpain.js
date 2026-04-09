@@ -1,4 +1,5 @@
 import { getMapboxAccessToken } from '../features/map/constants/mapbox.js'
+import { distanceMeters } from './location.js'
 
 /**
  * Geocodificación inversa (Mapbox): dirección legible a partir de coordenadas.
@@ -57,6 +58,44 @@ export async function searchSpainStreets(query, opts = {}) {
 
   if (!res.ok) return []
   return Array.isArray(data.features) ? data.features : []
+}
+
+/**
+ * Ordena sugerencias: mejor coincidencia de texto primero; a igualdad, más cercanas al usuario.
+ */
+export function rankSpainStreetFeatures(features, query, userLat, userLng) {
+  if (!Array.isArray(features) || features.length === 0) return []
+  const q = (query || '').trim().toLowerCase()
+  if (!q) return features
+  const hasUser = Number.isFinite(userLat) && Number.isFinite(userLng)
+
+  const labelOf = (f) =>
+    (
+      formatAddress(f) ||
+      (typeof f.place_name === 'string' ? f.place_name : '') ||
+      (typeof f.text === 'string' ? f.text : '') ||
+      ''
+    ).toLowerCase()
+
+  const scoreText = (f) => {
+    const label = labelOf(f)
+    if (!label.includes(q)) return 0
+    if (label.startsWith(q)) return 1000
+    return 800 - Math.min(400, label.indexOf(q))
+  }
+
+  const distM = (f) => {
+    const c = f.center
+    if (!Array.isArray(c) || c.length < 2 || !hasUser) return Number.POSITIVE_INFINITY
+    return distanceMeters(userLat, userLng, c[1], c[0])
+  }
+
+  return [...features].sort((a, b) => {
+    const sa = scoreText(a)
+    const sb = scoreText(b)
+    if (sb !== sa) return sb - sa
+    return distM(a) - distM(b)
+  })
 }
 
 /**

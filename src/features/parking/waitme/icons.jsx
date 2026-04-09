@@ -265,6 +265,16 @@ export function IconEuro({ className = '', size = 22, strokeWidth = 2 }) {
   )
 }
 
+/** Precio / dinero sin símbolo €; mismo shell que IconClock (22×22 en filas CreateAlertCard). */
+export function IconCoins({ className = '', size = 22, strokeWidth = 2 }) {
+  return (
+    <WaitmeIconStroke24 className={className} size={size} strokeWidth={strokeWidth}>
+      <circle cx="8" cy="8" r="5" />
+      <circle cx="16" cy="16" r="5" />
+    </WaitmeIconStroke24>
+  )
+}
+
 export function IconNavigation({ className = '', size = 12, strokeWidth = 2 }) {
   return (
     <svg

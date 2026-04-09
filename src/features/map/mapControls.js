@@ -3,6 +3,7 @@ import {
   getMapFollowUserGps,
   getParkingMapPinMode,
   getWaitmePinOffsetYSuppressed,
+  setParkedAutoAlignGps,
   setSearchFollowUserGps,
 } from './mapSession.js'
 import { getGlobalMapInstance } from './mapInstance.js'
@@ -133,6 +134,30 @@ export function alignParkedGpsMarkerToGap(map, lngLat) {
   })
 }
 
+/**
+ * (lng,lat) bajo el centro del hueco buscador–tarjeta (misma referencia que `alignParkedGpsMarkerToGap`).
+ * Para reverse geocode de la dirección mostrada en la tarjeta «Estoy aparcado aquí».
+ */
+export function getLngLatAtParkedPinGap(map) {
+  if (!map?.unproject) return null
+  const search = document.querySelector(GAP_SEARCH_BOTTOM)
+  const card = document.querySelector(GAP_CARD_TOP)
+  if (!search || !card) return null
+  const mapRect = map.getContainer().getBoundingClientRect()
+  const searchBottom = search.getBoundingClientRect().bottom - mapRect.top
+  const cardTop = card.getBoundingClientRect().top - mapRect.top
+  if (!(cardTop > searchBottom)) return null
+  const targetY = (searchBottom + cardTop) / 2
+  const targetX = mapRect.width / 2
+  try {
+    const ll = map.unproject({ x: targetX, y: targetY })
+    if (!ll || !Number.isFinite(ll.lng) || !Number.isFinite(ll.lat)) return null
+    return { lng: ll.lng, lat: ll.lat }
+  } catch {
+    return null
+  }
+}
+
 /** Home/Login con pin hero: sin offset Y global (cámara por punta + `computeMapCenterUnderPixelTarget`). */
 export function getWaitmeMapCameraOptions() {
   if (typeof window === 'undefined') {
@@ -223,6 +248,10 @@ export function jumpMapToGpsSearch(map, lng, lat) {
 export function recenterGlobalMapOnUser() {
   const map = getGlobalMapInstance()
   if (!map?.isStyleLoaded?.()) return
+
+  if (getParkingMapPinMode() === 'parked') {
+    setParkedAutoAlignGps(true)
+  }
 
   if (getParkingMapPinMode() === 'search') {
     setSearchFollowUserGps(true)

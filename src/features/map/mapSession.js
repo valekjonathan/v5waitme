@@ -7,6 +7,20 @@ let followUserGps = true
 /** Solo pantalla parking «¿Dónde quieres aparcar?»: seguir cámara al GPS tras pulsar «Ubicación» hasta que el usuario arrastre. */
 let searchFollowUserGps = false
 
+/**
+ * «Estoy aparcado aquí»: mientras true, cada tick GPS alinea el mapa al hueco del pin.
+ * Se pone false al arrastrar/rotar/inclinar el mapa; solo vuelve true al pulsar «Ubicación» o al entrar de nuevo en parked.
+ */
+let parkedAutoAlignGps = true
+
+export function setParkedAutoAlignGps(value) {
+  parkedAutoAlignGps = Boolean(value)
+}
+
+export function getParkedAutoAlignGps() {
+  return parkedAutoAlignGps
+}
+
 /** `search` | `parked` cuando `Map` usa `parkingBandPinAdjust`; null si no aplica. */
 let parkingMapPinMode = null
 

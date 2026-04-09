@@ -11,9 +11,11 @@ import {
   reapplyMapVisualLayers,
 } from '../constants/mapbox.js'
 import {
+  getParkedAutoAlignGps,
   getSearchFollowUserGps,
   setMapFollowUserGps,
   setMapReadOnlySession,
+  setParkedAutoAlignGps,
   setParkingMapPinMode,
   setSearchFollowUserGps,
   setWaitmePinOffsetYSuppressed,
@@ -414,6 +416,52 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
 
+  const parkingPinModePrevRef = useRef(parkingPinMode)
+  useEffect(() => {
+    if (parkingPinMode === 'parked' && parkingPinModePrevRef.current !== 'parked') {
+      setParkedAutoAlignGps(true)
+    }
+    parkingPinModePrevRef.current = parkingPinMode
+  }, [parkingPinMode])
+
+  /** Parked: el usuario arrastra/rote/inclina → dejar de seguir el GPS hasta pulsar «Ubicación». */
+  useEffect(() => {
+    if (!parkingBandPinAdjust || parkingPinMode !== 'parked' || unavailable || import.meta.env?.MODE === 'test') {
+      return undefined
+    }
+    let cancelled = false
+    let attached = false
+    let pollId = null
+    const stop = () => setParkedAutoAlignGps(false)
+    pollId = window.setInterval(() => {
+      if (attached || cancelled) return
+      const map = getGlobalMapInstance()
+      if (!map?.on) return
+      map.on('dragstart', stop)
+      map.on('rotatestart', stop)
+      map.on('pitchstart', stop)
+      attached = true
+      if (pollId != null) {
+        window.clearInterval(pollId)
+        pollId = null
+      }
+    }, 100)
+    return () => {
+      cancelled = true
+      if (pollId != null) window.clearInterval(pollId)
+      const map = getGlobalMapInstance()
+      if (map?.off) {
+        try {
+          map.off('dragstart', stop)
+          map.off('rotatestart', stop)
+          map.off('pitchstart', stop)
+        } catch {
+          /* */
+        }
+      }
+    }
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+
   /**
    * “Dónde quieres aparcar”: en el primer ciclo con layout listo, misma cámara/GPS que “Estoy aparcado aquí”.
    * Después se desactiva el seguimiento que mueve el mapa al GPS para conservar arrastre + pin en píxeles.
@@ -523,7 +571,9 @@ export default function Map({
 
         if (!map.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
-          alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
+          if (getParkedAutoAlignGps()) {
+            alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
+          }
           return
         }
         if (followUserGpsRef.current) {

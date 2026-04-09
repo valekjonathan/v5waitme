@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCurrentLocationFast } from '../../../services/location.js'
-import { formatAddress, searchSpainStreets } from '../../../services/geocodingSpain.js'
+import { formatAddress, rankSpainStreetFeatures, searchSpainStreets } from '../../../services/geocodingSpain.js'
 import { IconSearch } from './icons.jsx'
 import { LAYOUT } from '../../../ui/layout/layout'
 
@@ -102,7 +102,14 @@ export default function StreetSearch({
 
       if (id !== requestIdRef.current) return
 
-      setResults(Array.isArray(res) ? res : [])
+      const list = Array.isArray(res) ? res : []
+      const ranked = rankSpainStreetFeatures(
+        list,
+        trimmed,
+        fast?.latitude ?? null,
+        fast?.longitude ?? null
+      )
+      setResults(ranked)
     } catch (e) {
       if (id !== requestIdRef.current) return
     } finally {
