@@ -1,6 +1,6 @@
 /**
  * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
- * Cada lectura válida → low-pass (α dinámico por accuracy) + velocidad (deg/s→m/s) + predicción solo en movimiento → `notify()`.
+ * Cada lectura válida → solo low-pass (α por accuracy) → `notify()`. Sin predicción ni velocidad derivada.
  * Sin batching: un tick GPS procesado → una emisión.
  *
  * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
@@ -139,35 +139,18 @@ try {
   /* */
 }
 
-/** Raw GPS ya validado (antes del low-pass). */
-let lastRaw = null
-/** Última posición emitida (tras filtro + predicción); base del siguiente low-pass. */
+/** Última posición emitida (solo suavizada); base del siguiente low-pass. */
 let lastFiltered = null
-let velocity = { lat: 0, lng: 0 }
 
 function getAlpha(accuracy) {
-  if (!accuracy) return 0.2
+  if (!accuracy) return 0.25
   if (accuracy < 10) return 0.15
-  if (accuracy < 30) return 0.25
-  return 0.35
+  if (accuracy < 30) return 0.2
+  return 0.3
 }
-
-/** Velocidad escalar (m/s) desde componentes en grados/s a la latitud dada (coherente con `speed` del API). */
-function speedMetersPerSecondFromDegVelocity(velLatDegS, velLngDegS, latDeg) {
-  if (!Number.isFinite(velLatDegS) || !Number.isFinite(velLngDegS) || !Number.isFinite(latDeg)) return 0
-  const φ = (latDeg * Math.PI) / 180
-  const mPerDegLat = 111320
-  const mPerDegLng = 111320 * Math.cos(φ)
-  const vn = velLatDegS * mPerDegLat
-  const ve = velLngDegS * mPerDegLng
-  return Math.sqrt(vn * vn + ve * ve)
-}
-
-/** Por debajo de esto se considera quieto: sin lookahead (evita “respirar” el mapa con ruido estático). */
-const STATIONARY_SPEED_MPS = 0.35
 
 /**
- * Low-pass (α por accuracy) + velocidad + predicción solo si hay movimiento real; un tick → una emisión vía `notify`.
+ * Low-pass exponencial por accuracy; un tick → una emisión. Sin predicción ni velocidad derivada.
  */
 function emitSmoothedLocation(raw) {
   if (
@@ -188,40 +171,9 @@ function emitSmoothedLocation(raw) {
     ? lastFiltered.longitude + alpha * (raw.longitude - lastFiltered.longitude)
     : raw.longitude
 
-  const dt = Math.max(
-    (raw.timestamp - (lastRaw?.timestamp ?? raw.timestamp)) / 1000,
-    0.016
-  )
-
-  velocity.lat = (filteredLat - (lastFiltered?.latitude ?? filteredLat)) / dt
-  velocity.lng = (filteredLng - (lastFiltered?.longitude ?? filteredLng)) / dt
-
-  const derivedMps = speedMetersPerSecondFromDegVelocity(velocity.lat, velocity.lng, raw.latitude)
-  const speedForPrediction =
-    raw.speed != null && Number.isFinite(raw.speed) && raw.speed >= 0 ? raw.speed : derivedMps
-
-  let predictionTime = 0
-  if (speedForPrediction > STATIONARY_SPEED_MPS) {
-    if (speedForPrediction > 2.5) predictionTime = 0.42
-    else if (speedForPrediction > 1.2) predictionTime = 0.25
-    else predictionTime = 0.1
-  }
-
-  if (
-    predictionTime > 0 &&
-    typeof raw.accuracy === 'number' &&
-    Number.isFinite(raw.accuracy) &&
-    raw.accuracy > 40
-  ) {
-    predictionTime *= Math.max(0, 1 - (raw.accuracy - 40) / 120)
-  }
-
-  const predictedLat = filteredLat + velocity.lat * predictionTime
-  const predictedLng = filteredLng + velocity.lng * predictionTime
-
   const finalLocation = {
-    latitude: predictedLat,
-    longitude: predictedLng,
+    latitude: filteredLat,
+    longitude: filteredLng,
     accuracy: raw.accuracy,
     heading: raw.heading ?? null,
     speed: raw.speed ?? null,
@@ -230,7 +182,6 @@ function emitSmoothedLocation(raw) {
 
   notify(finalLocation)
 
-  lastRaw = raw
   lastFiltered = finalLocation
 }
 
