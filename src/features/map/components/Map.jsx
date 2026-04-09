@@ -27,7 +27,6 @@ import {
 import {
   alignParkedGpsMarkerToGap,
   centerParkingMapOnGpsLikeParked,
-  computeMapCenterAligningLngLatToPixel,
   GAP_CARD_TOP,
   GAP_SEARCH_BOTTOM,
   getWaitmeMapCameraOptions,
@@ -153,51 +152,55 @@ function centerMapOnUserImmediate(map, loc) {
   }
 }
 
-const HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX = 1
-
 /**
- * Home/Login: pin fijo; mapa bajo la punta `[data-waitme-pin-tip]`.
- * Misma matemática que parking gap (`computeMapCenterAligningLngLatToPixel`) + hasta 2 `jumpTo` si el error en px > 1.
+ * Home/Login (`readOnly` + `hideViewportCenterPin` + sin parking): pin fijo; el mapa se mueve en cada GPS.
+ * Un `jumpTo` por actualización; sin ease, sin verificación en dos pasos, sin límites de repeticiones.
  */
 function jumpHomeLoginMapUnderHeroPinTip(map, lng, lat) {
   if (typeof document === 'undefined') return
-  if (!map?.jumpTo || !map?.project || !map.isStyleLoaded?.()) return
+  if (!map?.jumpTo || !map?.project || !map?.unproject) return
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+
+  const pin = document.querySelector('[data-waitme-pin-tip]')
+  if (!pin) return
+
   const wrap = map.getContainer()
   if (!(wrap instanceof HTMLElement)) return
-  const pin = document.querySelector('[data-waitme-pin-tip]')
-  if (!(pin instanceof HTMLElement)) return
-  const mapRect = wrap.getBoundingClientRect()
-  if (mapRect.width < 2 || mapRect.height < 2) return
+
   const pinRect = pin.getBoundingClientRect()
+  const mapRect = wrap.getBoundingClientRect()
+
+  if (mapRect.width === 0 || mapRect.height === 0) return
+
   const targetX = pinRect.left + pinRect.width / 2 - mapRect.left
   const targetY = pinRect.bottom - mapRect.top
-  if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return
 
-  const applyIfNeeded = (epsilon) => {
-    const nc = computeMapCenterAligningLngLatToPixel(map, lng, lat, targetX, targetY, epsilon)
-    if (!nc) return false
-    try {
-      map.jumpTo({ center: nc })
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  applyIfNeeded(0.5)
-
-  let p
+  let projected
   try {
-    p = map.project([lng, lat])
+    projected = map.project([lng, lat])
   } catch {
     return
   }
-  const errOk =
-    Math.abs(p.x - targetX) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX &&
-    Math.abs(p.y - targetY) <= HOME_LOGIN_PIN_VERIFY_MAX_ERR_PX
-  if (!errOk) {
-    applyIfNeeded(0)
+
+  const dx = projected.x - targetX
+  const dy = projected.y - targetY
+
+  let newCenter
+  try {
+    newCenter = map.unproject({
+      x: wrap.clientWidth / 2 + dx,
+      y: wrap.clientHeight / 2 + dy,
+    })
+  } catch {
+    return
+  }
+
+  try {
+    map.jumpTo({
+      center: newCenter,
+    })
+  } catch {
+    /* */
   }
 }
 
@@ -559,21 +562,23 @@ export default function Map({
           return
         }
 
+        const isHeroHomeLogin =
+          readOnlyRef.current &&
+          hideViewportCenterPinRef.current &&
+          !parkingBandPinAdjustRef.current
+
+        if (isHeroHomeLogin) {
+          jumpHomeLoginMapUnderHeroPinTip(map, loc.longitude, loc.latitude)
+          return
+        }
+
         if (!map.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
           alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
           return
         }
         if (followUserGpsRef.current) {
-          if (
-            readOnlyRef.current &&
-            hideViewportCenterPinRef.current &&
-            !parkingBandPinAdjustRef.current
-          ) {
-            jumpHomeLoginMapUnderHeroPinTip(map, loc.longitude, loc.latitude)
-          } else {
-            centerMapOnUser(map, loc)
-          }
+          centerMapOnUser(map, loc)
         }
       })
     }
@@ -592,16 +597,14 @@ export default function Map({
         if (existingLoadCancelled) return
         applyPostLoadStyle(existingMap, readOnlyRef.current)
         const fast = getCurrentLocationFast()
-        if (followUserGpsRef.current && fast) {
-          if (
-            readOnlyRef.current &&
-            hideViewportCenterPinRef.current &&
-            !parkingBandPinAdjustRef.current
-          ) {
-            jumpHomeLoginMapUnderHeroPinTip(existingMap, fast.longitude, fast.latitude)
-          } else {
-            centerMapOnUserImmediate(existingMap, fast)
-          }
+        const isHeroHomeLogin =
+          readOnlyRef.current &&
+          hideViewportCenterPinRef.current &&
+          !parkingBandPinAdjustRef.current
+        if (isHeroHomeLogin && fast) {
+          jumpHomeLoginMapUnderHeroPinTip(existingMap, fast.longitude, fast.latitude)
+        } else if (followUserGpsRef.current && fast) {
+          centerMapOnUserImmediate(existingMap, fast)
         }
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
           if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
@@ -649,36 +652,40 @@ export default function Map({
 
     const onFirstLoad = () => {
       applyPostLoadStyle(map, readOnlyRef.current)
-      if (followUserGpsRef.current) {
+      const isHeroHomeLogin =
+        readOnlyRef.current &&
+        hideViewportCenterPinRef.current &&
+        !parkingBandPinAdjustRef.current
+
+      if (isHeroHomeLogin) {
         const fast = getCurrentLocationFast()
         if (fast) {
-          if (
-            readOnlyRef.current &&
-            hideViewportCenterPinRef.current &&
-            !parkingBandPinAdjustRef.current
-          ) {
-            jumpHomeLoginMapUnderHeroPinTip(map, fast.longitude, fast.latitude)
-          } else {
-            centerMapOnUserImmediate(map, fast)
-          }
+          jumpHomeLoginMapUnderHeroPinTip(map, fast.longitude, fast.latitude)
+        } else {
+          getCurrentPosition(
+            (validated) => {
+              if (!validated) return
+              const m = getGlobalMapInstance()
+              if (!m) return
+              jumpHomeLoginMapUnderHeroPinTip(m, validated.lng, validated.lat)
+            },
+            () => {}
+          )
+        }
+      } else if (followUserGpsRef.current) {
+        const fast = getCurrentLocationFast()
+        if (fast) {
+          centerMapOnUserImmediate(map, fast)
         } else {
           getCurrentPosition(
             (validated) => {
               if (!validated || !followUserGpsRef.current) return
               const m = getGlobalMapInstance()
               if (!m) return
-              if (
-                readOnlyRef.current &&
-                hideViewportCenterPinRef.current &&
-                !parkingBandPinAdjustRef.current
-              ) {
-                jumpHomeLoginMapUnderHeroPinTip(m, validated.lng, validated.lat)
-              } else {
-                centerMapOnUserImmediate(m, {
-                  latitude: validated.lat,
-                  longitude: validated.lng,
-                })
-              }
+              centerMapOnUserImmediate(m, {
+                latitude: validated.lat,
+                longitude: validated.lng,
+              })
             },
             () => {}
           )
