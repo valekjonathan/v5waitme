@@ -1,6 +1,6 @@
 /**
  * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
- * Cada lectura válida → solo low-pass (α por accuracy) → `notify()`. Sin predicción ni velocidad derivada.
+ * Cada lectura válida → coordenadas crudas del navegador → `notify()` (sin smoothing: cero lag artificial).
  * Sin batching: un tick GPS procesado → una emisión.
  *
  * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
@@ -139,50 +139,19 @@ try {
   /* */
 }
 
-/** Última posición emitida (solo suavizada); base del siguiente low-pass. */
-let lastFiltered = null
-
-function getAlpha(accuracy) {
-  if (!accuracy) return 0.25
-  if (accuracy < 10) return 0.15
-  if (accuracy < 30) return 0.2
-  return 0.3
-}
-
 /**
- * Low-pass exponencial por accuracy; un tick → una emisión. Sin predicción ni velocidad derivada.
+ * Un tick del pipeline GPS → payload canónico (misma forma que `notify`).
  */
-function emitSmoothedLocation(raw) {
-  if (
-    !raw ||
-    !Number.isFinite(raw.latitude) ||
-    !Number.isFinite(raw.longitude) ||
-    !isValidGps(raw.latitude, raw.longitude)
-  ) {
-    return
-  }
-
-  const alpha = getAlpha(raw.accuracy)
-
-  const filteredLat = lastFiltered
-    ? lastFiltered.latitude + alpha * (raw.latitude - lastFiltered.latitude)
-    : raw.latitude
-  const filteredLng = lastFiltered
-    ? lastFiltered.longitude + alpha * (raw.longitude - lastFiltered.longitude)
-    : raw.longitude
-
-  const finalLocation = {
-    latitude: filteredLat,
-    longitude: filteredLng,
-    accuracy: raw.accuracy,
-    heading: raw.heading ?? null,
-    speed: raw.speed ?? null,
-    timestamp: raw.timestamp,
-  }
-
-  notify(finalLocation)
-
-  lastFiltered = finalLocation
+function notifyFromGpsPayload(p) {
+  if (!p) return
+  notify({
+    latitude: p.lat,
+    longitude: p.lng,
+    accuracy: p.accuracy,
+    timestamp: p.ts,
+    heading: p.heading ?? null,
+    speed: p.speed ?? null,
+  })
 }
 
 /**
@@ -244,7 +213,7 @@ export function startLocationTracking() {
     const simulate = () => {
       lat += 0.00002
       lng += 0.00002
-      emitSmoothedLocation({
+      notify({
         latitude: lat,
         longitude: lng,
         accuracy: 5,
@@ -275,15 +244,7 @@ export function startLocationTracking() {
   geoWatchId = navigator.geolocation.watchPosition(
     (pos) => {
       const p = payloadFromBrowserPosition(pos)
-      if (p)
-        emitSmoothedLocation({
-          latitude: p.lat,
-          longitude: p.lng,
-          accuracy: p.accuracy,
-          timestamp: p.ts,
-          heading: p.heading,
-          speed: p.speed,
-        })
+      notifyFromGpsPayload(p)
     },
     () => {
       /* errores puntuales: el stream sigue vivo */
