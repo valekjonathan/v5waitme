@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { colors } from '../../design/colors'
 import { radius } from '../../design/radius'
@@ -79,10 +79,10 @@ function nextTempId() {
  */
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
-  /** Solo `threadId` del hilo; nunca `id` (puede ser peer UUID en tarjetas). */
+  /** Solo `threadId` del hilo; nunca mezclar con `id` (peer en tarjetas). */
   const threadId = String(s.threadId ?? '').trim()
   const threadPending = isWaitmePendingThreadId(threadId)
-  const peerIdStr = String(s.peerUserId ?? s.peer_user_id ?? '').trim()
+  const peerIdStr = String(s.peer_user_id ?? '').trim()
   const displayName = String(s.snapshot_user_name ?? s.user_name ?? s.name ?? '').trim()
   const peerPhotoUploaded = String(s.user_photo ?? '').trim()
   const peerAvatar =
@@ -112,15 +112,11 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
 
   const separatorLabel = 'Hoy'
 
-  const scrollBottom = useCallback(() => {
+  useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [])
-
-  useEffect(() => {
-    scrollBottom()
-  }, [messages, scrollBottom])
+  }, [messages])
 
   useEffect(() => {
     return () => {
@@ -128,7 +124,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     }
   }, [attachPreviewUrl])
 
-  const onAttachImageChosen = useCallback((e) => {
+  function onAttachImageChosen(e) {
     const input = e.target
     const f = input.files?.[0]
     input.value = ''
@@ -138,14 +134,14 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
       return URL.createObjectURL(f)
     })
     setAttachOpen(false)
-  }, [])
+  }
 
-  const clearAttachPreview = useCallback(() => {
+  function clearAttachPreview() {
     setAttachPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return null
     })
-  }, [])
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -223,7 +219,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     }
   }, [threadId, userId, localFallback])
 
-  const sendMine = useCallback(async () => {
+  async function sendMine() {
     const t = draft.trim()
     if (!t || sending || !threadId || isWaitmePendingThreadId(threadId)) return
     if (!localFallback && !isRealSupabaseAuthUid(userId)) return
@@ -248,17 +244,14 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
       )
     }
     setSending(false)
-  }, [draft, localFallback, sending, threadId, userId])
+  }
 
-  const isReadSimulated = useCallback(
-    (idx) => {
-      for (let i = idx + 1; i < messages.length; i++) {
-        if (messages[i]?.from === 'them') return true
-      }
-      return false
-    },
-    [messages]
-  )
+  function isReadSimulated(idx) {
+    for (let i = idx + 1; i < messages.length; i++) {
+      if (messages[i]?.from === 'them') return true
+    }
+    return false
+  }
 
   return (
     <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">

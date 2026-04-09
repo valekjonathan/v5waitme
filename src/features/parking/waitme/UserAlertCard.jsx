@@ -242,7 +242,8 @@ function UserAlertCard({
   /** Hora mostrada arriba a la derecha (lista Chats). */
   time: chatTimeProp = '',
 }) {
-  const display = resolveDisplayRow(user, streetPickAddress)
+  /** Lista chats: fila = mapper DM; no mezclar con `simulatedUserToAlert` ni spreads de mapa. */
+  const display = isChat ? user : resolveDisplayRow(user, streetPickAddress)
 
   const normalizedUserLocation = useMemo(() => {
     if (!userLocation) return null
@@ -359,8 +360,8 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** Lista Chats: mapper DM garantiza `user.id === peer_user_id` (peer); el hilo va en `user.threadId`. */
-  const uid = String(user?.id ?? '').trim()
+  /** Reseñas: solo peer del mapper (`peer_user_id`); el hilo es `user.threadId`. */
+  const uid = String(user?.peer_user_id ?? '').trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()

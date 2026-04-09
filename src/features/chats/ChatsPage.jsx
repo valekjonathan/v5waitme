@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { colors } from '../../design/colors'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
@@ -11,14 +11,11 @@ import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitme
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
-import { getProfile } from '../../services/profile.js'
 import {
   getOrCreateDmThread,
   isDmDevFallbackThread,
   listDmThreadsForUser,
-  WAITME_PENDING_THREAD_ID,
 } from '../../services/waitmeChats.js'
-import { generateReviewsForEntityId, getAverage } from '../../lib/reviewsModel'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -30,19 +27,54 @@ function clearChatHashFromUrl() {
   }
 }
 
+async function fetchThreadsForUser(uid) {
+  const { data, error } = await listDmThreadsForUser(uid)
+  if (error) return { list: [], error }
+  return { list: Array.isArray(data) ? data : [], error: null }
+}
+
+/**
+ * @param {{
+ *   peerUserId: string
+ *   userId: string
+ *   listFetchSeqRef: { current: number }
+ *   setThreads: (v: unknown[]) => void
+ *   setFetchError: (v: unknown) => void
+ *   openThreadById: (tid: string) => void
+ *   logTag: string
+ *   isCancelled: () => boolean
+ * }} p
+ */
+async function runGetOrCreateThenList(p) {
+  const seq = ++p.listFetchSeqRef.current
+  const { data: tid, error } = await getOrCreateDmThread(p.peerUserId)
+  if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
+  if (error) {
+    console.error(`[WaitMe][Chats] getOrCreateDmThread (${p.logTag})`, error)
+    return
+  }
+  if (!tid) return
+  const { list, error: listErr } = await fetchThreadsForUser(p.userId)
+  if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
+  if (listErr) {
+    p.setFetchError(listErr)
+    p.setThreads([])
+    return
+  }
+  p.setThreads(list)
+  p.setFetchError(null)
+  p.openThreadById(String(tid))
+}
+
 export default function ChatsPage() {
   const nav = useAppScreen()
   const { user } = useAuth()
   const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState([])
-  /** Incrementar para refrescar lista tras RPC (bootstrap / deep link) sin useCallback. */
-  const [listTick, setListTick] = useState(0)
-  const [loadError, setLoadError] = useState(null)
-  /** Solo ruta sin snapshot de tarjeta (hash/bookmark). */
-  const [resolvedBootstrapSummary, setResolvedBootstrapSummary] = useState(null)
-  /** UUID real del hilo cuando abrimos desde tarjeta (tras RPC). */
-  const [resolvedDirectThreadId, setResolvedDirectThreadId] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
+  /** Evita que dos `listDmThreadsForUser` concurrentes pisen la lista (orden de respuesta). */
+  const listFetchSeqRef = useRef(0)
 
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
@@ -53,126 +85,94 @@ export default function ChatsPage() {
   const pendingVis = nav.pendingDmVisual
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
-  function openThread(id) {
-    const sid = String(id ?? '')
-    if (!sid) return
-    setThreadId(sid)
+  function openThreadById(tid) {
+    const s = String(tid ?? '').trim()
+    if (!s) return
+    setThreadId(s)
   }
 
   useEffect(() => {
     let cancelled = false
     if (!canLoadChats) {
       setThreads([])
-      setLoadError(null)
-      return
+      setFetchError(null)
+      return undefined
     }
-    setLoadError(null)
+    setFetchError(null)
+    const seq = ++listFetchSeqRef.current
     void (async () => {
-      const { data, error } = await listDmThreadsForUser(userId)
-      if (cancelled) return
+      const { list, error } = await fetchThreadsForUser(userId)
+      if (cancelled || seq !== listFetchSeqRef.current) return
       if (error) {
-        setLoadError(error)
+        setFetchError(error)
         setThreads([])
       } else {
-        setThreads(Array.isArray(data) ? data : [])
-        setLoadError(null)
+        setThreads(list)
+        setFetchError(null)
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, userId, listTick])
+  }, [canLoadChats, userId])
 
   useEffect(() => {
-    if (loadError) return
+    if (fetchError) return
     nav.syncChatUnreadFromThreads?.(threads)
-  }, [nav, threads, loadError])
+  }, [nav, threads, fetchError])
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
-    setResolvedBootstrapSummary(null)
-    setResolvedDirectThreadId(null)
     setThreadId(null)
     nav.clearPendingDmVisual?.()
   }, [nav?.chatsListResetGeneration, nav])
 
-  /** Desde tarjeta mapa: un solo RPC en segundo plano; el hilo ya se muestra con snapshot. */
+  /** Si el hilo ya no está en la lista (datos reales), no dejar threadId colgado. */
   useEffect(() => {
-    if (!canLoadChats || !directMatch || !hashPeer) return
+    if (!threadId) return
+    if (threads.length === 0) return
+    const ok = threads.some((t) => String(t.threadId) === String(threadId))
+    if (!ok) setThreadId(null)
+  }, [threadId, threads])
+
+  /** Mapa → chat con snapshot: un RPC y lista actualizada; fila activa sale del mapper. */
+  useEffect(() => {
+    if (!canLoadChats || !directMatch || !hashPeer) return undefined
     let cancelled = false
-    void (async () => {
-      const { data: tid, error } = await getOrCreateDmThread(hashPeer)
-      if (cancelled) return
-      if (error) {
-        console.error('[WaitMe][Chats] getOrCreateDmThread (direct)', error)
-        return
-      }
-      if (tid) setResolvedDirectThreadId(tid)
-      setListTick((n) => n + 1)
-    })()
+    void runGetOrCreateThenList({
+      peerUserId: hashPeer,
+      userId,
+      listFetchSeqRef,
+      setThreads,
+      setFetchError,
+      openThreadById,
+      logTag: 'direct',
+      isCancelled: () => cancelled,
+    })
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, directMatch, hashPeer])
+  }, [canLoadChats, directMatch, hashPeer, userId])
 
-  /** Hash/pending sin snapshot (p. ej. enlace guardado): relleno tras red. */
+  /** Hash o peer pendiente en sessionStorage: mismo flujo — lista del mapper, sin objetos armados aquí. */
   useEffect(() => {
-    if (!canLoadChats) return
-    const peer = parseChatPeerFromHash() ?? takePendingDmPeerUserId()
-    if (!peer) return
-    if (nav.pendingDmVisual?.peerId === peer) return
+    if (!canLoadChats) return undefined
+    const peerFromHash = parseChatPeerFromHash()
+    const peer = peerFromHash ?? takePendingDmPeerUserId()
+    if (!peer) return undefined
+    if (nav.pendingDmVisual?.peerId === peer) return undefined
 
     let cancelled = false
-    void (async () => {
-      const { data: tid, error } = await getOrCreateDmThread(peer)
-      if (cancelled) return
-      if (error) {
-        console.error('[WaitMe][Chats] getOrCreateDmThread', error)
-        return
-      }
-      if (!tid) return
-
-      let displayName = ''
-      let userPhoto = null
-      const { data: prof } = await getProfile(peer)
-      if (cancelled) return
-      displayName = String(prof?.full_name ?? '').trim()
-      userPhoto = prof?.avatar_url != null ? String(prof.avatar_url).trim() || null : null
-      if (!displayName) {
-        const listResult = await listDmThreadsForUser(userId)
-        const list = Array.isArray(listResult.data) ? listResult.data : []
-        const row = list.find((t) => t.threadId === tid)
-        displayName = String(row?.name ?? '').trim()
-        if (!userPhoto && row?.user_photo) userPhoto = String(row.user_photo).trim() || null
-      }
-      if (cancelled) return
-
-      const bootstrapReviews = generateReviewsForEntityId(peer)
-      const summary = {
-        threadId: tid,
-        /** Siempre peer UUID (reseñas / tarjeta); el hilo va en threadId. */
-        id: peer,
-        peer_user_id: peer,
-        name: displayName,
-        user_name: displayName,
-        snapshot_user_name: displayName,
-        reviews: bootstrapReviews,
-        rating: getAverage(bootstrapReviews),
-        lastMessage: '',
-        time: '',
-        brand: '',
-        model: '',
-        plate: '',
-        peerUserId: peer,
-        user_photo: userPhoto,
-        unreadCount: 0,
-        phone: null,
-        allow_phone_calls: false,
-      }
-      setResolvedBootstrapSummary(summary)
-      setThreadId(String(tid))
-      setListTick((n) => n + 1)
-    })()
+    void runGetOrCreateThenList({
+      peerUserId: peer,
+      userId,
+      listFetchSeqRef,
+      setThreads,
+      setFetchError,
+      openThreadById,
+      logTag: 'bootstrap',
+      isCancelled: () => cancelled,
+    })
     return () => {
       cancelled = true
     }
@@ -183,61 +183,24 @@ export default function ChatsPage() {
     ? threads
     : threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
 
-  const fromListForActive =
-    filteredThreads.find((t) => t.threadId === threadId) ??
-    threads.find((t) => t.threadId === threadId) ??
-    null
-  const activeSummary =
-    fromListForActive ??
-    (threadId && resolvedBootstrapSummary && resolvedBootstrapSummary.threadId === threadId
-      ? resolvedBootstrapSummary
-      : null)
-
-  let directThreadSummary = null
-  if (directMatch && pendingVis && hashPeer) {
-    const tid = resolvedDirectThreadId
-    const snap = String(pendingVis.userName ?? pendingVis.displayName ?? '').trim()
-    const directReviews = generateReviewsForEntityId(hashPeer)
-    directThreadSummary = {
-      threadId: tid ?? WAITME_PENDING_THREAD_ID,
-      id: hashPeer,
-      peer_user_id: hashPeer,
-      name: snap,
-      user_name: snap,
-      snapshot_user_name: snap,
-      peerUserId: hashPeer,
-      user_photo: pendingVis.userPhoto,
-      phone: pendingVis.phone,
-      allow_phone_calls: pendingVis.allowPhoneCalls,
-      reviews: directReviews,
-      rating: getAverage(directReviews),
-      lastMessage: '',
-      time: '',
-      brand: '',
-      model: '',
-      plate: '',
-      unreadCount: 0,
-    }
-  }
+  const activeSummary = threadId
+    ? filteredThreads.find((t) => String(t.threadId) === String(threadId)) ??
+      threads.find((t) => String(t.threadId) === String(threadId)) ??
+      null
+    : null
 
   function handleBackFromThread() {
-    setResolvedBootstrapSummary(null)
-    setResolvedDirectThreadId(null)
     setThreadId(null)
     nav.clearPendingDmVisual?.()
     clearChatHashFromUrl()
   }
 
-  const showDirectThread = Boolean(directMatch && directThreadSummary)
-  const showListThread = Boolean(!showDirectThread && activeSummary && threadId)
-
-  if (showDirectThread || showListThread) {
-    const summary = showDirectThread ? directThreadSummary : activeSummary
-    const tid = String(summary?.threadId ?? '')
+  if (threadId && activeSummary) {
+    const tid = String(activeSummary.threadId).trim()
     const localFb = isDmDevFallbackThread(tid)
     return (
       <ChatThreadView
-        summary={summary}
+        summary={activeSummary}
         userId={userId}
         localFallback={localFb}
         onBack={handleBackFromThread}
@@ -285,7 +248,7 @@ export default function ChatsPage() {
             placeholder="Buscar..."
             placeholderMuted
             enableSuggestions={false}
-            onQueryChange={(q) => setListFilter(q)}
+            onQueryChange={(query) => setListFilter(query)}
           />
         </div>
 
@@ -301,7 +264,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {canLoadChats && loadError && threads.length === 0 ? (
+          {canLoadChats && fetchError && threads.length === 0 ? (
             <div
               style={{
                 padding: 16,
@@ -317,7 +280,7 @@ export default function ChatsPage() {
             </div>
           ) : null}
 
-          {!loadError && filteredThreads.length === 0 ? (
+          {!fetchError && filteredThreads.length === 0 ? (
             <div
               style={{
                 flex: 1,
@@ -342,17 +305,17 @@ export default function ChatsPage() {
                   lineHeight: 1.45,
                 }}
               >
-                No hay conversaciones que coincidan
+                {threads.length === 0 ? 'No hay conversaciones' : 'No hay conversaciones que coincidan'}
               </p>
             </div>
           ) : null}
 
-          {!loadError && filteredThreads.length > 0
+          {!fetchError && filteredThreads.length > 0
             ? filteredThreads.map((t) => {
-                const threadIdStr = String(t.threadId ?? '').trim()
+                const threadKey = String(t.threadId).trim()
                 return (
                   <div
-                    key={threadIdStr}
+                    key={threadKey}
                     role="button"
                     tabIndex={0}
                     onClick={(e) => {
@@ -364,14 +327,14 @@ export default function ChatsPage() {
                         return
                       }
                       if (e.target.closest('[data-waitme-chat-delete]')) return
-                      if (!threadIdStr) return
-                      openThread(threadIdStr)
+                      if (!threadKey) return
+                      openThreadById(threadKey)
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        if (!threadIdStr) return
-                        openThread(threadIdStr)
+                        if (!threadKey) return
+                        openThreadById(threadKey)
                       }
                     }}
                     style={{ cursor: 'pointer', flexShrink: 0 }}
@@ -383,7 +346,7 @@ export default function ChatsPage() {
                       time={t.time}
                       isEmpty={false}
                       onBuyAlert={() => {}}
-                      onChat={() => openThread(threadIdStr)}
+                      onChat={() => openThreadById(threadKey)}
                       onCall={() => {}}
                     />
                   </div>

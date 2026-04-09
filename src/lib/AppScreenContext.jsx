@@ -44,16 +44,16 @@ export function AppScreenProvider({ children }) {
     const next = /** @type {Record<string, number>} */ ({})
     for (const t of Array.isArray(list) ? list : []) {
       if (!t || typeof t !== 'object') continue
-      const threadKey = String(t.threadId ?? '')
-      if (!threadKey) continue
+      if (t.threadId == null || t.threadId === '') continue
+      const threadKey = String(t.threadId)
       next[threadKey] = Math.max(0, Number(t.unreadCount ?? 0))
     }
     setChatUnreadByThread(next)
   }, [])
 
-  const clearChatThreadUnread = useCallback((threadId) => {
-    const id = String(threadId ?? '')
-    if (!id) return
+  const clearChatThreadUnread = useCallback((tid) => {
+    if (tid == null || tid === '') return
+    const id = String(tid)
     setChatUnreadByThread((prev) => ({ ...prev, [id]: 0 }))
   }, [])
 
