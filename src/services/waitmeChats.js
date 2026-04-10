@@ -484,6 +484,31 @@ export async function sendDmMessage(userId, threadId, body) {
 }
 
 /**
+ * Solo fallback DEV: añade un mensaje como el peer (vendedor) para simulación WaitMe.
+ * @param {string} threadId
+ * @param {string} body
+ * @returns {{ ok: boolean }}
+ */
+export function appendDevFallbackPeerMessage(threadId, body) {
+  if (!devFallbackAllowed() || !isDmDevFallbackThread(threadId)) return { ok: false }
+  const trimmed = String(body ?? '').trim()
+  if (!trimmed) return { ok: false }
+  seedFallbackDmIfNeeded()
+  const list = fallbackThreadMessages.get(String(threadId))
+  if (!list) return { ok: false }
+  const at = formatDmMsgTime(new Date().toISOString())
+  const row = {
+    id: `fb-peer-${Date.now()}`,
+    from: /** @type {'them'} */ ('them'),
+    text: trimmed,
+    at,
+  }
+  list.push(row)
+  touchFallbackListPreview(String(threadId), trimmed, at)
+  return { ok: true }
+}
+
+/**
  * @param {string} otherUserId
  */
 export async function getOrCreateDmThread(otherUserId) {

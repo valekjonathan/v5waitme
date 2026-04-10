@@ -134,6 +134,16 @@ export function AppScreenProvider({ children }) {
     setReservations((prev) => [...prev, reservation])
   }, [])
 
+  const patchReservation = useCallback((reservationId, patch) => {
+    const id = String(reservationId ?? '').trim()
+    if (!id || !patch || typeof patch !== 'object') return
+    setReservations((prev) =>
+      prev.map((r) =>
+        r && typeof r === 'object' && String(r.id) === id ? { ...r, ...patch } : r
+      )
+    )
+  }, [])
+
   const markWaitMeSentToSeller = useCallback((sellerId) => {
     const s = String(sellerId ?? '').trim()
     if (!s) return
@@ -618,6 +628,7 @@ export function AppScreenProvider({ children }) {
       openReservations,
       reservations,
       createReservation,
+      patchReservation,
       openChats,
       openChatsRoot,
       openChatsWithPeer,
@@ -667,6 +678,7 @@ export function AppScreenProvider({ children }) {
       openAlerts,
       openReservations,
       createReservation,
+      patchReservation,
       reservations,
       openChats,
       openChatsRoot,

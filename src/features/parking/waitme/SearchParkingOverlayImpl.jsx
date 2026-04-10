@@ -11,14 +11,14 @@ import {
 } from '../../../services/location.js'
 import { useAuth } from '../../../lib/AuthContext'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import { isRealSupabaseAuthUid } from '../../../services/authUid.js'
-import { isSupabaseConfigured } from '../../../services/supabase.js'
+import { WAITME_ARRIVAL_MINUTES } from '../../../services/waitmePurchaseRequests.js'
 import {
-  fetchPendingPurchaseForBuyerSeller,
-  insertPurchaseRequest,
-  updatePurchaseThreadId,
-} from '../../../services/waitmePurchaseRequests.js'
-import { getOrCreateDmThread, listDmThreadsForUser, sendDmMessage } from '../../../services/waitmeChats.js'
+  appendDevFallbackPeerMessage,
+  getOrCreateDmThread,
+  isDmDevFallbackThread,
+  listDmThreadsForUser,
+  sendDmMessage,
+} from '../../../services/waitmeChats.js'
 import { buildReservationFromAlert } from '../../../services/waitmeReservations.js'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import ConfirmModal from '../../../ui/ConfirmModal.jsx'
@@ -68,7 +68,9 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     openThread,
     syncChatThreadList,
     createReservation,
-    openReservations,
+    patchReservation,
+    setBuyerWaitmeNotice,
+    setBuyerWaitmeArrivalUntilMs,
   } = useAppScreen()
   const [confirmBuyUser, setConfirmBuyUser] = useState(/** @type {Record<string, unknown> | null} */ (null))
   const [purchaseBusy, setPurchaseBusy] = useState(false)
@@ -83,6 +85,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const [filters, setFilters] = useState(WAITME_DEFAULT_SEARCH_FILTERS)
   const [isCardVisible, setIsCardVisible] = useState(true)
   const parkingCardStackRef = useRef(null)
+  const acceptSimTimerRef = useRef(/** @type {ReturnType<typeof setTimeout> | null} */ (null))
   const [parkingCardStackH, setParkingCardStackH] = useState(0)
 
   useEffect(() => {
@@ -138,20 +141,13 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const waitMeAlreadySent = Boolean(sellerIdForCard && hasSentWaitMeToSeller(sellerIdForCard))
 
   useEffect(() => {
-    let cancelled = false
-    const uid = authUser?.id != null ? String(authUser.id) : ''
-    if (!uid || !sellerIdForCard || !isSupabaseConfigured() || !isRealSupabaseAuthUid(uid)) {
-      return undefined
-    }
-    void (async () => {
-      const { data } = await fetchPendingPurchaseForBuyerSeller(uid, sellerIdForCard)
-      if (cancelled || !data) return
-      markWaitMeSentToSeller(sellerIdForCard)
-    })()
     return () => {
-      cancelled = true
+      if (acceptSimTimerRef.current != null) {
+        clearTimeout(acceptSimTimerRef.current)
+        acceptSimTimerRef.current = null
+      }
     }
-  }, [authUser?.id, sellerIdForCard, markWaitMeSentToSeller])
+  }, [])
 
   useEffect(() => {
     if (selectedUserId && !allUsers.some((u) => u.id === selectedUserId)) {
@@ -193,49 +189,11 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     }
 
     setPurchaseError(null)
-
-    const canUseSupabasePurchase = isSupabaseConfigured() && isRealSupabaseAuthUid(uid)
-
-    if (canUseSupabasePurchase && !isRealSupabaseAuthUid(sellerId)) {
-      setPurchaseError(
-        'Este vendedor es simulado; la compra WaitMe requiere un usuario real en Supabase.'
-      )
-      return
-    }
-
-    if (!canUseSupabasePurchase) {
-      try {
-        const reservation = buildReservationFromAlert(snapshot, uid)
-        createReservation(reservation)
-        markWaitMeSentToSeller(sellerId)
-        setConfirmBuyUser(null)
-        openReservations()
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        setPurchaseError(msg || 'No se pudo registrar la reserva.')
-      }
-      return
-    }
-
     setPurchaseBusy(true)
+
     try {
-      let requestRow = null
-      const { data: existing } = await fetchPendingPurchaseForBuyerSeller(uid, sellerId)
-      if (existing) {
-        requestRow = existing
-      } else {
-        const price = Number(snapshot.price ?? snapshot.priceEUR ?? 0)
-        const { data, error } = await insertPurchaseRequest(uid, sellerId, price, snapshot)
-        if (error || !data) {
-          setPurchaseError(
-            error?.message
-              ? `No se pudo enviar la solicitud: ${error.message}`
-              : 'No se pudo enviar la solicitud (comprueba Supabase y la migración waitme_purchase_requests).'
-          )
-          return
-        }
-        requestRow = data
-      }
+      const reservation = buildReservationFromAlert(snapshot, uid)
+      createReservation(reservation)
 
       const { data: threadId, error: tErr } = await getOrCreateDmThread(sellerId)
       if (tErr || threadId == null || threadId === '') {
@@ -247,28 +205,50 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         return
       }
 
-      if (requestRow?.id && String(requestRow.threadId ?? '') !== String(threadId)) {
-        await updatePurchaseThreadId(String(requestRow.id), String(threadId))
-      }
-
-      const reqId = requestRow?.id != null ? String(requestRow.id) : ''
-      const introKey = reqId ? `waitme_intro_${reqId}` : ''
-      if (
-        introKey &&
-        typeof window !== 'undefined' &&
-        !window.sessionStorage.getItem(introKey)
-      ) {
-        await sendDmMessage(uid, String(threadId), 'Hey! quiero comprar tu WaitMe!')
-        window.sessionStorage.setItem(introKey, '1')
-      }
+      const tid = String(threadId)
+      await sendDmMessage(uid, tid, 'Hey! quiero comprar tu WaitMe!')
 
       markWaitMeSentToSeller(sellerId)
 
       const { data: threads } = await listDmThreadsForUser(uid)
       const list = Array.isArray(threads) ? threads : []
       syncChatThreadList?.(list)
-      openThread(String(threadId), list)
+      openThread(tid, list)
       setConfirmBuyUser(null)
+
+      const resId = reservation.id
+      if (acceptSimTimerRef.current != null) {
+        clearTimeout(acceptSimTimerRef.current)
+        acceptSimTimerRef.current = null
+      }
+      acceptSimTimerRef.current = window.setTimeout(() => {
+        acceptSimTimerRef.current = null
+        const arrivalMs = Date.now() + WAITME_ARRIVAL_MINUTES * 60 * 1000
+        patchReservation(resId, {
+          status: 'locked',
+          acceptedUntilMs: arrivalMs,
+        })
+        setBuyerWaitmeNotice(
+          `El vendedor aceptó tu WaitMe. Tienes ${WAITME_ARRIVAL_MINUTES} minutos para llegar.`
+        )
+        setBuyerWaitmeArrivalUntilMs(arrivalMs)
+        window.setTimeout(() => {
+          setBuyerWaitmeNotice(null)
+          setBuyerWaitmeArrivalUntilMs(null)
+        }, 12000)
+
+        const replyBody = `Vale, te espero ${WAITME_ARRIVAL_MINUTES} minutos`
+        void (async () => {
+          if (isDmDevFallbackThread(tid)) {
+            appendDevFallbackPeerMessage(tid, replyBody)
+          } else {
+            await sendDmMessage(sellerId, tid, replyBody)
+          }
+          const { data: threads2 } = await listDmThreadsForUser(uid)
+          const list2 = Array.isArray(threads2) ? threads2 : []
+          syncChatThreadList?.(list2)
+        })()
+      }, 1000)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setPurchaseError(msg || 'Error al completar la compra.')
@@ -280,9 +260,11 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     confirmBuyUser,
     createReservation,
     markWaitMeSentToSeller,
-    openReservations,
     openThread,
+    patchReservation,
     purchaseBusy,
+    setBuyerWaitmeArrivalUntilMs,
+    setBuyerWaitmeNotice,
     syncChatThreadList,
   ])
 
