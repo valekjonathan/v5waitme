@@ -196,6 +196,13 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
 
     const canUseSupabasePurchase = isSupabaseConfigured() && isRealSupabaseAuthUid(uid)
 
+    if (canUseSupabasePurchase && !isRealSupabaseAuthUid(sellerId)) {
+      setPurchaseError(
+        'Este vendedor es simulado; la compra WaitMe requiere un usuario real en Supabase.'
+      )
+      return
+    }
+
     if (!canUseSupabasePurchase) {
       try {
         const reservation = buildReservationFromAlert(snapshot, uid)

@@ -51,14 +51,23 @@ export async function insertPurchaseRequest(buyerId, sellerId, price, alertSnaps
   if (!isSupabaseConfigured() || !supabase || !isRealSupabaseAuthUid(buyerId)) {
     return { data: null, error: new Error('not_configured') }
   }
+  const sid = String(sellerId ?? '').trim()
+  if (!isRealSupabaseAuthUid(sid)) {
+    return {
+      data: null,
+      error: new Error('El vendedor no es un usuario real (UUID); no uses perfiles simulados.'),
+    }
+  }
+  const snap = alertSnapshot && typeof alertSnapshot === 'object' ? alertSnapshot : {}
   const { data, error } = await supabase
     .from('waitme_purchase_requests')
     .insert({
       buyer_id: buyerId,
-      seller_id: sellerId,
+      seller_id: sid,
       status: 'pending',
       price,
-      alert_snapshot: alertSnapshot,
+      alert_id: null,
+      alert_snapshot: snap,
     })
     .select('*')
     .single()

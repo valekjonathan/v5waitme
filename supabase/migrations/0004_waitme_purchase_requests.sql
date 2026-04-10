@@ -7,6 +7,7 @@ create table if not exists public.waitme_purchase_requests (
   status text not null default 'pending'
     check (status in ('pending', 'accepted', 'rejected', 'cancelled', 'expired')),
   price numeric default 0,
+  alert_id uuid,
   alert_snapshot jsonb,
   thread_id uuid,
   seller_latitude double precision,
