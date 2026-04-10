@@ -72,7 +72,7 @@ export const layoutActionsStyle = {
 }
 
 /** Profile: columna del formulario (scroll en el body de ProfileReviewsLayout). */
-export const profileFormVerticalSlotStyle = {
+const profileFormVerticalSlotStyle = {
   flexShrink: 0,
   width: '100%',
   display: 'flex',

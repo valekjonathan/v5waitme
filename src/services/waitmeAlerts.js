@@ -18,7 +18,7 @@ function devFallbackAllowed() {
  * @param {unknown} error
  * @returns {boolean}
  */
-export function isMissingWaitmeTableError(error) {
+function isMissingWaitmeTableError(error) {
   if (!error || typeof error !== 'object') return false
   const e = /** @type {{ code?: string, message?: string }} */ (error)
   const code = String(e.code ?? '')
@@ -32,11 +32,6 @@ export function isMissingWaitmeTableError(error) {
 
 let _alertsBackendRealOk = true
 let _alertsDevFallbackActive = false
-
-/** Estado tras el último fetch de alertas (solo diagnóstico / informes). */
-export function getWaitmeAlertsBackendState() {
-  return { backendRealOk: _alertsBackendRealOk, devFallbackActive: _alertsDevFallbackActive }
-}
 
 /**
  * @param {string} ownerId

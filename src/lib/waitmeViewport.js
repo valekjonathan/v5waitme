@@ -3,7 +3,7 @@
  * El offset de cámara del pin vive en `Map.jsx` (solo `getBoundingClientRect` del contenedor Mapbox).
  */
 
-export function getWaitmeVisualViewportHeight() {
+function getWaitmeVisualViewportHeight() {
   if (typeof window === 'undefined') return 0
   const vv = window.visualViewport
   if (vv && Number.isFinite(vv.height) && vv.height > 0) return vv.height

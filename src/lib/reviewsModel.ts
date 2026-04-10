@@ -3,7 +3,7 @@
  * Cualquier objeto con `rating` numérico es válido.
  */
 
-export type RatingEntry = { rating: number }
+type RatingEntry = { rating: number }
 
 export function getAverage(
   reviews: ReadonlyArray<{ rating?: number } | null | undefined> | null | undefined

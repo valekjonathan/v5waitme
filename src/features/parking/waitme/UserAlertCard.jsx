@@ -14,6 +14,7 @@ import { getCarFill } from './carUtils.js'
 import { formatTimeHHmm } from './dateEs.js'
 import { IconClock, IconMapPin, IconNavigation, IconX } from './icons.jsx'
 import UserAlertCardActions, { WAITME_BTN_HEIGHT, waitmeOpenTelDialer } from './UserAlertCardActions.jsx'
+import { pravatarImgIdFromString } from '../../../services/dmPeerAvatar.js'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 
 /**
@@ -153,13 +154,6 @@ const CHAT_UNREAD_BADGE_STYLE = {
   fontWeight: 700,
   lineHeight: 1,
   overflow: 'hidden',
-}
-
-function pravatarImgIdFromString(s) {
-  let h = 0
-  const str = String(s || 'user')
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
-  return (h % 70) + 1
 }
 
 /** ID reseñas / peer: siempre el usuario real de la fila (`peer_user_id` en DM). */

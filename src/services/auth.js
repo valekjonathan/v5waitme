@@ -11,7 +11,7 @@ import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /** Único redirect PKCE en iOS/Android nativo; debe estar en Supabase Auth → Redirect URLs. */
-export const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
+const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
 
 /**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.

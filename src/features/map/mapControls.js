@@ -17,7 +17,7 @@ export { GAP_CARD_TOP, GAP_SEARCH_BOTTOM } from './mapGapSelectors.js'
  * Delta desde el punto GPS proyectado al objetivo; el nuevo centro se obtiene desplazando desde
  * `map.project(map.getCenter())` (no `clientWidth/2`), coherente con el transform interno de Mapbox.
  */
-export function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY) {
+function computeMapCenterUnderPixelTarget(map, lng, lat, targetX, targetY) {
   if (!map?.project || !map?.unproject || typeof map.getCenter !== 'function') return null
   if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null
   if (!Number.isFinite(targetX) || !Number.isFinite(targetY)) return null

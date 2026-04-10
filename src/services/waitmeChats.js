@@ -8,7 +8,7 @@ import { resolveDmPeerAvatarUrl } from './dmPeerAvatar.js'
 import { generateReviewsForEntityId, getAverage } from '../lib/reviewsModel'
 
 /** Hilo aún sin UUID real: UI ya montada; mensajes esperan `getOrCreateDmThread`. */
-export const WAITME_PENDING_THREAD_ID = '__waitme_pending_thread__'
+const WAITME_PENDING_THREAD_ID = '__waitme_pending_thread__'
 
 export function isWaitmePendingThreadId(id) {
   return String(id ?? '') === WAITME_PENDING_THREAD_ID
@@ -50,10 +50,6 @@ function isMissingWaitmeRelationError(error) {
 
 let _chatsBackendRealOk = true
 let _chatsDevFallbackActive = false
-
-export function getWaitmeChatsBackendState() {
-  return { backendRealOk: _chatsBackendRealOk, devFallbackActive: _chatsDevFallbackActive }
-}
 
 /** Peer desconocido → tarjeta dinámica: `threadId` = hilo; `id` = peer UUID. */
 const fallbackDynamicListCards = new Map()
@@ -243,7 +239,7 @@ export function formatDmMsgTime(iso) {
  *   lastMessage: { body?: string, created_at?: string } | null,
  * }} p
  */
-export function dmThreadToListCard(p) {
+function dmThreadToListCard(p) {
   const threadId = p.thread.id
   const peerId = String(p.peerId)
   const pr = p.profile && typeof p.profile === 'object' ? p.profile : {}

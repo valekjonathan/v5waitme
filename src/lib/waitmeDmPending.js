@@ -13,17 +13,6 @@ export function parseChatPeerFromHash() {
   }
 }
 
-/**
- * @param {string} peerUserId
- */
-export function stashPendingDmPeerUserId(peerUserId) {
-  try {
-    sessionStorage.setItem(KEY, peerUserId)
-  } catch {
-    /* */
-  }
-}
-
 /** @returns {string | null} */
 export function takePendingDmPeerUserId() {
   try {

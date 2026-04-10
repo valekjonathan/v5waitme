@@ -244,27 +244,6 @@ export function IconClock({ className = '', size = 16, strokeWidth = 2 }) {
   )
 }
 
-export function IconEuro({ className = '', size = 22, strokeWidth = 2 }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M18 7a6 6 0 1 0 0 10" />
-      <path d="M6 10h8" />
-      <path d="M6 14h8" />
-    </svg>
-  )
-}
-
 export function IconNavigation({ className = '', size = 12, strokeWidth = 2 }) {
   return (
     <svg

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { isNavigationEnabledForAlert, openGoogleMapsAt } from '../../../lib/waitmeNavigation.js'
 import { IconClock, IconMessageCircle, IconNavigation, IconPhone, IconPhoneOff } from './icons.jsx'
 
-export function WaitmeCardActionIconButton({
+function WaitmeCardActionIconButton({
   style,
   onClick,
   disabled,

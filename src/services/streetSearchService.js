@@ -10,7 +10,7 @@ const SUGGEST_BASE = 'https://api.mapbox.com/search/searchbox/v1/suggest'
  * Quita CP (5 dígitos), región/país redundantes y normaliza comas para UI tipo mapas.
  * @param {string} text
  */
-export function cleanAddress(text) {
+function cleanAddress(text) {
   if (!text) return ''
   return String(text)
     .replace(/\b\d{5}\b/g, '')
@@ -98,7 +98,7 @@ function rankResults(query, results) {
  * @param {{ latitude?: number, longitude?: number, sessionToken: string }} userLocation
  * @param {AbortSignal} [signal]
  */
-export async function searchStreets(query, userLocation, signal) {
+async function searchStreets(query, userLocation, signal) {
   const token = getMapboxAccessToken()
   if (!token) return []
 
@@ -169,7 +169,7 @@ export async function fetchSelectionPayloadForSuggestion(mapboxId, sessionToken,
   return selectionPayload(feature)
 }
 
-export async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
+async function retrieveStreetSuggestion(mapboxId, sessionToken, signal) {
   const token = getMapboxAccessToken()
   if (!token || mapboxId == null || mapboxId === '' || !sessionToken) return null
 
@@ -200,7 +200,7 @@ export function suggestionDisplayText(suggestion) {
  * Payload tras `/retrieve` (coordenadas en `properties.coordinates`).
  * @param {object | null | undefined} retrievedFeature
  */
-export function selectionPayload(retrievedFeature) {
+function selectionPayload(retrievedFeature) {
   const props = retrievedFeature?.properties
   const coords = props?.coordinates
   const lat = coords?.latitude
