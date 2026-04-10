@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-10T13:41:41.688Z
-Git revision: ffeac9cedb7296bff9eeb8a8f71b4959a55326ce
+Generated: 2026-04-10T13:53:11.287Z
+Git revision: d062c4fc42a8af2daf30ce82f3ce50a9dff83895
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -110,6 +110,7 @@ scripts/
   ngrok-tunnel-lib.mjs
   quality-gate.mjs
   run-browserstack-e2e.mjs
+  supabase-db-push-remote.mjs
   supabase-setup.mjs
   tunnel-dev.mjs
   validate-integrations.mjs
@@ -260,6 +261,7 @@ supabase/
     0002_profiles_avatar_email.sql
     0003_waitme_alerts_and_dm.sql
     0004_waitme_purchase_requests.sql
+    0005_waitme_alerts_and_dm.sql
 test/
   appScreenState.test.js
   authService.test.js

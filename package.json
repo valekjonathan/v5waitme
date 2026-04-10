@@ -33,6 +33,7 @@
     "clean": "node scripts/auto-clean.mjs",
     "knip": "knip --include files,dependencies,unlisted --no-config-hints",
     "supabase:setup": "node scripts/supabase-setup.mjs",
+    "supabase:db:push": "node scripts/supabase-db-push-remote.mjs",
     "supabase:types": "supabase gen types typescript --linked",
     "cap:sync": "npm run build && npx cap sync ios",
     "cap:sync:prod": "node scripts/cap-sync-production.mjs",

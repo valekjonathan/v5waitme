@@ -8,7 +8,7 @@ create table if not exists public.waitme_purchase_requests (
     check (status in ('pending', 'accepted', 'rejected', 'cancelled', 'expired')),
   price numeric default 0,
   alert_snapshot jsonb,
-  thread_id uuid references public.waitme_dm_threads (id) on delete set null,
+  thread_id uuid,
   seller_latitude double precision,
   seller_longitude double precision,
   accepted_until timestamptz,
