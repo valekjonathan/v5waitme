@@ -1,3 +1,5 @@
+import '../styles/global.css'
+import './bootstrapApp.js'
 import { AppScreenProvider, useAppScreen } from '../lib/AppScreenContext'
 import { AppAuthRoot, useAuth } from '../lib/AuthContext'
 import {
@@ -213,7 +215,7 @@ function clearChatHashFromUrl() {
 }
 
 /** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
-function AuthenticatedMainChrome() {
+function AuthenticatedRoutes() {
   const { user } = useAuth()
   const nav = useAppScreen()
   const {
@@ -298,7 +300,7 @@ function AppGate() {
               open={incompleteModalOpen}
               onClose={closeIncompleteModal}
             />
-            {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
+            {!isProfileComplete ? <ProfilePage /> : <AuthenticatedRoutes />}
           </div>
         </AppLayout>
       </ProfileIncompleteNoticeProvider>
@@ -322,7 +324,7 @@ function AppGate() {
   )
 }
 
-function AppContent() {
+function AuthenticatedMainChrome() {
   /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
   useEffect(() => {
     const isSafariPreview = window.location.search.includes('iphone=true')
@@ -372,9 +374,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
-    <ErrorBoundary name="root">
-      <AppContent />
-    </ErrorBoundary>
-  )
+  return <AuthenticatedMainChrome />
 }

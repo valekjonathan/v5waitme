@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-10T00:14:53.924Z
-Git revision: a31f84fa96c05ea07400930f8296cf536c8e38c6
+Generated: 2026-04-10T00:17:51.432Z
+Git revision: c578c5450872b19ae409786dad59ac236e0272d6
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -116,6 +116,7 @@ scripts/
 src/
   app/
     App.jsx
+    bootstrapApp.js
   design/
     colors.js
     radius.js
