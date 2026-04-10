@@ -34,17 +34,18 @@ const root = path.join(__dirname, '..')
 const VITE_PORT = 5173
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
-/** Misma IP que las sondas HTTP: evita fallos donde `localhost` → ::1 y la app no carga en Safari. */
-const SAFARI_DEV_URL = `http://127.0.0.1:${VITE_PORT}`
+/** Safari debe usar `localhost` para que `window.location.origin` sea `http://localhost:5173` (Supabase OAuth redirect URLs). */
+const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}`
+const LOCALHOST_HTTP_ROOT = `http://localhost:${VITE_PORT}/`
 const VITE_HTTP_WAIT_MS = 60_000
 
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
-  const iphonePreview = `http://127.0.0.1:${VITE_PORT}/?iphone=true`
+  const iphonePreview = `http://localhost:${VITE_PORT}/?iphone=true`
   console.log('\n')
   console.log(
-    `👉 URL Safari (Mac, local) → http://127.0.0.1:${VITE_PORT} (se abre sola si el servidor responde 200)`
+    `👉 URL Safari (Mac, local) → http://localhost:${VITE_PORT} (se abre sola si el servidor responde 200; origen OAuth)`
   )
   console.log(`   Vista previa iPhone en Mac (opcional) → ${iphonePreview}`)
   console.log(`👉 URL iPhone misma red (local) → ${baseDevUrl}`)
@@ -204,6 +205,19 @@ async function main() {
   }
 
   console.log('Vite client OK')
+
+  console.log(`Waiting for ${LOCALHOST_HTTP_ROOT} (origen OAuth / Supabase redirect)...`)
+  const localhostOk = await waitForHttpOk(LOCALHOST_HTTP_ROOT, 30_000)
+  if (!localhostOk) {
+    console.error('LOCALHOST NOT RESPONDING')
+    console.error(
+      '[waitme] Se requiere http://localhost:5173 para OAuth; revisa que Vite escuche en todas las interfaces (vite.config server.host).'
+    )
+    stopNgrok()
+    process.exit(1)
+  }
+  console.log('localhost OK')
+
   console.log('Opening Safari...')
   openDarwinSafari(SAFARI_DEV_URL)
 
