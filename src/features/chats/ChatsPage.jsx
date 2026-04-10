@@ -10,7 +10,11 @@ import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitme
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
-import { getOrCreateDmThread, listDmThreadsForUser } from '../../services/waitmeChats.js'
+import {
+  getDevDmThreadsListSnapshotSync,
+  getOrCreateDmThread,
+  listDmThreadsForUser,
+} from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -34,6 +38,20 @@ function loadThreads(uid) {
  *   isCancelled: () => boolean
  * }} p
  */
+/**
+ * @param {{ getChatThreadListSnapshot?: () => unknown[] }} nav
+ */
+function createInitialThreads(nav) {
+  const snap = nav.getChatThreadListSnapshot?.()
+  if (Array.isArray(snap) && snap.length > 0) return [...snap]
+  const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (dev) {
+    const fb = getDevDmThreadsListSnapshotSync()
+    if (Array.isArray(fb) && fb.length > 0) return fb
+  }
+  return []
+}
+
 async function runGetOrCreateThenList(p) {
   const seq = ++p.listFetchSeqRef.current
   const { data: tid, error } = await getOrCreateDmThread(p.peerUserId)
@@ -54,7 +72,7 @@ export default function ChatsPage() {
   const nav = useAppScreen()
   const { user } = useAuth()
   const [listFilter, setListFilter] = useState('')
-  const [threads, setThreads] = useState([])
+  const [threads, setThreads] = useState(() => createInitialThreads(nav))
   const listFetchSeqRef = useRef(0)
 
   const userId = user?.id ?? ''
@@ -73,7 +91,6 @@ export default function ChatsPage() {
   useEffect(() => {
     let cancelled = false
     if (!canLoadChats) {
-      setThreads([])
       return undefined
     }
     const seq = ++listFetchSeqRef.current

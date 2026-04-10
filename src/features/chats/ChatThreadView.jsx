@@ -283,7 +283,8 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             gap: 8,
             padding: '8px 4px 10px',
             borderBottom: `1px solid ${colors.border}`,
-            backgroundColor: BG,
+            background: `radial-gradient(circle at center, rgba(139,92,246,0.25) 0%, rgba(0,0,0,0) 70%), ${BG}`,
+            boxShadow: '0 0 25px rgba(139,92,246,0.25)',
           }}
         >
           <button

@@ -49,6 +49,12 @@ export function AppScreenProvider({ children }) {
     chatThreadListRef.current = Array.isArray(list) ? list : []
   }, [])
 
+  /** Copia de la última lista sincronizada (p. ej. estado inicial Chats sin flash). */
+  const getChatThreadListSnapshot = useCallback(() => {
+    const cur = chatThreadListRef.current
+    return Array.isArray(cur) ? [...cur] : []
+  }, [])
+
   const clearThreadState = useCallback(() => {
     setActiveThreadId(null)
     setActiveThreadSummary(null)
@@ -326,6 +332,7 @@ export function AppScreenProvider({ children }) {
       openThread,
       closeThread,
       syncChatThreadList,
+      getChatThreadListSnapshot,
       pendingDmVisual,
       clearPendingDmVisual,
       mapFocusGeneration,
@@ -361,6 +368,7 @@ export function AppScreenProvider({ children }) {
       openUserReviews,
       pendingDmVisual,
       syncChatThreadList,
+      getChatThreadListSnapshot,
       syncChatUnreadFromThreads,
       userReviewsPeerRow,
       viewingUserReviewsId,

@@ -151,6 +151,15 @@ function mergeFallbackListCards() {
 }
 
 /**
+ * Lista DM de fallback en DEV (sincrónica) para estado inicial sin flash al abrir Chats.
+ * @returns {unknown[]}
+ */
+export function getDevDmThreadsListSnapshotSync() {
+  if (!devFallbackAllowed()) return []
+  return mergeFallbackListCards()
+}
+
+/**
  * Perfil de cabecera UserReviews desde una fila de lista DM (misma forma que chats).
  *
  * @param {Record<string, unknown>} c
