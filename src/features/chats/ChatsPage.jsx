@@ -27,7 +27,7 @@ function clearChatHashFromUrl() {
   }
 }
 
-function fetchThreads(uid) {
+function loadThreads(uid) {
   return listDmThreadsForUser(uid).then(({ data, error }) => {
     if (error) return []
     return Array.isArray(data) ? data : []
@@ -54,7 +54,7 @@ async function runGetOrCreateThenList(p) {
     return
   }
   if (tid == null || tid === '') return
-  const list = await fetchThreads(p.userId)
+  const list = await loadThreads(p.userId)
   if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
   p.setThreads(list)
   p.openThreadById(String(tid))
@@ -89,9 +89,9 @@ export default function ChatsPage() {
       return undefined
     }
     const seq = ++listFetchSeqRef.current
-    void fetchThreads(userId).then((list) => {
+    void loadThreads(userId).then((rows) => {
       if (cancelled || seq !== listFetchSeqRef.current) return
-      setThreads(list)
+      setThreads(rows)
     })
     return () => {
       cancelled = true
@@ -158,6 +158,10 @@ export default function ChatsPage() {
   const filteredThreads = !q
     ? threads
     : threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
+
+  const listRows = filteredThreads.filter(
+    (t) => t.threadId != null && String(t.threadId).trim() !== ''
+  )
 
   const activeSummary = threadId
     ? filteredThreads.find((t) => String(t.threadId) === String(threadId)) ??
@@ -240,7 +244,7 @@ export default function ChatsPage() {
             gap: 12,
           }}
         >
-          {filteredThreads.map((t) => {
+          {listRows.map((t) => {
             const threadKey = String(t.threadId).trim()
             return (
               <div
@@ -282,7 +286,7 @@ export default function ChatsPage() {
             )
           })}
 
-          {filteredThreads.length === 0 ? (
+          {listRows.length === 0 ? (
             <div
               style={{
                 flex: 1,

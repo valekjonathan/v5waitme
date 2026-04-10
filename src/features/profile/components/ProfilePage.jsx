@@ -38,6 +38,14 @@ const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
 const AUTOSAVE_DEBOUNCE_MS = 600
 const shellStyle = { backgroundColor: colors.background }
 
+/** Shell estable mientras `canRenderProfile` es false (evita pantalla en blanco). */
+const profileBootstrapPlaceholderStyle = {
+  width: '100%',
+  minHeight: '100%',
+  flex: 1,
+  backgroundColor: colors.background,
+}
+
 export default function ProfilePage() {
   const { openHome } = useAppScreen()
   const {
@@ -383,7 +391,16 @@ export default function ProfilePage() {
   const profileHeaderReviewsAvg = useMemo(() => getAverage(getReviewsForScreen()), [])
 
   if (!canRenderProfile) {
-    return null
+    /** Nunca devolver null: evita pantalla en blanco mientras arranca perfil / sesión. */
+    return (
+      <ScreenShell
+        style={shellStyle}
+        mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
+        mainOverflow="hidden"
+      >
+        <div style={profileBootstrapPlaceholderStyle} />
+      </ScreenShell>
+    )
   }
 
   return (

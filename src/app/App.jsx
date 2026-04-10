@@ -114,9 +114,11 @@ function IncompleteProfileModal({ open, onClose, onConfirm }) {
       role="dialog"
       aria-modal={open}
       aria-hidden={!open}
-      hidden={!open}
       aria-labelledby="waitme-incomplete-profile-title"
-      style={modalOverlayStyle}
+      style={{
+        ...modalOverlayStyle,
+        display: open ? 'flex' : 'none',
+      }}
       onClick={onClose}
     >
       <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>

@@ -163,7 +163,11 @@ function pravatarImgIdFromString(s) {
 }
 
 function UserAlertAvatarBlock({ row, onClick }) {
-  const name = String(row?.user_name ?? '').trim() || String(row?.id ?? 'user')
+  const peerLabel =
+    row?.peer_user_id != null && String(row.peer_user_id).trim() !== ''
+      ? String(row.peer_user_id).trim()
+      : 'user'
+  const name = String(row?.user_name ?? '').trim() || peerLabel
   const photo = row?.user_photo
   const seed = useMemo(() => pravatarImgIdFromString(name), [name])
   const [brokenPhoto, setBrokenPhoto] = useState(false)
@@ -172,7 +176,7 @@ function UserAlertAvatarBlock({ row, onClick }) {
   useEffect(() => {
     setBrokenPhoto(false)
     setPravatarIx(seed)
-  }, [seed, photo, row?.peer_user_id, row?.id])
+  }, [seed, photo, row?.peer_user_id])
 
   const useUploaded = Boolean(photo) && !brokenPhoto
   const src = useUploaded ? photo : `https://i.pravatar.cc/150?img=${pravatarIx}`
@@ -360,15 +364,13 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** Lista chats: `user.id` es peer_user_id del mapper. Mapa: peer explícito. */
-  const uid = isChat
-    ? String(user.id != null ? user.id : '').trim()
-    : String(user.peer_user_id != null ? user.peer_user_id : '').trim()
+  /** Reseñas: siempre `user.id` (= peer del mapper / tarjeta). */
+  const reviewPeerId = String(user.id != null ? user.id : '').trim()
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()
-    if (!uid) return
-    openUserReviews(uid)
+    if (!reviewPeerId) return
+    openUserReviews(reviewPeerId)
   }
 
   const badgeBase = {
@@ -596,7 +598,7 @@ function UserAlertCard({
       <div style={{ display: 'flex', gap: 10, alignItems: isChat ? 'flex-start' : undefined }}>
         <UserAlertAvatarBlock
           row={display}
-          onClick={uid ? handleOpenPeerReviews : undefined}
+          onClick={reviewPeerId ? handleOpenPeerReviews : undefined}
         />
 
         <div
@@ -628,16 +630,16 @@ function UserAlertCard({
               }}
             >
               <span
-                {...(isChat && uid ? { 'data-waitme-chat-name-reviews': '' } : {})}
+                {...(isChat && reviewPeerId ? { 'data-waitme-chat-name-reviews': '' } : {})}
                 style={{
                   ...USER_CARD_NAME_STYLE,
-                  cursor: uid ? 'pointer' : undefined,
+                  cursor: reviewPeerId ? 'pointer' : undefined,
                 }}
-                onClick={uid ? handleOpenPeerReviews : undefined}
-                role={uid ? 'button' : undefined}
-                tabIndex={uid ? 0 : undefined}
+                onClick={reviewPeerId ? handleOpenPeerReviews : undefined}
+                role={reviewPeerId ? 'button' : undefined}
+                tabIndex={reviewPeerId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!uid) return
+                  if (!reviewPeerId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -660,13 +662,13 @@ function UserAlertCard({
                   alignItems: 'center',
                   flexShrink: 0,
                   transform: 'translateX(-12px)',
-                  cursor: uid ? 'pointer' : undefined,
+                  cursor: reviewPeerId ? 'pointer' : undefined,
                 }}
-                onClick={uid ? handleOpenPeerReviews : undefined}
-                role={uid ? 'button' : undefined}
-                tabIndex={uid ? 0 : undefined}
+                onClick={reviewPeerId ? handleOpenPeerReviews : undefined}
+                role={reviewPeerId ? 'button' : undefined}
+                tabIndex={reviewPeerId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!uid) return
+                  if (!reviewPeerId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -711,13 +713,13 @@ function UserAlertCard({
                   lineHeight: 1,
                   margin: 0,
                   marginTop: 4,
-                  cursor: uid ? 'pointer' : undefined,
+                  cursor: reviewPeerId ? 'pointer' : undefined,
                 }}
-                onClick={uid ? handleOpenPeerReviews : undefined}
-                role={uid ? 'button' : undefined}
-                tabIndex={uid ? 0 : undefined}
+                onClick={reviewPeerId ? handleOpenPeerReviews : undefined}
+                role={reviewPeerId ? 'button' : undefined}
+                tabIndex={reviewPeerId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!uid) return
+                  if (!reviewPeerId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)
@@ -729,11 +731,11 @@ function UserAlertCard({
 
               <div
                 style={{ position: 'relative', marginTop: 4 }}
-                onClick={uid ? handleOpenPeerReviews : undefined}
-                role={uid ? 'button' : undefined}
-                tabIndex={uid ? 0 : undefined}
+                onClick={reviewPeerId ? handleOpenPeerReviews : undefined}
+                role={reviewPeerId ? 'button' : undefined}
+                tabIndex={reviewPeerId ? 0 : undefined}
                 onKeyDown={(e) => {
-                  if (!uid) return
+                  if (!reviewPeerId) return
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     handleOpenPeerReviews(e)

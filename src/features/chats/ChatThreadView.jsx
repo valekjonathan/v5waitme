@@ -80,10 +80,10 @@ function nextTempId() {
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
   const s = summary && typeof summary === 'object' ? summary : {}
   /** Solo `threadId` del hilo; nunca mezclar con `id` (peer en tarjetas). */
-  const threadId = String(s.threadId ?? '').trim()
+  const threadId = String(s.threadId != null ? s.threadId : '').trim()
   const threadPending = isWaitmePendingThreadId(threadId)
-  const peerIdStr = String(s.peer_user_id ?? '').trim()
-  const displayName = String(s.snapshot_user_name ?? s.user_name ?? s.name ?? '').trim()
+  const peerIdStr = String(s.peer_user_id != null ? s.peer_user_id : '').trim()
+  const displayName = String(s.name != null ? s.name : '').trim()
   const peerPhotoUploaded = String(s.user_photo ?? '').trim()
   const peerAvatar =
     peerPhotoUploaded ||

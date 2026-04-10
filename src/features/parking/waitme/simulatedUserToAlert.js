@@ -12,6 +12,7 @@ export function simulatedUserToAlert(u) {
   const rating = reviews.length ? getAverage(reviews) : 0
   return {
     id: u.id,
+    peer_user_id: u.id,
     user_id: u.id,
     user_name: u.name,
     brand: u.brand,
