@@ -160,8 +160,8 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     server: {
-      /** 0.0.0.0 = mismo dev server para iPhone en LAN + Safari en Mac (localhost:5173). */
-      host: '0.0.0.0',
+      /** `true`: escucha en todas las interfaces (LAN + localhost). Mantiene 5173 fijo. */
+      host: true,
       port: 5173,
       strictPort: true,
       open: false,
