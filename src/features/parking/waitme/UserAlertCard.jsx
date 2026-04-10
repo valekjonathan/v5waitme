@@ -380,7 +380,20 @@ function UserAlertCard({
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()
     if (!reviewPeerId) return
-    openUserReviews(reviewPeerId)
+    openUserReviews(reviewPeerId, {
+      peer_user_id: reviewPeerId,
+      id: reviewPeerId,
+      name: display?.user_name,
+      user_name: display?.user_name,
+      user_photo: display?.user_photo,
+      avatar: display?.user_photo,
+      brand: display?.brand,
+      model: display?.model,
+      plate: display?.plate,
+      color: display?.color,
+      vehicleType: display?.vehicleType,
+      threadId: display?.threadId,
+    })
   }
 
   const badgeBase = {

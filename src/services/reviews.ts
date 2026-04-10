@@ -9,7 +9,7 @@ import {
 // @ts-expect-error Módulo JS del mapa sin tipos; helper estable para perfil mock de reseñas.
 import { getSimulatedUserProfileFromUserId } from '../features/map/simulatedUsers.js'
 // @ts-expect-error waitmeChats.js sin declaración de tipos (.d.ts)
-import { getFallbackDmListCardProfileForPeer } from './waitmeChats.js'
+import { dmListCardRowToProfileForReviews, getFallbackDmListCardProfileForPeer } from './waitmeChats.js'
 
 type Review = {
   id: string
@@ -132,8 +132,20 @@ const PROFILE_PLATES = [
 const PROFILE_COLORS = ['gris', 'negro', 'blanco', 'azul', 'rojo']
 
 /** Perfil mínimo para `ProfileHeader` en reseñas de otro usuario (mock determinista). */
-export function buildMockProfileForUserReviews(userId: string | null) {
+export function buildMockProfileForUserReviews(
+  userId: string | null,
+  peerRowFromContext?: Record<string, unknown> | null
+) {
   const id = String(userId ?? '').trim() || 'user'
+  if (peerRowFromContext && typeof peerRowFromContext === 'object') {
+    const peerId = String(
+      peerRowFromContext.peer_user_id ?? peerRowFromContext.id ?? ''
+    ).trim()
+    if (peerId && peerId === id) {
+      const fromCtx = dmListCardRowToProfileForReviews(peerRowFromContext)
+      if (fromCtx) return fromCtx
+    }
+  }
   const fromSim = getSimulatedUserProfileFromUserId(id)
   if (fromSim) return fromSim
   const fromDmFallback = getFallbackDmListCardProfileForPeer(id)

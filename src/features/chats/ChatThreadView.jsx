@@ -16,6 +16,7 @@ import {
   isWaitmePendingThreadId,
   sendDmMessage,
 } from '../../services/waitmeChats.js'
+import { resolveDmPeerAvatarUrl } from '../../services/dmPeerAvatar.js'
 import { useAuth } from '../../lib/AuthContext'
 
 const BG = colors.background
@@ -63,13 +64,6 @@ const attachMenuItemStyle = {
   cursor: 'pointer',
 }
 
-function pravatarImgIdFromString(s) {
-  let h = 0
-  const str = String(s || 'user')
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0
-  return (h % 70) + 1
-}
-
 function nextTempId() {
   return `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
@@ -84,10 +78,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const threadPending = isWaitmePendingThreadId(threadId)
   const peerIdStr = String(s.peer_user_id != null ? s.peer_user_id : '').trim()
   const displayName = String(s.name != null ? s.name : '').trim()
-  const peerPhotoUploaded = String(s.user_photo ?? '').trim()
-  const peerAvatar =
-    peerPhotoUploaded ||
-    `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(displayName || peerIdStr || threadId)}`
+  const peerAvatar = resolveDmPeerAvatarUrl(s)
   const peerPhone = String(s.phone ?? '').trim()
   const headerCallEnabled = Boolean(peerPhone && s.allow_phone_calls !== false)
   const { openUserReviews } = useAppScreen()
@@ -96,7 +87,10 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
     auth?.user?.user_metadata && typeof auth.user.user_metadata === 'object' ? auth.user.user_metadata : {}
   const myAvatarUrl =
     String(auth?.profile?.avatar_url ?? '').trim() || String(meta.avatar_url ?? meta.picture ?? '').trim()
-  const myAvatarFallback = `https://i.pravatar.cc/150?img=${pravatarImgIdFromString(userId || 'me')}`
+  const myAvatarFallback = resolveDmPeerAvatarUrl({
+    peer_user_id: userId || 'me',
+    name: userId || 'me',
+  })
   const myAvatar = myAvatarUrl || myAvatarFallback
 
   const [messages, setMessages] = useState([])
@@ -313,7 +307,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
             type="button"
             aria-label="Ver reseñas"
             onClick={() => {
-              if (peerIdStr) openUserReviews(peerIdStr)
+              if (peerIdStr) openUserReviews(peerIdStr, s)
             }}
             style={{
               padding: 0,

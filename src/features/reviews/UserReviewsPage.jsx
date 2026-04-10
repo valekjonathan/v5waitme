@@ -20,10 +20,10 @@ import { useAppScreen } from '../../lib/AppScreenContext'
 const shellStyle = { backgroundColor: colors.background }
 
 export default function UserReviewsPage() {
-  const { viewingUserReviewsId } = useAppScreen()
+  const { viewingUserReviewsId, userReviewsPeerRow } = useAppScreen()
   const profile = useMemo(
-    () => buildMockProfileForUserReviews(viewingUserReviewsId),
-    [viewingUserReviewsId]
+    () => buildMockProfileForUserReviews(viewingUserReviewsId, userReviewsPeerRow),
+    [viewingUserReviewsId, userReviewsPeerRow]
   )
   const reviews = useMemo(
     () => getReviewsForUserScreen(String(viewingUserReviewsId ?? '')),

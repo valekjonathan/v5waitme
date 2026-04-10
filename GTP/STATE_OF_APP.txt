@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-10T00:31:54.706Z
-Git revision: 10d14e20cf15ae65566ca15a841e8debf52a9d4f
+Generated: 2026-04-10T00:37:54.435Z
+Git revision: 733d0c99f91df4604783f84159f61e3265638716
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -209,6 +209,7 @@ src/
   services/
     auth.js
     authUid.js
+    dmPeerAvatar.js
     location.js
     profile.js
     reviews.ts
@@ -278,7 +279,7 @@ runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @s
 dev: @babel/eslint-parser, @babel/preset-react, @capacitor/cli, @eslint/js, @percy/cli, @percy/playwright, @playwright/test, @sentry/vite-plugin, @testing-library/react, @types/react, @types/react-dom, @vitejs/plugin-react, @vitest/coverage-v8, browser-sync, browserstack-node-sdk, eslint, eslint-plugin-react, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, jsdom, knip, ngrok, prettier, supabase, typescript, vite, vitest
 
 === SERVICIOS (src/services/) ===
-auth.js, authUid.js, location.js, profile.js, reviews.ts, streetSearchService.js, supabase.js, waitmeAlerts.js, waitmeChats.js
+auth.js, authUid.js, dmPeerAvatar.js, location.js, profile.js, reviews.ts, streetSearchService.js, supabase.js, waitmeAlerts.js, waitmeChats.js
 
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).

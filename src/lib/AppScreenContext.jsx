@@ -30,6 +30,10 @@ export function AppScreenProvider({ children }) {
   const [activeThreadId, setActiveThreadId] = useState(/** @type {string | null} */ (null))
   const [activeThreadSummary, setActiveThreadSummary] = useState(/** @type {Record<string, unknown> | null} */ (null))
   const [viewingUserReviewsId, setViewingUserReviewsId] = useState(/** @type {string | null} */ (null))
+  /** Fila DM / tarjeta peer al abrir reseñas (misma foto que chats). */
+  const [userReviewsPeerRow, setUserReviewsPeerRow] = useState(
+    /** @type {Record<string, unknown> | null} */ (null)
+  )
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
   const [pendingDmVisual, setPendingDmVisual] = useState(
@@ -52,6 +56,7 @@ export function AppScreenProvider({ children }) {
 
   const clearReviewsNavState = useCallback(() => {
     setViewingUserReviewsId(null)
+    setUserReviewsPeerRow(null)
     if (typeof window !== 'undefined' && window.location.hash.startsWith('#/user/')) {
       const { pathname, search } = window.location
       window.history.replaceState(null, '', pathname + search)
@@ -103,16 +108,23 @@ export function AppScreenProvider({ children }) {
   const openReviews = useCallback(() => {
     const uid = user?.id != null ? String(user.id) : ''
     if (!uid) return
+    setUserReviewsPeerRow(null)
     clearThreadState()
     setViewingUserReviewsId(uid)
     setActiveScreen(ACTIVE_SCREEN_REVIEWS)
   }, [clearThreadState, user?.id])
 
   const openUserReviews = useCallback(
-    (incomingUserId) => {
+    (incomingUserId, peerRow) => {
       if (incomingUserId == null || incomingUserId === '') return
       const id = String(incomingUserId).trim()
       if (!id) return
+      if (peerRow && typeof peerRow === 'object') {
+        const pid = String(peerRow.peer_user_id ?? peerRow.id ?? '').trim()
+        setUserReviewsPeerRow(pid === id ? /** @type {Record<string, unknown>} */ (peerRow) : null)
+      } else {
+        setUserReviewsPeerRow(null)
+      }
       clearThreadState()
       setViewingUserReviewsId(id)
       setActiveScreen(ACTIVE_SCREEN_REVIEWS)
@@ -272,6 +284,7 @@ export function AppScreenProvider({ children }) {
       const userM = hash.match(/^#\/user\/([^/?#]+)/)
       if (userM) {
         const id = decodeURIComponent(userM[1])
+        setUserReviewsPeerRow(null)
         setViewingUserReviewsId(id)
         setActiveScreen(ACTIVE_SCREEN_REVIEWS)
         clearThreadState()
@@ -298,6 +311,7 @@ export function AppScreenProvider({ children }) {
       activeThreadId,
       activeThreadSummary,
       viewingUserReviewsId,
+      userReviewsPeerRow,
       openMap,
       openProfile,
       openReviews,
@@ -348,6 +362,7 @@ export function AppScreenProvider({ children }) {
       pendingDmVisual,
       syncChatThreadList,
       syncChatUnreadFromThreads,
+      userReviewsPeerRow,
       viewingUserReviewsId,
     ]
   )

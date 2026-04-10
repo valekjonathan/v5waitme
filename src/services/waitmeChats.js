@@ -4,6 +4,7 @@
  */
 import { supabase, isSupabaseConfigured } from './supabase.js'
 import { isRealSupabaseAuthUid } from './authUid.js'
+import { resolveDmPeerAvatarUrl } from './dmPeerAvatar.js'
 import { generateReviewsForEntityId, getAverage } from '../lib/reviewsModel'
 
 /** Hilo aún sin UUID real: UI ya montada; mensajes esperan `getOrCreateDmThread`. */
@@ -150,6 +151,30 @@ function mergeFallbackListCards() {
 }
 
 /**
+ * Perfil de cabecera UserReviews desde una fila de lista DM (misma forma que chats).
+ *
+ * @param {Record<string, unknown>} c
+ * @returns {null | { id: string, full_name: string, email: string, avatar_url: string, brand: string, model: string, plate: string, color: string, vehicle_type: string }}
+ */
+export function dmListCardRowToProfileForReviews(c) {
+  if (!c || typeof c !== 'object') return null
+  const want = String(c.peer_user_id ?? c.id ?? '').trim()
+  if (!want) return null
+  const colorRaw = String(c.color ?? 'gris').trim().toLowerCase()
+  return {
+    id: want,
+    full_name: String(c.name ?? c.user_name ?? '').trim() || 'Usuario',
+    email: '',
+    avatar_url: resolveDmPeerAvatarUrl(c),
+    brand: String(c.brand ?? ''),
+    model: String(c.model ?? ''),
+    plate: String(c.plate ?? ''),
+    color: colorRaw || 'gris',
+    vehicle_type: String(c.vehicle_type ?? c.vehicleType ?? 'car'),
+  }
+}
+
+/**
  * Perfil de cabecera en UserReviews: misma identidad que la fila de lista chats (fallback dev).
  * Sin esto, `buildMockProfileForUserReviews` usa nombres derivados por hash del UUID (p. ej. Carlos → Iván).
  *
@@ -164,17 +189,7 @@ export function getFallbackDmListCardProfileForPeer(peerUserId) {
   for (const c of mergeFallbackListCards()) {
     const pid = String(c.peer_user_id ?? c.id ?? '').trim()
     if (pid === want) {
-      return {
-        id: want,
-        full_name: String(c.name ?? c.user_name ?? '').trim() || 'Usuario',
-        email: '',
-        avatar_url: String(c.user_photo ?? c.avatar ?? '').trim(),
-        brand: String(c.brand ?? ''),
-        model: String(c.model ?? ''),
-        plate: String(c.plate ?? ''),
-        color: 'gris',
-        vehicle_type: 'car',
-      }
+      return dmListCardRowToProfileForReviews(c)
     }
   }
   return null
