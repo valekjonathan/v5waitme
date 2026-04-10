@@ -9,7 +9,6 @@
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
 import { spawn, spawnSync } from 'node:child_process'
-import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
@@ -85,16 +84,6 @@ function printLsof5173() {
   }
 }
 
-/**
- * Volcado íntegro del buffer capturado (misma salida que en consola, sin resumir).
- * No se usa como señal de ready.
- */
-function dumpViteFullError(buf) {
-  console.log('--- VITE FULL ERROR ---')
-  console.log(buf.length === 0 ? '(empty buffer)' : buf)
-  console.log('--- END ---')
-}
-
 function viteExitPromise(vite) {
   return new Promise((resolve) => {
     vite.once('exit', (code, signal) => resolve({ code: code ?? 0, signal }))
@@ -148,39 +137,18 @@ async function main() {
     WAITME_SKIP_VITE_LAN_LOG: '1',
   }
 
-  console.info(`[waitme] ⑤ Vite --host 0.0.0.0 --port ${VITE_PORT} --strictPort`)
-  console.log('Starting Vite...')
+  console.info(`[waitme] ⑤ npm run dev:vite (vite.config.js → host/port ${VITE_PORT})`)
+  console.log('Starting Vite (persistent)...')
 
-  const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
-  const viteArgs = ['--host', '0.0.0.0', '--port', String(VITE_PORT), '--strictPort']
-  const viteSpawnOpts = {
+  const vite = spawn('npm', ['run', 'dev:vite'], {
     cwd: root,
     env: childEnv,
-    stdio: ['inherit', 'pipe', 'pipe'],
-  }
-  const vite = fs.existsSync(viteJs)
-    ? spawn(process.execPath, [viteJs, ...viteArgs], viteSpawnOpts)
-    : spawn('npx', ['vite', ...viteArgs], {
-        ...viteSpawnOpts,
-        shell: true,
-      })
-
-  let viteOutputBuf = ''
-  const appendBuf = (chunk) => {
-    viteOutputBuf += chunk.toString()
-  }
-
-  vite.stdout?.on('data', (chunk) => {
-    appendBuf(chunk)
-    process.stdout.write(chunk)
+    stdio: 'inherit',
+    shell: true,
   })
-  vite.stderr?.on('data', (chunk) => {
-    appendBuf(chunk)
-    process.stderr.write(chunk)
-  })
+
   vite.on('error', (err) => {
     console.error('[waitme] Vite spawn error:', err.message || err)
-    dumpViteFullError(viteOutputBuf)
     process.exit(1)
   })
 
@@ -193,15 +161,13 @@ async function main() {
   if (first.kind === 'exit') {
     console.error('VITE PROCESS EXITED')
     console.error('exit code:', first.code)
-    dumpViteFullError(viteOutputBuf)
     process.exit(1)
   }
 
   if (!first.ok) {
     console.error('SERVER NOT RESPONDING')
-    dumpViteFullError(viteOutputBuf)
     console.error(
-      '[waitme] No SIGTERM: si Vite sigue vivo, revisa el proceso (p. ej. Activity Monitor) o mata el PID manualmente.'
+      '[waitme] Vite no se detiene desde este script; si sigue en marcha, revisa el proceso (p. ej. Activity Monitor).'
     )
     stopNgrok()
     process.exit(1)
@@ -212,9 +178,8 @@ async function main() {
   const clientOk = await probeHttp200(VITE_HTTP_CLIENT, '*/*')
   if (!clientOk) {
     console.error('VITE BROKEN (client not served)')
-    dumpViteFullError(viteOutputBuf)
     console.error(
-      '[waitme] No SIGTERM: revisa el proceso Vite manualmente si hace falta detenerlo.'
+      '[waitme] Vite no se detiene desde este script; revisa el proceso manualmente si hace falta.'
     )
     stopNgrok()
     process.exit(1)
