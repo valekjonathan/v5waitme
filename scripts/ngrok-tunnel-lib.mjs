@@ -48,18 +48,40 @@ export function hasNgrokAuthtoken() {
   return false
 }
 
+/**
+ * Espera respuestas HTTP reales (fetch), no solo puerto abierto.
+ * Solo éxito si `status === 200` (no 304 ni otros 2xx).
+ *
+ * @param {string} url
+ * @param {number} [maxMs=90_000]
+ */
 export async function waitForHttpOk(url, maxMs = 90_000) {
   const start = Date.now()
+  const intervalMs = 500
   while (Date.now() - start < maxMs) {
     try {
       const res = await fetch(url, { redirect: 'manual', headers: { Accept: 'text/html' } })
-      if (res.ok || res.status === 304) return true
+      if (res.status === 200) return true
     } catch {
-      /* */
+      /* red aún no lista o conexión rechazada */
     }
-    await new Promise((r) => setTimeout(r, 400))
+    await new Promise((r) => setTimeout(r, intervalMs))
   }
   return false
+}
+
+/**
+ * Una sola petición: true solo si el servidor responde 200.
+ *
+ * @param {string} url
+ */
+export async function probeHttp200(url) {
+  try {
+    const res = await fetch(url, { redirect: 'manual', headers: { Accept: 'text/html' } })
+    return res.status === 200
+  } catch {
+    return false
+  }
 }
 
 /**

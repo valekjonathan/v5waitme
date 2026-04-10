@@ -18,6 +18,7 @@ import {
   ngrokBinPath,
   hasNgrokAuthtoken,
   openDarwinSafari,
+  probeHttp200,
   waitForHttpOk,
   waitForNgrokHttpsUrl,
   spawnNgrokHttp,
@@ -30,10 +31,10 @@ const root = path.join(__dirname, '..')
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
-  const safariLocal = 'http://localhost:5173/?iphone=true'
+  const iphonePreview = 'http://localhost:5173/?iphone=true'
   console.log('\n')
-  console.log('👉 URL Safari (Mac, local) → http://localhost:5173')
-  console.log(`   Vista previa iPhone en Mac → ${safariLocal}`)
+  console.log('👉 URL Safari (Mac, local) → http://localhost:5173 (se abre sola si el servidor responde 200)')
+  console.log(`   Vista previa iPhone en Mac (opcional) → ${iphonePreview}`)
   console.log(`👉 URL iPhone misma red (local) → ${baseDevUrl}`)
   console.log('')
   console.log(
@@ -51,10 +52,10 @@ function printUrlBanner(baseDevUrl) {
   )
 }
 
-/** Vite escucha en 0.0.0.0:5173; probar loopback evita depender de LAN ni de pestañas previas. */
-const VITE_LOCAL_OK = 'http://127.0.0.1:5173/'
-/** Misma app que la LAN; Safari Mac usa localhost (OAuth / certificados coherentes en escritorio). */
-const SAFARI_MAC_URL = 'http://localhost:5173/?iphone=true'
+/** Comprobación real del dev server (mismo proceso Vite que sirve en 0.0.0.0:5173). */
+const VITE_HTTP_PROBE = 'http://127.0.0.1:5173/'
+/** Apertura Safari solo tras HTTP 200 verificado en el probe. */
+const SAFARI_DEV_URL = 'http://localhost:5173'
 
 // ① LAN
 const { ip, url } = resolveWaitmeLanDevOrExit()
@@ -90,18 +91,32 @@ const childEnv = {
   WAITME_SKIP_VITE_LAN_LOG: '1',
 }
 
-console.info('[waitme] ⑤ Vite --host 0.0.0.0 --port 5173 --strictPort\n')
+console.info('[waitme] ⑤ Vite --host 0.0.0.0 --port 5173 --strictPort')
+console.log('Starting Vite...')
 
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
 const viteArgs = ['--host', '0.0.0.0', '--port', '5173', '--strictPort']
+const viteSpawnOpts = {
+  cwd: root,
+  env: childEnv,
+  stdio: ['inherit', 'pipe', 'pipe'],
+}
 const vite = fs.existsSync(viteJs)
-  ? spawn(process.execPath, [viteJs, ...viteArgs], { cwd: root, env: childEnv, stdio: 'inherit' })
+  ? spawn(process.execPath, [viteJs, ...viteArgs], viteSpawnOpts)
   : spawn('npx', ['vite', ...viteArgs], {
-      cwd: root,
-      env: childEnv,
-      stdio: 'inherit',
+      ...viteSpawnOpts,
       shell: true,
     })
+
+vite.stdout?.on('data', (chunk) => {
+  process.stdout.write(chunk)
+})
+vite.stderr?.on('data', (chunk) => {
+  process.stderr.write(chunk)
+})
+vite.on('error', (err) => {
+  console.error('[waitme] Vite spawn error:', err.message || err)
+})
 
 let ngrokChild = null
 function stopNgrok() {
@@ -113,20 +128,36 @@ function stopNgrok() {
   ngrokChild = null
 }
 
-let safariOpened = false
-waitForHttpOk(VITE_LOCAL_OK, 45_000).then((ok) => {
-  if (ok && !safariOpened) {
-    safariOpened = true
-    console.info('[waitme] ⑥ Vite listo (HTTP 200 en ' + VITE_LOCAL_OK + ')\n')
-    console.info('[waitme] ⑦ Abriendo Safari →', SAFARI_MAC_URL, '\n')
-    openDarwinSafari(SAFARI_MAC_URL)
-  } else if (!ok) {
-    console.warn(
-      '[waitme] Timeout esperando HTTP 200 en Vite (127.0.0.1:5173). Abre Safari manualmente:\n  ',
-      SAFARI_MAC_URL
-    )
+function killViteDev() {
+  try {
+    vite.kill('SIGTERM')
+  } catch {
+    /* */
   }
-})
+}
+
+const VITE_WAIT_MS = 60_000
+
+void (async () => {
+  console.log('Waiting for http://127.0.0.1:5173...')
+  const ok = await waitForHttpOk(VITE_HTTP_PROBE, VITE_WAIT_MS)
+  if (!ok) {
+    console.error('VITE NOT READY')
+    killViteDev()
+    stopNgrok()
+    process.exit(1)
+  }
+  console.log('Vite ready')
+  console.log('Opening Safari...')
+  openDarwinSafari(SAFARI_DEV_URL)
+
+  const stillUp = await probeHttp200(VITE_HTTP_PROBE)
+  if (!stillUp) {
+    console.warn('Safari opened but server unreachable')
+    return
+  }
+  console.log('DEV SERVER READY → SAFARI OPENED')
+})()
 
 void (async () => {
   if (process.env.WAITME_DEV_NGROK !== '1') {
