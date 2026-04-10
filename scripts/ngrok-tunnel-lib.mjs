@@ -2,7 +2,7 @@
  * Ngrok desde node_modules + token (.env.local / ngrok.yml).
  * Usado por `dev-ios.mjs` y `ngrok-public.mjs`. No invoca BrowserStack.
  */
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
@@ -60,6 +60,21 @@ export async function waitForHttpOk(url, maxMs = 90_000) {
     await new Promise((r) => setTimeout(r, 400))
   }
   return false
+}
+
+/**
+ * macOS: abre o enfoca Safari en la URL usando solo `open` (sin AppleScript).
+ * Repetir el mismo comando con la misma URL es el modo fiable de recargar / traer foco.
+ *
+ * @param {string} url
+ */
+export function openDarwinSafari(url) {
+  if (process.platform !== 'darwin') return
+  try {
+    spawnSync('open', ['-a', 'Safari', url], { stdio: 'ignore' })
+  } catch {
+    /* Safari ausente o `open` falló */
+  }
 }
 
 export async function waitForNgrokHttpsUrl(maxMs = 90_000) {

@@ -17,6 +17,7 @@ import {
   mergeDevEnvFromFiles,
   ngrokBinPath,
   hasNgrokAuthtoken,
+  openDarwinSafari,
   waitForHttpOk,
   waitForNgrokHttpsUrl,
   spawnNgrokHttp,
@@ -50,38 +51,14 @@ function printUrlBanner(baseDevUrl) {
   )
 }
 
-async function waitForRootOk(baseUrl, maxMs = 45000) {
-  const probe = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`
-  const start = Date.now()
-  while (Date.now() - start < maxMs) {
-    try {
-      const res = await fetch(probe, {
-        redirect: 'manual',
-        headers: { Accept: 'text/html' },
-      })
-      if (res.ok || res.status === 304) return true
-    } catch {
-      /* servidor aún no listo */
-    }
-    await new Promise((r) => setTimeout(r, 250))
-  }
-  return false
-}
-
-/** Safari con preview iPhone (`App.jsx` + clase `iphone-preview`). */
-function openSafariIphonePreview(url) {
-  if (process.platform !== 'darwin') return
-  try {
-    spawnSync('open', ['-a', 'Safari', url], { stdio: 'ignore' })
-  } catch {
-    /* Safari ausente */
-  }
-}
+/** Vite escucha en 0.0.0.0:5173; probar loopback evita depender de LAN ni de pestañas previas. */
+const VITE_LOCAL_OK = 'http://127.0.0.1:5173/'
+/** Misma app que la LAN; Safari Mac usa localhost (OAuth / certificados coherentes en escritorio). */
+const SAFARI_MAC_URL = 'http://localhost:5173/?iphone=true'
 
 // ① LAN
 const { ip, url } = resolveWaitmeLanDevOrExit()
 const baseDevUrl = url.replace(/\/$/, '')
-const safariPreviewUrl = `${baseDevUrl}/?iphone=true`
 
 process.env.WAITME_LAN_IP = ip
 process.env.WAITME_CAP_DEV_SERVER_URL = baseDevUrl
@@ -137,16 +114,16 @@ function stopNgrok() {
 }
 
 let safariOpened = false
-waitForRootOk(baseDevUrl).then((ok) => {
+waitForHttpOk(VITE_LOCAL_OK, 45_000).then((ok) => {
   if (ok && !safariOpened) {
     safariOpened = true
-    console.info('[waitme] ⑥ Servidor OK (HTTP en /)\n')
-    console.info('[waitme] ⑦ Abriendo Safari →', safariPreviewUrl, '\n')
-    openSafariIphonePreview(safariPreviewUrl)
+    console.info('[waitme] ⑥ Vite listo (HTTP 200 en ' + VITE_LOCAL_OK + ')\n')
+    console.info('[waitme] ⑦ Abriendo Safari →', SAFARI_MAC_URL, '\n')
+    openDarwinSafari(SAFARI_MAC_URL)
   } else if (!ok) {
     console.warn(
-      '[waitme] Timeout esperando HTTP en /. Abre Safari manualmente:\n  ',
-      safariPreviewUrl
+      '[waitme] Timeout esperando HTTP 200 en Vite (127.0.0.1:5173). Abre Safari manualmente:\n  ',
+      SAFARI_MAC_URL
     )
   }
 })
