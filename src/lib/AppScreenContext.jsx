@@ -12,11 +12,14 @@ import { useAuth } from './AuthContext'
 import { isRealSupabaseAuthUid } from '../services/authUid.js'
 import { isSupabaseConfigured } from '../services/supabase.js'
 import { listDmThreadsForUser } from '../services/waitmeChats.js'
+import { checkReservationProximity, subscribeToLocation } from '../services/location.js'
+import { releasePayment } from '../services/waitmeReservations.js'
 import {
   ACTIVE_SCREEN_ALERTS,
   ACTIVE_SCREEN_CHATS,
   ACTIVE_SCREEN_MAP,
   ACTIVE_SCREEN_PROFILE,
+  ACTIVE_SCREEN_RESERVATIONS,
   ACTIVE_SCREEN_REVIEWS,
   ACTIVE_SCREEN_THREAD,
 } from './appScreenState.js'
@@ -42,6 +45,7 @@ export function AppScreenProvider({ children }) {
     )
   )
   const [chatUnreadByThread, setChatUnreadByThread] = useState(/** @type {Record<string, number>} */ ({}))
+  const [reservations, setReservations] = useState(/** @type {Record<string, unknown>[]} */ ([]))
 
   const chatThreadListRef = useRef(/** @type {unknown[]} */ ([]))
 
@@ -98,6 +102,17 @@ export function AppScreenProvider({ children }) {
     setActiveScreen(ACTIVE_SCREEN_ALERTS)
     clearThreadState()
   }, [clearReviewsNavState, clearThreadState])
+
+  const openReservations = useCallback(() => {
+    clearReviewsNavState()
+    setActiveScreen(ACTIVE_SCREEN_RESERVATIONS)
+    clearThreadState()
+  }, [clearReviewsNavState, clearThreadState])
+
+  const createReservation = useCallback((reservation) => {
+    if (!reservation || typeof reservation !== 'object') return
+    setReservations((prev) => [...prev, reservation])
+  }, [])
 
   const openChats = useCallback(() => {
     clearReviewsNavState()
@@ -210,10 +225,27 @@ export function AppScreenProvider({ children }) {
     [clearReviewsNavState, clearThreadState]
   )
 
+  useEffect(() => {
+    return subscribeToLocation((loc) => {
+      setReservations((prev) => {
+        let changed = false
+        const next = prev.map((r) => {
+          if (!r || typeof r !== 'object') return r
+          if (r.status !== 'locked') return r
+          if (!checkReservationProximity(r, loc)) return r
+          changed = true
+          return releasePayment(r)
+        })
+        return changed ? next : prev
+      })
+    })
+  }, [])
+
   useLayoutEffect(() => {
     const valid = new Set([
       ACTIVE_SCREEN_MAP,
       ACTIVE_SCREEN_ALERTS,
+      ACTIVE_SCREEN_RESERVATIONS,
       ACTIVE_SCREEN_CHATS,
       ACTIVE_SCREEN_PROFILE,
       ACTIVE_SCREEN_REVIEWS,
@@ -326,6 +358,9 @@ export function AppScreenProvider({ children }) {
       openSearchParking,
       openParkHere,
       openAlerts,
+      openReservations,
+      reservations,
+      createReservation,
       openChats,
       openChatsRoot,
       openChatsWithPeer,
@@ -355,6 +390,9 @@ export function AppScreenProvider({ children }) {
       mapFocusGeneration,
       mapMode,
       openAlerts,
+      openReservations,
+      createReservation,
+      reservations,
       openChats,
       openChatsRoot,
       openChatsWithPeer,

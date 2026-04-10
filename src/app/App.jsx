@@ -14,6 +14,7 @@ import ReviewsPage from '../features/reviews/pages/ReviewsPage'
 import UserReviewsPage from '../features/reviews/UserReviewsPage'
 import MapParkingPage from '../features/parking/MapParkingPage'
 import AlertsPage from '../features/alerts/AlertsPage'
+import ReservationsPage from '../features/reservations/ReservationsPage'
 import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
@@ -27,6 +28,7 @@ import {
   ACTIVE_SCREEN_CHATS,
   ACTIVE_SCREEN_MAP,
   ACTIVE_SCREEN_PROFILE,
+  ACTIVE_SCREEN_RESERVATIONS,
   ACTIVE_SCREEN_REVIEWS,
   ACTIVE_SCREEN_THREAD,
 } from '../lib/appScreenState.js'
@@ -253,6 +255,7 @@ function AuthenticatedRoutes() {
   }
 
   if (activeScreen === ACTIVE_SCREEN_CHATS) return <ChatsPage />
+  if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) return <ReservationsPage />
   if (activeScreen === ACTIVE_SCREEN_ALERTS) return <AlertsPage />
   if (activeScreen === ACTIVE_SCREEN_PROFILE) return <ProfilePage />
 

@@ -5,6 +5,7 @@ export const ACTIVE_SCREEN_CHATS = 'chats'
 export const ACTIVE_SCREEN_PROFILE = 'profile'
 export const ACTIVE_SCREEN_REVIEWS = 'reviews'
 export const ACTIVE_SCREEN_THREAD = 'thread'
+export const ACTIVE_SCREEN_RESERVATIONS = 'reservations'
 
 /** @typedef {'home' | 'search' | 'parkHere'} MapMode */
 
@@ -17,6 +18,7 @@ export const APP_SCREEN_CHATS = ACTIVE_SCREEN_CHATS
 export const APP_SCREEN_PROFILE = ACTIVE_SCREEN_PROFILE
 export const APP_SCREEN_REVIEWS = ACTIVE_SCREEN_REVIEWS
 export const APP_SCREEN_USER_REVIEWS = ACTIVE_SCREEN_REVIEWS
+export const APP_SCREEN_RESERVATIONS = ACTIVE_SCREEN_RESERVATIONS
 
 /**
  * Reductor puro (tests). El runtime usa setters en AppScreenContext con reglas de limpieza.
@@ -35,6 +37,8 @@ export function reduceAppScreen(state, action) {
       return ACTIVE_SCREEN_MAP
     case 'openAlerts':
       return ACTIVE_SCREEN_ALERTS
+    case 'openReservations':
+      return ACTIVE_SCREEN_RESERVATIONS
     case 'openChats':
       return ACTIVE_SCREEN_CHATS
     case 'openUserReviews':

@@ -6,6 +6,7 @@ import {
   APP_SCREEN_HOME,
   APP_SCREEN_PARK_HERE,
   APP_SCREEN_PROFILE,
+  APP_SCREEN_RESERVATIONS,
   APP_SCREEN_SEARCH_PARKING,
   APP_SCREEN_USER_REVIEWS,
   reduceAppScreen,
@@ -40,6 +41,10 @@ test('reduceAppScreen: openParkHere', () => {
 
 test('reduceAppScreen: openAlerts', () => {
   assert.equal(reduceAppScreen(APP_SCREEN_HOME, { type: 'openAlerts' }), APP_SCREEN_ALERTS)
+})
+
+test('reduceAppScreen: openReservations', () => {
+  assert.equal(reduceAppScreen(APP_SCREEN_HOME, { type: 'openReservations' }), APP_SCREEN_RESERVATIONS)
 })
 
 test('reduceAppScreen: openChats', () => {

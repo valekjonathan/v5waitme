@@ -418,3 +418,20 @@ export function createPositionGuard(options = {}) {
     return accepted
   }
 }
+
+/**
+ * Comprueba si el usuario está lo bastante cerca del punto de la reserva (desbloqueo simulado).
+ * @param {{ status?: string, location?: { latitude?: number, longitude?: number } | null }} reservation
+ * @param {{ latitude?: number, longitude?: number } | null} userLocation
+ * @returns {boolean}
+ */
+export function checkReservationProximity(reservation, userLocation) {
+  if (!reservation || reservation.status !== 'locked') return false
+  if (!userLocation || !Number.isFinite(userLocation.latitude) || !Number.isFinite(userLocation.longitude)) {
+    return false
+  }
+  const loc = reservation.location
+  if (!loc || !Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude)) return false
+  const d = distanceMeters(userLocation.latitude, userLocation.longitude, loc.latitude, loc.longitude)
+  return d < 5
+}

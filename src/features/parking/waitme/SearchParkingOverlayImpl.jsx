@@ -9,6 +9,10 @@ import {
   getCurrentLocationFast,
   subscribeToLocation,
 } from '../../../services/location.js'
+import { buildReservationFromAlert } from '../../../services/waitmeReservations.js'
+import { useAuth } from '../../../lib/AuthContext'
+import { useAppScreen } from '../../../lib/AppScreenContext'
+import ConfirmModal from '../../../ui/ConfirmModal.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
 import { flyGlobalMapTo } from '../../map/mapControls.js'
 import CreateAlertCard from './CreateAlertCard.jsx'
@@ -48,6 +52,9 @@ const filterBtnStyle = {
 }
 
 export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [] }) {
+  const { user: authUser } = useAuth()
+  const { createReservation, openReservations } = useAppScreen()
+  const [confirmBuyUser, setConfirmBuyUser] = useState(/** @type {Record<string, unknown> | null} */ (null))
   const isSearch = mode === 'search'
   const [address, setAddress] = useState('')
   /** Dirección elegida en autocompletado (sin reverse geocode). */
@@ -117,6 +124,35 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
 
   const onSelectUser = useCallback((userId) => {
     setSelectedUserId(userId)
+  }, [])
+
+  const onBuyAlert = useCallback((alertUser) => {
+    if (!alertUser || typeof alertUser !== 'object') return
+    setConfirmBuyUser(alertUser)
+  }, [])
+
+  const confirmModalOpen = confirmBuyUser != null
+  const confirmPriceNum = confirmBuyUser
+    ? Number(confirmBuyUser.priceEUR ?? confirmBuyUser.price ?? 0)
+    : 0
+  const confirmPriceLabel = Number.isFinite(confirmPriceNum) ? `${confirmPriceNum}€` : '—€'
+  const confirmMessage = `Vas a comprar esta alerta por ${confirmPriceLabel}.\n¿Quieres continuar?`
+
+  const handleConfirmPurchase = useCallback(() => {
+    if (!confirmBuyUser) return
+    const uid = authUser?.id != null ? String(authUser.id) : ''
+    if (!uid) {
+      setConfirmBuyUser(null)
+      return
+    }
+    const reservation = buildReservationFromAlert(confirmBuyUser, uid)
+    createReservation(reservation)
+    setConfirmBuyUser(null)
+    openReservations()
+  }, [authUser?.id, confirmBuyUser, createReservation, openReservations])
+
+  const handleCancelPurchase = useCallback(() => {
+    setConfirmBuyUser(null)
   }, [])
 
   const handleStreetResolved = useCallback((payload) => {
@@ -270,6 +306,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
                   isEmpty={!user}
                   userLocation={userLocation}
                   collapsed={false}
+                  onBuyAlert={onBuyAlert}
                 />
               ) : (
                 <CreateAlertCard
@@ -288,6 +325,13 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       </div>
 
       <MapZoomControls measureLabel={isSearch ? 'navigate' : 'create'} />
+
+      <ConfirmModal
+        open={confirmModalOpen}
+        message={confirmMessage}
+        onCancel={handleCancelPurchase}
+        onConfirm={handleConfirmPurchase}
+      />
     </div>
   )
 }
