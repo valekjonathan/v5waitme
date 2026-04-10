@@ -147,6 +147,16 @@ async function main() {
     shell: true,
   })
 
+  vite.on('exit', (code) => {
+    console.error('VITE PROCESS EXITED')
+    console.error('exit code:', code)
+  })
+
+  vite.on('close', (code) => {
+    console.error('VITE PROCESS CLOSED')
+    console.error('close code:', code)
+  })
+
   vite.on('error', (err) => {
     console.error('[waitme] Vite spawn error:', err.message || err)
     process.exit(1)
