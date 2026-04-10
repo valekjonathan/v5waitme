@@ -24,7 +24,7 @@ npm run dev:ios
 2. Escribe/actualiza **`.env.local`** → `VITE_DEV_LAN_ORIGIN=http://<IP>:5173`.
 3. Define `WAITME_LAN_IP` y `WAITME_CAP_DEV_SERVER_URL` (origen LAN sin query) y ejecuta **`npx cap sync ios`** → `server.url` + `cleartext: true` en la config generada (solo con esa variable; nunca en prod sin ella).
 4. Arranca **Vite** en **5173**, `host: true`, HMR sin overlay agresivo, **sin** abrir navegador desde Vite.
-5. Cuando **`/`** responde **200**, en macOS abre **solo Safari** en `http://<LAN>:5173/?iphone=true`.
+5. Cuando **`/`** responde **200**, en macOS abre **solo Safari** en `http://127.0.0.1:5173` (alineado con las sondas; no `localhost` para evitar IPv4/IPv6).
 
 **Logs**
 

@@ -4,11 +4,13 @@
  * Readiness = solo HTTP (/) y /@vite/client; stdout/stderr solo informativos.
  *
  * Arranque mínimo solo Vite (sin cap, sin waits de este script): `npm run dev:vite`
- * (usa `vite.config.js`; no uses `npm run dev` para eso — ese comando es `dev:ios`).
+ * (usa `vite.config.js`). Aquí se invoca el binario de Vite con `node` (sin `npm` ni shell)
+ * para un solo proceso hijo estable y la misma semántica que `npm run dev:vite`.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
 import { spawn, spawnSync } from 'node:child_process'
+import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
@@ -32,16 +34,17 @@ const root = path.join(__dirname, '..')
 const VITE_PORT = 5173
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
-const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}`
+/** Misma IP que las sondas HTTP: evita fallos donde `localhost` → ::1 y la app no carga en Safari. */
+const SAFARI_DEV_URL = `http://127.0.0.1:${VITE_PORT}`
 const VITE_HTTP_WAIT_MS = 60_000
 
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
-  const iphonePreview = `http://localhost:${VITE_PORT}/?iphone=true`
+  const iphonePreview = `http://127.0.0.1:${VITE_PORT}/?iphone=true`
   console.log('\n')
   console.log(
-    `👉 URL Safari (Mac, local) → http://localhost:${VITE_PORT} (se abre sola si el servidor responde 200)`
+    `👉 URL Safari (Mac, local) → http://127.0.0.1:${VITE_PORT} (se abre sola si el servidor responde 200)`
   )
   console.log(`   Vista previa iPhone en Mac (opcional) → ${iphonePreview}`)
   console.log(`👉 URL iPhone misma red (local) → ${baseDevUrl}`)
@@ -137,24 +140,29 @@ async function main() {
     WAITME_SKIP_VITE_LAN_LOG: '1',
   }
 
-  console.info(`[waitme] ⑤ npm run dev:vite (vite.config.js → host/port ${VITE_PORT})`)
+  console.info(`[waitme] ⑤ Vite (node + vite/bin/vite.js; vite.config.js → host/port ${VITE_PORT})`)
   console.log('Starting Vite (persistent)...')
 
-  const vite = spawn('npm', ['run', 'dev:vite'], {
+  const viteBin = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
+  if (!fs.existsSync(viteBin)) {
+    console.error('[waitme] Falta node_modules/vite (ejecuta npm install).')
+    process.exit(1)
+  }
+
+  const vite = spawn(process.execPath, [viteBin], {
     cwd: root,
     env: childEnv,
     stdio: 'inherit',
-    shell: true,
   })
 
-  vite.on('exit', (code) => {
+  vite.on('exit', (code, signal) => {
     console.error('VITE PROCESS EXITED')
-    console.error('exit code:', code)
+    console.error('exit code:', code, 'signal:', signal)
   })
 
-  vite.on('close', (code) => {
+  vite.on('close', (code, signal) => {
     console.error('VITE PROCESS CLOSED')
-    console.error('close code:', code)
+    console.error('close code:', code, 'signal:', signal)
   })
 
   vite.on('error', (err) => {
