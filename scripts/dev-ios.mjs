@@ -3,6 +3,9 @@
  * Flujo dev local principal: Vite :5173, cap sync iOS, `.env.local` (VITE_DEV_LAN_ORIGIN).
  * Readiness = solo HTTP (/) y /@vite/client; stdout/stderr solo informativos.
  *
+ * Arranque mínimo solo Vite (sin cap, sin waits de este script): `npm run dev:vite`
+ * (usa `vite.config.js`; no uses `npm run dev` para eso — ese comando es `dev:ios`).
+ *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
 import { spawn, spawnSync } from 'node:child_process'
@@ -82,10 +85,14 @@ function printLsof5173() {
   }
 }
 
-/** Solo para volcar si falla HTTP o el proceso muere (no se usa como señal de ready). */
-function dumpViteOutputSoFar(buf) {
-  console.error('--- Vite stdout+stderr captured so far (diagnostic only) ---')
-  console.error(buf.length === 0 ? '(empty)' : buf)
+/**
+ * Volcado íntegro del buffer capturado (misma salida que en consola, sin resumir).
+ * No se usa como señal de ready.
+ */
+function dumpViteFullError(buf) {
+  console.log('--- VITE FULL ERROR ---')
+  console.log(buf.length === 0 ? '(empty buffer)' : buf)
+  console.log('--- END ---')
 }
 
 function viteExitPromise(vite) {
@@ -173,7 +180,7 @@ async function main() {
   })
   vite.on('error', (err) => {
     console.error('[waitme] Vite spawn error:', err.message || err)
-    dumpViteOutputSoFar(viteOutputBuf)
+    dumpViteFullError(viteOutputBuf)
     process.exit(1)
   })
 
@@ -186,18 +193,16 @@ async function main() {
   if (first.kind === 'exit') {
     console.error('VITE PROCESS EXITED')
     console.error('exit code:', first.code)
-    dumpViteOutputSoFar(viteOutputBuf)
+    dumpViteFullError(viteOutputBuf)
     process.exit(1)
   }
 
   if (!first.ok) {
     console.error('SERVER NOT RESPONDING')
-    dumpViteOutputSoFar(viteOutputBuf)
-    try {
-      vite.kill('SIGTERM')
-    } catch {
-      /* */
-    }
+    dumpViteFullError(viteOutputBuf)
+    console.error(
+      '[waitme] No SIGTERM: si Vite sigue vivo, revisa el proceso (p. ej. Activity Monitor) o mata el PID manualmente.'
+    )
     stopNgrok()
     process.exit(1)
   }
@@ -207,12 +212,10 @@ async function main() {
   const clientOk = await probeHttp200(VITE_HTTP_CLIENT, '*/*')
   if (!clientOk) {
     console.error('VITE BROKEN (client not served)')
-    dumpViteOutputSoFar(viteOutputBuf)
-    try {
-      vite.kill('SIGTERM')
-    } catch {
-      /* */
-    }
+    dumpViteFullError(viteOutputBuf)
+    console.error(
+      '[waitme] No SIGTERM: revisa el proceso Vite manualmente si hace falta detenerlo.'
+    )
     stopNgrok()
     process.exit(1)
   }
