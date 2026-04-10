@@ -110,6 +110,10 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
   const cameraInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
+  const safeMessages = Array.isArray(messages)
+    ? messages.filter((m) => m != null && typeof m === 'object')
+    : []
+
   const separatorLabel = 'Hoy'
 
   useEffect(() => {
@@ -197,11 +201,12 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
           const row = payload.new
           if (!row || row.thread_id !== threadId) return
           setMessages((prev) => {
+            const base = Array.isArray(prev) ? prev : []
             const mid = row.id
-            if (prev.some((m) => m.id === mid)) return prev
+            if (base.some((m) => m && m.id === mid)) return base
             const mine = row.sender_id === userId
             return [
-              ...prev,
+              ...base,
               {
                 id: mid,
                 from: mine ? 'me' : 'them',
@@ -232,23 +237,34 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
       text: t,
       at: formatDmMsgTime(new Date().toISOString()),
     }
-    setMessages((prev) => [...prev, optimistic])
+    setMessages((prev) => [...(Array.isArray(prev) ? prev : []), optimistic])
     const { data, error } = await sendDmMessage(userId, threadId, t)
     if (error) {
       console.error('[WaitMe][ChatThreadView] send', error)
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
-      setDraft(t)
-    } else if (data) {
       setMessages((prev) =>
-        prev.map((m) => (m.id === optimistic.id ? { ...data, id: data.id } : m))
+        Array.isArray(prev) ? prev.filter((m) => m && m.id !== optimistic.id) : []
       )
+      setDraft(t)
+    } else if (data != null && typeof data === 'object' && !Array.isArray(data)) {
+      setMessages((prev) => {
+        const list = Array.isArray(prev) ? prev : []
+        return list.map((m) => {
+          if (!m || m.id !== optimistic.id) return m
+          return {
+            id: data.id != null ? String(data.id) : String(optimistic.id),
+            from: 'me',
+            text: String(data.text ?? optimistic.text ?? ''),
+            at: String(data.at ?? optimistic.at ?? ''),
+          }
+        })
+      })
     }
     setSending(false)
   }
 
   function isReadSimulated(idx) {
-    for (let i = idx + 1; i < messages.length; i++) {
-      if (messages[i]?.from === 'them') return true
+    for (let i = idx + 1; i < safeMessages.length; i++) {
+      if (safeMessages[i]?.from === 'them') return true
     }
     return false
   }
@@ -374,7 +390,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               boxSizing: 'border-box',
             }}
           >
-            {messages.length > 0 ? (
+            {safeMessages.length > 0 ? (
               <div
                 aria-hidden
                 style={{
@@ -389,12 +405,13 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
               </div>
             ) : null}
 
-            {messages.map((m, idx) => {
-              const mine = m.from === 'me'
+            {safeMessages.map((m, idx) => {
+              const mine = m?.from === 'me'
               const read = mine ? isReadSimulated(idx) : false
+              const rowKey = m?.id != null ? String(m.id) : `msg-${idx}`
               return (
                 <div
-                  key={m.id}
+                  key={rowKey}
                   style={{
                     display: 'flex',
                     justifyContent: mine ? 'flex-end' : 'flex-start',
@@ -429,7 +446,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                       paddingBottom: mine ? 22 : undefined,
                     }}
                   >
-                    {m.text}
+                    {String(m?.text ?? '')}
                     <div
                       style={{
                         position: mine ? 'absolute' : 'static',
@@ -444,7 +461,7 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
                         alignItems: 'center',
                       }}
                     >
-                      <span>{m.at}</span>
+                      <span>{String(m?.at ?? '')}</span>
                       {mine ? (
                         <span
                           aria-hidden

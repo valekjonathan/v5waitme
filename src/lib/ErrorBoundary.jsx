@@ -14,6 +14,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
+    console.log('REACT CRASH', error, info)
     const label = this.props.name
       ? `[WaitMe][ErrorBoundary:${this.props.name}]`
       : '[WaitMe][ErrorBoundary]'
@@ -34,6 +35,23 @@ export default class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      const minimal = this.props.fallbackMessage
+      if (typeof minimal === 'string' && minimal.trim()) {
+        return (
+          <div
+            style={{
+              color: '#ffffff',
+              padding: 24,
+              minHeight: 'var(--app-height, 100vh)',
+              width: '100%',
+              boxSizing: 'border-box',
+              backgroundColor: '#000000',
+            }}
+          >
+            {minimal}
+          </div>
+        )
+      }
       return (
         <div
           style={{

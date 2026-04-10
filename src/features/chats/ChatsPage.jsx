@@ -136,10 +136,12 @@ export default function ChatsPage() {
     }
   }, [canLoadChats, userId, nav.pendingDmVisual, nav.openThread, nav.syncChatThreadList])
 
+  const threadsSafe = Array.isArray(threads) ? threads : []
+
   const q = listFilter.trim().toLowerCase()
   const filteredThreads = !q
-    ? threads
-    : threads.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
+    ? threadsSafe
+    : threadsSafe.filter((t) => `${t.name} ${t.lastMessage}`.toLowerCase().includes(q))
 
   const listRows = filteredThreads.filter(
     (t) => t.threadId != null && String(t.threadId).trim() !== ''
@@ -147,7 +149,7 @@ export default function ChatsPage() {
 
   function openThreadFromList(threadKey) {
     if (threadKey == null || threadKey === '') return
-    nav.openThread(String(threadKey), threads)
+    nav.openThread(String(threadKey), threadsSafe)
   }
 
   return (
@@ -273,7 +275,7 @@ export default function ChatsPage() {
                   lineHeight: 1.45,
                 }}
               >
-                {threads.length === 0 ? 'No hay conversaciones' : 'No hay conversaciones que coincidan'}
+                {threadsSafe.length === 0 ? 'No hay conversaciones' : 'No hay conversaciones que coincidan'}
               </p>
             </div>
           ) : null}

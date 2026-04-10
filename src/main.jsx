@@ -2,11 +2,19 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import App from './app/App.jsx'
+import ErrorBoundary from './lib/ErrorBoundary.jsx'
 import { logFlow } from './lib/devFlowLog.js'
 import { registerNativeOAuthDeepLink } from './lib/nativeOAuthDeepLink'
 import IphoneFrame from './ui/IphoneFrame.jsx'
 import { syncWaitmeViewportCssVars } from './lib/waitmeViewport.js'
 import './styles/global.css'
+
+window.onerror = function onWindowError(msg, url, line, col, error) {
+  console.log('GLOBAL ERROR', { msg, url, line, col, error })
+}
+window.onunhandledrejection = function onUnhandledRejection(e) {
+  console.log('PROMISE ERROR', e.reason)
+}
 
 registerNativeOAuthDeepLink()
 syncWaitmeViewportCssVars()
@@ -41,8 +49,10 @@ logFlow('APP_START')
 
 root.render(
   <React.StrictMode>
-    <IphoneFrame>
-      <App />
-    </IphoneFrame>
+    <ErrorBoundary name="global" fallbackMessage="ERROR DETECTADO">
+      <IphoneFrame>
+        <App />
+      </IphoneFrame>
+    </ErrorBoundary>
   </React.StrictMode>
 )

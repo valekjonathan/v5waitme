@@ -322,7 +322,7 @@ function AppGate() {
   )
 }
 
-export default function App() {
+function AppContent() {
   /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
   useEffect(() => {
     const isSafariPreview = window.location.search.includes('iphone=true')
@@ -363,12 +363,18 @@ export default function App() {
   return (
     <div className="waitme-app-root" style={appRootLayoutStyle}>
       <div className="waitme-iphone-frame-fullbleed">
-        <ErrorBoundary name="root">
-          <AppAuthRoot>
-            <AppGate />
-          </AppAuthRoot>
-        </ErrorBoundary>
+        <AppAuthRoot>
+          <AppGate />
+        </AppAuthRoot>
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary name="root">
+      <AppContent />
+    </ErrorBoundary>
   )
 }
