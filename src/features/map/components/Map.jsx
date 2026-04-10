@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import mapboxgl from 'mapbox-gl'
 import {
@@ -125,22 +125,6 @@ function applyWaitmeMapPinAndParkingCamera(pinEl, mapContainerEl, parkingBandPin
 }
 
 void mapboxgl.Map
-
-/**
- * Tras commit de layout, espera dos frames antes de medir (getBoundingClientRect con overlays ya pintados).
- * Devuelve cancelación para evitar trabajo tras unmount o nueva medición.
- */
-function scheduleDoubleRaf(fn) {
-  let h1 = 0
-  let h2 = 0
-  h1 = requestAnimationFrame(() => {
-    h2 = requestAnimationFrame(fn)
-  })
-  return () => {
-    cancelAnimationFrame(h1)
-    cancelAnimationFrame(h2)
-  }
-}
 
 function applyPostLoadStyle(map, readOnly) {
   try {
@@ -283,47 +267,38 @@ export default function Map({
     projectSearchPinFromGps()
   }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
 
-  /** Home: offset de cámara desde el contenedor Mapbox real + pin. */
+  /** Home: offset de cámara desde el contenedor Mapbox real + pin. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
-    if (parkingBandPinAdjust) return undefined
+    if (!parkingBandPinAdjust) {
+      const run = () => {
+        requestAnimationFrame(() => {
+          const mapContainer = resolveWaitmeMapDomContainer(containerRef)
+          const heroTip =
+            typeof document !== 'undefined' ? document.querySelector('[data-waitme-pin-tip]') : null
+          const pinEl =
+            hideViewportCenterPinRef.current && heroTip instanceof HTMLElement ? heroTip : pinRef.current
+          applyWaitmeMapPinAndParkingCamera(pinEl, mapContainer, false)
+        })
+      }
 
-    let cancelled = false
-    let cancelLastRaf = () => {}
-
-    const run = () => {
-      if (cancelled) return
-      cancelLastRaf()
-      cancelLastRaf = scheduleDoubleRaf(() => {
-        if (cancelled) return
-        const mapContainer = resolveWaitmeMapDomContainer(containerRef)
-        const heroTip =
-          typeof document !== 'undefined' ? document.querySelector('[data-waitme-pin-tip]') : null
-        const pinEl =
-          hideViewportCenterPinRef.current && heroTip instanceof HTMLElement ? heroTip : pinRef.current
-        applyWaitmeMapPinAndParkingCamera(pinEl, mapContainer, false)
-      })
+      run()
+      const observeEl = containerRef.current ?? mapShellRef.current
+      const ro = observeEl ? new ResizeObserver(run) : null
+      if (observeEl && ro) ro.observe(observeEl)
+      const unsubVvWin = subscribeWaitmeViewportEvents(run)
+      const raf = requestAnimationFrame(run)
+      return () => {
+        ro?.disconnect()
+        unsubVvWin()
+        cancelAnimationFrame(raf)
+        delete window.__WAITME_PIN_OFFSET_Y__
+      }
     }
 
-    run()
-    const observeEl = containerRef.current ?? mapShellRef.current
-    const ro = observeEl ? new ResizeObserver(run) : null
-    if (observeEl && ro) ro.observe(observeEl)
-    const unsubVvWin = subscribeWaitmeViewportEvents(run)
-    return () => {
-      cancelled = true
-      cancelLastRaf()
-      ro?.disconnect()
-      unsubVvWin()
-      delete window.__WAITME_PIN_OFFSET_Y__
+    if (parkingPinMode === 'search') {
+      return () => {}
     }
-  }, [parkingBandPinAdjust, parkingPinMode])
 
-  /** Parking “aparcado”: hueco buscador–tarjeta; medir tras layout (useLayoutEffect + doble rAF, no un solo frame). */
-  useLayoutEffect(() => {
-    if (!parkingBandPinAdjust || parkingPinMode === 'search') return undefined
-
-    let cancelled = false
-    let cancelLastRaf = () => {}
     const observedParking = new globalThis.Map()
 
     const pruneParkingObservers = () => {
@@ -336,10 +311,7 @@ export default function Map({
     }
 
     const run = () => {
-      if (cancelled) return
-      cancelLastRaf()
-      cancelLastRaf = scheduleDoubleRaf(() => {
-        if (cancelled) return
+      requestAnimationFrame(() => {
         const mapContainer = resolveWaitmeMapDomContainer(containerRef)
         applyWaitmeMapPinAndParkingCamera(pinRef.current, mapContainer, true)
 
@@ -388,11 +360,11 @@ export default function Map({
     const ro = observeEl ? new ResizeObserver(run) : null
     if (observeEl && ro) ro.observe(observeEl)
     const unsubVvWin = subscribeWaitmeViewportEvents(run)
+    const raf = requestAnimationFrame(run)
     return () => {
-      cancelled = true
-      cancelLastRaf()
       ro?.disconnect()
       unsubVvWin()
+      cancelAnimationFrame(raf)
       observedParking.forEach((obs) => obs.disconnect())
       observedParking.clear()
       delete window.__WAITME_PIN_OFFSET_Y__
@@ -403,9 +375,9 @@ export default function Map({
    * Solo PARKED: alinear cámara inicial a GPS bajo el pin (hueco buscador–tarjeta).
    * SEARCH: mapa libre; sin alinear cámara al GPS (`subscribeToLocation` no mueve el mapa).
    */
-  useLayoutEffect(() => {
-    if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return undefined
-    if (parkingPinMode !== 'parked') return undefined
+  useEffect(() => {
+    if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
+    if (parkingPinMode !== 'parked') return
     let cancelled = false
     let attempts = 0
     const maxAttempts = 100
@@ -437,12 +409,10 @@ export default function Map({
       )
     }
 
-    const cancelSchedule = scheduleDoubleRaf(() => {
-      if (!cancelled) run()
-    })
+    const t = window.setTimeout(run, 0)
     return () => {
       cancelled = true
-      cancelSchedule()
+      window.clearTimeout(t)
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
 
@@ -496,7 +466,7 @@ export default function Map({
    * “Dónde quieres aparcar”: en el primer ciclo con layout listo, misma cámara/GPS que “Estoy aparcado aquí”.
    * Después se desactiva el seguimiento que mueve el mapa al GPS para conservar arrastre + pin en píxeles.
    */
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!parkingBandPinAdjust || parkingPinMode !== 'search') {
       searchInitialGapAlignDoneRef.current = false
       return undefined
@@ -540,12 +510,10 @@ export default function Map({
       )
     }
 
-    const cancelSchedule = scheduleDoubleRaf(() => {
-      if (!cancelled) run()
-    })
+    const t = window.setTimeout(run, 0)
     return () => {
       cancelled = true
-      cancelSchedule()
+      window.clearTimeout(t)
       searchInitialGapAlignDoneRef.current = false
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
