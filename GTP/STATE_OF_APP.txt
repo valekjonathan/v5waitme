@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-10T00:21:43.781Z
-Git revision: c22a30c9d4f86c1b566292733ca3116aa965bea5
+Generated: 2026-04-10T00:31:54.706Z
+Git revision: 10d14e20cf15ae65566ca15a841e8debf52a9d4f
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -292,7 +292,7 @@ src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext
 === GRAFO DESDE main.jsx (módulos críticos) ===
 src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
 src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
-src/services/reviews.ts  ← 2 import(s) relativos (muestra): ../lib/reviewsModel, ../features/map/simulatedUsers.js
+src/services/reviews.ts  ← 3 import(s) relativos (muestra): ../lib/reviewsModel, ../features/map/simulatedUsers.js, ./waitmeChats.js
 Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 6, map 10
 
 === ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===

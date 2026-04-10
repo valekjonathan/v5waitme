@@ -150,6 +150,37 @@ function mergeFallbackListCards() {
 }
 
 /**
+ * Perfil de cabecera en UserReviews: misma identidad que la fila de lista chats (fallback dev).
+ * Sin esto, `buildMockProfileForUserReviews` usa nombres derivados por hash del UUID (p. ej. Carlos → Iván).
+ *
+ * @param {string} peerUserId
+ * @returns {null | { id: string, full_name: string, email: string, avatar_url: string, brand: string, model: string, plate: string, color: string, vehicle_type: string }}
+ */
+export function getFallbackDmListCardProfileForPeer(peerUserId) {
+  if (!devFallbackAllowed()) return null
+  const want = String(peerUserId ?? '').trim()
+  if (!want) return null
+  seedFallbackDmIfNeeded()
+  for (const c of mergeFallbackListCards()) {
+    const pid = String(c.peer_user_id ?? c.id ?? '').trim()
+    if (pid === want) {
+      return {
+        id: want,
+        full_name: String(c.name ?? c.user_name ?? '').trim() || 'Usuario',
+        email: '',
+        avatar_url: String(c.user_photo ?? c.avatar ?? '').trim(),
+        brand: String(c.brand ?? ''),
+        model: String(c.model ?? ''),
+        plate: String(c.plate ?? ''),
+        color: 'gris',
+        vehicle_type: 'car',
+      }
+    }
+  }
+  return null
+}
+
+/**
  * @param {string} threadId
  * @param {string} text
  * @param {string} at

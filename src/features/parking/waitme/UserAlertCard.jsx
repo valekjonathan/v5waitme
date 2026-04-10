@@ -162,6 +162,16 @@ function pravatarImgIdFromString(s) {
   return (h % 70) + 1
 }
 
+/** ID reseñas / peer: siempre el usuario real de la fila (`peer_user_id` en DM). */
+function reviewTargetUserIdFromRow(user) {
+  if (!user || typeof user !== 'object') return ''
+  const peer = String(user.peer_user_id ?? '').trim()
+  if (peer) return peer
+  const uid = String(user.user_id ?? '').trim()
+  if (uid) return uid
+  return String(user.id ?? '').trim()
+}
+
 function UserAlertAvatarBlock({ row, onClick }) {
   const peerLabel =
     row?.peer_user_id != null && String(row.peer_user_id).trim() !== ''
@@ -328,7 +338,7 @@ function UserAlertCard({
       onChat?.(user)
       return
     }
-    const id = String(user.id != null ? user.id : '').trim()
+    const id = reviewTargetUserIdFromRow(user)
     if (id !== '') {
       openChatsWithPeer(id, {
         user_name: display?.user_name,
@@ -364,8 +374,8 @@ function UserAlertCard({
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
 
-  /** Reseñas: siempre `user.id` (= peer del mapper / tarjeta). */
-  const reviewPeerId = String(user.id != null ? user.id : '').trim()
+  /** Reseñas: peer real de la fila (DM/lista); no mezclar con `alertId` u otros ids. */
+  const reviewPeerId = reviewTargetUserIdFromRow(user)
 
   function handleOpenPeerReviews(e) {
     e?.stopPropagation?.()

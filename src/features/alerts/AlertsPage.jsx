@@ -46,22 +46,29 @@ function DashedHint({ children }) {
   return <div style={dashedHintStyle}>{children}</div>
 }
 
-/** Misma familia visual que tarjetas moradas (p. ej. CreateAlertCard). */
-const alertsPurpleCardStyle = {
-  backgroundColor: 'rgba(17, 24, 39, 0.92)',
-  borderRadius: 16,
-  padding: '16px 20px',
-  border: '2px solid rgba(168, 85, 247, 0.55)',
-  color: TEXT_WHITE,
+/**
+ * Misma caja exterior que `UserAlertCard` en mapa/búsqueda (`data-alert-card`):
+ * alineado con tarjeta “¿Dónde quieres aparcar?”.
+ */
+const emptyStateCardMatchParkingUserCard = {
+  backgroundColor: '#111827',
+  borderRadius: 12,
+  padding: 8,
+  border: '2px solid rgba(168, 85, 247, 0.5)',
+  boxSizing: 'border-box',
+  minHeight: 148,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: TEXT_GRAY,
   fontSize: 15,
   fontWeight: 600,
   textAlign: 'center',
   lineHeight: 1.45,
-  boxSizing: 'border-box',
 }
 
-function AlertsPurpleCard({ children }) {
-  return <div style={alertsPurpleCardStyle}>{children}</div>
+function EmptyStateCard({ children }) {
+  return <div style={emptyStateCardMatchParkingUserCard}>{children}</div>
 }
 
 const labelBtnBase = {
@@ -187,7 +194,7 @@ export default function AlertsPage() {
           {loadingBlock}
           {errorBlock}
 
-          {ALERTS_LIST_RENDER_DISABLED && scope === 'alerts' ? (
+          {ALERTS_LIST_RENDER_DISABLED && (scope === 'alerts' || scope === 'reservations') ? (
             <div
               style={{
                 display: 'flex',
@@ -209,7 +216,11 @@ export default function AlertsPage() {
                   ACTIVAS
                 </Button>
               </div>
-              <AlertsPurpleCard>No tienes ninguna alerta activa.</AlertsPurpleCard>
+              <EmptyStateCard>
+                {scope === 'alerts'
+                  ? 'No tienes ninguna alerta activa.'
+                  : 'No tienes ninguna reserva activa.'}
+              </EmptyStateCard>
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                 <Button
                   type="button"
@@ -224,17 +235,12 @@ export default function AlertsPage() {
                   FINALIZADAS
                 </Button>
               </div>
-              <AlertsPurpleCard>No tienes ninguna alerta finalizada.</AlertsPurpleCard>
+              <EmptyStateCard>
+                {scope === 'alerts'
+                  ? 'No tienes ninguna alerta finalizada.'
+                  : 'No tienes ninguna reserva finalizada.'}
+              </EmptyStateCard>
             </div>
-          ) : null}
-
-          {ALERTS_LIST_RENDER_DISABLED && scope === 'reservations' ? (
-            <>
-              <h2 style={{ ...sectionTitle, marginTop: 0 }}>Activas</h2>
-              <DashedHint>No tienes reservas activas.</DashedHint>
-              <h2 style={sectionTitle}>Finalizadas</h2>
-              <DashedHint>No tienes reservas finalizadas.</DashedHint>
-            </>
           ) : null}
 
           {showRealLists && scope === 'alerts' ? (
