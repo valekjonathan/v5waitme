@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Flujo dev local principal: Vite :5173, cap sync iOS, `.env.local` (VITE_DEV_LAN_ORIGIN).
- * Raíz del fallo = Vite (no Safari): salida completa, HTTP /, /@vite/client, luego Safari.
+ * Readiness = solo HTTP (/) y /@vite/client; stdout/stderr solo informativos.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
@@ -31,8 +31,6 @@ const VITE_PORT = 5173
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
 const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}`
-/** Espera línea tipo `Local: http://localhost:5173` (30–60s). */
-const VITE_LOG_WAIT_MS = 60_000
 const VITE_HTTP_WAIT_MS = 60_000
 
 mergeDevEnvFromFiles(root)
@@ -84,51 +82,16 @@ function printLsof5173() {
   }
 }
 
-/** Línea estándar de Vite: `Local: http://localhost:5173` (con o sin barra final). */
-function sawViteLocalReadyLine(buf) {
-  if (/Local:\s*https?:\/\/localhost:5173\b/i.test(buf)) return true
-  if (/Local:\s*https?:\/\/127\.0\.0\.1:5173\b/i.test(buf)) return true
-  return false
+/** Solo para volcar si falla HTTP o el proceso muere (no se usa como señal de ready). */
+function dumpViteOutputSoFar(buf) {
+  console.error('--- Vite stdout+stderr captured so far (diagnostic only) ---')
+  console.error(buf.length === 0 ? '(empty)' : buf)
 }
 
-function guessViteFailureCause(buf) {
-  const b = buf.toLowerCase()
-  if (b.includes('eaddrinuse') || (b.includes('port') && b.includes('already'))) {
-    return 'Possible cause: port already in use (another process bound :5173).'
-  }
-  if (/cannot find module|err_module_not_found/i.test(buf)) {
-    return 'Possible cause: missing dependency, bad import path, or broken node_modules (try npm ci).'
-  }
-  if (b.includes('vite.config') && b.includes('error')) {
-    return 'Possible cause: syntax or option error in vite.config.'
-  }
-  if (b.includes('error when starting dev server') || b.includes('failed to start')) {
-    return 'Possible cause: see first "Error:" / stack trace in the log above.'
-  }
-  return 'Look for the first Error / stack trace in the full output above.'
-}
-
-/**
- * @param {() => string} getBuffer
- * @param {() => number | null} getExitCode
- */
-async function waitForViteLocalLineOrExit(getBuffer, getExitCode, maxMs) {
-  const start = Date.now()
-  while (Date.now() - start < maxMs) {
-    const code = getExitCode()
-    const b = getBuffer()
-    if (sawViteLocalReadyLine(b)) return { ok: true }
-    if (code !== null) {
-      return { ok: false, reason: 'exit', code }
-    }
-    await new Promise((r) => setTimeout(r, 300))
-  }
-  return { ok: false, reason: 'timeout' }
-}
-
-function dumpFullViteLog(viteOutputBuf) {
-  console.error('--- full Vite stdout+stderr (complete, not truncated) ---')
-  console.error(viteOutputBuf.length === 0 ? '(empty)' : viteOutputBuf)
+function viteExitPromise(vite) {
+  return new Promise((resolve) => {
+    vite.once('exit', (code, signal) => resolve({ code: code ?? 0, signal }))
+  })
 }
 
 let ngrokChild = null
@@ -195,16 +158,10 @@ async function main() {
         shell: true,
       })
 
-  /** Buffer completo: sin truncar (diagnóstico de fallo real). */
   let viteOutputBuf = ''
   const appendBuf = (chunk) => {
     viteOutputBuf += chunk.toString()
   }
-
-  let viteExitCode = /** @type {number | null} */ (null)
-  vite.on('exit', (code) => {
-    viteExitCode = code ?? 0
-  })
 
   vite.stdout?.on('data', (chunk) => {
     appendBuf(chunk)
@@ -216,44 +173,26 @@ async function main() {
   })
   vite.on('error', (err) => {
     console.error('[waitme] Vite spawn error:', err.message || err)
-    dumpFullViteLog(viteOutputBuf)
+    dumpViteOutputSoFar(viteOutputBuf)
     process.exit(1)
   })
 
-  console.log(`Waiting for Local: http://localhost:${VITE_PORT} (Vite ready line)...`)
+  console.log(`Waiting for http://127.0.0.1:${VITE_PORT}...`)
 
-  const logResult = await waitForViteLocalLineOrExit(
-    () => viteOutputBuf,
-    () => viteExitCode,
-    VITE_LOG_WAIT_MS
-  )
+  const httpWait = waitForHttpOk(VITE_HTTP_ROOT, VITE_HTTP_WAIT_MS).then((ok) => ({ kind: 'http', ok }))
+  const exitWait = viteExitPromise(vite).then(({ code, signal }) => ({ kind: 'exit', code, signal }))
+  const first = await Promise.race([httpWait, exitWait])
 
-  if (!logResult.ok) {
-    if (logResult.reason === 'exit') {
-      console.error('VITE PROCESS EXITED')
-      console.error('exit code:', logResult.code)
-    }
-    console.error('VITE FAILED TO START')
-    if (logResult.reason === 'timeout') {
-      console.error('(timeout: no line "Local: http://localhost:5173" in Vite output)')
-    }
-    console.error(guessViteFailureCause(viteOutputBuf))
-    dumpFullViteLog(viteOutputBuf)
-    try {
-      vite.kill('SIGTERM')
-    } catch {
-      /* */
-    }
+  if (first.kind === 'exit') {
+    console.error('VITE PROCESS EXITED')
+    console.error('exit code:', first.code)
+    dumpViteOutputSoFar(viteOutputBuf)
     process.exit(1)
   }
 
-  console.log(`Vite running on ${VITE_PORT}`)
-
-  const httpRootOk = await waitForHttpOk(VITE_HTTP_ROOT, VITE_HTTP_WAIT_MS)
-  if (!httpRootOk) {
+  if (!first.ok) {
     console.error('SERVER NOT RESPONDING')
-    console.error(guessViteFailureCause(viteOutputBuf))
-    dumpFullViteLog(viteOutputBuf)
+    dumpViteOutputSoFar(viteOutputBuf)
     try {
       vite.kill('SIGTERM')
     } catch {
@@ -267,9 +206,8 @@ async function main() {
 
   const clientOk = await probeHttp200(VITE_HTTP_CLIENT, '*/*')
   if (!clientOk) {
-    console.error('VITE CLIENT NOT SERVED → BROKEN DEV SERVER')
-    console.error(guessViteFailureCause(viteOutputBuf))
-    dumpFullViteLog(viteOutputBuf)
+    console.error('VITE BROKEN (client not served)')
+    dumpViteOutputSoFar(viteOutputBuf)
     try {
       vite.kill('SIGTERM')
     } catch {
