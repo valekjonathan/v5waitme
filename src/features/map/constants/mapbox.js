@@ -113,21 +113,29 @@ export function createMap(container, { token, interactive = true }) {
   }
 
   mapboxgl.accessToken = tokenStr
-  const map = new mapboxgl.Map({
-    container,
-    style: DARK_STYLE,
-    center: OVIEDO_CENTER,
-    zoom: DEFAULT_ZOOM,
-    pitch: DEFAULT_PITCH,
-    bearing: 0,
-    antialias: true,
-    attributionControl: false,
-    logoPosition: 'bottom-right',
-    dragPan: interactive,
-    touchZoomRotate: interactive,
-    scrollZoom: interactive,
-    doubleClickZoom: interactive,
-  })
+  /** WebGL puede fallar (headless, políticas GPU, Safari restringido): no propagar → root vacío. */
+  let map
+  try {
+    map = new mapboxgl.Map({
+      container,
+      style: DARK_STYLE,
+      center: OVIEDO_CENTER,
+      zoom: DEFAULT_ZOOM,
+      pitch: DEFAULT_PITCH,
+      bearing: 0,
+      antialias: true,
+      attributionControl: false,
+      logoPosition: 'bottom-right',
+      dragPan: interactive,
+      touchZoomRotate: interactive,
+      scrollZoom: interactive,
+      doubleClickZoom: interactive,
+    })
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.warn('[WaitMe][Mapbox] createMap failed (no WebGL o entorno)', msg)
+    return null
+  }
   try {
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
   } catch {
