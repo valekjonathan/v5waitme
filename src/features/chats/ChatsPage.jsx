@@ -5,27 +5,15 @@ import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import MessageCircleIcon from '../../ui/icons/MessageCircleIcon'
 import StreetSearch from '../parking/waitme/StreetSearch.jsx'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
-import ChatThreadView from './ChatThreadView.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
-import {
-  getOrCreateDmThread,
-  isDmDevFallbackThread,
-  listDmThreadsForUser,
-} from '../../services/waitmeChats.js'
+import { getOrCreateDmThread, listDmThreadsForUser } from '../../services/waitmeChats.js'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
-
-function clearChatHashFromUrl() {
-  if (typeof window !== 'undefined' && window.location.hash.startsWith('#/chat/')) {
-    const { pathname, search } = window.location
-    window.history.replaceState(null, '', pathname + search)
-  }
-}
 
 function loadThreads(uid) {
   return listDmThreadsForUser(uid).then(({ data, error }) => {
@@ -40,7 +28,8 @@ function loadThreads(uid) {
  *   userId: string
  *   listFetchSeqRef: { current: number }
  *   setThreads: (v: unknown[]) => void
- *   openThreadById: (tid: string) => void
+ *   syncChatThreadList: ((list: unknown[]) => void) | undefined
+ *   openThread: (tid: string, listSnapshot?: unknown[]) => void
  *   logTag: string
  *   isCancelled: () => boolean
  * }} p
@@ -57,13 +46,13 @@ async function runGetOrCreateThenList(p) {
   const list = await loadThreads(p.userId)
   if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
   p.setThreads(list)
-  p.openThreadById(String(tid))
+  p.syncChatThreadList?.(list)
+  p.openThread(String(tid), list)
 }
 
 export default function ChatsPage() {
   const nav = useAppScreen()
   const { user } = useAuth()
-  const [threadId, setThreadId] = useState(null)
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState([])
   const listFetchSeqRef = useRef(0)
@@ -77,10 +66,9 @@ export default function ChatsPage() {
   const pendingVis = nav.pendingDmVisual
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
-  function openThreadById(tid) {
-    if (tid == null || tid === '') return
-    setThreadId(String(tid))
-  }
+  useEffect(() => {
+    nav.syncChatThreadList?.(threads)
+  }, [nav, threads])
 
   useEffect(() => {
     let cancelled = false
@@ -104,16 +92,8 @@ export default function ChatsPage() {
 
   useEffect(() => {
     if (!nav?.chatsListResetGeneration) return
-    setThreadId(null)
     nav.clearPendingDmVisual?.()
   }, [nav?.chatsListResetGeneration, nav])
-
-  useEffect(() => {
-    if (!threadId) return
-    if (threads.length === 0) return
-    const ok = threads.some((t) => String(t.threadId) === String(threadId))
-    if (!ok) setThreadId(null)
-  }, [threadId, threads])
 
   useEffect(() => {
     if (!canLoadChats || !directMatch || !hashPeer) return undefined
@@ -123,14 +103,15 @@ export default function ChatsPage() {
       userId,
       listFetchSeqRef,
       setThreads,
-      openThreadById,
+      syncChatThreadList: nav.syncChatThreadList,
+      openThread: nav.openThread,
       logTag: 'direct',
       isCancelled: () => cancelled,
     })
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, directMatch, hashPeer, userId])
+  }, [canLoadChats, directMatch, hashPeer, userId, nav.openThread, nav.syncChatThreadList])
 
   useEffect(() => {
     if (!canLoadChats) return undefined
@@ -145,14 +126,15 @@ export default function ChatsPage() {
       userId,
       listFetchSeqRef,
       setThreads,
-      openThreadById,
+      syncChatThreadList: nav.syncChatThreadList,
+      openThread: nav.openThread,
       logTag: 'bootstrap',
       isCancelled: () => cancelled,
     })
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, userId, nav.pendingDmVisual])
+  }, [canLoadChats, userId, nav.pendingDmVisual, nav.openThread, nav.syncChatThreadList])
 
   const q = listFilter.trim().toLowerCase()
   const filteredThreads = !q
@@ -163,29 +145,9 @@ export default function ChatsPage() {
     (t) => t.threadId != null && String(t.threadId).trim() !== ''
   )
 
-  const activeSummary = threadId
-    ? filteredThreads.find((t) => String(t.threadId) === String(threadId)) ??
-      threads.find((t) => String(t.threadId) === String(threadId)) ??
-      null
-    : null
-
-  function handleBackFromThread() {
-    setThreadId(null)
-    nav.clearPendingDmVisual?.()
-    clearChatHashFromUrl()
-  }
-
-  if (threadId && activeSummary) {
-    const tid = String(activeSummary.threadId).trim()
-    const localFb = isDmDevFallbackThread(tid)
-    return (
-      <ChatThreadView
-        summary={activeSummary}
-        userId={userId}
-        localFallback={localFb}
-        onBack={handleBackFromThread}
-      />
-    )
+  function openThreadFromList(threadKey) {
+    if (threadKey == null || threadKey === '') return
+    nav.openThread(String(threadKey), threads)
   }
 
   return (
@@ -261,13 +223,13 @@ export default function ChatsPage() {
                   }
                   if (e.target.closest('[data-waitme-chat-delete]')) return
                   if (threadKey === '') return
-                  openThreadById(threadKey)
+                  openThreadFromList(threadKey)
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault()
                     if (threadKey === '') return
-                    openThreadById(threadKey)
+                    openThreadFromList(threadKey)
                   }
                 }}
                 style={{ cursor: 'pointer', flexShrink: 0 }}
@@ -279,7 +241,7 @@ export default function ChatsPage() {
                   time={t.time}
                   isEmpty={false}
                   onBuyAlert={() => {}}
-                  onChat={() => openThreadById(threadKey)}
+                  onChat={() => openThreadFromList(threadKey)}
                   onCall={() => {}}
                 />
               </div>

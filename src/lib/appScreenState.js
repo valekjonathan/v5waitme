@@ -1,36 +1,46 @@
-/** Estados lógicos de pantalla (AppScreenContext + reduceAppScreen). */
-export const APP_SCREEN_HOME = 'home'
-export const APP_SCREEN_PROFILE = 'profile'
-export const APP_SCREEN_REVIEWS = 'reviews'
-export const APP_SCREEN_SEARCH_PARKING = 'searchParking'
-export const APP_SCREEN_PARK_HERE = 'parkHere'
-export const APP_SCREEN_ALERTS = 'alerts'
-export const APP_SCREEN_CHATS = 'chats'
-export const APP_SCREEN_USER_REVIEWS = 'userReviews'
+/** Pantalla activa única (AppScreenContext). Mapa unifica home / búsqueda / aparcado. */
+export const ACTIVE_SCREEN_MAP = 'map'
+export const ACTIVE_SCREEN_ALERTS = 'alerts'
+export const ACTIVE_SCREEN_CHATS = 'chats'
+export const ACTIVE_SCREEN_PROFILE = 'profile'
+export const ACTIVE_SCREEN_REVIEWS = 'reviews'
+export const ACTIVE_SCREEN_THREAD = 'thread'
+
+/** @typedef {'home' | 'search' | 'parkHere'} MapMode */
+
+/** Compat: nombres antiguos → nuevos valores de pantalla. */
+export const APP_SCREEN_HOME = ACTIVE_SCREEN_MAP
+export const APP_SCREEN_SEARCH_PARKING = ACTIVE_SCREEN_MAP
+export const APP_SCREEN_PARK_HERE = ACTIVE_SCREEN_MAP
+export const APP_SCREEN_ALERTS = ACTIVE_SCREEN_ALERTS
+export const APP_SCREEN_CHATS = ACTIVE_SCREEN_CHATS
+export const APP_SCREEN_PROFILE = ACTIVE_SCREEN_PROFILE
+export const APP_SCREEN_REVIEWS = ACTIVE_SCREEN_REVIEWS
+export const APP_SCREEN_USER_REVIEWS = ACTIVE_SCREEN_REVIEWS
 
 /**
- * Reductor puro para navegación interna (testeable sin React).
+ * Reductor puro (tests). El runtime usa setters en AppScreenContext con reglas de limpieza.
  * @param {string} state
  * @param {{ type: string }} action
  */
 export function reduceAppScreen(state, action) {
   switch (action.type) {
     case 'openProfile':
-      return APP_SCREEN_PROFILE
+      return ACTIVE_SCREEN_PROFILE
     case 'openReviews':
-      return APP_SCREEN_REVIEWS
+      return ACTIVE_SCREEN_REVIEWS
     case 'openHome':
-      return APP_SCREEN_HOME
     case 'openSearchParking':
-      return APP_SCREEN_SEARCH_PARKING
     case 'openParkHere':
-      return APP_SCREEN_PARK_HERE
+      return ACTIVE_SCREEN_MAP
     case 'openAlerts':
-      return APP_SCREEN_ALERTS
+      return ACTIVE_SCREEN_ALERTS
     case 'openChats':
-      return APP_SCREEN_CHATS
+      return ACTIVE_SCREEN_CHATS
     case 'openUserReviews':
-      return APP_SCREEN_USER_REVIEWS
+      return ACTIVE_SCREEN_REVIEWS
+    case 'openThread':
+      return ACTIVE_SCREEN_THREAD
     default:
       return state
   }

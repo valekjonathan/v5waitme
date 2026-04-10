@@ -3,33 +3,216 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
-  useReducer,
+  useRef,
   useState,
 } from 'react'
 import { useAuth } from './AuthContext'
 import { isRealSupabaseAuthUid } from '../services/authUid.js'
 import { isSupabaseConfigured } from '../services/supabase.js'
 import { listDmThreadsForUser } from '../services/waitmeChats.js'
-import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
+import {
+  ACTIVE_SCREEN_ALERTS,
+  ACTIVE_SCREEN_CHATS,
+  ACTIVE_SCREEN_MAP,
+  ACTIVE_SCREEN_PROFILE,
+  ACTIVE_SCREEN_REVIEWS,
+  ACTIVE_SCREEN_THREAD,
+} from './appScreenState.js'
 
 const AppScreenContext = createContext(null)
 
 export function AppScreenProvider({ children }) {
   const { user } = useAuth()
-  const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
+  const [activeScreen, setActiveScreen] = useState(ACTIVE_SCREEN_MAP)
+  const [mapMode, setMapMode] = useState(/** @type {'home' | 'search' | 'parkHere'} */ ('home'))
+  const [activeThreadId, setActiveThreadId] = useState(/** @type {string | null} */ (null))
+  const [activeThreadSummary, setActiveThreadSummary] = useState(/** @type {Record<string, unknown> | null} */ (null))
   const [viewingUserReviewsId, setViewingUserReviewsId] = useState(/** @type {string | null} */ (null))
   const [mapFocusGeneration, setMapFocusGeneration] = useState(0)
   const [chatsListResetGeneration, setChatsListResetGeneration] = useState(0)
-  /** Snapshot visual desde tarjeta (mapa) para abrir DM sin flash de lista ni header vacío. */
   const [pendingDmVisual, setPendingDmVisual] = useState(
     /** @type {null | { peerId: string, displayName: string, userName: string, userPhoto: string | null, phone: string | null, allowPhoneCalls: boolean }} */ (
       null
     )
   )
-  const [chatUnreadByThread, setChatUnreadByThread] = useState(
-    /** @type {Record<string, number>} */ ({})
+  const [chatUnreadByThread, setChatUnreadByThread] = useState(/** @type {Record<string, number>} */ ({}))
+
+  const chatThreadListRef = useRef(/** @type {unknown[]} */ ([]))
+
+  const syncChatThreadList = useCallback((list) => {
+    chatThreadListRef.current = Array.isArray(list) ? list : []
+  }, [])
+
+  const clearThreadState = useCallback(() => {
+    setActiveThreadId(null)
+    setActiveThreadSummary(null)
+  }, [])
+
+  const clearReviewsNavState = useCallback(() => {
+    setViewingUserReviewsId(null)
+    if (typeof window !== 'undefined' && window.location.hash.startsWith('#/user/')) {
+      const { pathname, search } = window.location
+      window.history.replaceState(null, '', pathname + search)
+    }
+  }, [])
+
+  const openMap = useCallback(() => {
+    setActiveScreen(ACTIVE_SCREEN_MAP)
+    setMapMode('home')
+    clearThreadState()
+    clearReviewsNavState()
+  }, [clearThreadState, clearReviewsNavState])
+
+  const mapFocusActions = useMemo(() => {
+    const go = (mode) => () => {
+      clearReviewsNavState()
+      setActiveScreen(ACTIVE_SCREEN_MAP)
+      setMapMode(mode)
+      clearThreadState()
+      setMapFocusGeneration((g) => g + 1)
+    }
+    return {
+      openHome: go('home'),
+      openSearchParking: go('search'),
+      openParkHere: go('parkHere'),
+    }
+  }, [clearReviewsNavState, clearThreadState])
+
+  const { openHome, openSearchParking, openParkHere } = mapFocusActions
+
+  const openAlerts = useCallback(() => {
+    clearReviewsNavState()
+    setActiveScreen(ACTIVE_SCREEN_ALERTS)
+    clearThreadState()
+  }, [clearReviewsNavState, clearThreadState])
+
+  const openChats = useCallback(() => {
+    clearReviewsNavState()
+    setActiveScreen(ACTIVE_SCREEN_CHATS)
+    clearThreadState()
+  }, [clearReviewsNavState, clearThreadState])
+
+  const openProfile = useCallback(() => {
+    clearReviewsNavState()
+    setActiveScreen(ACTIVE_SCREEN_PROFILE)
+    clearThreadState()
+  }, [clearReviewsNavState, clearThreadState])
+
+  const openReviews = useCallback(() => {
+    const uid = user?.id != null ? String(user.id) : ''
+    if (!uid) return
+    clearThreadState()
+    setViewingUserReviewsId(uid)
+    setActiveScreen(ACTIVE_SCREEN_REVIEWS)
+  }, [clearThreadState, user?.id])
+
+  const openUserReviews = useCallback(
+    (incomingUserId) => {
+      if (incomingUserId == null || incomingUserId === '') return
+      const id = String(incomingUserId).trim()
+      if (!id) return
+      clearThreadState()
+      setViewingUserReviewsId(id)
+      setActiveScreen(ACTIVE_SCREEN_REVIEWS)
+      const next = `#/user/${encodeURIComponent(id)}`
+      if (typeof window !== 'undefined' && window.location.hash !== next) {
+        window.location.hash = next
+      }
+    },
+    [clearThreadState]
   )
+
+  const closeThread = useCallback(() => {
+    setActiveScreen(ACTIVE_SCREEN_CHATS)
+    clearThreadState()
+  }, [clearThreadState])
+
+  /**
+   * @param {string} threadId
+   * @param {unknown[] | undefined} listSnapshot filas del mapper justo después de fetch (evita carrera con ref).
+   */
+  const openThread = useCallback(
+    (threadId, listSnapshot) => {
+      if (threadId == null || threadId === '') return
+      const rows = listSnapshot ?? chatThreadListRef.current
+      const row = Array.isArray(rows)
+        ? rows.find((t) => t && typeof t === 'object' && String(t.threadId) === String(threadId))
+        : null
+      if (!row || typeof row !== 'object') return
+      clearReviewsNavState()
+      setActiveThreadId(String(threadId))
+      setActiveThreadSummary(row)
+      setActiveScreen(ACTIVE_SCREEN_THREAD)
+    },
+    [clearReviewsNavState]
+  )
+
+  const openChatsRoot = useCallback(() => {
+    clearReviewsNavState()
+    setPendingDmVisual(null)
+    clearThreadState()
+    setActiveScreen(ACTIVE_SCREEN_CHATS)
+    setChatsListResetGeneration((g) => g + 1)
+  }, [clearReviewsNavState, clearThreadState])
+
+  const clearPendingDmVisual = useCallback(() => {
+    setPendingDmVisual(null)
+  }, [])
+
+  const openChatsWithPeer = useCallback(
+    (peerUserId, fromCard = null) => {
+      clearReviewsNavState()
+      if (peerUserId == null || peerUserId === '') return
+      const id = String(peerUserId)
+      if (!id) return
+      if (fromCard && typeof fromCard === 'object') {
+        const dn = String(fromCard.displayName ?? fromCard.user_name ?? '').trim()
+        const photo = fromCard.userPhoto ?? fromCard.user_photo ?? null
+        const ph = fromCard.phone != null ? String(fromCard.phone).trim() : null
+        setPendingDmVisual({
+          peerId: id,
+          displayName: dn,
+          userName: dn,
+          userPhoto: typeof photo === 'string' && photo.trim() ? photo.trim() : null,
+          phone: ph && ph.length > 0 ? ph : null,
+          allowPhoneCalls: fromCard.allow_phone_calls !== false,
+        })
+      } else {
+        setPendingDmVisual(null)
+      }
+      const next = `#/chat/${encodeURIComponent(id)}`
+      if (typeof window !== 'undefined' && window.location.hash !== next) {
+        window.location.hash = next
+      }
+      clearThreadState()
+      setActiveScreen(ACTIVE_SCREEN_CHATS)
+    },
+    [clearReviewsNavState, clearThreadState]
+  )
+
+  useLayoutEffect(() => {
+    const valid = new Set([
+      ACTIVE_SCREEN_MAP,
+      ACTIVE_SCREEN_ALERTS,
+      ACTIVE_SCREEN_CHATS,
+      ACTIVE_SCREEN_PROFILE,
+      ACTIVE_SCREEN_REVIEWS,
+      ACTIVE_SCREEN_THREAD,
+    ])
+    if (!valid.has(activeScreen)) {
+      setActiveScreen(ACTIVE_SCREEN_MAP)
+      return
+    }
+    if (activeScreen === ACTIVE_SCREEN_THREAD && (!activeThreadId || !activeThreadSummary)) {
+      setActiveScreen(ACTIVE_SCREEN_CHATS)
+      clearThreadState()
+    }
+    if (activeScreen === ACTIVE_SCREEN_REVIEWS && !viewingUserReviewsId) {
+      setActiveScreen(ACTIVE_SCREEN_CHATS)
+    }
+  }, [activeScreen, activeThreadId, activeThreadSummary, viewingUserReviewsId, clearThreadState])
 
   const chatUnreadTotal = useMemo(
     () =>
@@ -57,7 +240,6 @@ export function AppScreenProvider({ children }) {
     setChatUnreadByThread((prev) => ({ ...prev, [id]: 0 }))
   }, [])
 
-  /** Badge global: hidratar no leídos al iniciar sesión / refrescar usuario sin depender de montar ChatsPage. */
   useEffect(() => {
     let cancelled = false
     const uid = String(user?.id ?? '')
@@ -84,142 +266,39 @@ export function AppScreenProvider({ children }) {
     }
   }, [user?.id, syncChatUnreadFromThreads])
 
-  const clearUserReviewsNav = useCallback(() => {
-    setViewingUserReviewsId(null)
-    if (typeof window !== 'undefined' && window.location.hash.startsWith('#/user/')) {
-      const { pathname, search } = window.location
-      window.history.replaceState(null, '', pathname + search)
-    }
-  }, [])
-
-  const mapFocusActions = useMemo(() => {
-    const go = (type) => () => {
-      clearUserReviewsNav()
-      dispatch({ type })
-      setMapFocusGeneration((g) => g + 1)
-    }
-    return {
-      openHome: go('openHome'),
-      openSearchParking: go('openSearchParking'),
-      openParkHere: go('openParkHere'),
-    }
-  }, [clearUserReviewsNav])
-
-  const { openHome, openSearchParking, openParkHere } = mapFocusActions
-
-  /** Acciones que solo despachan un tipo (evita bloques duplicados en quality-gate). */
-  const simpleScreenActions = useMemo(
-    () => ({
-      openAlerts: () => {
-        clearUserReviewsNav()
-        dispatch({ type: 'openAlerts' })
-      },
-      openChats: () => {
-        clearUserReviewsNav()
-        dispatch({ type: 'openChats' })
-      },
-      openProfile: () => {
-        clearUserReviewsNav()
-        dispatch({ type: 'openProfile' })
-      },
-      openReviews: () => {
-        clearUserReviewsNav()
-        dispatch({ type: 'openReviews' })
-      },
-    }),
-    [clearUserReviewsNav]
-  )
-
-  const { openAlerts, openChats, openProfile, openReviews } = simpleScreenActions
-
-  const openUserReviews = useCallback((incomingUserId) => {
-    if (incomingUserId == null || incomingUserId === '') return
-    const id = String(incomingUserId).trim()
-    if (!id) return
-    setViewingUserReviewsId(id)
-    dispatch({ type: 'openUserReviews' })
-    const next = `#/user/${encodeURIComponent(id)}`
-    if (typeof window !== 'undefined' && window.location.hash !== next) {
-      window.location.hash = next
-    }
-  }, [])
-
   useEffect(() => {
     const onHash = () => {
-      const m = window.location.hash.match(/^#\/user\/([^/?#]+)/)
-      if (!m) return
-      const id = decodeURIComponent(m[1])
-      setViewingUserReviewsId(id)
-      dispatch({ type: 'openUserReviews' })
+      const hash = typeof window !== 'undefined' ? window.location.hash : ''
+      const userM = hash.match(/^#\/user\/([^/?#]+)/)
+      if (userM) {
+        const id = decodeURIComponent(userM[1])
+        setViewingUserReviewsId(id)
+        setActiveScreen(ACTIVE_SCREEN_REVIEWS)
+        clearThreadState()
+        return
+      }
+      const chatM = hash.match(/^#\/chat\/([^/?#]+)/)
+      if (chatM) {
+        clearReviewsNavState()
+        clearThreadState()
+        setActiveScreen(ACTIVE_SCREEN_CHATS)
+      }
     }
     onHash()
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
-  }, [])
-
-  /** Siempre abre chats y fuerza volver a lista (sin toggles). */
-  const openChatsRoot = useCallback(() => {
-    clearUserReviewsNav()
-    setPendingDmVisual(null)
-    dispatch({ type: 'openChats' })
-    setChatsListResetGeneration((g) => g + 1)
-  }, [clearUserReviewsNav])
-
-  const clearPendingDmVisual = useCallback(() => {
-    setPendingDmVisual(null)
-  }, [])
-
-  /**
-   * @param {string} peerUserId
-   * @param {null | { displayName?: string, user_name?: string, userPhoto?: string | null, user_photo?: string | null, phone?: string | null, allow_phone_calls?: boolean }} [fromCard]
-   */
-  const openChatsWithPeer = useCallback(
-    (peerUserId, fromCard = null) => {
-      clearUserReviewsNav()
-      if (peerUserId == null || peerUserId === '') return
-      const id = String(peerUserId)
-      if (!id) return
-      if (fromCard && typeof fromCard === 'object') {
-        const dn = String(fromCard.displayName ?? fromCard.user_name ?? '').trim()
-        const photo = fromCard.userPhoto ?? fromCard.user_photo ?? null
-        const ph = fromCard.phone != null ? String(fromCard.phone).trim() : null
-        setPendingDmVisual({
-          peerId: id,
-          displayName: dn,
-          userName: dn,
-          userPhoto: typeof photo === 'string' && photo.trim() ? photo.trim() : null,
-          phone: ph && ph.length > 0 ? ph : null,
-          allowPhoneCalls: fromCard.allow_phone_calls !== false,
-        })
-      } else {
-        setPendingDmVisual(null)
-      }
-      const next = `#/chat/${encodeURIComponent(id)}`
-      if (typeof window !== 'undefined' && window.location.hash !== next) {
-        window.location.hash = next
-      }
-      dispatch({ type: 'openChats' })
-    },
-    [clearUserReviewsNav]
-  )
-
-  useEffect(() => {
-    const syncChatHash = () => {
-      const m = typeof window !== 'undefined' && window.location.hash.match(/^#\/chat\/([^/?#]+)/)
-      if (m) {
-        clearUserReviewsNav()
-        dispatch({ type: 'openChats' })
-      }
-    }
-    syncChatHash()
-    window.addEventListener('hashchange', syncChatHash)
-    return () => window.removeEventListener('hashchange', syncChatHash)
-  }, [clearUserReviewsNav])
+  }, [clearThreadState, clearReviewsNavState])
 
   const value = useMemo(
     () => ({
-      screen,
+      /** @deprecated Usar activeScreen */
+      screen: activeScreen,
+      activeScreen,
+      mapMode,
+      activeThreadId,
+      activeThreadSummary,
       viewingUserReviewsId,
+      openMap,
       openProfile,
       openReviews,
       openUserReviews,
@@ -230,6 +309,9 @@ export function AppScreenProvider({ children }) {
       openChats,
       openChatsRoot,
       openChatsWithPeer,
+      openThread,
+      closeThread,
+      syncChatThreadList,
       pendingDmVisual,
       clearPendingDmVisual,
       mapFocusGeneration,
@@ -239,9 +321,34 @@ export function AppScreenProvider({ children }) {
       syncChatUnreadFromThreads,
       clearChatThreadUnread,
     }),
-    // Una línea: evita bloque duplicado vs el objeto (quality-gate DUPLICATE_BLOCK_SAME_FILE).
     [
-      screen, viewingUserReviewsId, openProfile, openReviews, openUserReviews, openHome, openSearchParking, openParkHere, openAlerts, openChats, openChatsRoot, openChatsWithPeer, pendingDmVisual, clearPendingDmVisual, mapFocusGeneration, chatsListResetGeneration, chatUnreadByThread, chatUnreadTotal, syncChatUnreadFromThreads, clearChatThreadUnread,
+      activeScreen,
+      activeThreadId,
+      activeThreadSummary,
+      chatUnreadByThread,
+      chatUnreadTotal,
+      chatsListResetGeneration,
+      clearChatThreadUnread,
+      clearPendingDmVisual,
+      closeThread,
+      mapFocusGeneration,
+      mapMode,
+      openAlerts,
+      openChats,
+      openChatsRoot,
+      openChatsWithPeer,
+      openHome,
+      openMap,
+      openParkHere,
+      openProfile,
+      openReviews,
+      openSearchParking,
+      openThread,
+      openUserReviews,
+      pendingDmVisual,
+      syncChatThreadList,
+      syncChatUnreadFromThreads,
+      viewingUserReviewsId,
     ]
   )
 

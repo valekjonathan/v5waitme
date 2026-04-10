@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-10T00:03:22.669Z
-Git revision: d244c8971f62b9c14d794e680dd3cbad6596d5b5
+Generated: 2026-04-10T00:11:41.087Z
+Git revision: 2bf5b8f09953660caae28e079b38e453ed508ba8
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -282,7 +282,7 @@ auth.js, authUid.js, location.js, profile.js, reviews.ts, streetSearchService.js
 === PANTALLAS / RUTAS LÓGICAS ===
 Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).
 Pantallas:
-home, profile, reviews, searchParking, parkHere, alerts, chats
+map, profile, reviews, map, map, alerts, chats
 Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map import estático en MapParkingPage/MainLayout (sin React.lazy/Suspense).
 
 === ARCHIVOS CRÍTICOS (arranque y shell) ===

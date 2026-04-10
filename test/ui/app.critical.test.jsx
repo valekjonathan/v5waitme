@@ -264,7 +264,7 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
       </AuthProvider>
     )
 
-    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('home')
+    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('map')
 
     await act(async () => {
       const headerPerfilBtn = document.querySelector(
@@ -286,6 +286,6 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
       expect(screen.queryByText('La app se está recuperando')).toBeNull()
       expect(screen.queryByText('OK_HOME')).not.toBeNull()
     })
-    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('home')
+    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('map')
   })
 })

@@ -1,11 +1,10 @@
 import { forwardRef, memo } from 'react'
 import { useAppScreen } from '../lib/AppScreenContext'
 import {
-  APP_SCREEN_ALERTS,
-  APP_SCREEN_CHATS,
-  APP_SCREEN_HOME,
-  APP_SCREEN_PARK_HERE,
-  APP_SCREEN_SEARCH_PARKING,
+  ACTIVE_SCREEN_ALERTS,
+  ACTIVE_SCREEN_CHATS,
+  ACTIVE_SCREEN_MAP,
+  ACTIVE_SCREEN_THREAD,
 } from '../lib/appScreenState.js'
 import { useAuth } from '../lib/AuthContext'
 import { useProfileIncompleteNotice } from '../lib/ProfileIncompleteNoticeContext.jsx'
@@ -31,16 +30,14 @@ const divider = <div style={{ height: 32, width: 1, background: colors.border }}
 const BottomNav = memo(
   forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
-  const { screen, chatUnreadTotal = 0 } = nav
+  const { activeScreen, chatUnreadTotal = 0 } = nav
   const { status, isProfileComplete } = useAuth()
   const notice = useProfileIncompleteNotice()
 
-  const isMapActive =
-    screen === APP_SCREEN_HOME ||
-    screen === APP_SCREEN_SEARCH_PARKING ||
-    screen === APP_SCREEN_PARK_HERE
-  const isAlertsActive = screen === APP_SCREEN_ALERTS
-  const isChatActive = screen === APP_SCREEN_CHATS
+  const isMapActive = activeScreen === ACTIVE_SCREEN_MAP
+  const isAlertsActive = activeScreen === ACTIVE_SCREEN_ALERTS
+  const isChatActive =
+    activeScreen === ACTIVE_SCREEN_CHATS || activeScreen === ACTIVE_SCREEN_THREAD
 
   const guardOr = (fn) => {
     if (!interactive) return undefined

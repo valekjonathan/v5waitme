@@ -21,14 +21,15 @@ import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import Button from '../ui/Button'
 import { colors } from '../design/colors'
 import {
-  APP_SCREEN_ALERTS,
-  APP_SCREEN_CHATS,
-  APP_SCREEN_PARK_HERE,
-  APP_SCREEN_PROFILE,
-  APP_SCREEN_REVIEWS,
-  APP_SCREEN_SEARCH_PARKING,
-  APP_SCREEN_USER_REVIEWS,
+  ACTIVE_SCREEN_ALERTS,
+  ACTIVE_SCREEN_CHATS,
+  ACTIVE_SCREEN_MAP,
+  ACTIVE_SCREEN_PROFILE,
+  ACTIVE_SCREEN_REVIEWS,
+  ACTIVE_SCREEN_THREAD,
 } from '../lib/appScreenState.js'
+import ChatThreadView from '../features/chats/ChatThreadView.jsx'
+import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
 /**
@@ -190,10 +191,10 @@ function HomeActionGate({ children }) {
 }
 
 function AuthenticatedShellWithBoundary({ children }) {
-  const { screen } = useAppScreen()
+  const { activeScreen, activeThreadId } = useAppScreen()
   return (
     <div style={gateColumnStyle}>
-      <ErrorBoundary resetKeys={[screen]} name="shell">
+      <ErrorBoundary resetKeys={[activeScreen, activeThreadId]} name="shell">
         {children}
       </ErrorBoundary>
     </div>
@@ -204,16 +205,68 @@ function AppLayout({ children }) {
   return <IphoneFrame>{children}</IphoneFrame>
 }
 
+function clearChatHashFromUrl() {
+  if (typeof window !== 'undefined' && window.location.hash.startsWith('#/chat/')) {
+    const { pathname, search } = window.location
+    window.history.replaceState(null, '', pathname + search)
+  }
+}
+
 /** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
 function AuthenticatedMainChrome() {
-  const { screen } = useAppScreen()
-  if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
-  if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
-  if (screen === APP_SCREEN_USER_REVIEWS) return <UserReviewsPage />
-  if (screen === APP_SCREEN_SEARCH_PARKING || screen === APP_SCREEN_PARK_HERE)
+  const { user } = useAuth()
+  const nav = useAppScreen()
+  const {
+    activeScreen,
+    mapMode,
+    activeThreadId,
+    activeThreadSummary,
+    viewingUserReviewsId,
+    closeThread,
+    clearPendingDmVisual,
+  } = nav
+
+  const sessionUid = user?.id != null ? String(user.id) : ''
+
+  if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
+    const tid = String(activeThreadId).trim()
+    const localFb = isDmDevFallbackThread(tid)
+    return (
+      <ChatThreadView
+        summary={activeThreadSummary}
+        userId={sessionUid}
+        localFallback={localFb}
+        onBack={() => {
+          closeThread()
+          clearPendingDmVisual?.()
+          clearChatHashFromUrl()
+        }}
+      />
+    )
+  }
+
+  if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
+    if (viewingUserReviewsId === sessionUid) return <ReviewsPage />
+    return <UserReviewsPage />
+  }
+
+  if (activeScreen === ACTIVE_SCREEN_CHATS) return <ChatsPage />
+  if (activeScreen === ACTIVE_SCREEN_ALERTS) return <AlertsPage />
+  if (activeScreen === ACTIVE_SCREEN_PROFILE) return <ProfilePage />
+
+  if (activeScreen === ACTIVE_SCREEN_MAP) {
+    if (mapMode === 'home') {
+      return (
+        <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+          <HomeActionGate>
+            <HomePage />
+          </HomeActionGate>
+        </ScreenShell>
+      )
+    }
     return <MapParkingPage />
-  if (screen === APP_SCREEN_ALERTS) return <AlertsPage />
-  if (screen === APP_SCREEN_CHATS) return <ChatsPage />
+  }
+
   return (
     <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
       <HomeActionGate>

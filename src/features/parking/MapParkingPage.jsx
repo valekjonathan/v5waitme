@@ -2,7 +2,6 @@ import { useAppScreen } from '../../lib/AppScreenContext'
 import Map from '../map/components/Map.jsx'
 import ScreenShell from '../../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
-import { APP_SCREEN_PARK_HERE } from '../../lib/appScreenState.js'
 import { useSimulatedParkingUsers } from '../map/useSimulatedParkingUsers'
 import SearchParkingOverlay from './components/SearchParkingOverlay.jsx'
 
@@ -28,8 +27,8 @@ const mapPageMapSlotStyle = {
  * Una sola pantalla de mapa para búsqueda y “aparcado”: el <Map /> no se desmonta al cambiar de modo.
  */
 export default function MapParkingPage() {
-  const { screen } = useAppScreen()
-  const mode = screen === APP_SCREEN_PARK_HERE ? 'parked' : 'search'
+  const { mapMode } = useAppScreen()
+  const mode = mapMode === 'parkHere' ? 'parked' : 'search'
   const users = useSimulatedParkingUsers()
 
   return (
