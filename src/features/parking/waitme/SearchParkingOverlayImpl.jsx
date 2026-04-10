@@ -19,6 +19,7 @@ import {
   updatePurchaseThreadId,
 } from '../../../services/waitmePurchaseRequests.js'
 import { getOrCreateDmThread, listDmThreadsForUser, sendDmMessage } from '../../../services/waitmeChats.js'
+import { buildReservationFromAlert } from '../../../services/waitmeReservations.js'
 import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import ConfirmModal from '../../../ui/ConfirmModal.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
@@ -66,9 +67,12 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     hasSentWaitMeToSeller,
     openThread,
     syncChatThreadList,
+    createReservation,
+    openReservations,
   } = useAppScreen()
   const [confirmBuyUser, setConfirmBuyUser] = useState(/** @type {Record<string, unknown> | null} */ (null))
   const [purchaseBusy, setPurchaseBusy] = useState(false)
+  const [purchaseError, setPurchaseError] = useState(/** @type {string | null} */ (null))
   const isSearch = mode === 'search'
   const [address, setAddress] = useState('')
   /** Dirección elegida en autocompletado (sin reverse geocode). */
@@ -161,6 +165,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
 
   const onBuyAlert = useCallback((alertUser) => {
     if (!alertUser || typeof alertUser !== 'object') return
+    setPurchaseError(null)
     setConfirmBuyUser(alertUser)
   }, [])
 
@@ -175,7 +180,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
     if (!confirmBuyUser || purchaseBusy) return
     const uid = authUser?.id != null ? String(authUser.id) : ''
     if (!uid) {
-      setConfirmBuyUser(null)
+      setPurchaseError('Sesión no válida. Vuelve a iniciar sesión.')
       return
     }
     const snapshot = simulatedUserToAlert(confirmBuyUser) ?? confirmBuyUser
@@ -183,12 +188,25 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       snapshot.peer_user_id ?? snapshot.user_id ?? snapshot.id ?? confirmBuyUser.id ?? ''
     ).trim()
     if (!sellerId) {
-      setConfirmBuyUser(null)
+      setPurchaseError('No se pudo identificar al vendedor.')
       return
     }
 
-    if (!isSupabaseConfigured() || !isRealSupabaseAuthUid(uid)) {
-      setConfirmBuyUser(null)
+    setPurchaseError(null)
+
+    const canUseSupabasePurchase = isSupabaseConfigured() && isRealSupabaseAuthUid(uid)
+
+    if (!canUseSupabasePurchase) {
+      try {
+        const reservation = buildReservationFromAlert(snapshot, uid)
+        createReservation(reservation)
+        markWaitMeSentToSeller(sellerId)
+        setConfirmBuyUser(null)
+        openReservations()
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e)
+        setPurchaseError(msg || 'No se pudo registrar la reserva.')
+      }
       return
     }
 
@@ -202,6 +220,11 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
         const price = Number(snapshot.price ?? snapshot.priceEUR ?? 0)
         const { data, error } = await insertPurchaseRequest(uid, sellerId, price, snapshot)
         if (error || !data) {
+          setPurchaseError(
+            error?.message
+              ? `No se pudo enviar la solicitud: ${error.message}`
+              : 'No se pudo enviar la solicitud (comprueba Supabase y la migración waitme_purchase_requests).'
+          )
           return
         }
         requestRow = data
@@ -209,6 +232,11 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
 
       const { data: threadId, error: tErr } = await getOrCreateDmThread(sellerId)
       if (tErr || threadId == null || threadId === '') {
+        setPurchaseError(
+          tErr?.message
+            ? `No se pudo abrir el chat: ${tErr.message}`
+            : 'No se pudo abrir el chat con el vendedor.'
+        )
         return
       }
 
@@ -234,19 +262,25 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       syncChatThreadList?.(list)
       openThread(String(threadId), list)
       setConfirmBuyUser(null)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setPurchaseError(msg || 'Error al completar la compra.')
     } finally {
       setPurchaseBusy(false)
     }
   }, [
     authUser?.id,
     confirmBuyUser,
+    createReservation,
     markWaitMeSentToSeller,
+    openReservations,
     openThread,
     purchaseBusy,
     syncChatThreadList,
   ])
 
   const handleCancelPurchase = useCallback(() => {
+    setPurchaseError(null)
     setConfirmBuyUser(null)
   }, [])
 
@@ -426,6 +460,7 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
       <ConfirmModal
         open={confirmModalOpen}
         message={confirmMessage}
+        errorMessage={purchaseError}
         onCancel={handleCancelPurchase}
         onConfirm={handleConfirmPurchase}
       />
