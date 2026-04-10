@@ -74,10 +74,11 @@ export async function waitForHttpOk(url, maxMs = 90_000) {
  * Una sola petición: true solo si el servidor responde 200.
  *
  * @param {string} url
+ * @param {string} [accept] cabecera Accept (p. ej. text/html o comodín para JS)
  */
-export async function probeHttp200(url) {
+export async function probeHttp200(url, accept = 'text/html') {
   try {
-    const res = await fetch(url, { redirect: 'manual', headers: { Accept: 'text/html' } })
+    const res = await fetch(url, { redirect: 'manual', headers: { Accept: accept } })
     return res.status === 200
   } catch {
     return false
