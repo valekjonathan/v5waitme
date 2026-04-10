@@ -160,6 +160,16 @@ export default function UserAlertCardActions({
   const [timeLeftMs, setTimeLeftMs] = useState(0)
 
   useEffect(() => {
+    const untilMs = alert?.acceptedUntilMs
+    if (typeof untilMs === 'number' && Number.isFinite(untilMs)) {
+      const tick = () => {
+        setTimeLeftMs(Math.max(0, untilMs - Date.now()))
+      }
+      tick()
+      const interval = setInterval(tick, 1000)
+      return () => clearInterval(interval)
+    }
+
     if (alert?.available_in_minutes == null) {
       setTimeLeftMs(0)
       return undefined
@@ -175,7 +185,7 @@ export default function UserAlertCardActions({
     tick()
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
-  }, [alert?.available_in_minutes])
+  }, [alert?.acceptedUntilMs, alert?.available_in_minutes])
 
   const minutes = Math.floor(timeLeftMs / 60000)
   const seconds = Math.floor((timeLeftMs % 60000) / 1000)

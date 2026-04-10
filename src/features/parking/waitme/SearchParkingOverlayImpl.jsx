@@ -9,9 +9,17 @@ import {
   getCurrentLocationFast,
   subscribeToLocation,
 } from '../../../services/location.js'
-import { buildReservationFromAlert } from '../../../services/waitmeReservations.js'
 import { useAuth } from '../../../lib/AuthContext'
 import { useAppScreen } from '../../../lib/AppScreenContext'
+import { isRealSupabaseAuthUid } from '../../../services/authUid.js'
+import { isSupabaseConfigured } from '../../../services/supabase.js'
+import {
+  fetchPendingPurchaseForBuyerSeller,
+  insertPurchaseRequest,
+  updatePurchaseThreadId,
+} from '../../../services/waitmePurchaseRequests.js'
+import { getOrCreateDmThread, listDmThreadsForUser, sendDmMessage } from '../../../services/waitmeChats.js'
+import { simulatedUserToAlert } from './simulatedUserToAlert.js'
 import ConfirmModal from '../../../ui/ConfirmModal.jsx'
 import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap.jsx'
 import { flyGlobalMapTo } from '../../map/mapControls.js'
@@ -53,8 +61,14 @@ const filterBtnStyle = {
 
 export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [] }) {
   const { user: authUser } = useAuth()
-  const { createReservation, openReservations } = useAppScreen()
+  const {
+    markWaitMeSentToSeller,
+    hasSentWaitMeToSeller,
+    openThread,
+    syncChatThreadList,
+  } = useAppScreen()
   const [confirmBuyUser, setConfirmBuyUser] = useState(/** @type {Record<string, unknown> | null} */ (null))
+  const [purchaseBusy, setPurchaseBusy] = useState(false)
   const isSearch = mode === 'search'
   const [address, setAddress] = useState('')
   /** Dirección elegida en autocompletado (sin reverse geocode). */
@@ -116,6 +130,25 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const pickedUser = selectedUserId ? allUsers.find((u) => u.id === selectedUserId) : null
   const user = pickedUser ?? closestUser
 
+  const sellerIdForCard = user?.id != null ? String(user.id) : ''
+  const waitMeAlreadySent = Boolean(sellerIdForCard && hasSentWaitMeToSeller(sellerIdForCard))
+
+  useEffect(() => {
+    let cancelled = false
+    const uid = authUser?.id != null ? String(authUser.id) : ''
+    if (!uid || !sellerIdForCard || !isSupabaseConfigured() || !isRealSupabaseAuthUid(uid)) {
+      return undefined
+    }
+    void (async () => {
+      const { data } = await fetchPendingPurchaseForBuyerSeller(uid, sellerIdForCard)
+      if (cancelled || !data) return
+      markWaitMeSentToSeller(sellerIdForCard)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authUser?.id, sellerIdForCard, markWaitMeSentToSeller])
+
   useEffect(() => {
     if (selectedUserId && !allUsers.some((u) => u.id === selectedUserId)) {
       setSelectedUserId(null)
@@ -138,18 +171,80 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
   const confirmPriceLabel = Number.isFinite(confirmPriceNum) ? `${confirmPriceNum}€` : '—€'
   const confirmMessage = `Vas a comprar esta alerta por ${confirmPriceLabel}.\n¿Quieres continuar?`
 
-  const handleConfirmPurchase = useCallback(() => {
-    if (!confirmBuyUser) return
+  const handleConfirmPurchase = useCallback(async () => {
+    if (!confirmBuyUser || purchaseBusy) return
     const uid = authUser?.id != null ? String(authUser.id) : ''
     if (!uid) {
       setConfirmBuyUser(null)
       return
     }
-    const reservation = buildReservationFromAlert(confirmBuyUser, uid)
-    createReservation(reservation)
-    setConfirmBuyUser(null)
-    openReservations()
-  }, [authUser?.id, confirmBuyUser, createReservation, openReservations])
+    const snapshot = simulatedUserToAlert(confirmBuyUser) ?? confirmBuyUser
+    const sellerId = String(
+      snapshot.peer_user_id ?? snapshot.user_id ?? snapshot.id ?? confirmBuyUser.id ?? ''
+    ).trim()
+    if (!sellerId) {
+      setConfirmBuyUser(null)
+      return
+    }
+
+    if (!isSupabaseConfigured() || !isRealSupabaseAuthUid(uid)) {
+      setConfirmBuyUser(null)
+      return
+    }
+
+    setPurchaseBusy(true)
+    try {
+      let requestRow = null
+      const { data: existing } = await fetchPendingPurchaseForBuyerSeller(uid, sellerId)
+      if (existing) {
+        requestRow = existing
+      } else {
+        const price = Number(snapshot.price ?? snapshot.priceEUR ?? 0)
+        const { data, error } = await insertPurchaseRequest(uid, sellerId, price, snapshot)
+        if (error || !data) {
+          return
+        }
+        requestRow = data
+      }
+
+      const { data: threadId, error: tErr } = await getOrCreateDmThread(sellerId)
+      if (tErr || threadId == null || threadId === '') {
+        return
+      }
+
+      if (requestRow?.id && String(requestRow.threadId ?? '') !== String(threadId)) {
+        await updatePurchaseThreadId(String(requestRow.id), String(threadId))
+      }
+
+      const reqId = requestRow?.id != null ? String(requestRow.id) : ''
+      const introKey = reqId ? `waitme_intro_${reqId}` : ''
+      if (
+        introKey &&
+        typeof window !== 'undefined' &&
+        !window.sessionStorage.getItem(introKey)
+      ) {
+        await sendDmMessage(uid, String(threadId), 'Hey! quiero comprar tu WaitMe!')
+        window.sessionStorage.setItem(introKey, '1')
+      }
+
+      markWaitMeSentToSeller(sellerId)
+
+      const { data: threads } = await listDmThreadsForUser(uid)
+      const list = Array.isArray(threads) ? threads : []
+      syncChatThreadList?.(list)
+      openThread(String(threadId), list)
+      setConfirmBuyUser(null)
+    } finally {
+      setPurchaseBusy(false)
+    }
+  }, [
+    authUser?.id,
+    confirmBuyUser,
+    markWaitMeSentToSeller,
+    openThread,
+    purchaseBusy,
+    syncChatThreadList,
+  ])
 
   const handleCancelPurchase = useCallback(() => {
     setConfirmBuyUser(null)
@@ -307,6 +402,8 @@ export default function SearchParkingOverlayImpl({ mode = 'search', allUsers = [
                   userLocation={userLocation}
                   collapsed={false}
                   onBuyAlert={onBuyAlert}
+                  waitMeAlreadySent={waitMeAlreadySent}
+                  isLoading={purchaseBusy}
                 />
               ) : (
                 <CreateAlertCard

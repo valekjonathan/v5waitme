@@ -30,7 +30,7 @@ const divider = <div style={{ height: 32, width: 1, background: colors.border }}
 const BottomNav = memo(
   forwardRef(function BottomNav({ interactive = true }, ref) {
   const nav = useAppScreen()
-  const { activeScreen, chatUnreadTotal = 0 } = nav
+  const { activeScreen, chatUnreadTotal = 0, activeWaitmeReservationBadgeCount = 0 } = nav
   const { status, isProfileComplete } = useAuth()
   const notice = useProfileIncompleteNotice()
 
@@ -77,7 +77,37 @@ const BottomNav = memo(
           aria-current={isAlertsActive ? 'page' : undefined}
           onClick={guardOr(() => nav?.openAlerts?.())}
         >
-          <NavAlertIcon />
+          <span
+            style={{
+              position: 'relative',
+              width: 40,
+              height: 40,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <NavAlertIcon />
+            {activeWaitmeReservationBadgeCount > 0 ? (
+              <span
+                className="waitme-reservation-nav-dot"
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  bottom: 4,
+                  right: 2,
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #c084fc, #7c3aed)',
+                  border: '1px solid rgba(255,255,255,0.35)',
+                  boxShadow: '0 0 8px rgba(168,85,247,0.7)',
+                  pointerEvents: 'none',
+                }}
+              />
+            ) : null}
+          </span>
           <span style={labelStyle}>Alertas</span>
         </Button>
 

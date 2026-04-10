@@ -6,7 +6,7 @@
 export function isNavigationEnabledForAlert(alert) {
   if (!alert || typeof alert !== 'object') return false
   const st = String(alert.status ?? '').trim().toLowerCase()
-  return st === 'accepted' || st === 'in_progress'
+  return st === 'accepted' || st === 'in_progress' || st === 'locked'
 }
 
 /**

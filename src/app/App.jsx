@@ -34,6 +34,7 @@ import {
 } from '../lib/appScreenState.js'
 import ChatThreadView from '../features/chats/ChatThreadView.jsx'
 import { isDmDevFallbackThread } from '../services/waitmeChats.js'
+import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
 /**
@@ -149,6 +150,152 @@ function IncompleteProfileModalHost({ open, onClose }) {
         onClose()
       }}
     />
+  )
+}
+
+const buyerWaitmeToastStyle = {
+  position: 'fixed',
+  top: 'max(12px, env(safe-area-inset-top, 12px))',
+  left: 16,
+  right: 16,
+  zIndex: 2147483645,
+  padding: '12px 14px',
+  borderRadius: 12,
+  backgroundColor: 'rgba(17,24,39,0.96)',
+  border: '1px solid rgba(139,92,246,0.45)',
+  color: colors.textPrimary,
+  fontSize: 14,
+  fontWeight: 600,
+  textAlign: 'center',
+  boxSizing: 'border-box',
+  pointerEvents: 'none',
+}
+
+function BuyerWaitmeToast({ message, untilMs }) {
+  const [leftMs, setLeftMs] = useState(0)
+  useEffect(() => {
+    if (typeof untilMs !== 'number' || !Number.isFinite(untilMs)) {
+      setLeftMs(0)
+      return undefined
+    }
+    const tick = () => setLeftMs(Math.max(0, untilMs - Date.now()))
+    tick()
+    const t = window.setInterval(tick, 1000)
+    return () => window.clearInterval(t)
+  }, [untilMs])
+  const totalSec = Math.max(0, Math.ceil(leftMs / 1000))
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  const showCd =
+    typeof untilMs === 'number' && Number.isFinite(untilMs) && untilMs > Date.now() && totalSec > 0
+  return (
+    <div style={buyerWaitmeToastStyle} role="status">
+      <p style={{ margin: 0 }}>{message}</p>
+      {showCd ? (
+        <p
+          style={{
+            margin: '10px 0 0',
+            fontVariantNumeric: 'tabular-nums',
+            fontSize: 22,
+            fontWeight: 800,
+            color: '#c084fc',
+          }}
+        >
+          {String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function WaitMeIncomingPurchaseModal() {
+  const {
+    incomingWaitmePurchase,
+    dismissIncomingWaitmeModal,
+    respondIncomingWaitme,
+    buyerWaitmeNotice,
+    buyerWaitmeArrivalUntilMs,
+  } = useAppScreen()
+  const [busy, setBusy] = useState(false)
+  const [buyerName, setBuyerName] = useState('Usuario')
+
+  useEffect(() => {
+    const row = incomingWaitmePurchase
+    if (!row || typeof row !== 'object' || !row.buyerId) {
+      setBuyerName('Usuario')
+      return undefined
+    }
+    let cancelled = false
+    void fetchProfileDisplayName(String(row.buyerId)).then((n) => {
+      if (!cancelled) setBuyerName(n || 'Usuario')
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [incomingWaitmePurchase])
+
+  const open = Boolean(incomingWaitmePurchase && incomingWaitmePurchase.id)
+
+  return (
+    <>
+      {buyerWaitmeNotice ? (
+        <BuyerWaitmeToast message={buyerWaitmeNotice} untilMs={buyerWaitmeArrivalUntilMs} />
+      ) : null}
+      <div
+        role="dialog"
+        aria-modal={open}
+        aria-hidden={!open}
+        style={{
+          ...modalOverlayStyle,
+          display: open ? 'flex' : 'none',
+          zIndex: 2147483646,
+        }}
+        onClick={busy ? undefined : dismissIncomingWaitmeModal}
+      >
+        <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
+          <p style={modalTextStyle}>
+            {buyerName} quiere comprar tu WaitMe!
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button
+                type="button"
+                variant="primary"
+                style={{ flex: 1 }}
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true)
+                  void respondIncomingWaitme(true).finally(() => setBusy(false))
+                }}
+              >
+                Aceptar
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                style={{ flex: 1 }}
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true)
+                  void respondIncomingWaitme(false).finally(() => setBusy(false))
+                }}
+              >
+                Rechazar
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              style={{ width: '100%' }}
+              disabled={busy}
+              onClick={dismissIncomingWaitmeModal}
+            >
+              Cerrar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -303,6 +450,7 @@ function AppGate() {
               open={incompleteModalOpen}
               onClose={closeIncompleteModal}
             />
+            <WaitMeIncomingPurchaseModal />
             {!isProfileComplete ? <ProfilePage /> : <AuthenticatedRoutes />}
           </div>
         </AppLayout>

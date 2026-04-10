@@ -243,6 +243,8 @@ function UserAlertCard({
   /** Lista chats: misma tarjeta que parking + bloque “Últimos mensajes” al pie. */
   showLastMessage = false,
   lastMessage = '',
+  /** Mapa/búsqueda: ya se envió solicitud WaitMe a este vendedor (botón inactivo). */
+  waitMeAlreadySent = false,
   /** Lista Chats: oculta fila Chats/Llamada/Navegar/contador y botón WaitMe inferior (misma tarjeta). */
   hideParkingActionsRow = false,
   /** Variante lista Chats: UI distinta sin romper parking/alertas. */
@@ -347,7 +349,7 @@ function UserAlertCard({
     onCall?.(user)
   }
   const handleBuy = () => {
-    if (isLoading) return
+    if (isLoading || waitMeAlreadySent) return
     onBuyAlert?.(user)
   }
 
@@ -367,6 +369,8 @@ function UserAlertCard({
 
   const [waitMePremiumHover, setWaitMePremiumHover] = useState(false)
   const [waitMePremiumPressed, setWaitMePremiumPressed] = useState(false)
+
+  const premiumWaitMeLabel = waitMeAlreadySent ? 'Ya le has enviado un WaitMe!' : buyLabel
 
   /** Reseñas: peer real de la fila (DM/lista); no mezclar con `alertId` u otros ids. */
   const reviewPeerId = reviewTargetUserIdFromRow(user)
@@ -464,12 +468,15 @@ function UserAlertCard({
   }
 
   const applePremiumTransition = `${oauthTransitionBase}, transform 260ms cubic-bezier(0.34, 1.35, 0.64, 1)`
-  const waitMePremiumShadowKey = waitMePremiumPressed
-    ? 'pressed'
-    : waitMePremiumHover
-      ? 'hover'
-      : 'idle'
-  const waitMePremiumTransform = waitMePremiumPressed ? 'scale(0.96)' : 'scale(1)'
+  const waitMePremiumShadowKey = waitMeAlreadySent
+    ? 'idle'
+    : waitMePremiumPressed
+      ? 'pressed'
+      : waitMePremiumHover
+        ? 'hover'
+        : 'idle'
+  const waitMePremiumTransform =
+    waitMeAlreadySent ? 'scale(1)' : waitMePremiumPressed ? 'scale(0.96)' : 'scale(1)'
   const waitMePremiumStyle = {
     ...oauthButtonBase,
     display: 'flex',
@@ -491,8 +498,15 @@ function UserAlertCard({
     boxShadow: appleShadow[waitMePremiumShadowKey],
     transform: waitMePremiumTransform,
     transition: applePremiumTransition,
-    filter: waitMePremiumHover && !waitMePremiumPressed ? 'brightness(1.05)' : 'none',
-    cursor: isLoading ? 'wait' : 'pointer',
+    filter:
+      waitMeAlreadySent
+        ? 'grayscale(0.2)'
+        : waitMePremiumHover && !waitMePremiumPressed
+          ? 'brightness(1.05)'
+          : 'none',
+    opacity: waitMeAlreadySent ? 0.58 : 1,
+    cursor: waitMeAlreadySent ? 'not-allowed' : isLoading ? 'wait' : 'pointer',
+    pointerEvents: waitMeAlreadySent ? 'none' : 'auto',
   }
 
   const vehicleIconNode = (
@@ -893,7 +907,7 @@ function UserAlertCard({
             alert={display}
             handleBuy={handleBuy}
             isLoading={isLoading}
-            buyLabel={buyLabel}
+            buyLabel={premiumWaitMeLabel}
           />
           {!hideBuy ? (
             <>
@@ -909,21 +923,27 @@ function UserAlertCard({
               <div style={{ marginTop: 10, marginBottom: 0 }}>
                 <button
                   type="button"
-                  disabled={isLoading}
+                  disabled={isLoading || waitMeAlreadySent}
                   onClick={handleBuy}
-                  onMouseEnter={() => setWaitMePremiumHover(true)}
+                  onMouseEnter={() => {
+                    if (!waitMeAlreadySent) setWaitMePremiumHover(true)
+                  }}
                   onMouseLeave={() => {
                     setWaitMePremiumHover(false)
                     setWaitMePremiumPressed(false)
                   }}
-                  onMouseDown={() => setWaitMePremiumPressed(true)}
+                  onMouseDown={() => {
+                    if (!waitMeAlreadySent) setWaitMePremiumPressed(true)
+                  }}
                   onMouseUp={() => setWaitMePremiumPressed(false)}
-                  onTouchStart={() => setWaitMePremiumPressed(true)}
+                  onTouchStart={() => {
+                    if (!waitMeAlreadySent) setWaitMePremiumPressed(true)
+                  }}
                   onTouchEnd={() => setWaitMePremiumPressed(false)}
                   onTouchCancel={() => setWaitMePremiumPressed(false)}
                   style={waitMePremiumStyle}
                 >
-                  {isLoading ? 'Procesando...' : buyLabel}
+                  {isLoading ? 'Procesando...' : premiumWaitMeLabel}
                 </button>
               </div>
             </>

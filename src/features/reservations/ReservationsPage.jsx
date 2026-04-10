@@ -82,6 +82,16 @@ export default function ReservationsPage() {
               const completed = st === 'completed'
               const sellerAmt = r.sellerAmount
               const feeAmt = r.feeAmount
+              const lat = r.location?.latitude ?? snap.latitude ?? snap.lat
+              const lng = r.location?.longitude ?? snap.longitude ?? snap.lng
+              const until = Number(r.acceptedUntilMs)
+              const userForCard = {
+                ...snap,
+                status: st === 'locked' ? 'locked' : snap.status,
+                latitude: lat,
+                longitude: lng,
+                acceptedUntilMs: Number.isFinite(until) ? until : undefined,
+              }
               return (
                 <div key={r.id != null && String(r.id) !== '' ? String(r.id) : `res-${i}`}>
                   <div style={completed ? bannerDone : bannerActive}>
@@ -90,7 +100,7 @@ export default function ReservationsPage() {
                       : 'Reserva activa'}
                   </div>
                   <UserAlertCard
-                    user={snap}
+                    user={userForCard}
                     streetPickAddress={typeof snap.address === 'string' ? snap.address : undefined}
                     hideBuy
                     isEmpty={false}

@@ -150,3 +150,37 @@ body {
 .waitme-app-root select {
   font-size: 16px;
 }
+
+@keyframes waitme-reservation-dot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+}
+
+.waitme-reservation-nav-dot {
+  animation: waitme-reservation-dot-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes waitme-nav-cta-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(37, 99, 235, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(37, 99, 235, 0),
+      0 2px 12px rgba(37, 99, 235, 0.35);
+  }
+}
+
+button.btn-ir-navigate-waitme:not(:disabled) {
+  animation: waitme-nav-cta-pulse 1.25s ease-in-out infinite;
+}
