@@ -6,9 +6,20 @@ import MainLayout, {
   mainLayoutMapBackgroundStyle,
   mainLayoutRootStyle,
 } from '../../shared/components/MainLayout.jsx'
+import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
+
+function NativeDebugHomePage() {
+  useNativeDebugMount('HomePage')
+  return <HomePage />
+}
+
+function NativeDebugMap(/** @type {Record<string, unknown>} */ props) {
+  useNativeDebugMount('Map')
+  return <Map {...props} />
+}
 
 const mapPageMapSlotStyle = {
   flex: '1 1 0%',
@@ -54,12 +65,12 @@ export default function AuthenticatedMapScreen() {
         mapBackgroundExtraStyle={{ pointerEvents: 'none' }}
         mapLayer={
           <div style={homeMapSlotStyle} data-waitme-map-slot>
-            <Map {...mapProps} />
+            <NativeDebugMap {...mapProps} />
             <SimulatedCarsOnMap enabled={mapForeground} users={users} />
           </div>
         }
       >
-        <HomePage />
+        <NativeDebugHomePage />
       </MainLayout>
     )
   }
@@ -68,7 +79,7 @@ export default function AuthenticatedMapScreen() {
     <div style={mainLayoutRootStyle}>
       <div style={{ ...mainLayoutMapBackgroundStyle, pointerEvents: 'auto' }} aria-label="Capa de mapa">
         <div style={mapPageMapSlotStyle} data-waitme-map-slot>
-          <Map {...mapProps} />
+          <NativeDebugMap {...mapProps} />
           <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
         </div>
       </div>

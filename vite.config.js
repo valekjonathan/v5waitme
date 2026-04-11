@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process'
 import { networkInterfaces } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -6,6 +7,14 @@ import react from '@vitejs/plugin-react'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+function gitShortHash() {
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+  } catch {
+    return 'unknown'
+  }
+}
 
 /** Evita el mismo aviso dos veces cuando herramientas cargan esta config más de una vez en el mismo proceso. */
 let sentryUploadHintLogged = false
@@ -105,13 +114,14 @@ export default defineConfig(({ mode, command }) => {
   return {
     /** Producción: rutas relativas para empaquetar `dist/` en Capacitor iOS. */
     base: command === 'build' ? './' : '/',
-    ...(command === 'serve'
-      ? {
-          define: {
+    define: {
+      ...(command === 'serve'
+        ? {
             'import.meta.env.VITE_DEV_LAN_ORIGIN': JSON.stringify(resolvedDevLanOrigin),
-          },
-        }
-      : {}),
+          }
+        : {}),
+      'import.meta.env.VITE_WAITME_BUILD_HASH': JSON.stringify(gitShortHash()),
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
