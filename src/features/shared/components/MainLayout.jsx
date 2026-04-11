@@ -13,10 +13,9 @@ const s = LAYOUT.spacing
 export const mainLayoutRootStyle = {
   position: 'relative',
   isolation: 'isolate',
-  flex: 1,
+  flex: '1 1 0%',
   minHeight: 0,
   minWidth: 0,
-  height: '100%',
   width: '100%',
   display: 'flex',
   flexDirection: 'column',

@@ -57,13 +57,15 @@ const Header = memo(
         boxShadow: '0 1px 0 rgba(0,0,0,0.25)',
         boxSizing: 'border-box',
         isolation: 'isolate',
+        /** Una sola fuente de safe-area top; el bloque interior lleva padding Y simétrico (centra “WaitMe!” con inset 0). */
+        paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
       <div
         ref={innerRef}
         style={{
           position: 'relative',
-          paddingTop: `calc(env(safe-area-inset-top, 0px) + ${HEADER_PADDING_Y}px)`,
+          paddingTop: HEADER_PADDING_Y,
           paddingBottom: HEADER_PADDING_Y,
           paddingLeft: HEADER_PADDING_X,
           paddingRight: HEADER_PADDING_X,

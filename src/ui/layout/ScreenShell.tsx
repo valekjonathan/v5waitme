@@ -10,6 +10,8 @@ import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
 const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
+  flex: '1 1 0%',
+  minHeight: 0,
   height: '100%',
   width: '100%',
   overflow: 'hidden',
@@ -46,7 +48,9 @@ export default function ScreenShell({
   }
 
   const mainStyle: CSSProperties = {
-    flex: 1,
+    flex: '1 1 0%',
+    minHeight: 0,
+    position: 'relative',
     overflow: 'hidden',
   }
 
@@ -54,7 +58,7 @@ export default function ScreenShell({
     mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED ? 'hidden' : mainOverflow
 
   const contentSlotStyle: CSSProperties = {
-    height: '100%',
+    flex: '1 1 0%',
     minHeight: 0,
     width: '100%',
     maxWidth: 'none',
@@ -63,6 +67,7 @@ export default function ScreenShell({
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
+    position: 'relative',
     overflow: mainOverflowResolved,
     WebkitOverflowScrolling: mainOverflowResolved === 'auto' ? 'touch' : undefined,
   }
