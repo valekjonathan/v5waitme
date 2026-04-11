@@ -61,6 +61,10 @@
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Acceso al servidor de desarrollo en la red local (misma URL que Safari).</string>
 </dict>
 </plist>
