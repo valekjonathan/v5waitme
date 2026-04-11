@@ -7,9 +7,22 @@ import { logFlow } from '../lib/devFlowLog.js'
 import { registerNativeOAuthDeepLink } from '../lib/nativeOAuthDeepLink'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
-registerNativeOAuthDeepLink()
-/** WKWebView (Capacitor iOS): el primer frame a veces no tiene `visualViewport.height`; la suscripción actualiza `--app-height` cuando el viewport estabiliza. */
-subscribeWaitmeViewportCssVars()
+/**
+ * Orden y try/catch: el viewport debe registrarse siempre; fallos en Sentry/OAuth nativo
+ * no deben impedir el montaje de React (Safari / plugins Capacitor en web).
+ */
+try {
+  /** WKWebView (Capacitor iOS): el primer frame a veces no tiene `visualViewport.height`; la suscripción actualiza `--app-height` cuando el viewport estabiliza. */
+  subscribeWaitmeViewportCssVars()
+} catch (e) {
+  console.error('[WaitMe][bootstrap] subscribeWaitmeViewportCssVars', e)
+}
+
+try {
+  registerNativeOAuthDeepLink()
+} catch (e) {
+  console.error('[WaitMe][bootstrap] registerNativeOAuthDeepLink', e)
+}
 
 if (import.meta.env.DEV) {
   const lan = String(import.meta.env.VITE_DEV_LAN_ORIGIN || '').trim()
@@ -24,12 +37,16 @@ if (sentryDsn) {
   const rawRelease = import.meta.env.VITE_SENTRY_RELEASE
   const release =
     typeof rawRelease === 'string' && rawRelease.trim() ? rawRelease.trim() : undefined
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: import.meta.env.MODE,
-    sendDefaultPii: false,
-    ...(release ? { release } : {}),
-  })
+  try {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: import.meta.env.MODE,
+      sendDefaultPii: false,
+      ...(release ? { release } : {}),
+    })
+  } catch (e) {
+    console.error('[WaitMe][bootstrap] Sentry.init', e)
+  }
 } else if (import.meta.env.DEV) {
   console.info(
     '[Sentry] Sin VITE_SENTRY_DSN (o vacío): el SDK no se inicializa; no se envían eventos.'
