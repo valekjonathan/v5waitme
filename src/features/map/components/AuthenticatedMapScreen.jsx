@@ -2,7 +2,10 @@ import Map from './Map.jsx'
 import SimulatedCarsOnMap from './SimulatedCarsOnMap.jsx'
 import SearchParkingOverlay from '../../parking/components/SearchParkingOverlay.jsx'
 import HomePage from '../../home/components/HomePage.jsx'
-import MainLayout from '../../shared/components/MainLayout.jsx'
+import MainLayout, {
+  mainLayoutMapBackgroundStyle,
+  mainLayoutRootStyle,
+} from '../../shared/components/MainLayout.jsx'
 import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
 import { useAppScreen } from '../../../lib/AppScreenContext'
@@ -13,7 +16,6 @@ function NativeDebugMap(/** @type {Record<string, unknown>} */ props) {
   return <Map {...props} />
 }
 
-/** Rellena la capa mapa (`MainLayout`: fondo absolute); `inset:0` evita altura % / slot colapsado. */
 const mapSlotStyle = {
   position: 'absolute',
   inset: 0,
@@ -24,8 +26,7 @@ const mapSlotStyle = {
 }
 
 /**
- * Mapa autenticado: siempre `MainLayout` → `MainLayoutChrome` → `HomePage` (mapa vía `mapLayer`).
- * Así `HomePage` monta en MAP aunque `mapMode` sea search/park (antes la rama sin MainLayout dejaba HomePage=false).
+ * Mapa autenticado: en `home`, `MainLayout` → `MainLayoutChrome` → `HomePage`; en search/park, mapa + overlay sin `HomePage`.
  */
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
@@ -44,23 +45,30 @@ export default function AuthenticatedMapScreen() {
         mapForeground,
       }
 
-  const mapLayer = (
-    <div style={mapSlotStyle} data-waitme-map-slot>
-      <NativeDebugMap {...mapProps} />
-      {isHome ? (
-        <SimulatedCarsOnMap enabled={mapForeground} users={users} />
-      ) : (
-        <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
-      )}
-    </div>
-  )
+  if (isHome) {
+    return (
+      <MainLayout
+        mapBackgroundExtraStyle={{ pointerEvents: 'none' }}
+        mapLayer={
+          <div style={mapSlotStyle} data-waitme-map-slot>
+            <NativeDebugMap {...mapProps} />
+            <SimulatedCarsOnMap enabled={mapForeground} users={users} />
+          </div>
+        }
+      >
+        <HomePage />
+      </MainLayout>
+    )
+  }
 
   return (
-    <MainLayout
-      mapBackgroundExtraStyle={isHome ? { pointerEvents: 'none' } : { pointerEvents: 'auto' }}
-      mapLayer={mapLayer}
-    >
-      <HomePage />
-    </MainLayout>
+    <div style={mainLayoutRootStyle}>
+      <div style={{ ...mainLayoutMapBackgroundStyle, pointerEvents: 'auto' }} aria-label="Capa de mapa">
+        <div style={mapSlotStyle} data-waitme-map-slot>
+          <NativeDebugMap {...mapProps} />
+          <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
+        </div>
+      </div>
+    </div>
   )
 }

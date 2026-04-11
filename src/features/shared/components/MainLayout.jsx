@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { Children, lazy, Suspense } from 'react'
 
 import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 
@@ -20,7 +20,6 @@ export const mainLayoutRootStyle = {
   minHeight: 0,
   minWidth: 0,
   width: '100%',
-  height: '100%',
   display: 'flex',
   flexDirection: 'column',
   overflowX: 'hidden',
@@ -107,7 +106,8 @@ const contentColumnStyle = {
   position: 'relative',
   zIndex: LAYOUT.z.content,
   display: 'flex',
-  height: '100%',
+  flex: '1 1 0%',
+  minHeight: 0,
   width: '100%',
   maxWidth: 340,
   flexDirection: 'column',
@@ -158,8 +158,16 @@ const heroLogoBoxStyle = {
   justifyContent: 'center',
   borderRadius: radius.logo,
 }
-/** No altera el gap del Section; permite medir `[data-home-cta-region] button` en Home. */
-const homeCtaRegionWrapStyle = { display: 'contents' }
+/**
+ * WKWebView: `display: contents` en el envoltorio de CTAs puede romper caja de formato / hit-test;
+ * flujo flex real conserva medición `[data-home-cta-region] button`.
+ */
+const homeCtaRegionWrapStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  width: '100%',
+}
 
 function overlayLayerStyle(background) {
   return { ...overlayStyleBase, background }
@@ -170,7 +178,7 @@ function overlayLayerStyle(background) {
  */
 export function MainLayoutChrome({ children = null }) {
   useNativeDebugMount('MainLayoutChrome')
-  const hasCta = children != null
+  const hasCta = Children.count(children) > 0
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 

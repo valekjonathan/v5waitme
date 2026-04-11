@@ -52,6 +52,7 @@ export default function ScreenShell({
     minHeight: 0,
     position: 'relative',
     overflow: 'hidden',
+    alignSelf: 'stretch',
   }
 
   const mainOverflowResolved =
@@ -64,6 +65,7 @@ export default function ScreenShell({
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
+    alignSelf: 'stretch',
     width: '100%',
     maxWidth: 'none',
     margin: 0,
