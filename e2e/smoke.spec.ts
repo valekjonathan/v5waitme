@@ -7,16 +7,12 @@ test('arranque: documento y #root', async ({ page }) => {
   await expect(page.locator('#root')).toBeVisible()
   expect(await page.locator('#root > *').count()).toBeGreaterThan(0)
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible()
-  await expect(
-    page.getByText('Continuar con Google').or(page.locator('[data-waitme-auth-boot]'))
-  ).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[data-home-google-button]')).toBeVisible({ timeout: 20_000 })
 })
 
 test('arranque: boot auth o login visible (sin #root colgado)', async ({ page }) => {
   await page.goto('/')
-  const boot = page.locator('[data-waitme-auth-boot]')
-  const google = page.getByRole('button', { name: /Continuar con Google/i })
-  await expect(boot.or(google)).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[data-home-google-button]')).toBeVisible({ timeout: 20_000 })
 })
 
 test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)', async ({
@@ -53,10 +49,9 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
 
   await page.goto('/')
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })
-  const searchCta = page.getByRole('button', { name: /Dónde quieres aparcar/i })
+  const searchCta = page.locator('[data-waitme-home-search-parking]')
   await searchCta.evaluate((el) => (el as HTMLButtonElement).click())
-  // StreetSearch limpia placeholder al focus; fill() enfoca → getByPlaceholder deja de matchear tras el primer fill.
-  const input = page.locator('[data-waitme-parking-search-morado] input.waitme-street-search-input')
+  const input = page.locator('[data-waitme-street-search-input]')
   await expect(input).toBeVisible()
 
   for (const q of ['muer', 'muerd', 'muerdago']) {
@@ -120,8 +115,8 @@ test('park here: placeholder modo aparcado y shell fullBleed (dev auth)', async 
   await page.goto('/')
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })
   await page
-    .getByRole('button', { name: /Estoy aparcado aquí/i })
+    .locator('[data-waitme-home-park-here]')
     .evaluate((el) => (el as HTMLButtonElement).click())
-  await expect(page.getByPlaceholder(/Donde estas aparcado/i)).toBeVisible({ timeout: 20000 })
+  await expect(page.locator('[data-waitme-street-search-input]')).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('[data-waitme-main="fullBleed"]')).toBeVisible()
 })

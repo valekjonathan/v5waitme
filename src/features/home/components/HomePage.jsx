@@ -9,11 +9,21 @@ export default function HomePage() {
 
   return (
     <MainLayout>
-      <Button type="button" variant="primary" onClick={() => openSearchParking?.()}>
+      <Button
+        type="button"
+        variant="primary"
+        data-waitme-home-search-parking=""
+        onClick={() => openSearchParking?.()}
+      >
         <MagnifierIcon />
         ¿Dónde quieres aparcar?
       </Button>
-      <Button type="button" variant="secondary" onClick={() => openParkHere?.()}>
+      <Button
+        type="button"
+        variant="secondary"
+        data-waitme-home-park-here=""
+        onClick={() => openParkHere?.()}
+      >
         <CarIconHome />
         ¡Estoy aparcado aquí!
       </Button>

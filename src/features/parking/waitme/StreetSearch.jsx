@@ -276,6 +276,7 @@ export default function StreetSearch({
           </span>
           <input
             className={streetSearchInputClass}
+            data-waitme-street-search-input=""
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)

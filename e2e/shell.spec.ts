@@ -7,9 +7,7 @@ test('shell login: main fullBleed cuando no hay sesión', async ({ page }) => {
   expect(bodyKids).toBeGreaterThan(0)
   expect(await page.locator('#root > *').count()).toBeGreaterThan(0)
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible()
-  await expect(
-    page.getByText('Continuar con Google').or(page.locator('[data-waitme-auth-boot]'))
-  ).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[data-home-google-button]')).toBeVisible({ timeout: 20_000 })
   await expect(page.locator('[data-waitme-screen-shell="fullBleed"]')).toBeVisible()
   await expect(page.locator('[data-waitme-main="fullBleed"]')).toBeVisible()
 })
