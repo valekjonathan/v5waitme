@@ -44,14 +44,14 @@ jobs:
         run: npm run test:e2e
 
       - name: Sentry smoke (solo si hay DSN)
-        if: secrets.VITE_SENTRY_DSN != ''
+        if: ${{ secrets.VITE_SENTRY_DSN != '' }}
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
         run: npm run test:sentry
 
   browserstack-iphone:
     name: e2e-browserstack-iphone
-    if: secrets.BROWSERSTACK_USERNAME != '' && secrets.BROWSERSTACK_ACCESS_KEY != ''
+    if: ${{ secrets.BROWSERSTACK_USERNAME != '' && secrets.BROWSERSTACK_ACCESS_KEY != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -75,7 +75,7 @@ jobs:
 
   percy:
     name: percy-visual
-    if: secrets.PERCY_TOKEN != ''
+    if: ${{ secrets.PERCY_TOKEN != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
