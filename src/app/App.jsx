@@ -382,6 +382,10 @@ function AuthenticatedRoutes() {
     void import('../features/chats/ChatsPage')
     void import('../features/chats/ChatThreadView.jsx')
     void import('../features/alerts/AlertsPage')
+    void import('../features/parking/MapParkingPage')
+    void import('../features/reviews/pages/ReviewsPage')
+    void import('../features/reviews/UserReviewsPage')
+    void import('../features/map/components/MainLayoutMapStack.jsx')
   }, [])
 
   const {
