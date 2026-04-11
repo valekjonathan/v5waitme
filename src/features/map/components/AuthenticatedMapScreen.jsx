@@ -2,15 +2,13 @@ import Map from './Map.jsx'
 import SimulatedCarsOnMap from './SimulatedCarsOnMap.jsx'
 import SearchParkingOverlay from '../../parking/components/SearchParkingOverlay.jsx'
 import HomePage from '../../home/components/HomePage.jsx'
-import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
-import { useAppScreen } from '../../../lib/AppScreenContext'
-import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
-import {
-  MainLayoutChrome,
-  mainLayoutHomeSlotStyle,
+import MainLayout, {
   mainLayoutMapBackgroundStyle,
   mainLayoutRootStyle,
 } from '../../shared/components/MainLayout.jsx'
+import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
+import { useAppScreen } from '../../../lib/AppScreenContext'
+import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
 
 const mapPageMapSlotStyle = {
   flex: '1 1 0%',
@@ -31,6 +29,7 @@ const homeMapSlotStyle = {
 
 /**
  * Mapa autenticado único: Home / búsqueda / aparcado sin desmontar `<Map>` (solo cambian props y overlays).
+ * Modo `home`: mismo árbol que login — `MainLayout` → `MainLayoutChrome` → `HomePage` (mapa vía `mapLayer`).
  */
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
@@ -49,33 +48,30 @@ export default function AuthenticatedMapScreen() {
         mapForeground,
       }
 
+  if (isHome) {
+    return (
+      <MainLayout
+        mapBackgroundExtraStyle={{ pointerEvents: 'none' }}
+        mapLayer={
+          <div style={homeMapSlotStyle} data-waitme-map-slot>
+            <Map {...mapProps} />
+            <SimulatedCarsOnMap enabled={mapForeground} users={users} />
+          </div>
+        }
+      >
+        <HomePage />
+      </MainLayout>
+    )
+  }
+
   return (
     <div style={mainLayoutRootStyle}>
-      <div
-        style={{
-          ...mainLayoutMapBackgroundStyle,
-          pointerEvents: isHome ? 'none' : 'auto',
-        }}
-        aria-label="Capa de mapa"
-      >
-        <div
-          style={isHome ? homeMapSlotStyle : mapPageMapSlotStyle}
-          data-waitme-map-slot
-        >
+      <div style={{ ...mainLayoutMapBackgroundStyle, pointerEvents: 'auto' }} aria-label="Capa de mapa">
+        <div style={mapPageMapSlotStyle} data-waitme-map-slot>
           <Map {...mapProps} />
-          {isHome ? <SimulatedCarsOnMap enabled={mapForeground} users={users} /> : null}
-          {!isHome ? (
-            <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
-          ) : null}
+          <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
         </div>
       </div>
-      {isHome ? (
-        <div style={mainLayoutHomeSlotStyle}>
-          <MainLayoutChrome>
-            <HomePage />
-          </MainLayoutChrome>
-        </div>
-      ) : null}
     </div>
   )
 }

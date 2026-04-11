@@ -205,18 +205,31 @@ export function MainLayoutChrome({ children = null }) {
 
 /**
  * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, frase, pin, CTAs).
- * Ancla GPS: `MapViewportCenterPin` en Map (medición, punta en centro); pin visible en columna (mismo CenterPin).
- * `loginEntrance` se acepta por compatibilidad con LoginPage; la entrada es instantánea.
+ * `mapLayer` opcional sustituye `MainLayoutMapStack` (p. ej. mapa autenticado en home).
  */
-export default function MainLayout({ children = null, loginEntrance: _loginEntrance = false }) {
+export default function MainLayout({
+  children = null,
+  loginEntrance: _loginEntrance = false,
+  mapLayer = null,
+  mapBackgroundExtraStyle = undefined,
+}) {
   const simulatedUsers = useSimulatedParkingUsers()
+
+  const mapBgStyle =
+    mapBackgroundExtraStyle != null
+      ? { ...mainLayoutMapBackgroundStyle, ...mapBackgroundExtraStyle }
+      : mainLayoutMapBackgroundStyle
 
   return (
     <div style={mainLayoutRootStyle}>
-      <div style={mainLayoutMapBackgroundStyle} aria-label="Capa de mapa">
-        <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
-          <MainLayoutMapStack simulatedUsers={simulatedUsers} />
-        </Suspense>
+      <div style={mapBgStyle} aria-label="Capa de mapa">
+        {mapLayer != null ? (
+          mapLayer
+        ) : (
+          <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
+            <MainLayoutMapStack simulatedUsers={simulatedUsers} />
+          </Suspense>
+        )}
       </div>
 
       <div style={mainLayoutHomeSlotStyle}>
