@@ -667,6 +667,30 @@ export default function Map({
         applyPostLoadStyle(existingMap, readOnlyRef.current)
         fireSettled()
       }
+      const onExistingError = (e) => {
+        console.error('[WaitMe][Mapbox] MAPBOX ERROR:', e?.error ?? e)
+        try {
+          existingMap.off('error', onExistingError)
+        } catch {
+          /* */
+        }
+        try {
+          existingMap.off('load', onExistingLoad)
+        } catch {
+          /* */
+        }
+        try {
+          existingMap.remove()
+        } catch {
+          /* */
+        }
+        setGlobalMapInstance(null)
+        mapInstanceRef.current = null
+        setUnavailable(true)
+        clearLocationPipe()
+        fireSettled()
+      }
+      existingMap.on('error', onExistingError)
       ensureLocationPipe()
       if (existingMap.isStyleLoaded?.()) {
         onExistingLoad()
@@ -675,6 +699,11 @@ export default function Map({
       }
       teardown = () => {
         existingLoadCancelled = true
+        try {
+          existingMap.off('error', onExistingError)
+        } catch {
+          /* */
+        }
         existingMap.off('load', onExistingLoad)
         clearLocationPipe()
       }
@@ -733,45 +762,85 @@ export default function Map({
           return
         }
 
-        const map = createMap(globalContainer, { token, interactive: true })
-        if (import.meta.env.DEV) {
-          console.info('[WaitMe][Map]', {
-            step: 'createMap',
-            ok: Boolean(map && typeof map.jumpTo === 'function'),
-          })
-        }
-        if (!map || typeof map.jumpTo !== 'function') {
+        try {
+          const map = createMap(globalContainer, { token, interactive: true })
+          if (import.meta.env.DEV) {
+            console.info('[WaitMe][Map]', {
+              step: 'createMap',
+              ok: Boolean(map && typeof map.jumpTo === 'function'),
+            })
+          }
+          if (!map || typeof map.jumpTo !== 'function') {
+            setUnavailable(true)
+            setGlobalMapInstance(null)
+            fireSettled()
+            return
+          }
+
+          const onFirstLoad = () => {
+            if (cancelled) return
+            applyPostLoadStyle(map, readOnlyRef.current)
+            fireSettled()
+          }
+
+          const onMapError = (e) => {
+            console.error('[WaitMe][Mapbox] MAPBOX ERROR:', e?.error ?? e)
+            try {
+              map.off('error', onMapError)
+            } catch {
+              /* */
+            }
+            try {
+              map.off('load', onFirstLoad)
+            } catch {
+              /* */
+            }
+            try {
+              map.remove()
+            } catch {
+              /* */
+            }
+            setGlobalMapInstance(null)
+            mapInstanceRef.current = null
+            setUnavailable(true)
+            clearLocationPipe()
+            fireSettled()
+          }
+
+          map.on('error', onMapError)
+
+          setGlobalMapInstance(map)
+          mapInstanceRef.current = map
+
+          try {
+            map.setFadeDuration?.(0)
+          } catch {
+            /* */
+          }
+
+          ensureLocationPipe()
+
+          if (map.isStyleLoaded?.()) {
+            onFirstLoad()
+          } else {
+            map.once('load', onFirstLoad)
+          }
+
+          teardown = () => {
+            try {
+              map.off('error', onMapError)
+            } catch {
+              /* */
+            }
+            map.off('load', onFirstLoad)
+            clearLocationPipe()
+          }
+        } catch (err) {
+          console.error('[WaitMe][Map] MAP FAILED:', err)
           setUnavailable(true)
           setGlobalMapInstance(null)
+          mapInstanceRef.current = null
           fireSettled()
-          return
-        }
-
-        setGlobalMapInstance(map)
-        mapInstanceRef.current = map
-
-        try {
-          map.setFadeDuration?.(0)
-        } catch {
-          /* */
-        }
-
-        const onFirstLoad = () => {
-          applyPostLoadStyle(map, readOnlyRef.current)
-          fireSettled()
-        }
-
-        ensureLocationPipe()
-
-        if (map.isStyleLoaded?.()) {
-          onFirstLoad()
-        } else {
-          map.once('load', onFirstLoad)
-        }
-
-        teardown = () => {
-          map.off('load', onFirstLoad)
-          clearLocationPipe()
         }
       }
 
