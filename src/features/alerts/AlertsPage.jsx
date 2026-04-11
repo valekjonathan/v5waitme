@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import ScreenShell from '../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
 import Button from '../../ui/Button'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
@@ -11,20 +9,14 @@ import {
   fetchParkingAlertsForUser,
   parkingAlertRowToCard,
 } from '../../services/waitmeAlerts.js'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
+import { EmbeddedShellContent } from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const PURPLE = colors.primary
-const BG = colors.background
 const TEXT_GRAY = colors.textMuted
 const TEXT_WHITE = colors.textPrimary
 
 /** Solo layout vacío en «Tus alertas»; integración real desactivada sin borrar servicios. */
 const ALERTS_LIST_RENDER_DISABLED = true
-
-const shellStyle = { backgroundColor: BG }
 
 const sectionTitle = {
   fontSize: 13,
@@ -116,7 +108,6 @@ function ScopeTab({ active, onClick, side, children }) {
 }
 
 export default function AlertsPage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const { user } = useAuth()
   const [scope, setScope] = useState('alerts')
   const [rows, setRows] = useState([])
@@ -319,13 +310,6 @@ export default function AlertsPage() {
       </div>
   )
 
-  if (embedded) {
-    return <EmbeddedShellContent mainOverflow="auto">{inner}</EmbeddedShellContent>
-  }
-
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="auto">
-      {inner}
-    </ScreenShell>
-  )
+  /** `ScreenShell` global en `App.jsx`; aquí solo slot (scroll en lista de alertas). */
+  return <EmbeddedShellContent mainOverflow="auto">{inner}</EmbeddedShellContent>
 }

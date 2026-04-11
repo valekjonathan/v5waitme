@@ -1,8 +1,5 @@
 import { useMemo } from 'react'
-import ScreenShell from '../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Section from '../../ui/layout/Section'
-import { colors } from '../../design/colors'
 import ProfileHeader from '../profile/components/ProfileHeader'
 import ReviewsSummary from './components/ReviewsSummary'
 import ReviewsList from './components/ReviewsList'
@@ -16,15 +13,9 @@ import {
 } from '../../services/reviews'
 import { getAverage } from '../../lib/reviewsModel'
 import { useAppScreen } from '../../lib/AppScreenContext'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
-
-const shellStyle = { backgroundColor: colors.background }
+import { EmbeddedShellContent } from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 export default function UserReviewsPage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const { viewingUserReviewsId, userReviewsPeerRow } = useAppScreen()
   const profile = useMemo(
     () => buildMockProfileForUserReviews(viewingUserReviewsId, userReviewsPeerRow),
@@ -64,20 +55,8 @@ export default function UserReviewsPage() {
     </ProfileReviewsLayout>
   )
 
-  if (embedded) {
-    return (
-      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
-    )
-  }
-
+  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
   return (
-    <ScreenShell
-      style={shellStyle}
-      contentStyle={profileReviewsShellContentStyle}
-      mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
-      mainOverflow="hidden"
-    >
-      {inner}
-    </ScreenShell>
+    <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
   )
 }

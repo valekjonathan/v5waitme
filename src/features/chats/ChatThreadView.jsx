@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppScreen } from '../../lib/AppScreenContext'
 import { colors } from '../../design/colors'
 import { radius } from '../../design/radius'
-import ScreenShell from '../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import Button from '../../ui/Button'
 import InputBase from '../../ui/InputBase'
 import { IconChevronLeft } from '../parking/waitme/icons.jsx'
@@ -18,13 +16,9 @@ import {
 } from '../../services/waitmeChats.js'
 import { resolveDmPeerAvatarUrl } from '../../services/dmPeerAvatar.js'
 import { useAuth } from '../../lib/AuthContext'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
+import { EmbeddedShellContent } from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const BG = colors.background
-const shellStyle = { backgroundColor: BG }
 
 /** Gap entre burbujas (8–12px). */
 const MESSAGE_GAP = 10
@@ -76,7 +70,6 @@ function nextTempId() {
  * @param {{ summary: Record<string, unknown>, userId: string, onBack: () => void, localFallback?: boolean }} props
  */
 export default function ChatThreadView({ summary, userId, onBack, localFallback = false }) {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const s = summary && typeof summary === 'object' ? summary : {}
   /** Solo `threadId` del hilo; nunca mezclar con `id` (peer en tarjetas). */
   const threadId = String(s.threadId != null ? s.threadId : '').trim()
@@ -679,13 +672,6 @@ export default function ChatThreadView({ summary, userId, onBack, localFallback 
       </div>
   )
 
-  if (embedded) {
-    return <EmbeddedShellContent mainOverflow="hidden">{inner}</EmbeddedShellContent>
-  }
-
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
-      {inner}
-    </ScreenShell>
-  )
+  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
+  return <EmbeddedShellContent mainOverflow="hidden">{inner}</EmbeddedShellContent>
 }

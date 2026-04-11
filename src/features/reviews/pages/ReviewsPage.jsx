@@ -1,9 +1,6 @@
 import { useMemo } from 'react'
 import { useAuth } from '../../../lib/AuthContext'
-import ScreenShell from '../../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
-import { colors } from '../../../design/colors'
 import ProfileHeader from '../../profile/components/ProfileHeader'
 import ReviewsSummary from '../components/ReviewsSummary'
 import ReviewsList from '../components/ReviewsList'
@@ -13,15 +10,9 @@ import ProfileReviewsLayout, {
 import { profileReviewsSectionFlushStyle } from '../../shared/profileReviewsLayout'
 import { getReviewsForScreen } from '../../../services/reviews'
 import { getAverage } from '../../../lib/reviewsModel'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
-
-const shellStyle = { backgroundColor: colors.background }
+import { EmbeddedShellContent } from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 export default function ReviewsPage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const { headerProfile, user } = useAuth()
   const reviews = useMemo(() => getReviewsForScreen(), [])
   const headerAverage = useMemo(() => getAverage(reviews), [reviews])
@@ -54,20 +45,8 @@ export default function ReviewsPage() {
     </ProfileReviewsLayout>
   )
 
-  if (embedded) {
-    return (
-      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
-    )
-  }
-
+  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
   return (
-    <ScreenShell
-      style={shellStyle}
-      contentStyle={profileReviewsShellContentStyle}
-      mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
-      mainOverflow="hidden"
-    >
-      {inner}
-    </ScreenShell>
+    <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
   )
 }

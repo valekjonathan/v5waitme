@@ -1,17 +1,9 @@
 import { useMemo } from 'react'
-import ScreenShell from '../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import { colors } from '../../design/colors'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { useAppScreen } from '../../lib/AppScreenContext'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
-
-const BG = colors.background
-const shellStyle = { backgroundColor: BG }
+import { EmbeddedShellContent } from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const titleStyle = {
   fontSize: 18,
@@ -48,7 +40,6 @@ const bannerDone = {
 }
 
 export default function ReservationsPage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const { user } = useAuth()
   const { reservations } = useAppScreen()
   const sessionId = user?.id != null ? String(user.id) : ''
@@ -118,13 +109,6 @@ export default function ReservationsPage() {
       </div>
   )
 
-  if (embedded) {
-    return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
-  }
-
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
-      {inner}
-    </ScreenShell>
-  )
+  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
+  return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
 }

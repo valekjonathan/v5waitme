@@ -1,17 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { colors } from '../../design/colors'
-import ScreenShell from '../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../ui/layout/layout'
 import MessageCircleIcon from '../../ui/icons/MessageCircleIcon'
 import StreetSearch from '../parking/waitme/StreetSearch.jsx'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
 import { useAppScreen } from '../../lib/AppScreenContext'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
+import { EmbeddedShellContent } from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -19,9 +14,6 @@ import {
   getOrCreateDmThread,
   listDmThreadsForUser,
 } from '../../services/waitmeChats.js'
-
-const BG = colors.background
-const shellStyle = { backgroundColor: BG }
 
 function loadThreads(uid) {
   return listDmThreadsForUser(uid).then(({ data, error }) => {
@@ -91,7 +83,6 @@ async function runGetOrCreateThenList(p) {
 }
 
 export default function ChatsPage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const nav = useAppScreen()
   const { user } = useAuth()
   const [listFilter, setListFilter] = useState('')
@@ -360,13 +351,6 @@ export default function ChatsPage() {
     </div>
   )
 
-  if (embedded) {
-    return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
-  }
-
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
-      {inner}
-    </ScreenShell>
-  )
+  /** `ScreenShell` global vive en `App.jsx` (`AuthenticatedRoutes`); aquí solo el slot de contenido. */
+  return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
 }

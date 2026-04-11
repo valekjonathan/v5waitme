@@ -18,8 +18,6 @@ import {
 import { getReviewsForScreen } from '../../../services/reviews'
 import { getAverage } from '../../../lib/reviewsModel'
 import { logFlow } from '../../../lib/devFlowLog.js'
-import ScreenShell from '../../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 import ProfileReviewsLayout, {
   profileReviewsShellContentStyle,
@@ -32,15 +30,11 @@ import {
   profileReviewsFullWidthButtonStyle,
   profileScreenAvatarBorder,
 } from '../../shared/profileReviewsLayout'
-import {
-  EmbeddedShellContent,
-  useAuthenticatedOverlayEmbedded,
-} from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
+import { EmbeddedShellContent } from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
 const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
 const AUTOSAVE_DEBOUNCE_MS = 600
-const shellStyle = { backgroundColor: colors.background }
 
 /** Shell estable mientras `canRenderProfile` es false (evita pantalla en blanco). */
 const profileBootstrapPlaceholderStyle = {
@@ -51,7 +45,6 @@ const profileBootstrapPlaceholderStyle = {
 }
 
 export default function ProfilePage() {
-  const embedded = useAuthenticatedOverlayEmbedded()
   const { openHome } = useAppScreen()
   const {
     user: sessionUser,
@@ -398,18 +391,8 @@ export default function ProfilePage() {
   if (!canRenderProfile) {
     /** Nunca devolver null: evita pantalla en blanco mientras arranca perfil / sesión. */
     const bootstrapInner = <div style={profileBootstrapPlaceholderStyle} />
-    if (embedded) {
-      return <EmbeddedShellContent>{bootstrapInner}</EmbeddedShellContent>
-    }
-    return (
-      <ScreenShell
-        style={shellStyle}
-        mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
-        mainOverflow="hidden"
-      >
-        {bootstrapInner}
-      </ScreenShell>
-    )
+    /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
+    return <EmbeddedShellContent>{bootstrapInner}</EmbeddedShellContent>
   }
 
   const inner = (
@@ -454,20 +437,8 @@ export default function ProfilePage() {
     </ProfileReviewsLayout>
   )
 
-  if (embedded) {
-    return (
-      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
-    )
-  }
-
+  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
   return (
-    <ScreenShell
-      style={shellStyle}
-      contentStyle={profileReviewsShellContentStyle}
-      mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
-      mainOverflow="hidden"
-    >
-      {inner}
-    </ScreenShell>
+    <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
   )
 }
