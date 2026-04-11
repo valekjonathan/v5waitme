@@ -27,6 +27,7 @@ import {
   NGROK_DEV_PORT,
 } from './ngrok-tunnel-lib.mjs'
 import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -103,6 +104,10 @@ async function main() {
     stdio: 'inherit',
   })
   if (sync.status !== 0) process.exit(sync.status === null ? 1 : sync.status)
+
+  if (String(process.env.SKIP_RM_IOS_PUBLIC || '').trim() !== '1') {
+    stripIosEmbeddedWeb(root)
+  }
 
   if (!(await checkPort5173Available())) {
     console.error('PORT 5173 ALREADY IN USE')

@@ -12,6 +12,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { resolveWaitmeLanDevOrExit, upsertEnvLocalViteDevLanOrigin } from './get-lan-ip.mjs'
+import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
@@ -43,5 +44,9 @@ const r = spawnSync('npx', ['cap', 'sync', 'ios'], {
   env,
   stdio: 'inherit',
 })
+
+if (r.status === 0 && String(process.env.SKIP_RM_IOS_PUBLIC || '').trim() !== '1') {
+  stripIosEmbeddedWeb(root)
+}
 
 process.exit(r.status === null ? 1 : r.status)
