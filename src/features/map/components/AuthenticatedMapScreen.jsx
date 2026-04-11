@@ -32,7 +32,10 @@ const mapSlotSearchParkStyle = {
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
   const mapForeground = useMapForeground()
-  const isHome = mapMode === 'home'
+  // TEMP debug: una sola fuente — useAppScreen(); comparación robusta (evita tipo raro en WKWebView)
+  console.log('REAL mapMode render:', mapMode)
+  const isHome = String(mapMode) === 'home'
+  console.log('IS HOME?', isHome)
   const parkingUiMode = mapMode === 'parkHere' ? 'parked' : 'search'
   const users = useSimulatedParkingUsers(!mapForeground)
 
