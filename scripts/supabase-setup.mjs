@@ -72,7 +72,7 @@ async function validateAuthAndRls(url, anonKey) {
       /Could not find the table/i.test(existsError.message)
     ) {
       throw new Error(
-        'Table profiles missing in PostgREST schema cache. Create `public.profiles` + RLS + policies (see `supabase/migrations/20260325_000001_init_profiles.sql`) then re-run npm run supabase:setup.'
+        'Table profiles missing in PostgREST schema cache. Create `public.profiles` + RLS + policies (see `supabase/migrations/0001_init_profiles.sql`) then re-run npm run supabase:setup.'
       )
     }
     throw new Error(`profiles check failed: ${existsError.message}`)
