@@ -150,13 +150,12 @@ const alertStyle = {
   lineHeight: 1.4,
 }
 
-/** Columna OAuth: el padre `[data-home-cta-region]` es flex sin `gap`; sin esto Google/Apple quedan pegados. */
+/** Columna OAuth; separación Google→Apple vía `marginTop` en el botón Apple (no depender de `gap` del contenedor). */
 const oauthStackStyle = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',
   alignItems: 'stretch',
-  gap: 14,
 }
 
 const oauthSpinStyleTag = `
@@ -274,6 +273,7 @@ export default function LoginButtons() {
   const appleShadowKey = applePressed ? 'pressed' : appleHover ? 'hover' : 'idle'
   const appleStyle = {
     ...oauthButtonBase,
+    marginTop: '14px',
     backgroundColor: colors.primaryStrong,
     backgroundImage: appleBg,
     color: colors.textPrimary,
