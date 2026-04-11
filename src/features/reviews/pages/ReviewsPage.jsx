@@ -13,13 +13,52 @@ import ProfileReviewsLayout, {
 import { profileReviewsSectionFlushStyle } from '../../shared/profileReviewsLayout'
 import { getReviewsForScreen } from '../../../services/reviews'
 import { getAverage } from '../../../lib/reviewsModel'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const shellStyle = { backgroundColor: colors.background }
 
 export default function ReviewsPage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const { headerProfile, user } = useAuth()
   const reviews = useMemo(() => getReviewsForScreen(), [])
   const headerAverage = useMemo(() => getAverage(reviews), [reviews])
+
+  const inner = (
+    <ProfileReviewsLayout
+      header={
+        <ProfileHeader
+          profile={headerProfile}
+          averageRating={headerAverage}
+          surface="reviews"
+          subjectUserId={user?.id ?? ''}
+        />
+      }
+    >
+      <Section style={profileReviewsSectionFlushStyle}>
+        <ReviewsSummary reviews={reviews} />
+      </Section>
+      <Section
+        style={{
+          ...profileReviewsSectionFlushStyle,
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <ReviewsList reviews={reviews} />
+      </Section>
+    </ProfileReviewsLayout>
+  )
+
+  if (embedded) {
+    return (
+      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
+    )
+  }
 
   return (
     <ScreenShell
@@ -28,31 +67,7 @@ export default function ReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout
-        header={
-          <ProfileHeader
-            profile={headerProfile}
-            averageRating={headerAverage}
-            surface="reviews"
-            subjectUserId={user?.id ?? ''}
-          />
-        }
-      >
-        <Section style={profileReviewsSectionFlushStyle}>
-          <ReviewsSummary reviews={reviews} />
-        </Section>
-        <Section
-          style={{
-            ...profileReviewsSectionFlushStyle,
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <ReviewsList reviews={reviews} />
-        </Section>
-      </ProfileReviewsLayout>
+      {inner}
     </ScreenShell>
   )
 }

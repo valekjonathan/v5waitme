@@ -8,6 +8,10 @@ import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { parseChatPeerFromHash, takePendingDmPeerUserId } from '../../lib/waitmeDmPending.js'
 import { useAppScreen } from '../../lib/AppScreenContext'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 import { isSupabaseConfigured } from '../../services/supabase.js'
 import { isRealSupabaseAuthUid } from '../../services/authUid.js'
 import {
@@ -87,6 +91,7 @@ async function runGetOrCreateThenList(p) {
 }
 
 export default function ChatsPage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const nav = useAppScreen()
   const { user } = useAuth()
   const [listFilter, setListFilter] = useState('')
@@ -224,135 +229,143 @@ export default function ChatsPage() {
     nav.openThread(String(threadKey), threadsSafe)
   }
 
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
+  const inner = (
+    <div
+      data-waitme-chats-screen
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: 360,
+        display: 'flex',
+        flexDirection: 'column',
+        paddingLeft: 16,
+        paddingRight: 16,
+        paddingTop: 8,
+        boxSizing: 'border-box',
+      }}
+    >
+      {!hasRealSupabaseSession && !dev ? (
+        <div style={{ flexShrink: 0, marginBottom: 8 }}>
+          <div
+            style={{
+              padding: 16,
+              borderRadius: 12,
+              border: `1px dashed ${colors.primaryBorderMuted}`,
+              color: colors.textMuted,
+              fontSize: 14,
+              fontWeight: 600,
+              textAlign: 'center',
+            }}
+          >
+            Conecta Supabase e inicia sesión para ver tus conversaciones.
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
+        <StreetSearch
+          placeholder="Buscar..."
+          placeholderMuted
+          enableSuggestions={false}
+          onQueryChange={(query) => setListFilter(query)}
+        />
+      </div>
+
       <div
-        data-waitme-chats-screen
         style={{
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-          minHeight: 360,
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          marginTop: 12,
+          paddingBottom: 16,
           display: 'flex',
           flexDirection: 'column',
-          paddingLeft: 16,
-          paddingRight: 16,
-          paddingTop: 8,
-          boxSizing: 'border-box',
+          gap: 12,
         }}
       >
-        {!hasRealSupabaseSession && !dev ? (
-          <div style={{ flexShrink: 0, marginBottom: 8 }}>
+        {listRows.map((t) => {
+          const threadKey = String(t.threadId).trim()
+          return (
             <div
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                border: `1px dashed ${colors.primaryBorderMuted}`,
-                color: colors.textMuted,
-                fontSize: 14,
-                fontWeight: 600,
-                textAlign: 'center',
+              key={threadKey}
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                if (
+                  e.target.closest(
+                    '[data-waitme-chat-avatar-reviews], [data-waitme-chat-name-reviews]'
+                  )
+                ) {
+                  return
+                }
+                if (e.target.closest('[data-waitme-chat-delete]')) return
+                if (threadKey === '') return
+                openThreadFromList(threadKey)
               }}
-            >
-              Conecta Supabase e inicia sesión para ver tus conversaciones.
-            </div>
-          </div>
-        ) : null}
-
-        <div style={{ flexShrink: 0, pointerEvents: 'auto' }} role="search">
-          <StreetSearch
-            placeholder="Buscar..."
-            placeholderMuted
-            enableSuggestions={false}
-            onQueryChange={(query) => setListFilter(query)}
-          />
-        </div>
-
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            marginTop: 12,
-            paddingBottom: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}
-        >
-          {listRows.map((t) => {
-            const threadKey = String(t.threadId).trim()
-            return (
-              <div
-                key={threadKey}
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  if (
-                    e.target.closest(
-                      '[data-waitme-chat-avatar-reviews], [data-waitme-chat-name-reviews]'
-                    )
-                  ) {
-                    return
-                  }
-                  if (e.target.closest('[data-waitme-chat-delete]')) return
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
                   if (threadKey === '') return
                   openThreadFromList(threadKey)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    if (threadKey === '') return
-                    openThreadFromList(threadKey)
-                  }
-                }}
-                style={{ cursor: 'pointer', flexShrink: 0 }}
-              >
-                <UserAlertCard
-                  user={t}
-                  isChat
-                  lastMessage={t.lastMessage}
-                  time={t.time}
-                  isEmpty={false}
-                  onBuyAlert={() => {}}
-                  onChat={() => openThreadFromList(threadKey)}
-                  onCall={() => {}}
-                />
-              </div>
-            )
-          })}
+                }
+              }}
+              style={{ cursor: 'pointer', flexShrink: 0 }}
+            >
+              <UserAlertCard
+                user={t}
+                isChat
+                lastMessage={t.lastMessage}
+                time={t.time}
+                isEmpty={false}
+                onBuyAlert={() => {}}
+                onChat={() => openThreadFromList(threadKey)}
+                onCall={() => {}}
+              />
+            </div>
+          )
+        })}
 
-          {listRows.length === 0 ? (
-            <div
+        {listRows.length === 0 ? (
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '24px 8px',
+            }}
+          >
+            <div style={{ color: colors.primary, display: 'inline-block' }}>
+              <MessageCircleIcon />
+            </div>
+            <p
               style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                padding: '24px 8px',
+                marginTop: 16,
+                marginBottom: 0,
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.88)',
+                lineHeight: 1.45,
               }}
             >
-              <div style={{ color: colors.primary, display: 'inline-block' }}>
-                <MessageCircleIcon />
-              </div>
-              <p
-                style={{
-                  marginTop: 16,
-                  marginBottom: 0,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.88)',
-                  lineHeight: 1.45,
-                }}
-              >
-                {threadsSafe.length === 0 ? 'No hay conversaciones' : 'No hay conversaciones que coincidan'}
-              </p>
-            </div>
-          ) : null}
-        </div>
+              {threadsSafe.length === 0 ? 'No hay conversaciones' : 'No hay conversaciones que coincidan'}
+            </p>
+          </div>
+        ) : null}
       </div>
+    </div>
+  )
+
+  if (embedded) {
+    return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
+  }
+
+  return (
+    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
+      {inner}
     </ScreenShell>
   )
 }

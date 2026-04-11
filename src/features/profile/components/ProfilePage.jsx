@@ -32,6 +32,10 @@ import {
   profileReviewsFullWidthButtonStyle,
   profileScreenAvatarBorder,
 } from '../../shared/profileReviewsLayout'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
 const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
@@ -47,6 +51,7 @@ const profileBootstrapPlaceholderStyle = {
 }
 
 export default function ProfilePage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const { openHome } = useAppScreen()
   const {
     user: sessionUser,
@@ -392,14 +397,66 @@ export default function ProfilePage() {
 
   if (!canRenderProfile) {
     /** Nunca devolver null: evita pantalla en blanco mientras arranca perfil / sesión. */
+    const bootstrapInner = <div style={profileBootstrapPlaceholderStyle} />
+    if (embedded) {
+      return <EmbeddedShellContent>{bootstrapInner}</EmbeddedShellContent>
+    }
     return (
       <ScreenShell
         style={shellStyle}
         mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
         mainOverflow="hidden"
       >
-        <div style={profileBootstrapPlaceholderStyle} />
+        {bootstrapInner}
       </ScreenShell>
+    )
+  }
+
+  const inner = (
+    <ProfileReviewsLayout
+      scrollBody={false}
+      header={
+        <ProfileHeader
+          profile={headerProfile}
+          avatarBorder={profileScreenAvatarBorder}
+          averageRating={profileHeaderReviewsAvg}
+          surface="profile"
+          subjectUserId={sessionUser?.id ?? ''}
+        />
+      }
+    >
+      <div style={profileFormVerticalSlotStyleNoScroll}>
+        <Section style={profileFormSectionLayoutStyle}>
+          <ProfileForm
+            value={profile ?? EMPTY_APP_PROFILE}
+            onChange={setProfile}
+            errors={fieldErrors}
+          />
+        </Section>
+      </div>
+      <div style={profileActionsFooterStyle}>
+        <div style={layoutActionsStyle}>
+          <Button
+            type="button"
+            variant="profileSave"
+            disabled={!hasChanges}
+            onClick={handleContinue}
+            style={profileReviewsFullWidthButtonStyle}
+          >
+            Guardar
+          </Button>
+          <ProfileLogoutButton
+            onLogout={handleLogout}
+            style={profileReviewsFullWidthButtonStyle}
+          />
+        </div>
+      </div>
+    </ProfileReviewsLayout>
+  )
+
+  if (embedded) {
+    return (
+      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
     )
   }
 
@@ -410,45 +467,7 @@ export default function ProfilePage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout
-        scrollBody={false}
-        header={
-          <ProfileHeader
-            profile={headerProfile}
-            avatarBorder={profileScreenAvatarBorder}
-            averageRating={profileHeaderReviewsAvg}
-            surface="profile"
-            subjectUserId={sessionUser?.id ?? ''}
-          />
-        }
-      >
-        <div style={profileFormVerticalSlotStyleNoScroll}>
-          <Section style={profileFormSectionLayoutStyle}>
-            <ProfileForm
-              value={profile ?? EMPTY_APP_PROFILE}
-              onChange={setProfile}
-              errors={fieldErrors}
-            />
-          </Section>
-        </div>
-        <div style={profileActionsFooterStyle}>
-          <div style={layoutActionsStyle}>
-            <Button
-              type="button"
-              variant="profileSave"
-              disabled={!hasChanges}
-              onClick={handleContinue}
-              style={profileReviewsFullWidthButtonStyle}
-            >
-              Guardar
-            </Button>
-            <ProfileLogoutButton
-              onLogout={handleLogout}
-              style={profileReviewsFullWidthButtonStyle}
-            />
-          </div>
-        </div>
-      </ProfileReviewsLayout>
+      {inner}
     </ScreenShell>
   )
 }

@@ -16,10 +16,15 @@ import {
 } from '../../services/reviews'
 import { getAverage } from '../../lib/reviewsModel'
 import { useAppScreen } from '../../lib/AppScreenContext'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const shellStyle = { backgroundColor: colors.background }
 
 export default function UserReviewsPage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const { viewingUserReviewsId, userReviewsPeerRow } = useAppScreen()
   const profile = useMemo(
     () => buildMockProfileForUserReviews(viewingUserReviewsId, userReviewsPeerRow),
@@ -31,6 +36,40 @@ export default function UserReviewsPage() {
   )
   const headerAverage = useMemo(() => getAverage(reviews), [reviews])
 
+  const inner = (
+    <ProfileReviewsLayout
+      header={
+        <ProfileHeader
+          profile={profile}
+          averageRating={headerAverage}
+          surface="reviews"
+          subjectUserId={String(viewingUserReviewsId ?? '')}
+        />
+      }
+    >
+      <Section style={profileReviewsSectionFlushStyle}>
+        <ReviewsSummary reviews={reviews} />
+      </Section>
+      <Section
+        style={{
+          ...profileReviewsSectionFlushStyle,
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <ReviewsList reviews={reviews} />
+      </Section>
+    </ProfileReviewsLayout>
+  )
+
+  if (embedded) {
+    return (
+      <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
+    )
+  }
+
   return (
     <ScreenShell
       style={shellStyle}
@@ -38,31 +77,7 @@ export default function UserReviewsPage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout
-        header={
-          <ProfileHeader
-            profile={profile}
-            averageRating={headerAverage}
-            surface="reviews"
-            subjectUserId={String(viewingUserReviewsId ?? '')}
-          />
-        }
-      >
-        <Section style={profileReviewsSectionFlushStyle}>
-          <ReviewsSummary reviews={reviews} />
-        </Section>
-        <Section
-          style={{
-            ...profileReviewsSectionFlushStyle,
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
-          <ReviewsList reviews={reviews} />
-        </Section>
-      </ProfileReviewsLayout>
+      {inner}
     </ScreenShell>
   )
 }

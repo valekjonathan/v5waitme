@@ -60,6 +60,7 @@ import {
 import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
+import { AuthenticatedOverlayEmbeddedProvider } from '../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 /**
  * Raíz React: llena #root (flex). `--app-height` se escribe solo desde `visualViewport.height`
@@ -104,6 +105,15 @@ const homeGateStyle = {
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
+}
+
+/** Contenedor del mapa persistente + overlay (mismo slot que ocupaba solo el mapa). */
+const authenticatedPersistentStackStyle = {
+  position: 'relative',
+  flex: '1 1 0%',
+  minHeight: 0,
+  width: '100%',
+  height: '100%',
 }
 
 const modalOverlayStyle = {
@@ -387,7 +397,7 @@ function clearChatHashFromUrl() {
   }
 }
 
-/** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
+/** Mapa persistente bajo un único ScreenShell; pantallas apiladas encima sin desmontar el mapa. */
 function AuthenticatedRoutes() {
   const { user } = useAuth()
   const nav = useAppScreen()
@@ -414,53 +424,46 @@ function AuthenticatedRoutes() {
 
   const sessionUid = user?.id != null ? String(user.id) : ''
 
+  const onMap = activeScreen === ACTIVE_SCREEN_MAP
+
+  const showPersistentMapStack =
+    (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) ||
+    (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) ||
+    activeScreen === ACTIVE_SCREEN_CHATS ||
+    activeScreen === ACTIVE_SCREEN_RESERVATIONS ||
+    activeScreen === ACTIVE_SCREEN_ALERTS ||
+    activeScreen === ACTIVE_SCREEN_PROFILE ||
+    activeScreen === ACTIVE_SCREEN_MAP
+
+  function renderOverlayBody() {
+    if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
+      const tid = String(activeThreadId).trim()
+      const localFb = isDmDevFallbackThread(tid)
+      return (
+        <ChatThreadView
+          summary={activeThreadSummary}
+          userId={sessionUid}
+          localFallback={localFb}
+          onBack={() => {
+            closeThread()
+            clearPendingDmVisual?.()
+            clearChatHashFromUrl()
+          }}
+        />
+      )
+    }
+    if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
+      return viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />
+    }
+    if (activeScreen === ACTIVE_SCREEN_CHATS) return <ChatsPage />
+    if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) return <ReservationsPage />
+    if (activeScreen === ACTIVE_SCREEN_ALERTS) return <AlertsPage />
+    if (activeScreen === ACTIVE_SCREEN_PROFILE) return <ProfilePage />
+    return null
+  }
+
   let body
-  if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
-    const tid = String(activeThreadId).trim()
-    const localFb = isDmDevFallbackThread(tid)
-    body = (
-      <ChatThreadView
-        summary={activeThreadSummary}
-        userId={sessionUid}
-        localFallback={localFb}
-        onBack={() => {
-          closeThread()
-          clearPendingDmVisual?.()
-          clearChatHashFromUrl()
-        }}
-      />
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
-    body =
-      viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />
-  } else if (activeScreen === ACTIVE_SCREEN_CHATS) {
-    body = <ChatsPage />
-  } else if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) {
-    body = <ReservationsPage />
-  } else if (activeScreen === ACTIVE_SCREEN_ALERTS) {
-    body = <AlertsPage />
-  } else if (activeScreen === ACTIVE_SCREEN_PROFILE) {
-    body = <ProfilePage />
-  } else if (activeScreen === ACTIVE_SCREEN_MAP) {
-    const shellMapProps =
-      mapMode !== 'home'
-        ? {
-            contentStyle: { overflow: 'visible' },
-            screenMainStyle: { overflow: 'visible' },
-          }
-        : {}
-    body = (
-      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED} {...shellMapProps}>
-        {mapMode === 'home' ? (
-          <HomeActionGate>
-            <AuthenticatedMapScreen />
-          </HomeActionGate>
-        ) : (
-          <AuthenticatedMapScreen />
-        )}
-      </ScreenShell>
-    )
-  } else {
+  if (!showPersistentMapStack) {
     body = (
       <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
         <HomeActionGate>
@@ -468,6 +471,66 @@ function AuthenticatedRoutes() {
             <HomePage />
           </MainLayout>
         </HomeActionGate>
+      </ScreenShell>
+    )
+  } else {
+    const shellMapProps =
+      mapMode !== 'home'
+        ? {
+            contentStyle: { overflow: 'visible' },
+            screenMainStyle: { overflow: 'visible' },
+          }
+        : {}
+
+    const overlayShellProps = onMap
+      ? {
+          interactive: true,
+          mainMode: SCREEN_SHELL_MAIN_MODE.FULL_BLEED,
+          ...shellMapProps,
+        }
+      : {
+          interactive: true,
+          style: { backgroundColor: colors.background },
+          mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
+          mainOverflow: activeScreen === ACTIVE_SCREEN_ALERTS ? 'auto' : 'hidden',
+        }
+
+    body = (
+      <ScreenShell {...overlayShellProps}>
+        <div style={authenticatedPersistentStackStyle}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: onMap ? 'auto' : 'none',
+            }}
+            aria-hidden={!onMap}
+          >
+            {onMap && mapMode === 'home' ? (
+              <HomeActionGate>
+                <AuthenticatedMapScreen />
+              </HomeActionGate>
+            ) : (
+              <AuthenticatedMapScreen />
+            )}
+          </div>
+          {!onMap ? (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                backgroundColor: colors.background,
+              }}
+            >
+              <AuthenticatedOverlayEmbeddedProvider>{renderOverlayBody()}</AuthenticatedOverlayEmbeddedProvider>
+            </div>
+          ) : null}
+        </div>
       </ScreenShell>
     )
   }

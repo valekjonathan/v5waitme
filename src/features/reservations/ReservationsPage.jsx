@@ -5,6 +5,10 @@ import { colors } from '../../design/colors'
 import UserAlertCard from '../parking/waitme/UserAlertCard.jsx'
 import { useAuth } from '../../lib/AuthContext'
 import { useAppScreen } from '../../lib/AppScreenContext'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const BG = colors.background
 const shellStyle = { backgroundColor: BG }
@@ -44,6 +48,7 @@ const bannerDone = {
 }
 
 export default function ReservationsPage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const { user } = useAuth()
   const { reservations } = useAppScreen()
   const sessionId = user?.id != null ? String(user.id) : ''
@@ -56,21 +61,20 @@ export default function ReservationsPage() {
     [reservations, sessionId]
   )
 
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
-      <div
-        data-waitme-reservations-screen
-        style={{
-          width: '100%',
-          height: '100%',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '12px 16px 24px',
-          boxSizing: 'border-box',
-          overflowY: 'auto',
-        }}
-      >
+  const inner = (
+    <div
+      data-waitme-reservations-screen
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '12px 16px 24px',
+        boxSizing: 'border-box',
+        overflowY: 'auto',
+      }}
+    >
         <h1 style={titleStyle}>Tus reservas</h1>
         {mine.length === 0 ? (
           <div style={emptyStyle}>Aún no tienes reservas.</div>
@@ -112,6 +116,15 @@ export default function ReservationsPage() {
           </div>
         )}
       </div>
+  )
+
+  if (embedded) {
+    return <EmbeddedShellContent>{inner}</EmbeddedShellContent>
+  }
+
+  return (
+    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="hidden">
+      {inner}
     </ScreenShell>
   )
 }

@@ -11,6 +11,10 @@ import {
   fetchParkingAlertsForUser,
   parkingAlertRowToCard,
 } from '../../services/waitmeAlerts.js'
+import {
+  EmbeddedShellContent,
+  useAuthenticatedOverlayEmbedded,
+} from '../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const PURPLE = colors.primary
 const BG = colors.background
@@ -112,6 +116,7 @@ function ScopeTab({ active, onClick, side, children }) {
 }
 
 export default function AlertsPage() {
+  const embedded = useAuthenticatedOverlayEmbedded()
   const { user } = useAuth()
   const [scope, setScope] = useState('alerts')
   const [rows, setRows] = useState([])
@@ -168,12 +173,11 @@ export default function AlertsPage() {
       <DashedHint>No se pudieron cargar los datos. Revisa la conexión y el proyecto Supabase.</DashedHint>
     ) : null
 
-  return (
-    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="auto">
-      <div
-        data-waitme-alerts-screen
-        style={{ position: 'relative', width: '100%', minHeight: '100%', paddingBottom: 24 }}
-      >
+  const inner = (
+    <div
+      data-waitme-alerts-screen
+      style={{ position: 'relative', width: '100%', minHeight: '100%', paddingBottom: 24 }}
+    >
         <ScopeTab
           active={scope === 'alerts'}
           onClick={() => setScope('alerts')}
@@ -313,6 +317,15 @@ export default function AlertsPage() {
           ) : null}
         </div>
       </div>
+  )
+
+  if (embedded) {
+    return <EmbeddedShellContent mainOverflow="auto">{inner}</EmbeddedShellContent>
+  }
+
+  return (
+    <ScreenShell style={shellStyle} mainMode={SCREEN_SHELL_MAIN_MODE.INSET} mainOverflow="auto">
+      {inner}
     </ScreenShell>
   )
 }
