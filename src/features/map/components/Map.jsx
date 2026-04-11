@@ -494,29 +494,17 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode])
 
-  /** Layout: ref al host debe existir antes de enganchar Mapbox; `useEffect` puede adelantarse al primer paint en algunos motores. */
+  /**
+   * Singleton Mapbox: init en layout (ref DOM listo). Si no hay instancia global, `initMap` reintenta con rAF
+   * hasta tener `containerRef` (antes un `return` temprano dejaba `createMap` sin ejecutar nunca).
+   */
   useLayoutEffect(() => {
-    const containerEl = containerRef.current
-    if (!containerEl) return
-
-    if (import.meta.env?.MODE === 'test') {
-      setUnavailable(true)
-      setGlobalMapInstance(null)
-      fireSettled()
-      return
-    }
-
-    if (!globalContainer) {
-      globalContainer = document.createElement('div')
-      globalContainer.style.width = '100%'
-      globalContainer.style.height = '100%'
-      globalContainer.style.position = 'relative'
-    }
-
-    if (containerEl.firstChild !== globalContainer) {
-      containerEl.innerHTML = ''
-      containerEl.appendChild(globalContainer)
-    }
+    let cancelled = false
+    let pendingRaf = 0
+    let rafAttempts = 0
+    const MAX_CONTAINER_RAF_ATTEMPTS = 120
+    /** @type {() => void} */
+    let teardown = () => {}
 
     let unsubscribeLocation = null
     const ensureLocationPipe = () => {
@@ -663,6 +651,14 @@ export default function Map({
     }
 
     const existingMap = getGlobalMapInstance()
+    if (import.meta.env.DEV) {
+      console.info('[WaitMe][Map]', {
+        step: 'layout',
+        hasExistingMap: Boolean(existingMap),
+        hasContainer: Boolean(containerRef.current),
+      })
+    }
+
     if (existingMap) {
       mapInstanceRef.current = existingMap
       let existingLoadCancelled = false
@@ -677,54 +673,115 @@ export default function Map({
       } else {
         existingMap.once('load', onExistingLoad)
       }
-      return () => {
+      teardown = () => {
         existingLoadCancelled = true
         existingMap.off('load', onExistingLoad)
         clearLocationPipe()
       }
-    }
-
-    const token = getMapboxAccessToken()
-    if (!token) {
-      setUnavailable(true)
-      setGlobalMapInstance(null)
-      fireSettled()
-      return
-    }
-
-    const map = createMap(globalContainer, { token, interactive: true })
-    if (!map || typeof map.jumpTo !== 'function') {
-      setUnavailable(true)
-      setGlobalMapInstance(null)
-      fireSettled()
-      return
-    }
-
-    setGlobalMapInstance(map)
-    mapInstanceRef.current = map
-
-    try {
-      map.setFadeDuration?.(0)
-    } catch {
-      /* */
-    }
-
-    const onFirstLoad = () => {
-      applyPostLoadStyle(map, readOnlyRef.current)
-      fireSettled()
-    }
-
-    ensureLocationPipe()
-
-    if (map.isStyleLoaded?.()) {
-      onFirstLoad()
     } else {
-      map.once('load', onFirstLoad)
+      const initMap = () => {
+        if (cancelled) return
+        const containerEl = containerRef.current
+        if (import.meta.env.DEV) {
+          console.info('[WaitMe][Map]', {
+            step: 'initMap',
+            hasContainer: Boolean(containerEl),
+            hasGlobalMap: Boolean(getGlobalMapInstance()),
+          })
+        }
+        if (!containerEl) {
+          rafAttempts += 1
+          if (rafAttempts > MAX_CONTAINER_RAF_ATTEMPTS) {
+            if (import.meta.env.DEV) {
+              console.warn(
+                '[WaitMe][Map] initMap: container ref ausente tras rAF; createMap no se llamó'
+              )
+            }
+            return
+          }
+          pendingRaf = requestAnimationFrame(initMap)
+          return
+        }
+
+        if (import.meta.env?.MODE === 'test') {
+          setUnavailable(true)
+          setGlobalMapInstance(null)
+          fireSettled()
+          return
+        }
+
+        if (!globalContainer) {
+          globalContainer = document.createElement('div')
+          globalContainer.style.width = '100%'
+          globalContainer.style.height = '100%'
+          globalContainer.style.position = 'relative'
+        }
+
+        if (containerEl.firstChild !== globalContainer) {
+          containerEl.innerHTML = ''
+          containerEl.appendChild(globalContainer)
+        }
+
+        const token = getMapboxAccessToken()
+        if (import.meta.env.DEV) {
+          console.info('[WaitMe][Map]', { step: 'beforeCreateMap', hasToken: Boolean(token) })
+        }
+        if (!token) {
+          setUnavailable(true)
+          setGlobalMapInstance(null)
+          fireSettled()
+          return
+        }
+
+        const map = createMap(globalContainer, { token, interactive: true })
+        if (import.meta.env.DEV) {
+          console.info('[WaitMe][Map]', {
+            step: 'createMap',
+            ok: Boolean(map && typeof map.jumpTo === 'function'),
+          })
+        }
+        if (!map || typeof map.jumpTo !== 'function') {
+          setUnavailable(true)
+          setGlobalMapInstance(null)
+          fireSettled()
+          return
+        }
+
+        setGlobalMapInstance(map)
+        mapInstanceRef.current = map
+
+        try {
+          map.setFadeDuration?.(0)
+        } catch {
+          /* */
+        }
+
+        const onFirstLoad = () => {
+          applyPostLoadStyle(map, readOnlyRef.current)
+          fireSettled()
+        }
+
+        ensureLocationPipe()
+
+        if (map.isStyleLoaded?.()) {
+          onFirstLoad()
+        } else {
+          map.once('load', onFirstLoad)
+        }
+
+        teardown = () => {
+          map.off('load', onFirstLoad)
+          clearLocationPipe()
+        }
+      }
+
+      initMap()
     }
 
     return () => {
-      map.off('load', onFirstLoad)
-      clearLocationPipe()
+      cancelled = true
+      if (pendingRaf) cancelAnimationFrame(pendingRaf)
+      teardown()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- init singleton; props vía refs.
 

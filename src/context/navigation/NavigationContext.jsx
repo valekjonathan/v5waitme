@@ -99,15 +99,17 @@ export function NavigationProvider({ children }) {
 
   const { openHome, openSearchParking, openParkHere } = mapFocusActions
 
-  useEffect(() => {
+  /** Una vez por uid, antes del paint: mapa + home sin depender de la identidad de `openMap`. */
+  useLayoutEffect(() => {
     const uid = user?.id != null ? String(user.id) : ''
-    if (!uid) return
-    const ready = Boolean(profileBootstrapReady && isProfileComplete)
-    if (ready && !initialHomeAppliedForAuthUid.has(uid)) {
-      openMap()
-      initialHomeAppliedForAuthUid.add(uid)
-    }
-  }, [user?.id, profileBootstrapReady, isProfileComplete, openMap])
+    if (!uid || !profileBootstrapReady || !isProfileComplete) return
+    if (initialHomeAppliedForAuthUid.has(uid)) return
+    initialHomeAppliedForAuthUid.add(uid)
+    setActiveScreen(ACTIVE_SCREEN_MAP)
+    setMapMode('home')
+    clearThreadState()
+    clearReviewsNavState()
+  }, [user?.id, profileBootstrapReady, isProfileComplete, clearThreadState, clearReviewsNavState])
 
   const openAlerts = useCallback(() => {
     clearReviewsNavState()
