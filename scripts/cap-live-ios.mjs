@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Live Reload (iPhone físico): `WAITME_CAP_DEV_SERVER_URL` + `npx cap sync ios`.
- * La detección LAN vive en `get-lan-ip.mjs`.
+ * Live Reload (iPhone físico): `npx cap sync ios` + inyección de `server.url` en
+ * `ios/App/App/capacitor.config.json` (IP LAN desde `get-lan-ip.mjs`).
  *
- * Producción: `npm run cap:live:off` (sync sin esa variable).
+ * Producción: `npm run cap:live:off` (sync sin server.url).
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */
@@ -12,6 +12,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { resolveWaitmeLanDevOrExit, upsertEnvLocalViteDevLanOrigin } from './get-lan-ip.mjs'
+import { injectIosCapacitorDevServerUrl } from './inject-ios-cap-dev-server.mjs'
 import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -45,8 +46,11 @@ const r = spawnSync('npx', ['cap', 'sync', 'ios'], {
   stdio: 'inherit',
 })
 
-if (r.status === 0 && String(process.env.SKIP_RM_IOS_PUBLIC || '').trim() !== '1') {
-  stripIosEmbeddedWeb(root)
+if (r.status === 0) {
+  injectIosCapacitorDevServerUrl(root, url)
+  if (String(process.env.SKIP_RM_IOS_PUBLIC || '').trim() !== '1') {
+    stripIosEmbeddedWeb(root)
+  }
 }
 
 process.exit(r.status === null ? 1 : r.status)

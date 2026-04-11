@@ -27,6 +27,7 @@ import {
   NGROK_DEV_PORT,
 } from './ngrok-tunnel-lib.mjs'
 import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import { injectIosCapacitorDevServerUrl } from './inject-ios-cap-dev-server.mjs'
 import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -104,6 +105,8 @@ async function main() {
     stdio: 'inherit',
   })
   if (sync.status !== 0) process.exit(sync.status === null ? 1 : sync.status)
+
+  injectIosCapacitorDevServerUrl(root, baseDevUrl)
 
   if (String(process.env.SKIP_RM_IOS_PUBLIC || '').trim() !== '1') {
     stripIosEmbeddedWeb(root)

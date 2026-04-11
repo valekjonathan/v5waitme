@@ -184,7 +184,7 @@ function summarizeCapacitorServerUrl() {
   const iosUrl = iosCap?.server && typeof iosCap.server === 'object' ? iosCap.server.url : undefined
 
   const parts = [
-    'Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync)',
+    'Capacitor raíz: capacitor.config.ts (sin server; Live Reload: scripts inyectan server.url tras cap sync)',
   ]
   if (typeof iosUrl === 'string' && iosUrl.trim())
     parts.push(`ios/App/App/capacitor.config.json (generado) server.url = ${iosUrl}`)
