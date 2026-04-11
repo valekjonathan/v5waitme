@@ -6,8 +6,6 @@ import {
   DEFAULT_PITCH,
   DEFAULT_ZOOM,
   getMapboxAccessToken,
-  OVIEDO_LAT,
-  OVIEDO_LNG,
   reapplyMapVisualLayers,
 } from '../constants/mapbox.js'
 import {
@@ -21,11 +19,7 @@ import {
   setWaitmePinOffsetYSuppressed,
 } from '../mapSession.js'
 import { getGlobalMapInstance, setGlobalMapInstance } from '../mapInstance.js'
-import {
-  getCurrentLocationFast,
-  getCurrentPosition,
-  subscribeToLocation,
-} from '../../../services/location.js'
+import { subscribeToLocation } from '../../../services/location.js'
 import {
   alignParkedGpsMarkerToGap,
   centerParkingMapOnGpsLikeParked,
@@ -198,6 +192,11 @@ export default function Map({
   const prevParkingPinModeForFollowRef = useRef(/** @type {string | null} */ (null))
   /** Última posición aplicada al mapa (evita trabajo repetido en ticks GPS idénticos). */
   const lastMapLocationRef = useRef(/** @type {{ lat: number, lng: number } | null} */ (null))
+  /**
+   * Un solo posicionamiento inicial desde `subscribeToLocation` (no `getCurrentLocationFast` en onLoad).
+   * Evita doble salto: caché/localStorage vs primer fix del watch.
+   */
+  const hasValidInitialLocationRef = useRef(false)
 
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
@@ -227,6 +226,7 @@ export default function Map({
     }
     setMapReadOnlySession(readOnly)
     lastMapLocationRef.current = null
+    hasValidInitialLocationRef.current = false
     const map = getGlobalMapInstance()
     if (map?.isStyleLoaded?.()) {
       try {
@@ -270,16 +270,6 @@ export default function Map({
 
   const projectSearchPinFromGpsRef = useRef(projectSearchPinFromGps)
   projectSearchPinFromGpsRef.current = projectSearchPinFromGps
-
-  useEffect(() => {
-    if (import.meta.env?.MODE === 'test') return
-    if (!parkingBandPinAdjust || parkingPinMode !== 'search') return
-    const fast = getCurrentLocationFast()
-    if (fast) {
-      searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
-    }
-    projectSearchPinFromGps()
-  }, [parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
 
   /** Home: offset de cámara desde el contenedor Mapbox real + pin. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
@@ -385,51 +375,6 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode])
 
-  /**
-   * Solo PARKED: alinear cámara inicial a GPS bajo el pin (hueco buscador–tarjeta).
-   * SEARCH: mapa libre; sin alinear cámara al GPS (`subscribeToLocation` no mueve el mapa).
-   */
-  useEffect(() => {
-    if (!parkingBandPinAdjust || unavailable || import.meta.env?.MODE === 'test') return
-    if (parkingPinMode !== 'parked') return
-    let cancelled = false
-    let attempts = 0
-    const maxAttempts = 100
-
-    const run = () => {
-      if (cancelled) return
-      const map = getGlobalMapInstance()
-      if (!map?.isStyleLoaded?.() || !isWaitmeParkingLayoutReady()) {
-        if (attempts++ < maxAttempts) requestAnimationFrame(run)
-        return
-      }
-      const fast = getCurrentLocationFast()
-      const applyCoords = (lng, lat) => {
-        if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-        const m = getGlobalMapInstance()
-        if (!m) return
-        alignParkedGpsMarkerToGap(m, { lng, lat })
-      }
-      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-        applyCoords(fast.longitude, fast.latitude)
-        return
-      }
-      getCurrentPosition(
-        (v) => {
-          if (cancelled || !v) return
-          applyCoords(v.lng, v.lat)
-        },
-        () => {}
-      )
-    }
-
-    const t = window.setTimeout(run, 0)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
-
   const parkingPinModePrevRef = useRef(parkingPinMode)
   useEffect(() => {
     if (parkingPinMode === 'parked' && parkingPinModePrevRef.current !== 'parked') {
@@ -476,61 +421,11 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode, unavailable])
 
-  /**
-   * “Dónde quieres aparcar”: en el primer ciclo con layout listo, misma cámara/GPS que “Estoy aparcado aquí”.
-   * Después se desactiva el seguimiento que mueve el mapa al GPS para conservar arrastre + pin en píxeles.
-   */
   useEffect(() => {
     if (!parkingBandPinAdjust || parkingPinMode !== 'search') {
       searchInitialGapAlignDoneRef.current = false
-      return undefined
     }
-    if (unavailable || import.meta.env?.MODE === 'test') return undefined
-    if (searchInitialGapAlignDoneRef.current) return undefined
-
-    let cancelled = false
-    let attempts = 0
-    const maxAttempts = 120
-
-    const finishAlign = (lng, lat) => {
-      if (cancelled || !Number.isFinite(lng) || !Number.isFinite(lat)) return
-      const m = getGlobalMapInstance()
-      if (!m) return
-      centerParkingMapOnGpsLikeParked(m, lng, lat)
-      setSearchFollowUserGps(false)
-      searchGpsRef.current = { lng, lat }
-      projectSearchPinFromGpsRef.current()
-      searchInitialGapAlignDoneRef.current = true
-    }
-
-    const run = () => {
-      if (cancelled) return
-      const map = getGlobalMapInstance()
-      if (!map?.isStyleLoaded?.() || !isWaitmeParkingLayoutReady()) {
-        if (attempts++ < maxAttempts) requestAnimationFrame(run)
-        return
-      }
-      const fast = getCurrentLocationFast()
-      if (fast && Number.isFinite(fast.longitude) && Number.isFinite(fast.latitude)) {
-        finishAlign(fast.longitude, fast.latitude)
-        return
-      }
-      getCurrentPosition(
-        (v) => {
-          if (cancelled || !v) return
-          finishAlign(v.lng, v.lat)
-        },
-        () => {}
-      )
-    }
-
-    const t = window.setTimeout(run, 0)
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-      searchInitialGapAlignDoneRef.current = false
-    }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+  }, [parkingBandPinAdjust, parkingPinMode])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -561,20 +456,7 @@ export default function Map({
         if (!loc) return
         const lat = loc.latitude
         const lng = loc.longitude
-        const prevApplied = lastMapLocationRef.current
-        const significant = locationDeltaSignificant(prevApplied, lat, lng)
-
-        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          searchGpsRef.current = { lng, lat }
-          if (!significant) return
-          projectSearchPinFromGpsRef.current()
-          const map = getGlobalMapInstance()
-          if (map && getSearchFollowUserGps() && map.isStyleLoaded?.()) {
-            jumpMapToGpsSearch(map, lng, lat)
-          }
-          lastMapLocationRef.current = { lat, lng }
-          return
-        }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
         const map = getGlobalMapInstance()
         if (!map) return
@@ -583,6 +465,77 @@ export default function Map({
           readOnlyRef.current &&
           hideViewportCenterPinRef.current &&
           !parkingBandPinAdjustRef.current
+        const isSearch = parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search'
+        const isParked = parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked'
+
+        if (!hasValidInitialLocationRef.current) {
+          if (!map.isStyleLoaded?.() && !isHeroHomeLogin) {
+            return
+          }
+          if (isSearch && !searchInitialGapAlignDoneRef.current && !isWaitmeParkingLayoutReady()) {
+            return
+          }
+          if (isHeroHomeLogin) {
+            const pin =
+              typeof document !== 'undefined'
+                ? document.querySelector('[data-waitme-pin-tip]')
+                : null
+            if (!(pin instanceof HTMLElement)) {
+              return
+            }
+            jumpMapLngLatUnderHeroPinTip(map, lng, lat)
+            hasValidInitialLocationRef.current = true
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
+
+          if (isSearch) {
+            searchGpsRef.current = { lng, lat }
+            if (!searchInitialGapAlignDoneRef.current) {
+              centerParkingMapOnGpsLikeParked(map, lng, lat)
+              setSearchFollowUserGps(false)
+              searchInitialGapAlignDoneRef.current = true
+            }
+            projectSearchPinFromGpsRef.current()
+            hasValidInitialLocationRef.current = true
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
+
+          if (isParked) {
+            if (getParkedAutoAlignGps()) {
+              alignParkedGpsMarkerToGap(map, { lng, lat })
+            }
+            hasValidInitialLocationRef.current = true
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
+
+          if (followUserGpsRef.current) {
+            centerMapOnUserImmediate(map, loc)
+            hasValidInitialLocationRef.current = true
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
+
+          hasValidInitialLocationRef.current = true
+          lastMapLocationRef.current = { lat, lng }
+          return
+        }
+
+        const prevApplied = lastMapLocationRef.current
+        const significant = locationDeltaSignificant(prevApplied, lat, lng)
+
+        if (isSearch) {
+          searchGpsRef.current = { lng, lat }
+          if (!significant) return
+          projectSearchPinFromGpsRef.current()
+          if (map && getSearchFollowUserGps() && map.isStyleLoaded?.()) {
+            jumpMapToGpsSearch(map, lng, lat)
+          }
+          lastMapLocationRef.current = { lat, lng }
+          return
+        }
 
         if (isHeroHomeLogin) {
           if (!significant) return
@@ -592,7 +545,7 @@ export default function Map({
         }
 
         if (!map.isStyleLoaded?.()) return
-        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
+        if (isParked) {
           if (!significant) return
           if (getParkedAutoAlignGps()) {
             alignParkedGpsMarkerToGap(map, { lng, lat })
@@ -621,20 +574,6 @@ export default function Map({
       const onExistingLoad = () => {
         if (existingLoadCancelled) return
         applyPostLoadStyle(existingMap, readOnlyRef.current)
-        const fast = getCurrentLocationFast()
-        const isHeroHomeLogin =
-          readOnlyRef.current &&
-          hideViewportCenterPinRef.current &&
-          !parkingBandPinAdjustRef.current
-        if (isHeroHomeLogin && fast) {
-          jumpMapLngLatUnderHeroPinTip(existingMap, fast.longitude, fast.latitude)
-        } else if (followUserGpsRef.current && fast) {
-          centerMapOnUserImmediate(existingMap, fast)
-        }
-        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
-          projectSearchPinFromGpsRef.current()
-        }
         fireSettled()
       }
       ensureLocationPipe()
@@ -677,60 +616,6 @@ export default function Map({
 
     const onFirstLoad = () => {
       applyPostLoadStyle(map, readOnlyRef.current)
-      const isHeroHomeLogin =
-        readOnlyRef.current &&
-        hideViewportCenterPinRef.current &&
-        !parkingBandPinAdjustRef.current
-
-      if (isHeroHomeLogin) {
-        const fast = getCurrentLocationFast()
-        if (fast) {
-          jumpMapLngLatUnderHeroPinTip(map, fast.longitude, fast.latitude)
-        } else {
-          getCurrentPosition(
-            (validated) => {
-              if (!validated) return
-              const m = getGlobalMapInstance()
-              if (!m) return
-              jumpMapLngLatUnderHeroPinTip(m, validated.lng, validated.lat)
-            },
-            () => {}
-          )
-        }
-      } else if (followUserGpsRef.current) {
-        const fast = getCurrentLocationFast()
-        if (fast) {
-          centerMapOnUserImmediate(map, fast)
-        } else {
-          getCurrentPosition(
-            (validated) => {
-              if (!validated || !followUserGpsRef.current) return
-              const m = getGlobalMapInstance()
-              if (!m) return
-              centerMapOnUserImmediate(m, {
-                latitude: validated.lat,
-                longitude: validated.lng,
-              })
-            },
-            () => {}
-          )
-        }
-      } else if (!(parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search')) {
-        try {
-          map.jumpTo({
-            center: [OVIEDO_LNG, OVIEDO_LAT],
-            zoom: DEFAULT_ZOOM,
-            pitch: DEFAULT_PITCH,
-          })
-        } catch {
-          /* */
-        }
-      }
-      if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-        const fast = getCurrentLocationFast()
-        if (fast) searchGpsRef.current = { lng: fast.longitude, lat: fast.latitude }
-        projectSearchPinFromGpsRef.current()
-      }
       fireSettled()
     }
 

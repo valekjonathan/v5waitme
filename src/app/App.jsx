@@ -22,12 +22,23 @@ import ProfilePage from '../features/profile/components/ProfilePage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
 import LoginPage from '../features/auth/components/LoginPage'
 
-const MapParkingPage = lazy(() => import('../features/parking/MapParkingPage'))
-const AlertsPage = lazy(() => import('../features/alerts/AlertsPage'))
-const ChatsPage = lazy(() => import('../features/chats/ChatsPage'))
-const ChatThreadView = lazy(() => import('../features/chats/ChatThreadView.jsx'))
-const ReviewsPage = lazy(() => import('../features/reviews/pages/ReviewsPage'))
-const UserReviewsPage = lazy(() => import('../features/reviews/UserReviewsPage'))
+/** Misma fábrica que `lazy()` para `Component.preload()` sin duplicar rutas de import. */
+function lazyWithPreload(factory) {
+  const Component = lazy(factory)
+  Component.preload = factory
+  return Component
+}
+
+const MapParkingPage = lazyWithPreload(() => import('../features/parking/MapParkingPage'))
+const AlertsPage = lazyWithPreload(() => import('../features/alerts/AlertsPage'))
+const ChatsPage = lazyWithPreload(() => import('../features/chats/ChatsPage'))
+const ChatThreadView = lazyWithPreload(() => import('../features/chats/ChatThreadView.jsx'))
+const ReviewsPage = lazyWithPreload(() => import('../features/reviews/pages/ReviewsPage'))
+const UserReviewsPage = lazyWithPreload(() => import('../features/reviews/UserReviewsPage'))
+/** Solo precarga en `AuthenticatedRoutes`; el `lazy` real vive en `MainLayout.jsx`. */
+const MainLayoutMapStackPreload = lazyWithPreload(() =>
+  import('../features/map/components/MainLayoutMapStack.jsx')
+)
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
@@ -379,13 +390,13 @@ function AuthenticatedRoutes() {
   const nav = useAppScreen()
 
   useEffect(() => {
-    void import('../features/chats/ChatsPage')
-    void import('../features/chats/ChatThreadView.jsx')
-    void import('../features/alerts/AlertsPage')
-    void import('../features/parking/MapParkingPage')
-    void import('../features/reviews/pages/ReviewsPage')
-    void import('../features/reviews/UserReviewsPage')
-    void import('../features/map/components/MainLayoutMapStack.jsx')
+    ChatsPage.preload()
+    ChatThreadView.preload()
+    AlertsPage.preload()
+    MapParkingPage.preload()
+    ReviewsPage.preload()
+    UserReviewsPage.preload()
+    MainLayoutMapStackPreload.preload()
   }, [])
 
   const {
