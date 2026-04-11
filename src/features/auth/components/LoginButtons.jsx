@@ -142,20 +142,11 @@ const spinnerStyle = {
 
 const alertStyle = {
   margin: 0,
-  marginTop: LAYOUT.spacing.sm,
   width: '100%',
   fontSize: 13,
   fontWeight: 500,
   color: colors.danger,
   lineHeight: 1.4,
-}
-
-/** Columna OAuth; separación Google→Apple vía `marginTop` en el botón Apple (no depender de `gap` del contenedor). */
-const oauthStackStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  alignItems: 'stretch',
 }
 
 const oauthSpinStyleTag = `
@@ -273,7 +264,6 @@ export default function LoginButtons() {
   const appleShadowKey = applePressed ? 'pressed' : appleHover ? 'hover' : 'idle'
   const appleStyle = {
     ...oauthButtonBase,
-    marginTop: '14px',
     backgroundColor: colors.primaryStrong,
     backgroundImage: appleBg,
     color: colors.textPrimary,
@@ -287,47 +277,45 @@ export default function LoginButtons() {
   return (
     <>
       <style>{oauthSpinStyleTag}</style>
-      <div style={oauthStackStyle}>
-        <OAuthButton
-          variant="primary"
-          disabled={authActionLoading}
-          onClick={async () => {
-            if (authActionLoading) return
-            setAppleMessage('')
-            await signInWithGoogle()
-          }}
-          handlers={googleHandlers}
-          data-home-google-button=""
-          style={googleStyle}
-          icon={
-            <IconSlot {...googleIconStyle}>
-              {authActionLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
-            </IconSlot>
-          }
-          label={authActionLoading ? 'Conectando...' : 'Continuar con Google'}
-        />
-        {showSlowNotice ? (
-          <div role="status" aria-live="polite" style={slowNoticeWrapStyle}>
-            <span style={slowNoticePillStyle}>
-              <span aria-hidden style={slowNoticeDotStyle} />
-              Verificando acceso seguro...
-            </span>
-          </div>
-        ) : null}
-        <OAuthButton
-          variant="secondary"
-          disabled={authActionLoading}
-          onClick={onApple}
-          handlers={appleHandlers}
-          style={appleStyle}
-          icon={
-            <IconSlot {...appleIconStyle}>
-              <AppleMark />
-            </IconSlot>
-          }
-          label="Continuar con Apple"
-        />
-      </div>
+      <OAuthButton
+        variant="primary"
+        disabled={authActionLoading}
+        onClick={async () => {
+          if (authActionLoading) return
+          setAppleMessage('')
+          await signInWithGoogle()
+        }}
+        handlers={googleHandlers}
+        data-home-google-button=""
+        style={googleStyle}
+        icon={
+          <IconSlot {...googleIconStyle}>
+            {authActionLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
+          </IconSlot>
+        }
+        label={authActionLoading ? 'Conectando...' : 'Continuar con Google'}
+      />
+      {showSlowNotice ? (
+        <div role="status" aria-live="polite" style={slowNoticeWrapStyle}>
+          <span style={slowNoticePillStyle}>
+            <span aria-hidden style={slowNoticeDotStyle} />
+            Verificando acceso seguro...
+          </span>
+        </div>
+      ) : null}
+      <OAuthButton
+        variant="secondary"
+        disabled={authActionLoading}
+        onClick={onApple}
+        handlers={appleHandlers}
+        style={appleStyle}
+        icon={
+          <IconSlot {...appleIconStyle}>
+            <AppleMark />
+          </IconSlot>
+        }
+        label="Continuar con Apple"
+      />
       {authError || appleMessage ? (
         <p role="alert" style={alertStyle}>
           {authError || appleMessage}

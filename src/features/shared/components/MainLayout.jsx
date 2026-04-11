@@ -166,6 +166,8 @@ const homeCtaRegionWrapStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   width: '100%',
+  /** Espaciado vertical entre CTAs (login OAuth, home); requiere hijos directos en columna, no un solo wrapper. */
+  gap: 14,
 }
 
 function overlayLayerStyle(background) {
