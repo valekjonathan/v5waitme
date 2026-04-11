@@ -44,6 +44,12 @@ import {
 
 let globalContainer = null
 
+/** Umbral ~1e-7° (~1 cm): ticks GPS duplicados no repiten jumpTo/easeTo/DOM. */
+function locationDeltaSignificant(prev, lat, lng) {
+  if (prev == null || !Number.isFinite(lat) || !Number.isFinite(lng)) return true
+  return Math.abs(prev.lat - lat) >= 1e-7 || Math.abs(prev.lng - lng) >= 1e-7
+}
+
 /** Nodo al que Mapbox engancha el canvas (`getContainer()`), no el shell que también lleva el pin. */
 function resolveWaitmeMapDomContainer(containerRef) {
   const m = getGlobalMapInstance()
@@ -190,6 +196,8 @@ export default function Map({
   /** Una sola alineación tipo “aparcado” al entrar en búsqueda; luego ref se resetea al salir de search. */
   const searchInitialGapAlignDoneRef = useRef(false)
   const prevParkingPinModeForFollowRef = useRef(/** @type {string | null} */ (null))
+  /** Última posición aplicada al mapa (evita trabajo repetido en ticks GPS idénticos). */
+  const lastMapLocationRef = useRef(/** @type {{ lat: number, lng: number } | null} */ (null))
 
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
@@ -218,6 +226,7 @@ export default function Map({
       }
     }
     setMapReadOnlySession(readOnly)
+    lastMapLocationRef.current = null
     const map = getGlobalMapInstance()
     if (map?.isStyleLoaded?.()) {
       try {
@@ -244,7 +253,16 @@ export default function Map({
     if (!g || !Number.isFinite(g.lng) || !Number.isFinite(g.lat)) return
     try {
       const p = map.project([g.lng, g.lat])
-      setSearchPinPixel({ x: p.x, y: p.y })
+      setSearchPinPixel((prev) => {
+        if (
+          prev &&
+          Math.abs(prev.x - p.x) < 0.25 &&
+          Math.abs(prev.y - p.y) < 0.25
+        ) {
+          return prev
+        }
+        return { x: p.x, y: p.y }
+      })
     } catch {
       /* */
     }
@@ -541,19 +559,25 @@ export default function Map({
       if (unsubscribeLocation) return
       unsubscribeLocation = subscribeToLocation((loc) => {
         if (!loc) return
-        if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
-          searchGpsRef.current = { lng: loc.longitude, lat: loc.latitude }
-        }
-        const map = getGlobalMapInstance()
-        if (!map) return
+        const lat = loc.latitude
+        const lng = loc.longitude
+        const prevApplied = lastMapLocationRef.current
+        const significant = locationDeltaSignificant(prevApplied, lat, lng)
 
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search') {
+          searchGpsRef.current = { lng, lat }
+          if (!significant) return
           projectSearchPinFromGpsRef.current()
-          if (getSearchFollowUserGps() && map.isStyleLoaded?.()) {
-            jumpMapToGpsSearch(map, loc.longitude, loc.latitude)
+          const map = getGlobalMapInstance()
+          if (map && getSearchFollowUserGps() && map.isStyleLoaded?.()) {
+            jumpMapToGpsSearch(map, lng, lat)
           }
+          lastMapLocationRef.current = { lat, lng }
           return
         }
+
+        const map = getGlobalMapInstance()
+        if (!map) return
 
         const isHeroHomeLogin =
           readOnlyRef.current &&
@@ -561,19 +585,25 @@ export default function Map({
           !parkingBandPinAdjustRef.current
 
         if (isHeroHomeLogin) {
-          jumpMapLngLatUnderHeroPinTip(map, loc.longitude, loc.latitude)
+          if (!significant) return
+          jumpMapLngLatUnderHeroPinTip(map, lng, lat)
+          lastMapLocationRef.current = { lat, lng }
           return
         }
 
         if (!map.isStyleLoaded?.()) return
         if (parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked') {
+          if (!significant) return
           if (getParkedAutoAlignGps()) {
-            alignParkedGpsMarkerToGap(map, { lng: loc.longitude, lat: loc.latitude })
+            alignParkedGpsMarkerToGap(map, { lng, lat })
           }
+          lastMapLocationRef.current = { lat, lng }
           return
         }
         if (followUserGpsRef.current) {
+          if (!significant) return
           centerMapOnUserImmediate(map, loc)
+          lastMapLocationRef.current = { lat, lng }
         }
       })
     }
@@ -756,6 +786,7 @@ export default function Map({
 
     let cancelled = false
     let rafId = 0
+    let moveProjectRafId = 0
     let detach = () => {}
 
     const tryAttach = () => {
@@ -769,16 +800,28 @@ export default function Map({
       const onDragStart = () => {
         setSearchFollowUserGps(false)
       }
+      /** Mapbox emite `move` muy a menudo; una proyección por frame basta para el pin. */
+      const scheduleProjectPin = () => {
+        if (moveProjectRafId !== 0) return
+        moveProjectRafId = requestAnimationFrame(() => {
+          moveProjectRafId = 0
+          if (!cancelled) projectSearchPinFromGpsRef.current()
+        })
+      }
       const onMove = () => {
-        projectSearchPinFromGps()
+        scheduleProjectPin()
       }
       const onResize = () => {
-        projectSearchPinFromGps()
+        scheduleProjectPin()
       }
       map.on('dragstart', onDragStart)
       map.on('move', onMove)
       const unsubVv = subscribeWaitmeViewportEvents(onResize)
       detach = () => {
+        if (moveProjectRafId !== 0) {
+          cancelAnimationFrame(moveProjectRafId)
+          moveProjectRafId = 0
+        }
         map.off('dragstart', onDragStart)
         map.off('move', onMove)
         unsubVv()
