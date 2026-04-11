@@ -377,6 +377,13 @@ function clearChatHashFromUrl() {
 function AuthenticatedRoutes() {
   const { user } = useAuth()
   const nav = useAppScreen()
+
+  useEffect(() => {
+    void import('../features/chats/ChatsPage')
+    void import('../features/chats/ChatThreadView.jsx')
+    void import('../features/alerts/AlertsPage')
+  }, [])
+
   const {
     activeScreen,
     mapMode,

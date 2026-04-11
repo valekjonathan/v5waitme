@@ -42,8 +42,15 @@ export function NavigationProvider({ children }) {
     )
   )
   const [chatUnreadByThread, setChatUnreadByThread] = useState(/** @type {Record<string, number>} */ ({}))
+  /** Lista ya cargada en app para este usuario (evita refetch en ChatsPage). */
+  const [chatThreadListFetchedForUserId, setChatThreadListFetchedForUserId] = useState(
+    /** @type {string | null} */ (null)
+  )
+  /** Incrementa cuando la lista global se sincroniza (hidrata ChatsPage si montó con []). */
+  const [chatThreadListEpoch, setChatThreadListEpoch] = useState(0)
 
   const chatThreadListRef = useRef(/** @type {unknown[]} */ ([]))
+  const lastUidForChatThreadListRef = useRef(/** @type {string} */ (''))
 
   const syncChatThreadList = useCallback((list) => {
     chatThreadListRef.current = Array.isArray(list) ? list : []
@@ -266,8 +273,21 @@ export function NavigationProvider({ children }) {
     const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
     const canLoad = Boolean(dev || (isSupabaseConfigured() && isRealSupabaseAuthUid(uid)))
 
+    if (lastUidForChatThreadListRef.current !== uid) {
+      lastUidForChatThreadListRef.current = uid
+      if (!uid) {
+        setChatUnreadByThread({})
+        chatThreadListRef.current = []
+        setChatThreadListFetchedForUserId(null)
+        setChatThreadListEpoch(0)
+        return undefined
+      }
+      chatThreadListRef.current = []
+      setChatThreadListFetchedForUserId(null)
+      setChatThreadListEpoch(0)
+    }
+
     if (!uid) {
-      setChatUnreadByThread({})
       return undefined
     }
     if (!canLoad) {
@@ -279,12 +299,15 @@ export function NavigationProvider({ children }) {
       if (cancelled) return
       if (error || !Array.isArray(data)) return
       syncChatUnreadFromThreads(data)
+      syncChatThreadList(data)
+      setChatThreadListFetchedForUserId(uid)
+      setChatThreadListEpoch((e) => e + 1)
     })()
 
     return () => {
       cancelled = true
     }
-  }, [user?.id, syncChatUnreadFromThreads])
+  }, [user?.id, syncChatUnreadFromThreads, syncChatThreadList])
 
   useEffect(() => {
     const onHash = () => {
@@ -336,6 +359,8 @@ export function NavigationProvider({ children }) {
       closeThread,
       syncChatThreadList,
       getChatThreadListSnapshot,
+      chatThreadListFetchedForUserId,
+      chatThreadListEpoch,
       pendingDmVisual,
       clearPendingDmVisual,
       mapFocusGeneration,
@@ -373,6 +398,8 @@ export function NavigationProvider({ children }) {
       pendingDmVisual,
       syncChatThreadList,
       getChatThreadListSnapshot,
+      chatThreadListFetchedForUserId,
+      chatThreadListEpoch,
       syncChatUnreadFromThreads,
       userReviewsPeerRow,
       viewingUserReviewsId,

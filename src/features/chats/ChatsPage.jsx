@@ -93,6 +93,8 @@ export default function ChatsPage() {
   const [threads, setThreads] = useState(() => createInitialThreads(nav))
   const listFetchSeqRef = useRef(0)
   const lastThreadsUserIdRef = useRef(/** @type {string} */ (''))
+  /** Lista local lista (fetch propio o skip si ya vino del NavigationContext). */
+  const threadsListLoadDoneRef = useRef(false)
 
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
@@ -104,26 +106,57 @@ export default function ChatsPage() {
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
   useEffect(() => {
+    if (!canLoadChats) {
+      nav.syncChatThreadList?.(threads)
+      return
+    }
+    const snap = nav.getChatThreadListSnapshot?.()
+    const snapLen = Array.isArray(snap) ? snap.length : 0
+    const globalReady = nav.chatThreadListFetchedForUserId === userId
+    if (threads.length === 0 && snapLen > 0) return
+    if (!globalReady && !threadsListLoadDoneRef.current && threads.length === 0) return
     nav.syncChatThreadList?.(threads)
-  }, [nav, threads])
+  }, [nav, threads, canLoadChats, userId, nav.chatThreadListFetchedForUserId])
+
+  useEffect(() => {
+    const epoch = nav.chatThreadListEpoch ?? 0
+    if (!epoch) return
+    const snap = nav.getChatThreadListSnapshot?.()
+    if (!Array.isArray(snap) || snap.length === 0) return
+    setThreads((prev) => (prev.length > 0 ? prev : [...snap]))
+    threadsListLoadDoneRef.current = true
+  }, [nav, nav.chatThreadListEpoch])
 
   useEffect(() => {
     let cancelled = false
     if (!canLoadChats) {
+      threadsListLoadDoneRef.current = true
       return undefined
     }
     const priorUserId = lastThreadsUserIdRef.current
     const switchedUser = priorUserId !== userId
+    if (switchedUser) {
+      threadsListLoadDoneRef.current = false
+    }
     lastThreadsUserIdRef.current = userId
+
+    if (nav.chatThreadListFetchedForUserId === userId && userId !== '') {
+      threadsListLoadDoneRef.current = true
+      return () => {
+        cancelled = true
+      }
+    }
+
     const seq = ++listFetchSeqRef.current
     void loadThreads(userId).then((rows) => {
       if (cancelled || seq !== listFetchSeqRef.current) return
+      threadsListLoadDoneRef.current = true
       setThreads((prev) => mergeThreadList(prev, rows, { allowEmptyOverwrite: switchedUser }))
     })
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, userId])
+  }, [canLoadChats, userId, nav.chatThreadListFetchedForUserId])
 
   useEffect(() => {
     nav.syncChatUnreadFromThreads?.(threads)
