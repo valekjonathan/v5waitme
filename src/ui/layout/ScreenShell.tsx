@@ -57,17 +57,18 @@ export default function ScreenShell({
   const mainOverflowResolved =
     mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED ? 'hidden' : mainOverflow
 
+  /** Cadena flex explícita (WKWebView): sin `height: %` en el slot — evita slotH=0. */
   const contentSlotStyle: CSSProperties = {
     flex: '1 1 0%',
     minHeight: 0,
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
     width: '100%',
     maxWidth: 'none',
     margin: 0,
     padding: 0,
     boxSizing: 'border-box',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
     overflow: mainOverflowResolved,
     WebkitOverflowScrolling: mainOverflowResolved === 'auto' ? 'touch' : undefined,
   }
