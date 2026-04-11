@@ -58,7 +58,7 @@ export default function ScreenShell({
   const mainOverflowResolved =
     mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED ? 'hidden' : mainOverflow
 
-  /** Cadena flex explícita (WKWebView): sin `height: %` en el slot — evita slotH=0. */
+  /** Base inequívoca (WKWebView); `contentStyle` añade overflow/anchos en mapa fullBleed. */
   const contentSlotStyle: CSSProperties = {
     flex: '1 1 0%',
     minHeight: 0,
@@ -66,11 +66,6 @@ export default function ScreenShell({
     display: 'flex',
     flexDirection: 'column',
     alignSelf: 'stretch',
-    width: '100%',
-    maxWidth: 'none',
-    margin: 0,
-    padding: 0,
-    boxSizing: 'border-box',
     overflow: mainOverflowResolved,
     WebkitOverflowScrolling: mainOverflowResolved === 'auto' ? 'touch' : undefined,
   }

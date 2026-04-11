@@ -16,7 +16,7 @@ function NativeDebugMap(/** @type {Record<string, unknown>} */ props) {
   return <Map {...props} />
 }
 
-const mapSlotStyle = {
+const mapSlotSearchParkStyle = {
   position: 'absolute',
   inset: 0,
   display: 'flex',
@@ -26,7 +26,8 @@ const mapSlotStyle = {
 }
 
 /**
- * Mapa autenticado: en `home`, `MainLayout` → `MainLayoutChrome` → `HomePage`; en search/park, mapa + overlay sin `HomePage`.
+ * Home: `MainLayout` → `MainLayoutChrome` → `HomePage` como children (mapa solo en `mapLayer`).
+ * Search/park: mapa + overlay, sin `HomePage`.
  */
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
@@ -48,10 +49,21 @@ export default function AuthenticatedMapScreen() {
   if (isHome) {
     return (
       <MainLayout
-        mapBackgroundExtraStyle={{ pointerEvents: 'none' }}
         mapLayer={
-          <div style={mapSlotStyle} data-waitme-map-slot>
-            <NativeDebugMap {...mapProps} />
+          <div
+            data-waitme-map-slot
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              minWidth: 0,
+            }}
+          >
+            <Map {...mapProps} />
             <SimulatedCarsOnMap enabled={mapForeground} users={users} />
           </div>
         }
@@ -64,7 +76,7 @@ export default function AuthenticatedMapScreen() {
   return (
     <div style={mainLayoutRootStyle}>
       <div style={{ ...mainLayoutMapBackgroundStyle, pointerEvents: 'auto' }} aria-label="Capa de mapa">
-        <div style={mapSlotStyle} data-waitme-map-slot>
+        <div style={mapSlotSearchParkStyle} data-waitme-map-slot>
           <NativeDebugMap {...mapProps} />
           <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
         </div>
