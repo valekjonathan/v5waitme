@@ -564,7 +564,7 @@ function AppGate() {
               onClose={closeIncompleteModal}
             />
             <WaitMeIncomingPurchaseModal />
-            {profileBootstrapReady && !isProfileComplete ? (
+            {!profileBootstrapReady ? null : !isProfileComplete ? (
               <ProfilePage />
             ) : (
               <AuthenticatedRoutes />

@@ -22,8 +22,11 @@ import {
 
 const NavigationContext = createContext(null)
 
+/** Sobrevive a remounts (p. ej. Strict Mode): una sola vez por uid al quedar listo el perfil. */
+const initialHomeAppliedForAuthUid = new Set()
+
 export function NavigationProvider({ children }) {
-  const { user } = useAuth()
+  const { user, profileBootstrapReady, isProfileComplete } = useAuth()
   const [activeScreen, setActiveScreen] = useState(ACTIVE_SCREEN_MAP)
   const [mapMode, setMapMode] = useState(/** @type {'home' | 'search' | 'parkHere'} */ ('home'))
   const [activeThreadId, setActiveThreadId] = useState(/** @type {string | null} */ (null))
@@ -49,7 +52,6 @@ export function NavigationProvider({ children }) {
 
   const chatThreadListRef = useRef(/** @type {unknown[]} */ ([]))
   const lastUidForChatThreadListRef = useRef(/** @type {string} */ (''))
-
   const syncChatThreadList = useCallback((list) => {
     chatThreadListRef.current = Array.isArray(list) ? list : []
   }, [])
@@ -96,6 +98,16 @@ export function NavigationProvider({ children }) {
   }, [clearReviewsNavState, clearThreadState])
 
   const { openHome, openSearchParking, openParkHere } = mapFocusActions
+
+  useEffect(() => {
+    const uid = user?.id != null ? String(user.id) : ''
+    if (!uid) return
+    const ready = Boolean(profileBootstrapReady && isProfileComplete)
+    if (ready && !initialHomeAppliedForAuthUid.has(uid)) {
+      openMap()
+      initialHomeAppliedForAuthUid.add(uid)
+    }
+  }, [user?.id, profileBootstrapReady, isProfileComplete, openMap])
 
   const openAlerts = useCallback(() => {
     clearReviewsNavState()

@@ -240,7 +240,7 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
   function ResetBoundary({ children }) {
     const { screen } = useAppScreen()
     return (
-      <ErrorBoundaryUi resetKeys={[screen]} name="navTest">
+      <ErrorBoundaryUi key={screen} resetKeys={[screen]} name="navTest">
         {children}
       </ErrorBoundaryUi>
     )

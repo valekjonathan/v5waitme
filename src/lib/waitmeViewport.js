@@ -73,6 +73,7 @@ export function subscribeWaitmeViewportEvents(handler) {
 
 /**
  * Mantiene `--app-height` y variables auxiliares; reutiliza la misma suscripción de eventos que el mapa.
+ * Primer frame en WKWebView: `visualViewport.height` a veces es 0; se reintenta en rAF y microtarea.
  */
 export function subscribeWaitmeViewportCssVars() {
   if (typeof window === 'undefined') return () => {}
@@ -83,5 +84,13 @@ export function subscribeWaitmeViewportCssVars() {
   }
 
   run()
-  return subscribeWaitmeViewportEvents(run)
+  const rafId = window.requestAnimationFrame(run)
+  const t0 = window.setTimeout(run, 0)
+  const unsub = subscribeWaitmeViewportEvents(run)
+
+  return () => {
+    window.cancelAnimationFrame(rafId)
+    window.clearTimeout(t0)
+    unsub()
+  }
 }

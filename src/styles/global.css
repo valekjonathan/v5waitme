@@ -24,8 +24,7 @@ body,
   max-height: var(--app-height);
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: hidden;
 }
 
 /**

@@ -7,6 +7,8 @@ export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props)
     this.state = { hasError: false }
+    /** Tras un error, el primer cambio de `resetKeys` suele ser la navegación al sitio que rompe; no limpiar ahí. */
+    this.ignoreNextResetKeysSync = false
   }
 
   static getDerivedStateFromError() {
@@ -14,6 +16,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
+    this.ignoreNextResetKeysSync = true
     console.log('REACT CRASH', error, info)
     const label = this.props.name
       ? `[WaitMe][ErrorBoundary:${this.props.name}]`
@@ -30,6 +33,10 @@ export default class ErrorBoundary extends React.Component {
     const { resetKeys } = this.props
     if (!this.state.hasError || resetKeys == null) return
     if (!resetKeysChanged(prevProps.resetKeys, resetKeys)) return
+    if (this.ignoreNextResetKeysSync) {
+      this.ignoreNextResetKeysSync = false
+      return
+    }
     this.setState({ hasError: false })
   }
 
@@ -54,6 +61,7 @@ export default class ErrorBoundary extends React.Component {
       }
       return (
         <div
+          data-waitme-error-fallback="default"
           style={{
             display: 'flex',
             minHeight: 'var(--app-height)',
