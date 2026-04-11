@@ -106,13 +106,33 @@ const homeGateStyle = {
   flexDirection: 'column',
 }
 
-/** Contenedor del mapa persistente + overlay (mismo slot que ocupaba solo el mapa). */
+/** Slot bajo ScreenShell: columna flex (altura real del main); sin absolute en la base. */
 const authenticatedPersistentStackStyle = {
   position: 'relative',
   flex: '1 1 0%',
   minHeight: 0,
   width: '100%',
-  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}
+
+/** Área útil mapa + overlay: flex + relative para que un único overlay absolute tenga caja con altura. */
+const authenticatedPersistentStageStyle = {
+  position: 'relative',
+  flex: '1 1 0%',
+  minHeight: 0,
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+}
+
+/** Capa base del mapa/Home: flujo normal (no inset-0 absolute). */
+const authenticatedPersistentMapLayerStyle = {
+  flex: '1 1 0%',
+  minHeight: 0,
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
 }
 
 /** Mismo fondo que la capa mapa (`MainLayout` mapLazyFallback) mientras carga el chunk lazy; `fallback={null}` dejaba ver el negro de `html`. */
@@ -506,40 +526,40 @@ function AuthenticatedRoutes() {
     body = (
       <ScreenShell {...overlayShellProps}>
         <div style={authenticatedPersistentStackStyle}>
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 0,
-              pointerEvents: onMap ? 'auto' : 'none',
-            }}
-            aria-hidden={!onMap}
-          >
-            <MapForegroundProvider value={onMap}>
-              {onMap && mapMode === 'home' ? (
-                <HomeActionGate>
-                  <AuthenticatedMapScreen />
-                </HomeActionGate>
-              ) : (
-                <AuthenticatedMapScreen />
-              )}
-            </MapForegroundProvider>
-          </div>
-          {!onMap ? (
+          <div style={authenticatedPersistentStageStyle}>
             <div
               style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 0,
-                backgroundColor: colors.background,
+                ...authenticatedPersistentMapLayerStyle,
+                pointerEvents: onMap ? 'auto' : 'none',
               }}
+              aria-hidden={!onMap}
             >
-              <AuthenticatedOverlayEmbeddedProvider>{renderOverlayBody()}</AuthenticatedOverlayEmbeddedProvider>
+              <MapForegroundProvider value={onMap}>
+                {onMap && mapMode === 'home' ? (
+                  <HomeActionGate>
+                    <AuthenticatedMapScreen />
+                  </HomeActionGate>
+                ) : (
+                  <AuthenticatedMapScreen />
+                )}
+              </MapForegroundProvider>
             </div>
-          ) : null}
+            {!onMap ? (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                  backgroundColor: colors.background,
+                }}
+              >
+                <AuthenticatedOverlayEmbeddedProvider>{renderOverlayBody()}</AuthenticatedOverlayEmbeddedProvider>
+              </div>
+            ) : null}
+          </div>
         </div>
       </ScreenShell>
     )
