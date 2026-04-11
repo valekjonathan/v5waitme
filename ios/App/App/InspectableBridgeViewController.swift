@@ -14,16 +14,32 @@ import WebKit
  */
 final class InspectableBridgeViewController: CAPBridgeViewController {
 
-    override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
-        let webView = super.webView(with: frame, configuration: configuration)
+    /// Alinea el scroll del WKWebView con Safari: sin insets automáticos de UIKit (ver comentario de clase).
+    private func applyWaitmeWebViewScrollInsets(to webView: WKWebView) {
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.contentInset = .zero
         webView.scrollView.scrollIndicatorInsets = .zero
+    }
+
+    override func webView(with frame: CGRect, configuration: WKWebViewConfiguration) -> WKWebView {
+        let webView = super.webView(with: frame, configuration: configuration)
+        applyWaitmeWebViewScrollInsets(to: webView)
         #if DEBUG
         if #available(iOS 16.4, *) {
             webView.isInspectable = true
         }
         #endif
         return webView
+    }
+
+    /**
+     * Tras rotación, teclado u otros pasos de layout, UIKit puede volver a ajustar `contentInset`.
+     * Repetir aquí evita que el cambio “no se refleje” en app nativa frente a Safari.
+     */
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if let wv = webView {
+            applyWaitmeWebViewScrollInsets(to: wv)
+        }
     }
 }
