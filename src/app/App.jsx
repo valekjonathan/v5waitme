@@ -19,10 +19,10 @@ import {
 } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
-import MapParkingPage from '../features/parking/MapParkingPage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
 import LoginPage from '../features/auth/components/LoginPage'
 
+const MapParkingPage = lazy(() => import('../features/parking/MapParkingPage'))
 const AlertsPage = lazy(() => import('../features/alerts/AlertsPage'))
 const ChatsPage = lazy(() => import('../features/chats/ChatsPage'))
 const ChatThreadView = lazy(() => import('../features/chats/ChatThreadView.jsx'))

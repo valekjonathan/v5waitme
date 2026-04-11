@@ -56,6 +56,7 @@ test('MainLayout: hero frase → CenterPin → CTAs; Map readOnly + hideViewport
   const main = read('src/features/shared/components/MainLayout.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
   const map = read('src/features/map/components/Map.jsx')
+  const mapStack = read('src/features/map/components/MainLayoutMapStack.jsx')
 
   assert.match(home, /import\s+MainLayout\s+from\s+'.*MainLayout'/i)
   assert.match(home, /<MainLayout\b/)
@@ -73,8 +74,8 @@ test('MainLayout: hero frase → CenterPin → CTAs; Map readOnly + hideViewport
   assert.match(map, /MapViewportCenterPin/)
   assert.match(main, /import\s+CenterPin\b/)
   assert.match(main, /<CenterPin\b/)
-  assert.match(main, /hideViewportCenterPin/)
-  assert.match(main, /<Map\s+readOnly\s+hideViewportCenterPin\s*\/>/)
+  assert.match(mapStack, /hideViewportCenterPin/)
+  assert.match(mapStack, /<Map\s+readOnly\s+hideViewportCenterPin\s*\/>/)
   assert.match(main, /\{hasCta \?/)
 })
 

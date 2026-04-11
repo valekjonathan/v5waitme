@@ -2,7 +2,7 @@ import {
   getMapboxAccessToken,
   OVIEDO_LAT,
   OVIEDO_LNG,
-} from '../features/map/constants/mapbox.js'
+} from '../features/map/constants/mapboxConstants.js'
 
 const SUGGEST_BASE = 'https://api.mapbox.com/search/searchbox/v1/suggest'
 

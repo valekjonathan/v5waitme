@@ -1,5 +1,6 @@
-import Map from '../../map/components/Map.jsx'
-import SimulatedCarsOnMap from '../../map/components/SimulatedCarsOnMap'
+import { lazy, Suspense } from 'react'
+
+const MainLayoutMapStack = lazy(() => import('../../map/components/MainLayoutMapStack.jsx'))
 import CenterPin from '../../home/components/CenterPin'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
 import { colors } from '../../../design/colors'
@@ -24,6 +25,12 @@ const mapLayerStyle = {
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.map,
+  backgroundColor: colors.background,
+}
+/** Mismo fondo que la capa mapa mientras carga el chunk async (sin parpadeo de color). */
+const mapLazyFallbackStyle = {
+  width: '100%',
+  height: '100%',
   backgroundColor: colors.background,
 }
 const overlayStyleBase = {
@@ -129,8 +136,9 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
   return (
     <div style={rootStyle}>
       <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Map readOnly hideViewportCenterPin />
-        <SimulatedCarsOnMap enabled users={simulatedUsers} />
+        <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
+          <MainLayoutMapStack simulatedUsers={simulatedUsers} />
+        </Suspense>
       </div>
 
       <div style={overlayLayerStyle(overlayBackground)} />

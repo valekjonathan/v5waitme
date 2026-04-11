@@ -1,14 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createMap, reapplyMapVisualLayers } from '../src/features/map/constants/mapbox.js'
 import {
-  createMap,
   DEFAULT_PITCH,
   DEFAULT_ZOOM,
   getMapboxAccessToken,
   OVIEDO_LAT,
   OVIEDO_LNG,
-  reapplyMapVisualLayers,
-} from '../src/features/map/constants/mapbox.js'
+} from '../src/features/map/constants/mapboxConstants.js'
 import { isWaitmeParkingLayoutReady } from '../src/features/map/mapControls.js'
 import { getGlobalMapInstance, setGlobalMapInstance } from '../src/features/map/mapInstance.js'
 import {

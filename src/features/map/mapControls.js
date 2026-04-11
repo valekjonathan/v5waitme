@@ -1,4 +1,4 @@
-import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapbox.js'
+import { DEFAULT_PITCH, DEFAULT_ZOOM } from './constants/mapboxConstants.js'
 import {
   getMapFollowUserGps,
   getParkingMapPinMode,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { OVIEDO_LAT, OVIEDO_LNG } from './constants/mapbox.js'
+import { OVIEDO_LAT, OVIEDO_LNG } from './constants/mapboxConstants.js'
 import { buildSimulatedUsers } from './simulatedUsers.js'
 import { getCurrentLocationFast, subscribeToLocation } from '../../services/location.js'
 

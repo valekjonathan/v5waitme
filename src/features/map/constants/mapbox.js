@@ -1,8 +1,14 @@
 import mapboxgl from 'mapbox-gl'
+import { DEFAULT_PITCH, DEFAULT_ZOOM, OVIEDO_LAT, OVIEDO_LNG } from './mapboxConstants.js'
 
-/** Single source for default map / GPS fallback (Map + config). */
-export const OVIEDO_LAT = 43.3619
-export const OVIEDO_LNG = -5.8494
+export {
+  DEFAULT_PITCH,
+  DEFAULT_ZOOM,
+  OVIEDO_LAT,
+  OVIEDO_LNG,
+  getMapboxAccessToken,
+} from './mapboxConstants.js'
+
 const OVIEDO_CENTER = [OVIEDO_LNG, OVIEDO_LAT]
 const DARK_STYLE = 'mapbox://styles/mapbox/dark-v11'
 const ROAD_COLOR = '#8b5cf6'
@@ -21,15 +27,6 @@ export function reapplyMapVisualLayers(map, mapReadOnly) {
   } catch {
     /* */
   }
-}
-
-export const DEFAULT_ZOOM = 16.5
-export const DEFAULT_PITCH = 30
-
-export function getMapboxAccessToken(env = import.meta.env) {
-  const t = env?.VITE_MAPBOX_ACCESS_TOKEN
-  if (typeof t === 'string' && t.trim()) return t.trim()
-  return null
 }
 
 function setupMapStyleOnLoad(map) {
