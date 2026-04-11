@@ -18,6 +18,12 @@ test('arranque: boot auth o login visible (sin #root colgado)', async ({ page })
 test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)', async ({
   page,
 }) => {
+  const mapboxToken = String(process.env.VITE_MAPBOX_ACCESS_TOKEN ?? '').trim()
+  test.skip(
+    !mapboxToken,
+    'Sin VITE_MAPBOX_ACCESS_TOKEN no hay búsqueda Mapbox en runtime; en CI usar secret omite este caso.'
+  )
+
   /** Prueba runtime: peticiones reales a Mapbox (console con objetos no siempre llega a `msg.text()`). */
   const mapboxSuggestUrls: string[] = []
 
