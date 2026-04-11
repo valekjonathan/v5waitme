@@ -22,6 +22,8 @@ jobs:
     name: quality-and-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +35,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Lint (fast fail)
+        run: npm run lint
 
       - name: Quality gate
         run: npm run quality
