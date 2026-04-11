@@ -244,11 +244,12 @@ function checkLikelyUnimportedJsxModules() {
     if (nameSansExt.length < 4) continue
     const escaped = nameSansExt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const fromImport = new RegExp(`from\\s+['"][^'"]*${escaped}[^'"]*['"]`)
-    if (!fromImport.test(combined)) {
+    const dynamicImport = new RegExp(`import\\s*\\(\\s*['"][^'"]*${escaped}[^'"]*['"]`)
+    if (!fromImport.test(combined) && !dynamicImport.test(combined)) {
       issues.push({
         level: 'WARN',
         code: 'POSSIBLY_UNIMPORTED_MODULE',
-        message: `Ningún "from '…${nameSansExt}…'" detectado en src/ (¿módulo no usado?)`,
+        message: `Ningún "from '…${nameSansExt}…'" ni import() dinámico detectado en src/ (¿módulo no usado?)`,
         files: [rel(file)],
       })
     }

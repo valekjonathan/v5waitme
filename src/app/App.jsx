@@ -7,16 +7,27 @@ import {
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
-import ReviewsPage from '../features/reviews/pages/ReviewsPage'
-import UserReviewsPage from '../features/reviews/UserReviewsPage'
 import MapParkingPage from '../features/parking/MapParkingPage'
-import AlertsPage from '../features/alerts/AlertsPage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
-import ChatsPage from '../features/chats/ChatsPage'
 import LoginPage from '../features/auth/components/LoginPage'
+
+const AlertsPage = lazy(() => import('../features/alerts/AlertsPage'))
+const ChatsPage = lazy(() => import('../features/chats/ChatsPage'))
+const ChatThreadView = lazy(() => import('../features/chats/ChatThreadView.jsx'))
+const ReviewsPage = lazy(() => import('../features/reviews/pages/ReviewsPage'))
+const UserReviewsPage = lazy(() => import('../features/reviews/UserReviewsPage'))
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
@@ -32,7 +43,6 @@ import {
   ACTIVE_SCREEN_REVIEWS,
   ACTIVE_SCREEN_THREAD,
 } from '../lib/appScreenState.js'
-import ChatThreadView from '../features/chats/ChatThreadView.jsx'
 import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
@@ -379,10 +389,11 @@ function AuthenticatedRoutes() {
 
   const sessionUid = user?.id != null ? String(user.id) : ''
 
+  let body
   if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
     const tid = String(activeThreadId).trim()
     const localFb = isDmDevFallbackThread(tid)
-    return (
+    body = (
       <ChatThreadView
         summary={activeThreadSummary}
         userId={sessionUid}
@@ -394,38 +405,40 @@ function AuthenticatedRoutes() {
         }}
       />
     )
-  }
-
-  if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
-    if (viewingUserReviewsId === sessionUid) return <ReviewsPage />
-    return <UserReviewsPage />
-  }
-
-  if (activeScreen === ACTIVE_SCREEN_CHATS) return <ChatsPage />
-  if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) return <ReservationsPage />
-  if (activeScreen === ACTIVE_SCREEN_ALERTS) return <AlertsPage />
-  if (activeScreen === ACTIVE_SCREEN_PROFILE) return <ProfilePage />
-
-  if (activeScreen === ACTIVE_SCREEN_MAP) {
+  } else if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
+    body =
+      viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />
+  } else if (activeScreen === ACTIVE_SCREEN_CHATS) {
+    body = <ChatsPage />
+  } else if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) {
+    body = <ReservationsPage />
+  } else if (activeScreen === ACTIVE_SCREEN_ALERTS) {
+    body = <AlertsPage />
+  } else if (activeScreen === ACTIVE_SCREEN_PROFILE) {
+    body = <ProfilePage />
+  } else if (activeScreen === ACTIVE_SCREEN_MAP) {
     if (mapMode === 'home') {
-      return (
+      body = (
         <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
           <HomeActionGate>
             <HomePage />
           </HomeActionGate>
         </ScreenShell>
       )
+    } else {
+      body = <MapParkingPage />
     }
-    return <MapParkingPage />
+  } else {
+    body = (
+      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+        <HomeActionGate>
+          <HomePage />
+        </HomeActionGate>
+      </ScreenShell>
+    )
   }
 
-  return (
-    <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-      <HomeActionGate>
-        <HomePage />
-      </HomeActionGate>
-    </ScreenShell>
-  )
+  return <Suspense fallback={null}>{body}</Suspense>
 }
 
 function AppGate() {
