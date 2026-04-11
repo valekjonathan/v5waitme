@@ -5,10 +5,11 @@
 import * as Sentry from '@sentry/react'
 import { logFlow } from '../lib/devFlowLog.js'
 import { registerNativeOAuthDeepLink } from '../lib/nativeOAuthDeepLink'
-import { syncWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
+import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 
 registerNativeOAuthDeepLink()
-syncWaitmeViewportCssVars()
+/** WKWebView (Capacitor iOS): el primer frame a veces no tiene `visualViewport.height`; la suscripción actualiza `--app-height` cuando el viewport estabiliza. */
+subscribeWaitmeViewportCssVars()
 
 if (import.meta.env.DEV) {
   const lan = String(import.meta.env.VITE_DEV_LAN_ORIGIN || '').trim()

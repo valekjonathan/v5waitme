@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T14:37:40.762Z
-Git revision: f2d606f163702dee96cef43b70487828f29c6f34
+Generated: 2026-04-11T15:14:52.074Z
+Git revision: 0dbef4607bb0c37da21e8d63d8299b56362e73b6
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -96,6 +96,7 @@ scripts/
   build-env.mjs
   cap-live-ios.mjs
   cap-live-off.mjs
+  cap-sync-ios-clean.mjs
   cap-sync-production.mjs
   dev-ios.mjs
   dev-safari-live-reload.mjs
@@ -335,6 +336,6 @@ ninguno
 - Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).
 - Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
 - PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
-- Capacitor iOS: Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync); ios/App/App/capacitor.config.json (generado) server.url = http://192.168.0.50:5173. webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por `cap sync`.
+- Capacitor iOS: Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync); ios/App/App/capacitor.config.json (generado) server.url = (no configurado; WKWebView usa dist local). webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por `cap sync`.
 
 === FIN ===
