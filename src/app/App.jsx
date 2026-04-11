@@ -36,7 +36,6 @@ const ChatsPage = lazyWithPreload(() => import('../features/chats/ChatsPage'))
 const ChatThreadView = lazyWithPreload(() => import('../features/chats/ChatThreadView.jsx'))
 const ReviewsPage = lazyWithPreload(() => import('../features/reviews/pages/ReviewsPage'))
 const UserReviewsPage = lazyWithPreload(() => import('../features/reviews/UserReviewsPage'))
-import NativeRuntimeDebugPanel from '../debug/NativeRuntimeDebugPanel.jsx'
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
@@ -562,7 +561,6 @@ function AppGate() {
 
   return (
     <AppScreenProvider>
-      <NativeRuntimeDebugPanel />
       {!user ? (
         <div style={gateColumnStyle}>
           <AppLayout>

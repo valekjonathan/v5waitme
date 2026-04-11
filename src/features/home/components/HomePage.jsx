@@ -1,4 +1,3 @@
-import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import Button from '../../../ui/Button'
 import MagnifierIcon from '../../../ui/icons/MagnifierIcon'
@@ -6,7 +5,6 @@ import CarIconHome from '../../../ui/icons/CarIconHome'
 
 /** CTAs de inicio; el chrome (hero, velo) lo monta `AuthenticatedMapScreen` o `MainLayout` (login). */
 export default function HomePage() {
-  useNativeDebugMount('HomePage')
   const { openSearchParking, openParkHere } = useAppScreen()
 
   return (

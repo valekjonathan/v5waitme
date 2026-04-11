@@ -1,7 +1,5 @@
 import { lazy, Suspense } from 'react'
 
-import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
-
 const MainLayoutMapStack = lazy(() => import('../../map/components/MainLayoutMapStack.jsx'))
 import CenterPin from '../../home/components/CenterPin'
 import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
@@ -178,7 +176,6 @@ function overlayLayerStyle(background) {
  * Velo + hero + CTAs (sin capa de mapa). Login y `AuthenticatedMapScreen` (home) comparten el mismo chrome.
  */
 export function MainLayoutChrome({ children = null }) {
-  useNativeDebugMount('MainLayoutChrome')
   const hasCta = children != null
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'

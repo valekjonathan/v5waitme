@@ -10,7 +10,6 @@ export default defineConfig({
   plugins: [react()],
   define: {
     'import.meta.env.VITE_DEV_LAN_ORIGIN': JSON.stringify('http://192.168.99.1:5173'),
-    'import.meta.env.VITE_WAITME_BUILD_HASH': JSON.stringify('test'),
   },
   resolve: {
     alias: {

@@ -6,15 +6,9 @@ import MainLayout, {
   mainLayoutMapBackgroundStyle,
   mainLayoutRootStyle,
 } from '../../shared/components/MainLayout.jsx'
-import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
-
-function NativeDebugMap(/** @type {Record<string, unknown>} */ props) {
-  useNativeDebugMount('Map')
-  return <Map {...props} />
-}
 
 const mapSlotSearchParkStyle = {
   position: 'absolute',
@@ -32,10 +26,7 @@ const mapSlotSearchParkStyle = {
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
   const mapForeground = useMapForeground()
-  // TEMP debug: una sola fuente — useAppScreen(); comparación robusta (evita tipo raro en WKWebView)
-  console.log('REAL mapMode render:', mapMode)
   const isHome = String(mapMode) === 'home'
-  console.log('IS HOME?', isHome)
   const parkingUiMode = mapMode === 'parkHere' ? 'parked' : 'search'
   const users = useSimulatedParkingUsers(!mapForeground)
 
@@ -76,7 +67,7 @@ export default function AuthenticatedMapScreen() {
     <div style={mainLayoutRootStyle}>
       <div style={{ ...mainLayoutMapBackgroundStyle, pointerEvents: 'auto' }} aria-label="Capa de mapa">
         <div style={mapSlotSearchParkStyle} data-waitme-map-slot>
-          <NativeDebugMap {...mapProps} />
+          <Map {...mapProps} />
           <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
         </div>
       </div>
