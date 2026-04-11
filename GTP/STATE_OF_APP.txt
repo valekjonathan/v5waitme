@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T10:07:08.892Z
-Git revision: 836b0f1e9f63ee13a39509b7aaf76e445bb42ab2
+Generated: 2026-04-11T10:30:20.582Z
+Git revision: 500dc55592537d46ebbe871947e3c9939b0ad7ef
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -118,6 +118,11 @@ src/
   app/
     App.jsx
     bootstrapApp.js
+  context/
+    navigation/
+      NavigationContext.jsx
+    waitme/
+      WaitMeContext.jsx
   design/
     colors.js
     radius.js
