@@ -5,8 +5,9 @@ import { getCurrentLocationFast, subscribeToLocation } from '../../services/loca
 
 /**
  * Ancla GPS para generar 10 coches cercanos + 40 en Oviedo; una sola fuente de verdad.
+ * @param {boolean} [suspendAnchorUpdates] Si true, no actualiza el ancla (mapa oculto bajo overlay).
  */
-export function useSimulatedParkingUsers() {
+export function useSimulatedParkingUsers(suspendAnchorUpdates = false) {
   const [anchor, setAnchor] = useState(() => {
     const fast = getCurrentLocationFast()
     if (fast && Number.isFinite(fast.latitude) && Number.isFinite(fast.longitude)) {
@@ -22,9 +23,10 @@ export function useSimulatedParkingUsers() {
     }
     return subscribeToLocation((loc) => {
       if (!loc || !Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude)) return
+      if (suspendAnchorUpdates) return
       setAnchor({ lat: loc.latitude, lng: loc.longitude })
     })
-  }, [])
+  }, [suspendAnchorUpdates])
 
   return useMemo(() => buildSimulatedUsers(anchor.lat, anchor.lng), [anchor.lat, anchor.lng])
 }

@@ -61,6 +61,7 @@ import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
 import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 import { AuthenticatedOverlayEmbeddedProvider } from '../lib/AuthenticatedOverlayEmbeddedContext.jsx'
+import { MapForegroundProvider } from '../lib/MapForegroundContext.jsx'
 
 /**
  * Raíz React: llena #root (flex). `--app-height` se escribe solo desde `visualViewport.height`
@@ -507,13 +508,15 @@ function AuthenticatedRoutes() {
             }}
             aria-hidden={!onMap}
           >
-            {onMap && mapMode === 'home' ? (
-              <HomeActionGate>
+            <MapForegroundProvider value={onMap}>
+              {onMap && mapMode === 'home' ? (
+                <HomeActionGate>
+                  <AuthenticatedMapScreen />
+                </HomeActionGate>
+              ) : (
                 <AuthenticatedMapScreen />
-              </HomeActionGate>
-            ) : (
-              <AuthenticatedMapScreen />
-            )}
+              )}
+            </MapForegroundProvider>
           </div>
           {!onMap ? (
             <div

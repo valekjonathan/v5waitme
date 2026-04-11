@@ -161,6 +161,8 @@ export default function Map({
   followUserGps = true,
   /** `search`: pin viewport tipo Uber. `parked`: marcador GPS. Solo con `parkingBandPinAdjust`. */
   parkingPinMode = 'parked',
+  /** Pantalla mapa al frente; si false, se pausa cámara/proyecciones/pin sin desmontar el mapa. */
+  mapForeground = true,
 }) {
   const containerRef = useRef(null)
   const mapShellRef = useRef(null)
@@ -197,6 +199,8 @@ export default function Map({
    * Evita doble salto: caché/localStorage vs primer fix del watch.
    */
   const hasValidInitialLocationRef = useRef(false)
+  const mapForegroundRef = useRef(mapForeground)
+  mapForegroundRef.current = mapForeground
 
   const fireSettled = useCallback(() => {
     if (settledRef.current) return
@@ -271,8 +275,65 @@ export default function Map({
   const projectSearchPinFromGpsRef = useRef(projectSearchPinFromGps)
   projectSearchPinFromGpsRef.current = projectSearchPinFromGps
 
+  /** Al volver al mapa: un resize + una pasada de cámara/pin desde refs (sin recrear el mapa). */
+  useEffect(() => {
+    if (!mapForeground) return undefined
+    if (import.meta.env?.MODE === 'test') return undefined
+    const map = getGlobalMapInstance()
+    if (!map?.isStyleLoaded?.()) return undefined
+
+    const raf = requestAnimationFrame(() => {
+      try {
+        map.resize()
+      } catch {
+        /* */
+      }
+
+      const last = lastMapLocationRef.current
+      if (!last || !Number.isFinite(last.lat) || !Number.isFinite(last.lng)) return
+      const { lat, lng } = last
+
+      const isHeroHomeLogin =
+        readOnlyRef.current &&
+        hideViewportCenterPinRef.current &&
+        !parkingBandPinAdjustRef.current
+      const isSearch = parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'search'
+      const isParked = parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked'
+
+      if (isSearch) {
+        searchGpsRef.current = { lng, lat }
+        projectSearchPinFromGpsRef.current()
+        if (getSearchFollowUserGps() && map.isStyleLoaded?.()) {
+          jumpMapToGpsSearch(map, lng, lat)
+        }
+        return
+      }
+
+      if (isHeroHomeLogin) {
+        jumpMapLngLatUnderHeroPinTip(map, lng, lat)
+        return
+      }
+
+      if (isParked) {
+        if (getParkedAutoAlignGps()) {
+          alignParkedGpsMarkerToGap(map, { lng, lat })
+        }
+        return
+      }
+
+      if (followUserGpsRef.current) {
+        centerMapOnUserImmediate(map, { latitude: lat, longitude: lng })
+      }
+    })
+
+    return () => cancelAnimationFrame(raf)
+  }, [mapForeground])
+
   /** Home: offset de cámara desde el contenedor Mapbox real + pin. Parking search: hueco buscador–tarjeta. */
   useEffect(() => {
+    if (!mapForeground) {
+      return undefined
+    }
     if (!parkingBandPinAdjust) {
       const run = () => {
         requestAnimationFrame(() => {
@@ -373,7 +434,7 @@ export default function Map({
       observedParking.clear()
       delete window.__WAITME_PIN_OFFSET_Y__
     }
-  }, [parkingBandPinAdjust, parkingPinMode])
+  }, [parkingBandPinAdjust, parkingPinMode, mapForeground])
 
   const parkingPinModePrevRef = useRef(parkingPinMode)
   useEffect(() => {
@@ -385,7 +446,13 @@ export default function Map({
 
   /** Parked: el usuario arrastra/rote/inclina → dejar de seguir el GPS hasta pulsar «Ubicación». */
   useEffect(() => {
-    if (!parkingBandPinAdjust || parkingPinMode !== 'parked' || unavailable || import.meta.env?.MODE === 'test') {
+    if (
+      !parkingBandPinAdjust ||
+      parkingPinMode !== 'parked' ||
+      unavailable ||
+      import.meta.env?.MODE === 'test' ||
+      !mapForeground
+    ) {
       return undefined
     }
     let cancelled = false
@@ -419,7 +486,7 @@ export default function Map({
         }
       }
     }
-  }, [parkingBandPinAdjust, parkingPinMode, unavailable])
+  }, [parkingBandPinAdjust, parkingPinMode, unavailable, mapForeground])
 
   useEffect(() => {
     if (!parkingBandPinAdjust || parkingPinMode !== 'search') {
@@ -461,6 +528,8 @@ export default function Map({
         const map = getGlobalMapInstance()
         if (!map) return
 
+        const fg = mapForegroundRef.current
+
         const isHeroHomeLogin =
           readOnlyRef.current &&
           hideViewportCenterPinRef.current &&
@@ -469,6 +538,14 @@ export default function Map({
         const isParked = parkingBandPinAdjustRef.current && parkingPinModeRef.current === 'parked'
 
         if (!hasValidInitialLocationRef.current) {
+          if (!fg) {
+            if (isSearch) {
+              searchGpsRef.current = { lng, lat }
+            }
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
+
           if (!map.isStyleLoaded?.() && !isHeroHomeLogin) {
             return
           }
@@ -529,6 +606,10 @@ export default function Map({
         if (isSearch) {
           searchGpsRef.current = { lng, lat }
           if (!significant) return
+          if (!fg) {
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
           projectSearchPinFromGpsRef.current()
           if (map && getSearchFollowUserGps() && map.isStyleLoaded?.()) {
             jumpMapToGpsSearch(map, lng, lat)
@@ -539,6 +620,10 @@ export default function Map({
 
         if (isHeroHomeLogin) {
           if (!significant) return
+          if (!fg) {
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
           jumpMapLngLatUnderHeroPinTip(map, lng, lat)
           lastMapLocationRef.current = { lat, lng }
           return
@@ -547,6 +632,10 @@ export default function Map({
         if (!map.isStyleLoaded?.()) return
         if (isParked) {
           if (!significant) return
+          if (!fg) {
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
           if (getParkedAutoAlignGps()) {
             alignParkedGpsMarkerToGap(map, { lng, lat })
           }
@@ -555,6 +644,10 @@ export default function Map({
         }
         if (followUserGpsRef.current) {
           if (!significant) return
+          if (!fg) {
+            lastMapLocationRef.current = { lat, lng }
+            return
+          }
           centerMapOnUserImmediate(map, loc)
           lastMapLocationRef.current = { lat, lng }
         }
@@ -635,6 +728,7 @@ export default function Map({
 
   useEffect(() => {
     if (import.meta.env?.MODE === 'test') return
+    if (!mapForeground) return undefined
 
     const resizeMap = () => {
       try {
@@ -663,11 +757,12 @@ export default function Map({
       clearTimeout(t1)
       clearTimeout(t2)
     }
-  }, [])
+  }, [mapForeground])
 
   useEffect(() => {
     if (unavailable || import.meta.env?.MODE === 'test') return
     if (!parkingBandPinAdjust || parkingPinMode !== 'search') return
+    if (!mapForeground) return undefined
 
     let cancelled = false
     let rafId = 0
@@ -718,7 +813,7 @@ export default function Map({
       cancelAnimationFrame(rafId)
       detach()
     }
-  }, [unavailable, parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps])
+  }, [unavailable, parkingBandPinAdjust, parkingPinMode, projectSearchPinFromGps, mapForeground])
 
   return (
     <>

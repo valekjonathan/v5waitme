@@ -4,6 +4,7 @@ import SearchParkingOverlay from '../../parking/components/SearchParkingOverlay.
 import HomePage from '../../home/components/HomePage.jsx'
 import { useSimulatedParkingUsers } from '../useSimulatedParkingUsers'
 import { useAppScreen } from '../../../lib/AppScreenContext'
+import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
 import {
   MainLayoutChrome,
   mainLayoutMapLayerStyle,
@@ -32,17 +33,19 @@ const homeMapSlotStyle = {
  */
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
+  const mapForeground = useMapForeground()
   const isHome = mapMode === 'home'
   const parkingUiMode = mapMode === 'parkHere' ? 'parked' : 'search'
-  const users = useSimulatedParkingUsers()
+  const users = useSimulatedParkingUsers(!mapForeground)
 
   const mapProps = isHome
-    ? { readOnly: true, hideViewportCenterPin: true, followUserGps: true }
+    ? { readOnly: true, hideViewportCenterPin: true, followUserGps: true, mapForeground }
     : {
         readOnly: false,
         parkingBandPinAdjust: true,
         parkingPinMode: parkingUiMode,
         followUserGps: parkingUiMode === 'parked',
+        mapForeground,
       }
 
   return (
@@ -53,7 +56,7 @@ export default function AuthenticatedMapScreen() {
           data-waitme-map-slot
         >
           <Map {...mapProps} />
-          {isHome ? <SimulatedCarsOnMap enabled users={users} /> : null}
+          {isHome ? <SimulatedCarsOnMap enabled={mapForeground} users={users} /> : null}
           {!isHome ? (
             <SearchParkingOverlay mode={parkingUiMode} allUsers={users} />
           ) : null}
