@@ -11,6 +11,7 @@ import Section from '../../../ui/layout/Section'
 const s = LAYOUT.spacing
 export const mainLayoutRootStyle = {
   position: 'relative',
+  isolation: 'isolate',
   flex: '1 1 0%',
   minHeight: 0,
   minWidth: 0,
@@ -21,11 +22,28 @@ export const mainLayoutRootStyle = {
   overflowX: 'hidden',
   overflowY: 'hidden',
 }
+/**
+ * Mapa al fondo: flujo flex (no absolute/inset) para que WKWebView no promocione el canvas
+ * por encima del chrome HTML hermano; z-index explícito bajo dentro del mismo contexto.
+ */
 export const mainLayoutMapLayerStyle = {
-  position: 'absolute',
-  inset: 0,
+  position: 'relative',
+  flex: '1 1 0%',
+  minHeight: 0,
+  minWidth: 0,
+  width: '100%',
   zIndex: LAYOUT.z.map,
   backgroundColor: colors.background,
+}
+/** Contenedor único del chrome sobre el mapa: stacking context fiable para Home/login. */
+const mainLayoutChromeStackStyle = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: LAYOUT.z.content,
+  pointerEvents: 'none',
+  isolation: 'isolate',
+  display: 'flex',
+  flexDirection: 'column',
 }
 /** Mismo fondo que la capa mapa mientras carga el chunk async (sin parpadeo de color). */
 const mapLazyFallbackStyle = {
@@ -130,7 +148,7 @@ export function MainLayoutChrome({ children = null }) {
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 
   return (
-    <>
+    <div style={mainLayoutChromeStackStyle}>
       <div style={overlayLayerStyle(overlayBackground)} />
 
       <div style={centeredLayerStyle}>
@@ -168,7 +186,7 @@ export function MainLayoutChrome({ children = null }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

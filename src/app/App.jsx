@@ -126,7 +126,7 @@ const authenticatedPersistentStageStyle = {
   flexDirection: 'column',
 }
 
-/** Contenedor map-shell en App: relativo + flex para no tapar el chrome Home en WKWebView. */
+/** Contenedor del árbol mapa+Home: flex; el apilamiento mapa/chrome vive en MainLayout (isolate). */
 const authenticatedPersistentMapLayerStyle = {
   position: 'relative',
   flex: 1,
@@ -134,17 +134,6 @@ const authenticatedPersistentMapLayerStyle = {
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-}
-
-/** Home sobre el mapa: stacking explícito (mapa detrás, UI delante). */
-const authenticatedHomeOverlaySlotStyle = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-  minHeight: 0,
-  width: '100%',
 }
 
 /** Mismo fondo que la capa mapa (`MainLayout` mapLazyFallback) mientras carga el chunk lazy; `fallback={null}` dejaba ver el negro de `html`. */
@@ -548,11 +537,9 @@ function AuthenticatedRoutes() {
             >
               <MapForegroundProvider value={onMap}>
                 {onMap && mapMode === 'home' ? (
-                  <div style={authenticatedHomeOverlaySlotStyle}>
-                    <HomeActionGate>
-                      <AuthenticatedMapScreen />
-                    </HomeActionGate>
-                  </div>
+                  <HomeActionGate>
+                    <AuthenticatedMapScreen />
+                  </HomeActionGate>
                 ) : (
                   <AuthenticatedMapScreen />
                 )}
