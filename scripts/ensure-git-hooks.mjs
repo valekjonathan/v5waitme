@@ -7,6 +7,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.join(fileURLToPath(new URL('.', import.meta.url)), '..')
+
+/** En GitHub Actions no hay hooks locales; evita tocar `.git` del checkout (prepare corre en `npm ci`). */
+if (process.env.GITHUB_ACTIONS === 'true') {
+  process.exit(0)
+}
+
 const gitDir = path.join(root, '.git')
 const dstDir = path.join(gitDir, 'hooks')
 
