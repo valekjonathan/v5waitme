@@ -9,10 +9,11 @@ import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
 const s = LAYOUT.spacing
+/** Contenedor único: mapa (fondo) + chrome en capas deterministas (WKWebView). */
 export const mainLayoutRootStyle = {
   position: 'relative',
   isolation: 'isolate',
-  flex: '1 1 0%',
+  flex: 1,
   minHeight: 0,
   minWidth: 0,
   height: '100%',
@@ -22,24 +23,29 @@ export const mainLayoutRootStyle = {
   overflowX: 'hidden',
   overflowY: 'hidden',
 }
-/**
- * Mapa al fondo: flujo flex (no absolute/inset) para que WKWebView no promocione el canvas
- * por encima del chrome HTML hermano; z-index explícito bajo dentro del mismo contexto.
- */
-export const mainLayoutMapLayerStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  minHeight: 0,
-  minWidth: 0,
-  width: '100%',
+/** Capa mapa detrás: absolute z0; en Home (AuthenticatedMapScreen) se añade pointerEvents: none. */
+export const mainLayoutMapBackgroundStyle = {
+  position: 'absolute',
+  inset: 0,
   zIndex: LAYOUT.z.map,
   backgroundColor: colors.background,
 }
-/** Contenedor único del chrome sobre el mapa: stacking context fiable para Home/login. */
+/** Capa Home/chrome delante del mapa (mismo shell que login). */
+export const mainLayoutHomeSlotStyle = {
+  position: 'relative',
+  zIndex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
+  width: '100%',
+}
+/** Velo + hero + CTAs: ocupa el slot Home con altura real (no compite el map-shell en hit-test). */
 const mainLayoutChromeStackStyle = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: LAYOUT.z.content,
+  position: 'relative',
+  flex: 1,
+  minHeight: 0,
+  width: '100%',
   pointerEvents: 'none',
   isolation: 'isolate',
   display: 'flex',
@@ -200,13 +206,15 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
 
   return (
     <div style={mainLayoutRootStyle}>
-      <div style={mainLayoutMapLayerStyle} aria-label="Capa de mapa">
+      <div style={mainLayoutMapBackgroundStyle} aria-label="Capa de mapa">
         <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
           <MainLayoutMapStack simulatedUsers={simulatedUsers} />
         </Suspense>
       </div>
 
-      <MainLayoutChrome>{children}</MainLayoutChrome>
+      <div style={mainLayoutHomeSlotStyle}>
+        <MainLayoutChrome>{children}</MainLayoutChrome>
+      </div>
     </div>
   )
 }

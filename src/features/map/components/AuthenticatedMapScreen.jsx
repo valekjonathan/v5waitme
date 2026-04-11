@@ -7,7 +7,8 @@ import { useAppScreen } from '../../../lib/AppScreenContext'
 import { useMapForeground } from '../../../lib/MapForegroundContext.jsx'
 import {
   MainLayoutChrome,
-  mainLayoutMapLayerStyle,
+  mainLayoutHomeSlotStyle,
+  mainLayoutMapBackgroundStyle,
   mainLayoutRootStyle,
 } from '../../shared/components/MainLayout.jsx'
 
@@ -50,7 +51,13 @@ export default function AuthenticatedMapScreen() {
 
   return (
     <div style={mainLayoutRootStyle}>
-      <div style={mainLayoutMapLayerStyle} aria-label="Capa de mapa">
+      <div
+        style={{
+          ...mainLayoutMapBackgroundStyle,
+          pointerEvents: isHome ? 'none' : 'auto',
+        }}
+        aria-label="Capa de mapa"
+      >
         <div
           style={isHome ? homeMapSlotStyle : mapPageMapSlotStyle}
           data-waitme-map-slot
@@ -63,9 +70,11 @@ export default function AuthenticatedMapScreen() {
         </div>
       </div>
       {isHome ? (
-        <MainLayoutChrome>
-          <HomePage />
-        </MainLayoutChrome>
+        <div style={mainLayoutHomeSlotStyle}>
+          <MainLayoutChrome>
+            <HomePage />
+          </MainLayoutChrome>
+        </div>
       ) : null}
     </div>
   )

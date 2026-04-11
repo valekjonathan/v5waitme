@@ -202,11 +202,11 @@ function IncompleteProfileModal({ open, onClose, onConfirm }) {
   )
 }
 
-function IncompleteProfileModalHost({ open, onClose }) {
+function IncompleteProfileModalHost({ onClose }) {
   const { openProfile } = useAppScreen()
   return (
     <IncompleteProfileModal
-      open={open}
+      open
       onClose={onClose}
       onConfirm={() => {
         openProfile()
@@ -617,10 +617,9 @@ function AppGate() {
       <ProfileIncompleteNoticeProvider value={noticeValue}>
         <AppLayout>
           <div style={authTreeInnerStyle}>
-            <IncompleteProfileModalHost
-              open={incompleteModalOpen}
-              onClose={closeIncompleteModal}
-            />
+            {incompleteModalOpen ? (
+              <IncompleteProfileModalHost onClose={closeIncompleteModal} />
+            ) : null}
             <WaitMeIncomingPurchaseModal />
             <AuthenticatedInitialMapHome />
             <AuthenticatedRoutes />
