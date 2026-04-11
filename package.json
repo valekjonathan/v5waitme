@@ -3,11 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "npm run dev → Vite :5173 (0.0.0.0), local + LAN en consola; fuera de casa → Vercel; ngrok solo demo (WAITME_DEV_NGROK=1); BrowserStack: npm run test:e2e:browserstack. Producción: cap:sync:prod sin server.url.",
+  "description": "dev:web → Vite+Safari (sin Cap, puerto 5173 comprobado). dev → iOS+cap sync+LAN. dev:vite → solo Vite. dev:safari → BrowserSync :5175+live-reload. Fuera de casa: Vercel; ngrok: WAITME_DEV_NGROK=1. E2E: npm run test:e2e (Playwright :5174). CI: push/PR → quality + E2E.",
   "scripts": {
     "dev:ios": "node scripts/dev-ios.mjs",
     "get:lan-ip": "node scripts/get-lan-ip.mjs",
     "dev": "npm run dev:ios",
+    "dev:web": "node scripts/dev-web.mjs",
     "dev:vite": "vite",
     "tunnel:dev": "node scripts/tunnel-dev.mjs",
     "tunnel:public": "node scripts/ngrok-public.mjs",

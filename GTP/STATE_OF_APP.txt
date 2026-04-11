@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T10:30:20.582Z
-Git revision: 500dc55592537d46ebbe871947e3c9939b0ad7ef
+Generated: 2026-04-11T10:36:20.452Z
+Git revision: 4601ac3220d078bbde89438b647c1d980d065165
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -99,6 +99,7 @@ scripts/
   cap-sync-production.mjs
   dev-ios.mjs
   dev-safari-live-reload.mjs
+  dev-web.mjs
   ensure-git-hooks.mjs
   generate-state-of-app.mjs
   get-lan-ip.mjs
@@ -114,6 +115,7 @@ scripts/
   supabase-setup.mjs
   tunnel-dev.mjs
   validate-integrations.mjs
+  vite-dev-5173.mjs
 src/
   app/
     App.jsx

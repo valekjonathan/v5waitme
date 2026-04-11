@@ -11,7 +11,6 @@
  */
 import { spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
-import net from 'node:net'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -27,11 +26,12 @@ import {
   spawnNgrokHttp,
   NGROK_DEV_PORT,
 } from './ngrok-tunnel-lib.mjs'
+import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
-const VITE_PORT = 5173
+const VITE_PORT = VITE_DEV_PORT
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
 /** Safari debe usar `localhost` para que `window.location.origin` sea `http://localhost:5173` (Supabase OAuth redirect URLs). */
@@ -63,29 +63,6 @@ function printUrlBanner(baseDevUrl) {
   console.log(
     '[waitme] Validación final en dispositivos reales (BrowserStack): npm run test:e2e:browserstack\n'
   )
-}
-
-function checkPort5173Available() {
-  return new Promise((resolve, reject) => {
-    const s = net.createServer()
-    s.unref()
-    s.on('error', (err) => {
-      if (err && typeof err === 'object' && 'code' in err && err.code === 'EADDRINUSE') resolve(false)
-      else reject(err)
-    })
-    s.listen(VITE_PORT, '0.0.0.0', () => {
-      s.close(() => resolve(true))
-    })
-  })
-}
-
-function printLsof5173() {
-  try {
-    const r = spawnSync('lsof', ['-iTCP:5173', '-sTCP:LISTEN', '-n', '-P'], { encoding: 'utf8' })
-    if (r.stdout) console.error(r.stdout)
-  } catch {
-    /* lsof no disponible */
-  }
 }
 
 function viteExitPromise(vite) {

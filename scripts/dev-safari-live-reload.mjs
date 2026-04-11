@@ -1,36 +1,45 @@
 #!/usr/bin/env node
 /**
  * Safari + BrowserSync proxy (live-reload vía snippet en :5175).
- * 1) Vite en :5173
- * 2) Espera HTTP 200 en 127.0.0.1:5173
- * 3) Arranca proxy; espera HTTP 200 en el proxy
- * 4) Abre Safari con `open -a Safari` (sin AppleScript)
+ * 1) Comprueba que :5173 esté libre (mismo criterio que dev-ios / dev-web)
+ * 2) Vite en :5173
+ * 3) Espera HTTP 200 en 127.0.0.1:5173
+ * 4) Arranca proxy; espera HTTP 200 en el proxy
+ * 5) Abre Safari con `open -a Safari` (sin AppleScript)
  */
 import { spawn } from 'node:child_process'
 import process from 'node:process'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
 import { openDarwinSafari, waitForHttpOk } from './ngrok-tunnel-lib.mjs'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
-const VITE_PORT = 5173
+const VITE_PORT = VITE_DEV_PORT
 const BS_PORT = 5175
 const safariUrl = `http://localhost:${BS_PORT}/?iphone=true`
 
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
-const vite = spawn(process.execPath, [viteJs, '--port', String(VITE_PORT), '--strictPort'], {
-  cwd: root,
-  env: { ...process.env },
-  stdio: 'inherit',
-})
 
-let bs = null
+async function main() {
+  if (!(await checkPort5173Available())) {
+    console.error('[waitme] PORT 5173 ALREADY IN USE (necesario para Vite antes del proxy).')
+    printLsof5173()
+    process.exit(1)
+  }
 
-void (async () => {
+  const vite = spawn(process.execPath, [viteJs, '--port', String(VITE_PORT), '--strictPort'], {
+    cwd: root,
+    env: { ...process.env },
+    stdio: 'inherit',
+  })
+
+  let bs = null
+
   const viteUp = await waitForHttpOk(`http://127.0.0.1:${VITE_PORT}/`, 90_000)
   if (!viteUp) {
     console.error('[waitme] Vite no respondió HTTP 200 en :5173.')
@@ -67,22 +76,27 @@ void (async () => {
       openDarwinSafari(safariUrl)
     }
   )
-})()
 
-function shutdown(code) {
-  try {
-    bs?.exit()
-  } catch {
-    /* */
+  function shutdown(code) {
+    try {
+      bs?.exit()
+    } catch {
+      /* */
+    }
+    try {
+      vite.kill('SIGTERM')
+    } catch {
+      /* */
+    }
+    process.exit(code)
   }
-  try {
-    vite.kill('SIGTERM')
-  } catch {
-    /* */
-  }
-  process.exit(code)
+
+  process.on('SIGINT', () => shutdown(130))
+  process.on('SIGTERM', () => shutdown(143))
+  vite.on('exit', (code) => shutdown(code ?? 0))
 }
 
-process.on('SIGINT', () => shutdown(130))
-process.on('SIGTERM', () => shutdown(143))
-vite.on('exit', (code) => shutdown(code ?? 0))
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})
