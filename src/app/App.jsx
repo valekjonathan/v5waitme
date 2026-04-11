@@ -117,6 +117,15 @@ const authenticatedPersistentStackStyle = {
   height: '100%',
 }
 
+/** Mismo fondo que la capa mapa (`MainLayout` mapLazyFallback) mientras carga el chunk lazy; `fallback={null}` dejaba ver el negro de `html`. */
+const authenticatedRoutesSuspenseFallbackStyle = {
+  flex: '1 1 0%',
+  minHeight: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: colors.background,
+}
+
 const modalOverlayStyle = {
   position: 'fixed',
   inset: 0,
@@ -538,7 +547,15 @@ function AuthenticatedRoutes() {
     )
   }
 
-  return <Suspense fallback={null}>{body}</Suspense>
+  return (
+    <Suspense
+      fallback={
+        <div style={authenticatedRoutesSuspenseFallbackStyle} aria-hidden />
+      }
+    >
+      {body}
+    </Suspense>
+  )
 }
 
 function AppGate() {

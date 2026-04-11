@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import mapboxgl from 'mapbox-gl'
 import {
@@ -494,8 +494,10 @@ export default function Map({
     }
   }, [parkingBandPinAdjust, parkingPinMode])
 
-  useEffect(() => {
-    if (!containerRef.current) return
+  /** Layout: ref al host debe existir antes de enganchar Mapbox; `useEffect` puede adelantarse al primer paint en algunos motores. */
+  useLayoutEffect(() => {
+    const containerEl = containerRef.current
+    if (!containerEl) return
 
     if (import.meta.env?.MODE === 'test') {
       setUnavailable(true)
@@ -511,9 +513,9 @@ export default function Map({
       globalContainer.style.position = 'relative'
     }
 
-    if (containerRef.current.firstChild !== globalContainer) {
-      containerRef.current.innerHTML = ''
-      containerRef.current.appendChild(globalContainer)
+    if (containerEl.firstChild !== globalContainer) {
+      containerEl.innerHTML = ''
+      containerEl.appendChild(globalContainer)
     }
 
     let unsubscribeLocation = null
