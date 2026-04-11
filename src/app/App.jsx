@@ -17,8 +17,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import HomePage from '../features/home/components/HomePage'
-import MainLayout from '../features/shared/components/MainLayout.jsx'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
 import LoginPage from '../features/auth/components/LoginPage'
@@ -38,10 +36,6 @@ const ChatsPage = lazyWithPreload(() => import('../features/chats/ChatsPage'))
 const ChatThreadView = lazyWithPreload(() => import('../features/chats/ChatThreadView.jsx'))
 const ReviewsPage = lazyWithPreload(() => import('../features/reviews/pages/ReviewsPage'))
 const UserReviewsPage = lazyWithPreload(() => import('../features/reviews/UserReviewsPage'))
-/** Solo precarga en `AuthenticatedRoutes`; el `lazy` real vive en `MainLayout.jsx`. */
-const MainLayoutMapStackPreload = lazyWithPreload(() =>
-  import('../features/map/components/MainLayoutMapStack.jsx')
-)
 import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
@@ -59,8 +53,6 @@ import {
 } from '../lib/appScreenState.js'
 import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
-import { AuthenticatedOverlayEmbeddedProvider } from '../lib/AuthenticatedOverlayEmbeddedContext.jsx'
-import { MapForegroundProvider } from '../lib/MapForegroundContext.jsx'
 
 /**
  * Raíz React: llena #root (flex). `--app-height` se suscribe en `bootstrapApp.js` (`waitmeViewport`).
@@ -99,37 +91,6 @@ const authTreeInnerStyle = {
 
 const homeGateStyle = {
   flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-}
-
-/** Slot bajo ScreenShell: columna flex (altura real del main); sin absolute en la base. */
-const authenticatedPersistentStackStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-}
-
-/** Área útil mapa + overlay: flex + relative para que un único overlay absolute tenga caja con altura. */
-const authenticatedPersistentStageStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-}
-
-/** Contenedor del árbol mapa+Home: flex; el apilamiento mapa/chrome vive en MainLayout (isolate). */
-const authenticatedPersistentMapLayerStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
   display: 'flex',
@@ -426,7 +387,16 @@ function clearChatHashFromUrl() {
   }
 }
 
-/** Mapa persistente bajo un único ScreenShell; pantallas apiladas encima sin desmontar el mapa. */
+/** Una pantalla por `activeScreen`: mapa solo en MAP; resto ocupa el main sin mapa persistente debajo. */
+function authenticatedScreenShellProps(activeScreen) {
+  return {
+    interactive: true,
+    style: { backgroundColor: colors.background },
+    mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
+    mainOverflow: activeScreen === ACTIVE_SCREEN_ALERTS ? 'auto' : 'hidden',
+  }
+}
+
 function AuthenticatedRoutes() {
   const { user } = useAuth()
   const nav = useAppScreen()
@@ -438,7 +408,6 @@ function AuthenticatedRoutes() {
     AuthenticatedMapScreen.preload()
     ReviewsPage.preload()
     UserReviewsPage.preload()
-    MainLayoutMapStackPreload.preload()
   }, [])
 
   const {
@@ -453,22 +422,28 @@ function AuthenticatedRoutes() {
 
   const sessionUid = user?.id != null ? String(user.id) : ''
 
-  const onMap = activeScreen === ACTIVE_SCREEN_MAP
+  const shellMapProps =
+    mapMode !== 'home'
+      ? {
+          contentStyle: { overflow: 'visible' },
+          screenMainStyle: { overflow: 'visible' },
+        }
+      : {}
 
-  const showPersistentMapStack =
-    (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) ||
-    (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) ||
-    activeScreen === ACTIVE_SCREEN_CHATS ||
-    activeScreen === ACTIVE_SCREEN_RESERVATIONS ||
-    activeScreen === ACTIVE_SCREEN_ALERTS ||
-    activeScreen === ACTIVE_SCREEN_PROFILE ||
-    activeScreen === ACTIVE_SCREEN_MAP
-
-  function renderOverlayBody() {
-    if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
-      const tid = String(activeThreadId).trim()
-      const localFb = isDmDevFallbackThread(tid)
-      return (
+  let body
+  if (activeScreen === ACTIVE_SCREEN_MAP) {
+    body = (
+      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED} {...shellMapProps}>
+        <HomeActionGate>
+          <AuthenticatedMapScreen />
+        </HomeActionGate>
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
+    const tid = String(activeThreadId).trim()
+    const localFb = isDmDevFallbackThread(tid)
+    body = (
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
         <ChatThreadView
           summary={activeThreadSummary}
           userId={sessionUid}
@@ -479,89 +454,44 @@ function AuthenticatedRoutes() {
             clearChatHashFromUrl()
           }}
         />
-      )
-    }
-    if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
-      return viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />
-    }
-    if (activeScreen === ACTIVE_SCREEN_CHATS) return <ChatsPage />
-    if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) return <ReservationsPage />
-    if (activeScreen === ACTIVE_SCREEN_ALERTS) return <AlertsPage />
-    if (activeScreen === ACTIVE_SCREEN_PROFILE) return <ProfilePage />
-    return null
-  }
-
-  let body
-  if (!showPersistentMapStack) {
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
     body = (
-      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-        <HomeActionGate>
-          <MainLayout>
-            <HomePage />
-          </MainLayout>
-        </HomeActionGate>
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
+        {viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />}
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_CHATS) {
+    body = (
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
+        <ChatsPage />
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) {
+    body = (
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
+        <ReservationsPage />
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_ALERTS) {
+    body = (
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
+        <AlertsPage />
+      </ScreenShell>
+    )
+  } else if (activeScreen === ACTIVE_SCREEN_PROFILE) {
+    body = (
+      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
+        <ProfilePage />
       </ScreenShell>
     )
   } else {
-    const shellMapProps =
-      mapMode !== 'home'
-        ? {
-            contentStyle: { overflow: 'visible' },
-            screenMainStyle: { overflow: 'visible' },
-          }
-        : {}
-
-    const overlayShellProps = onMap
-      ? {
-          interactive: true,
-          mainMode: SCREEN_SHELL_MAIN_MODE.FULL_BLEED,
-          ...shellMapProps,
-        }
-      : {
-          interactive: true,
-          style: { backgroundColor: colors.background },
-          mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
-          mainOverflow: activeScreen === ACTIVE_SCREEN_ALERTS ? 'auto' : 'hidden',
-        }
-
     body = (
-      <ScreenShell {...overlayShellProps}>
-        <div style={authenticatedPersistentStackStyle}>
-          <div style={authenticatedPersistentStageStyle}>
-            <div
-              style={{
-                ...authenticatedPersistentMapLayerStyle,
-                pointerEvents: onMap ? 'auto' : 'none',
-              }}
-              aria-hidden={!onMap}
-            >
-              <MapForegroundProvider value={onMap}>
-                {onMap && mapMode === 'home' ? (
-                  <HomeActionGate>
-                    <AuthenticatedMapScreen />
-                  </HomeActionGate>
-                ) : (
-                  <AuthenticatedMapScreen />
-                )}
-              </MapForegroundProvider>
-            </div>
-            {!onMap ? (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  zIndex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: 0,
-                  backgroundColor: colors.background,
-                }}
-              >
-                <AuthenticatedOverlayEmbeddedProvider>{renderOverlayBody()}</AuthenticatedOverlayEmbeddedProvider>
-              </div>
-            ) : null}
-          </div>
-        </div>
+      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+        <HomeActionGate>
+          <AuthenticatedMapScreen />
+        </HomeActionGate>
       </ScreenShell>
     )
   }
