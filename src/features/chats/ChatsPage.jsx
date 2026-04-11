@@ -27,6 +27,20 @@ function loadThreads(uid) {
 }
 
 /**
+ * Evita pisar una lista ya mostrada con `[]` por error, carrera o respuesta vacía transitoria.
+ * `allowEmptyOverwrite`: cuando cambia el usuario autenticado, sí aceptar `[]` como estado válido.
+ */
+function mergeThreadList(prev, next, opts) {
+  const allowEmptyOverwrite = opts?.allowEmptyOverwrite === true
+  const p = Array.isArray(prev) ? prev : []
+  const n = Array.isArray(next) ? next : []
+  if (n.length > 0) return n
+  if (allowEmptyOverwrite) return n
+  if (p.length > 0) return p
+  return n
+}
+
+/**
  * @param {{
  *   peerUserId: string
  *   userId: string
@@ -63,9 +77,13 @@ async function runGetOrCreateThenList(p) {
   if (tid == null || tid === '') return
   const list = await loadThreads(p.userId)
   if (p.isCancelled() || seq !== p.listFetchSeqRef.current) return
-  p.setThreads(list)
-  p.syncChatThreadList?.(list)
-  p.openThread(String(tid), list)
+  let merged = list
+  p.setThreads((prev) => {
+    merged = mergeThreadList(prev, list, { allowEmptyOverwrite: false })
+    return merged
+  })
+  p.syncChatThreadList?.(merged)
+  p.openThread(String(tid), merged)
 }
 
 export default function ChatsPage() {
@@ -74,6 +92,7 @@ export default function ChatsPage() {
   const [listFilter, setListFilter] = useState('')
   const [threads, setThreads] = useState(() => createInitialThreads(nav))
   const listFetchSeqRef = useRef(0)
+  const lastThreadsUserIdRef = useRef(/** @type {string} */ (''))
 
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
@@ -93,10 +112,13 @@ export default function ChatsPage() {
     if (!canLoadChats) {
       return undefined
     }
+    const priorUserId = lastThreadsUserIdRef.current
+    const switchedUser = priorUserId !== userId
+    lastThreadsUserIdRef.current = userId
     const seq = ++listFetchSeqRef.current
     void loadThreads(userId).then((rows) => {
       if (cancelled || seq !== listFetchSeqRef.current) return
-      setThreads(rows)
+      setThreads((prev) => mergeThreadList(prev, rows, { allowEmptyOverwrite: switchedUser }))
     })
     return () => {
       cancelled = true
