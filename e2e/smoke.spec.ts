@@ -55,7 +55,8 @@ test('parking search: MAPBOX/RESULTS UI, lista DOM y cadena sin clip (dev auth)'
   await expect(page.locator('[data-waitme-screen-shell]')).toBeVisible({ timeout: 20_000 })
   const searchCta = page.getByRole('button', { name: /Dónde quieres aparcar/i })
   await searchCta.evaluate((el) => (el as HTMLButtonElement).click())
-  const input = page.getByPlaceholder(/Dónde quieres aparcar/i)
+  // StreetSearch limpia placeholder al focus; fill() enfoca → getByPlaceholder deja de matchear tras el primer fill.
+  const input = page.locator('[data-waitme-parking-search-morado] input.waitme-street-search-input')
   await expect(input).toBeVisible()
 
   for (const q of ['muer', 'muerd', 'muerdago']) {
