@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T22:27:52.804Z
-Git revision: f5d9f50cef421748f665523bfe6e8482981bcf39
+Generated: 2026-04-11T23:03:20.793Z
+Git revision: 2d2a294d37803825b576b3eefa8b9a2def4daea9
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -56,155 +56,6 @@ ios/
         xcuserdata/
       xcuserdata/
         jonathanalvarez.xcuserdatad/
-    build-DD/
-      Build/
-        Intermediates.noindex/
-        Products/
-      CompilationCache.noindex/
-        generic/
-      info.plist
-      Logs/
-        Build/
-        Launch/
-        Localization/
-        Package/
-        Test/
-      ModuleCache.noindex/
-        _AvailabilityInternal-4DDZZM6SWJYBXN8BSARK6L1GH.pcm
-        _AvailabilityInternal-BN72DVKSV3N7SVG9W6PCEIVPH.pcm
-        _Builtin_float-3HI013Y4EIKXZFLM4YRFPIULT.pcm
-        _Builtin_float-AGXHKNDN0M8B4R6Q24DJC07OS.pcm
-        _Builtin_intrinsics-3LLAN8PCKOENZAWORFRIEOVHB.pcm
-        _Builtin_intrinsics-9Z2C33BXDV9Y0VYDALDG1AIVL.pcm
-        _Builtin_inttypes-6O18BH6MKE77GZ5B82BBSI59B.pcm
-        _Builtin_inttypes-9UEIB8WB0FNSHWZUH6S2OF8AL.pcm
-        _Builtin_limits-5M7UWNBLR6HC7WXG33NLS9G12.pcm
-        _Builtin_limits-6GT9EEBY2UPA8BGCYM5QDGW3U.pcm
-        _Builtin_stdarg-5RCHWLXI0CTGARKWVB2ORE8LR.pcm
-        _Builtin_stdarg-BL4MCFOTS8KC9VXZZRVE387QR.pcm
-        _Builtin_stdatomic-53F81IO30CMADFZCXRXFJ2Z05.pcm
-        _Builtin_stdatomic-EGWYCHF77D9YDQSQJ7LAN3Z8Q.pcm
-        _Builtin_stdbool-7U7AQTAE9NETPE9V1EV2QVLZ3.pcm
-        _Builtin_stdbool-D8XEBJOWC7C0W9MZE3A9OUN7.pcm
-        _Builtin_stddef-B1YBGJ7BMWDZQ2BFACE2BP26Y.pcm
-        _Builtin_stddef-C2Y2NRVTZDN1SCD7K0W8UK6PL.pcm
-        _Builtin_stdint-B9MOHKE01LDOC3XZAICJW0XTF.pcm
-        _Builtin_stdint-FY1R062I5M8ZXXTOQOTG7OOS.pcm
-        _Builtin_tgmath-615EJE9RE9AZC7N55W1HNK87A.pcm
-        _Builtin_tgmath-7AQTG6S2L2A4T6AR03EZ19HDD.pcm
-        _DarwinFoundation1-27QUVW4EI7FRRG1YJWUO321RS.pcm
-        _DarwinFoundation1-789EQME438FCNWL2U0847ZWBW.pcm
-        _DarwinFoundation2-83YOR54PYELH8AF5MMYF73WKY.pcm
-        _DarwinFoundation2-TJ9HIPEC6EOLPQO7E8Q2YXMO.pcm
-        _DarwinFoundation3-89BU38ZJ7BC650ORWLGRDV2A5.pcm
-        _DarwinFoundation3-X2PDF4H233FKAGO50J3LST4E.pcm
-        _SwiftConcurrencyShims-9AUM6MVSHA67IVY9271Y9QA9O.pcm
-        _SwiftConcurrencyShims-EXFEPEODBH043F2WZR24OGWHI.pcm
-        1F9GM6NK3TUAC/
-        1MBPTMNNC83X0/
-        25504C3LLVSU0/
-        2V3H4JEXB0YG2/
-        38N8ANGQKG4OD/
-        Accessibility-2B2G0OT8DX7L6CTT1I5JG56ZB.pcm
-        Accessibility-2X943KWIDP2K9ZCOPEF4NZAUD.pcm
-        AuthenticationServices-7JFO8GB6K3WYW3R1XS1EPIETK.pcm
-        CFNetwork-B95AJZ68CSU92MYZMQH7QA6XO.pcm
-        CFNetwork-E19LHPYX4RE2EQ82K3O0V5PJH.pcm
-        CommonCrypto-9YHI6JSLYZI70YK3WKEETGOEZ.pcm
-        CommonCrypto-A9NMHNYBKIEPY3S6O27O8167T.pcm
-        CoreData-15D8QMAMRMJ4HOKS3MXFYGB1S.pcm
-        CoreFoundation-3Y68FEMU99ZM2JQNVB9NJ0D53.pcm
-        CoreFoundation-D7F6GGS11PTYFK9WT41PZ2DQB.pcm
-        CoreGraphics-4VAYQ6VFKKX0ONKWYBJ3XHTTK.pcm
-        CoreGraphics-ACZV0QAH6AOZAL1CTNA9R7J9A.pcm
-        CoreImage-1Y5QO7M477VUW4GZ2KEIUHTJ3.pcm
-        CoreImage-6TYLSX5UYS1F2R551RG858I8.pcm
-        CoreText-312KBHCA68SJWAHXKFSV43IFU.pcm
-        CoreText-3YGN2Q1UOOCGQ2V6PMQMCXX74.pcm
-        CoreTransferable-9Q2119HFF5NHFI2GT0VLOYP7U.pcm
-        CoreTransferable-A355TIVUC7QSNXO4Q50LQCFWD.pcm
-        CoreVideo-3AUHQBVLFQX59G4TC12NV66XB.pcm
-        CoreVideo-AVRUN492P2C5TZSFJRHZQRY5R.pcm
-        Darwin-2GGPNSVO7GTKOPDDE93GH0SU4.pcm
-        Darwin-5YYPPMNCDVATHVVNJ91Y175Q4.pcm
-        DataDetection-179OH7D2420K4HBPCUENYKRG9.pcm
-        DataDetection-86CUIWO05E0CA1O719BPAHTA5.pcm
-        DeveloperToolsSupport-8H26K97L8RCCC5KONF6LLU29X.pcm
-        DeveloperToolsSupport-D14Z2Z1NXUCL5UAQG811TE13F.pcm
-        Dispatch-2GZHEQZQEXO7OUWGBP90AUUMM.pcm
-        Dispatch-AJGTPQHAS8M10Y6LDMPISUGUF.pcm
-        dnssd-76TI36232U20IOOHPD952EJ9M.pcm
-        dnssd-DXBHKATCCLOM3PG7GO0DGCL9N.pcm
-        FileProvider-1CAFJJCTH51DWFL66VLGYRB4E.pcm
-        FileProvider-4YNYFDRBC7JU48RBGJ22SE5P3.pcm
-        Foundation-9BRH9QD770UHL26JHKRKAGHYO.pcm
-        Foundation-EVQXKFXJ4HKPXLT4ZE5E0NENM.pcm
-        ImageIO-4XY6IUZBXNGXLZIJVN3TJ4FRZ.pcm
-        ImageIO-705IO9I2MNIIUH1PKZVUG8JWR.pcm
-        IOSurface-21TOGXMSZ0SC6ISWY3CV1KCOT.pcm
-        IOSurface-DKKW5ETM7FGZ94G0LWBHIPOLO.pcm
-        LocalAuthentication-8BSUWCGAZEJXNWMQARQ9Y5ZOY.pcm
-        MachO-5V6G8X1TFPAJDYE42XSJYS8VZ.pcm
-        MachO-ETPR58JR7CNEIXXAUT7QCUAP8.pcm
-        Metal-6J4BVE9IXAJXSGGXMN3YO6Y51.pcm
-        Metal-E1H61L42JP3K0MXEWKBQYRR5H.pcm
-        modules.timestamp
-        Network-46PSCRU1TW47ITCE6ADAWEEAD.pcm
-        Network-DGXW3AR50HQVNGS5WLR0H35FY.pcm
-        ObjectiveC-9250HM24582BBU9PP2MULCMKR.pcm
-        ObjectiveC-AC852DY1GF7EL5JKK1GGCH4TA.pcm
-        OpenGLES-7YVAMSBPQ1XL80X50IZXP3EXI.pcm
-        OpenGLES-9SWGEMVKNQVXSO42KQXQ9IKAS.pcm
-        os_object-8P9C1YLVJ3V08KYK387JQ5UVN.pcm
-        os_object-LGAG0BVBBWRC9WD0MLITC82Z.pcm
-        os_workgroup-2J6DC4EJKLA1VIXI3DETFX6QC.pcm
-        os_workgroup-C49ZOQPLQDB6JE8WQT8L62TB0.pcm
-        os-62MYTHYTEB41QGTZLENCMT4HH.pcm
-        os-DW397STEJNP4WUGTNRF5239VB.pcm
-        OSLog-5QJ2VS58MQCYALL6G00ZM2WWD.pcm
-        OSLog-DPWHTR3F50GLI1SMG6RPGNXU1.pcm
-        ptrauth-252ZKGRK0IYC4KW2Z2MYC3PT1.pcm
-        ptrauth-40RI3WPXHGLRS740VDQRKBJ8W.pcm
-        ptrcheck-7GRIS5NEFES727R8Z0JI5G9F0.pcm
-        ptrcheck-BMB9KI0THN9CK07Z1GWECXDY9.pcm
-        QuartzCore-298F4C3IE7X5C7O6ZTVUIS5BO.pcm
-        QuartzCore-89E6XCCDHUXSY7HXH5BKTI07S.pcm
-        SafariServices-9ODBGFIN9AMSMFMDOZN6WBMA1.pcm
-        Security-1KHQQRN9WBALRRIBA6WO7UMDK.pcm
-        Security-CTVB0OX9FIJO7KZPGEBNVJSP2.pcm
-        Session.modulevalidation
-        simd-CIU8MT5HTRF9IBAQYU6JG9NGI.pcm
-        simd-SIFMF1OIB5NH8JTXKMLHZGAI.pcm
-        Spatial-E1YEVHNV06RI5V5V50FZBKNPI.pcm
-        Spatial-E9IEOQFT2JWXHO2QX94CESVXG.pcm
-        SwiftShims-2FY2KTZSSFR9K4JAD2XB0RG9H.pcm
-        SwiftShims-BL5LCYCK1SNHVGC8YPKOHKYXJ.pcm
-        SwiftUI-5NZR8JP3HD2BQ4OLKD7SQP65X.pcm
-        SwiftUICore-7D2ITU4JVRDZ0LKI8PBTKSVXV.pcm
-        SwiftUICore-NNTIYOX4S4ZIWSQXUSCG698P.pcm
-        Symbols-6OYY650LOBLNGEDL6J5N4EYW4.pcm
-        Symbols-CJBMRPF9CHAIE4M9F6CFEYVI6.pcm
-        sys_types-8Q8ZG5WA9FDG3K8J5P4ZPSMLB.pcm
-        sys_types-BI3LMQIKEIHW0D1VPLBOH1SNS.pcm
-        UIKit-1EZQJ438GOOT9WSCK0URKVJWK.pcm
-        UIKit-6463PXQP41SPGHYAX8CL4IDG4.pcm
-        UIUtilities-BJ5LJTCSZBE2VIONMX1NHEGYX.pcm
-        UIUtilities-EGC5LT12CK6LRVZ409W1U2AHE.pcm
-        UniformTypeIdentifiers-31PCGYFIFMT3KVXU6Y302HAWT.pcm
-        UniformTypeIdentifiers-CIFYHN7CIEYYPH98SRWFSTTR6.pcm
-        UserNotifications-3ZXHZ8SVUPH4ANY2OEY160ZHR.pcm
-        UserNotifications-6DZPC79K6BI0ZPWYR9EKK3HM4.pcm
-        WebKit-198SERPL36B8ZB8S33R2E3QZ8.pcm
-        WebKit-25J5UH7B9V9CV0LOSA7JD623A.pcm
-        XPC-35GNJHBBWO0WOF6L7QIVGV69G.pcm
-        XPC-9T7PQ3ZDYILVWAYCNLHKEWWOB.pcm
-      SDKStatCaches.noindex/
-        iphoneos26.4-23E237-68a138bb55de9ba35ce6c8c40d12849e.sdkstatcache
-      SourcePackages/
-        artifacts/
-        checkouts/
-        repositories/
-        workspace-state.json
     CapApp-SPM/
       Package.swift
       README.md
@@ -405,6 +256,47 @@ src/
       MessageCircleIcon.jsx
       NavAlertIcon.jsx
       NavMapIcon.jsx
+      SettingsIcon.jsx
+      UserIcon.jsx
+    IconSlot.jsx
+    InputBase.jsx
+    IphoneFrame.jsx
+    layout/
+      layout.ts
+      ScreenShell.tsx
+      Section.jsx
+    primitives/
+      ButtonBase.jsx
+      Row.jsx
+      Stack.jsx
+    Switch.jsx
+  vite-env.d.ts
+supabase/
+  migrations/
+    0001_init_profiles.sql
+    0002_profiles_avatar_email.sql
+    0003_waitme_alerts_and_dm.sql
+    0004_waitme_purchase_requests.sql
+    0005_waitme_alerts_and_dm.sql
+test/
+  appScreenState.test.js
+  authService.test.js
+  errorBoundaryReset.test.js
+  location.test.js
+  loginLayoutInvariant.test.js
+  loginStructure.test.js
+  mapbox.test.js
+  navigationShellInvariant.test.js
+  oauthUrl.test.js
+  profileCompleteness.test.js
+  ui/
+    app.critical.test.jsx
+    vitest.setup.js
+test-results/  [omitido]
+tsconfig.json
+vercel.json
+vite.config.js
+vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
