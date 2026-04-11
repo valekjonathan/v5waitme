@@ -59,13 +59,11 @@ import {
 } from '../lib/appScreenState.js'
 import { isDmDevFallbackThread } from '../services/waitmeChats.js'
 import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
-import { subscribeWaitmeViewportCssVars } from '../lib/waitmeViewport.js'
 import { AuthenticatedOverlayEmbeddedProvider } from '../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 import { MapForegroundProvider } from '../lib/MapForegroundContext.jsx'
 
 /**
- * Raíz React: llena #root (flex). `--app-height` se escribe solo desde `visualViewport.height`
- * en `subscribeWaitmeViewportCssVars()` (resize/scroll/orientation del vv y de `window`).
+ * Raíz React: llena #root (flex). `--app-height` se suscribe en `bootstrapApp.js` (`waitmeViewport`).
  */
 const appRootLayoutStyle = {
   display: 'flex',
@@ -637,11 +635,10 @@ function AuthenticatedMainChrome() {
     }
 
     updateDevLayoutClass()
-    const unsubViewport = subscribeWaitmeViewportCssVars()
+    /** `--app-height`: una sola suscripción en `bootstrapApp.js` (evita listeners duplicados). */
     window.addEventListener('resize', updateDevLayoutClass)
 
     return () => {
-      unsubViewport()
       window.removeEventListener('resize', updateDevLayoutClass)
       document.documentElement.classList.remove('force-iphone')
     }

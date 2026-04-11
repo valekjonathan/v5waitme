@@ -3,11 +3,13 @@ export default function IphoneFrame({ children }) {
 
   if (!isDesktop) {
     // MODO REAL (iPhone / Safari móvil)
+    /** `flex` + `minHeight:0` llena el padre en columna; `height:100%` solo suele fallar en WKWebView. */
     return (
       <div
         style={{
           width: '100%',
-          height: '100%',
+          flex: '1 1 0%',
+          minHeight: 0,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
