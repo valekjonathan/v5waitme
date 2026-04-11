@@ -104,14 +104,15 @@ export default function ChatsPage() {
   const userId = user?.id ?? ''
   const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
   const hasRealSupabaseSession = isSupabaseConfigured() && isRealSupabaseAuthUid(userId)
-  const canLoadChats = Boolean(dev || hasRealSupabaseSession)
+  const hasUser = Boolean(userId)
+  const canUseSupabaseDm = Boolean(dev || hasRealSupabaseSession)
 
   const hashPeer = parseChatPeerFromHash()
   const pendingVis = nav.pendingDmVisual
   const directMatch = Boolean(hashPeer && pendingVis && pendingVis.peerId === hashPeer)
 
   useEffect(() => {
-    if (!canLoadChats) {
+    if (!hasUser) {
       nav.syncChatThreadList?.(threads)
       return
     }
@@ -121,7 +122,7 @@ export default function ChatsPage() {
     if (threads.length === 0 && snapLen > 0) return
     if (!globalReady && !threadsListLoadDoneRef.current && threads.length === 0) return
     nav.syncChatThreadList?.(threads)
-  }, [nav, threads, canLoadChats, userId, nav.chatThreadListFetchedForUserId])
+  }, [nav, threads, hasUser, userId, nav.chatThreadListFetchedForUserId])
 
   useEffect(() => {
     const epoch = nav.chatThreadListEpoch ?? 0
@@ -134,7 +135,7 @@ export default function ChatsPage() {
 
   useEffect(() => {
     let cancelled = false
-    if (!canLoadChats) {
+    if (!hasUser) {
       threadsListLoadDoneRef.current = true
       return undefined
     }
@@ -161,7 +162,7 @@ export default function ChatsPage() {
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, userId, nav.chatThreadListFetchedForUserId])
+  }, [hasUser, userId, nav.chatThreadListFetchedForUserId])
 
   useEffect(() => {
     nav.syncChatUnreadFromThreads?.(threads)
@@ -173,7 +174,7 @@ export default function ChatsPage() {
   }, [nav?.chatsListResetGeneration, nav])
 
   useEffect(() => {
-    if (!canLoadChats || !directMatch || !hashPeer) return undefined
+    if (!canUseSupabaseDm || !directMatch || !hashPeer) return undefined
     let cancelled = false
     void runGetOrCreateThenList({
       peerUserId: hashPeer,
@@ -188,10 +189,10 @@ export default function ChatsPage() {
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, directMatch, hashPeer, userId, nav.openThread, nav.syncChatThreadList])
+  }, [canUseSupabaseDm, directMatch, hashPeer, userId, nav.openThread, nav.syncChatThreadList])
 
   useEffect(() => {
-    if (!canLoadChats) return undefined
+    if (!canUseSupabaseDm) return undefined
     const peerFromHash = parseChatPeerFromHash()
     const peer = peerFromHash ?? takePendingDmPeerUserId()
     if (peer == null || peer === '') return undefined
@@ -211,7 +212,7 @@ export default function ChatsPage() {
     return () => {
       cancelled = true
     }
-  }, [canLoadChats, userId, nav.pendingDmVisual, nav.openThread, nav.syncChatThreadList])
+  }, [canUseSupabaseDm, userId, nav.pendingDmVisual, nav.openThread, nav.syncChatThreadList])
 
   const threadsSafe = Array.isArray(threads) ? threads : []
 

@@ -9,8 +9,6 @@ import {
   useState,
 } from 'react'
 import { useAuth } from '../../lib/AuthContext'
-import { isRealSupabaseAuthUid } from '../../services/authUid.js'
-import { isSupabaseConfigured } from '../../services/supabase.js'
 import { listDmThreadsForUser } from '../../services/waitmeChats.js'
 import {
   ACTIVE_SCREEN_ALERTS,
@@ -270,8 +268,6 @@ export function NavigationProvider({ children }) {
   useEffect(() => {
     let cancelled = false
     const uid = String(user?.id ?? '')
-    const dev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
-    const canLoad = Boolean(dev || (isSupabaseConfigured() && isRealSupabaseAuthUid(uid)))
 
     if (lastUidForChatThreadListRef.current !== uid) {
       lastUidForChatThreadListRef.current = uid
@@ -288,9 +284,6 @@ export function NavigationProvider({ children }) {
     }
 
     if (!uid) {
-      return undefined
-    }
-    if (!canLoad) {
       return undefined
     }
 
