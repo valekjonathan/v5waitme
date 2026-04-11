@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T18:46:09.768Z
-Git revision: af08eda2f2bc0ae712d5e50c96a2bc3a755b0141
+Generated: 2026-04-11T18:59:26.626Z
+Git revision: 5a32f7ac6416ac3c80505939eee430df7a026429
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -41,6 +41,13 @@ ios/
       config.xml
       Info.plist
       InspectableBridgeViewController.swift
+      public/
+        assets/
+        cordova_plugins.js
+        cordova.js
+        index.html
+        logo.png
+        manifest.json
     App.xcodeproj/
       project.pbxproj
       project.xcworkspace/
@@ -48,6 +55,15 @@ ios/
         xcuserdata/
       xcuserdata/
         jonathanalvarez.xcuserdatad/
+    build/
+      DerivedData-cli/
+        Build/
+        CompilationCache.noindex/
+        info.plist
+        Logs/
+        ModuleCache.noindex/
+        SDKStatCaches.noindex/
+        SourcePackages/
     CapApp-SPM/
       Package.swift
       README.md
@@ -58,158 +74,6 @@ ios/
     resources/
     sources/
   debug.xcconfig
-  DerivedData/
-    00008140-000C04400C62801C/
-      Build/
-        Intermediates.noindex/
-        Products/
-      CompilationCache.noindex/
-        generic/
-      Index.noindex/
-        DataStore/
-      info.plist
-      Logs/
-        Build/
-        Launch/
-        Localization/
-        Package/
-        Test/
-      ModuleCache.noindex/
-        _AvailabilityInternal-4TDJ9PORS8V7I525YEDADNMYR.pcm
-        _AvailabilityInternal-5H5891TEFWFUUC5ONVIZ7MAO9.pcm
-        _Builtin_float-5LE2JAE8YNF3S6306ZS4K9CQY.pcm
-        _Builtin_float-5V0N268FQ0OSBM0HBO6Z34AAH.pcm
-        _Builtin_intrinsics-16DBV1TP66B2XXA69MFURBJDJ.pcm
-        _Builtin_intrinsics-E0SWG29X5M4D4VNP3VRQTPGRQ.pcm
-        _Builtin_inttypes-6CX77GH0L7YY6M2XDRZXDO23D.pcm
-        _Builtin_inttypes-9HSID4M3BAT1EOMWJPFDLDRHV.pcm
-        _Builtin_limits-2F2XK9WNIW22XTUQI4OSI1FOH.pcm
-        _Builtin_limits-CZOW7NR5KQRTPZ6OKS5V3XO9I.pcm
-        _Builtin_stdarg-7V9VWHAU5KNYKKH5ZL6YLYCWB.pcm
-        _Builtin_stdarg-IY65JZCL6KCX8XWZTVUF8FIB.pcm
-        _Builtin_stdatomic-470JUK0WBXDEBQFZMJ4F0BBGI.pcm
-        _Builtin_stdatomic-EB4VILRQIF5OO8XW5YDXRJSEI.pcm
-        _Builtin_stdbool-CITBJ2GXBQIB0N2IR156E12KY.pcm
-        _Builtin_stdbool-DVFQ6S30C0QOOPXHYUGOA0WC.pcm
-        _Builtin_stddef-3Z545C1LHVNWSH1HZJF6U8U0U.pcm
-        _Builtin_stddef-BQ0M1Z4GU4YULCFMD6F7IJBEN.pcm
-        _Builtin_stdint-4QI0KW3ONKE4BB7RI1NSAQDT.pcm
-        _Builtin_stdint-7J1W5TJKGBANOPR5ZY3TQU83V.pcm
-        _Builtin_tgmath-5O5PY45KLSNMFCG6BM67PPVPH.pcm
-        _Builtin_tgmath-EJBQC3Q3SZS19A032Z7XU81VD.pcm
-        _DarwinFoundation1-8OU4VO2XUNJ340S64NZ6F4HBH.pcm
-        _DarwinFoundation1-ASST6N4X9QZSMG4B0KFBWYMRR.pcm
-        _DarwinFoundation2-2WXAL3F48EGQ2B2IL6TISJ5DS.pcm
-        _DarwinFoundation2-8U7G3KCMESGDKP4J7KANAV0IG.pcm
-        _DarwinFoundation3-48UQXJABH1B5QRKVE6LCGPJC7.pcm
-        _DarwinFoundation3-52I1B178B7OEMVKD72N00TA2Z.pcm
-        _SwiftConcurrencyShims-3I4XB1M9G0715HXYNRUW3R4LH.pcm
-        _SwiftConcurrencyShims-CC9WRBQCW58KKUCZBPZ0Z70QG.pcm
-        1GOS6KWG5514T/
-        1W5W2OKC2F6VR/
-        36ILTQYC1LJ42/
-        Accessibility-1CXAI73JTT2QKQI4NFSTXU55B.pcm
-        Accessibility-45L9ENRQ0L8986SDGXK71EGN1.pcm
-        AuthenticationServices-6O6G3YET0G78053TCNKTK0DCZ.pcm
-        CFNetwork-DWMYN0RG67A8S161A4ZA2GBHB.pcm
-        CFNetwork-T98RUT7TSOQ52CF9XAJUGDAJ.pcm
-        CommonCrypto-5POKYAWOAODGHPD399IGUM5LF.pcm
-        CommonCrypto-ECUMRIJT8VS3BJVYSZOWMTUYU.pcm
-        CoreData-1Q859LFN75XUG556L93QT44MA.pcm
-        CoreFoundation-EX0VKGM9BMBPRHWW2L8CDQB7A.pcm
-        CoreFoundation-NUDEUBSKGD0FRYO6G7ZA44PM.pcm
-        CoreGraphics-8LQCGPJ0BBTW8ODB3O4DYRI92.pcm
-        CoreGraphics-EWITWAIS1EE674EPN3AJ2WATN.pcm
-        CoreImage-BRFP2ICR02ZRTYBNI0IBQZDP3.pcm
-        CoreImage-ET3CC95C9ZGP0UIJB24J133RM.pcm
-        CoreText-4XRS34629EGXNSPEWGOH2L9FN.pcm
-        CoreText-89I5CJID08JAKOMTLPIWBSG36.pcm
-        CoreTransferable-3BNDSNLC0VG83QO39N4AKLVH6.pcm
-        CoreTransferable-3RKPBSQF6X4KH4MEDQITHJ2I4.pcm
-        CoreVideo-50D38RQ5GD3A9POB1Z2WR0VX4.pcm
-        CoreVideo-5OP07VW1BEJYF6VMFNKD11GEK.pcm
-        Darwin-A5U1RFJPXVUIF1IQIG0895CX0.pcm
-        Darwin-PUUELYO6TNMPT72P4M2NUYZ0.pcm
-        DataDetection-3G3FKE77Q5PHMAJVMCV6I8H3O.pcm
-        DataDetection-3TPPDAS7V6BUXR73YNA6Z77ZY.pcm
-        DD2LOQM9F1HB/
-        DeveloperToolsSupport-55WJ9M1UZ8AN9W5NA3LKZWOMF.pcm
-        DeveloperToolsSupport-G1221WLFPJW5F8XQJRN1J0DO.pcm
-        Dispatch-2ZTSSZB6J5J139H9D0JC1ZBYY.pcm
-        Dispatch-5FHO3SPTE97OMS2PWEFFDZ7C5.pcm
-        dnssd-3X53DPUIM5RWYE8LNJZ77M1XT.pcm
-        dnssd-9HEBQSQY5KPV7LR05NPZPAKPG.pcm
-        FileProvider-1OIYR1VA35CNBUWUP9HPGK3IV.pcm
-        FileProvider-7FZ8NSDXY5P0NFYGAINLP7WBM.pcm
-        Foundation-241YPJZCDKYHPN3R4CMIFZ8N9.pcm
-        Foundation-59M5IDM8Q84D1GI4MZ9IS1QUL.pcm
-        ImageIO-5K9KGCW4U0QQU25WZUGSUQSY3.pcm
-        ImageIO-C6OU81PBSP9I0J6Z1HQ72CLMR.pcm
-        IOSurface-117MVUZ65L5KFI8RHJVOZ01S7.pcm
-        IOSurface-942GNGVHZN4Z4UBBJM4ZOWDCC.pcm
-        LocalAuthentication-8UUVDPHUOLMCRIQTRJHKD48AO.pcm
-        MachO-1YVQWLL57JT90J1CB496XS507.pcm
-        MachO-76QPR2973VS2NPW8OK4K007ZA.pcm
-        Metal-7JBG3V07KXTDQ8GOI8HSD3RLC.pcm
-        Metal-8G6PO6WVBXHLEKFC0NIAMRI1V.pcm
-        modules.timestamp
-        Network-39QNL4WWMLL1I1BB37LDPY7SY.pcm
-        Network-78EBTBHCA1NW52JYQZZHBDOGS.pcm
-        ObjectiveC-3DVYWZ8VEEWT3EV47POWT4VAJ.pcm
-        ObjectiveC-D41BAKK2WA8BI3ONLTN9G2F38.pcm
-        OpenGLES-1431DIQR27YRZUS9VKZ7OD5N1.pcm
-        OpenGLES-DJMOL5VVH5CK4L17OR2B8HE72.pcm
-        os_object-50IAHFIMMQ3579DDCNI99T7KO.pcm
-        os_object-6RT8KDM6JF7XN2MW92MNYP7RO.pcm
-        os_workgroup-BVAKMB9FICXIGEKQZGK7MA42R.pcm
-        os_workgroup-G4CTYWFGET7DHE3W9XH2NS61.pcm
-        os-3LMOTHJ0ZGMENPQ5APPGG6FDH.pcm
-        os-AKIX4F9FH5THU6LO0CT2NQWMN.pcm
-        OSLog-4VR6XL70NQAK9IT9KWJ0N4SQA.pcm
-        OSLog-CZAHGXD6090LE7Z6Q4FF2NEXM.pcm
-        ptrauth-6O9SF39I0Y2NJ6ZHDBCANI0XJ.pcm
-        ptrauth-BGTDNA1XSHBJWET5I1HDFR70Z.pcm
-        ptrcheck-4O3DKAZ47SWX94WL2MGRVYVUG.pcm
-        ptrcheck-62QSS48VJ6ZB9YBJTTKWJPEP3.pcm
-        QuartzCore-4F0D4K5A8K5D38MCYQ5W36WW2.pcm
-        QuartzCore-A8SJ1RR226HNHMC2DKJE9UKJF.pcm
-        SafariServices-A2V8BZ9N47P2Y9JZEHS1XQCGW.pcm
-        Security-2WVYZENUY31F4CO47CXV858T0.pcm
-        Security-CN39KU4J5TNV5Q6IPLOU7T0WN.pcm
-        Session.modulevalidation
-        simd-5ZD9M47QCQZG32ZBH1CCCTTTT.pcm
-        simd-79WWVUTTD3AV5MKJB665ZOJY2.pcm
-        Spatial-3HDMR513LZTRD9JAJDLG2ZKZ.pcm
-        Spatial-B9FY7WDYRYRKZ8FOYTP06AU2A.pcm
-        SwiftShims-C6ASH6XPXBMDI2JCXG1DBMOH0.pcm
-        SwiftShims-ESPVUN2YUVZSKTYMZO2USALE.pcm
-        SwiftUI-E0729UAGWJWUX7T1ROVWQKI8W.pcm
-        SwiftUICore-DGFS9JT06EZZVPLH15LAI0X0Q.pcm
-        SwiftUICore-F0T3WQK2XKD6NNDJXNBCW7E6P.pcm
-        Symbols-2U31LKSHWTIAED47P1X1UK3TN.pcm
-        Symbols-527YHGXSE3L6XKK9WKML1O60G.pcm
-        sys_types-5QNU3RVIO11RMSWDAK68UZEA6.pcm
-        sys_types-D5SPUWRVJZOXNUED9ZHLJAM7G.pcm
-        UIKit-4NEBHCBMX5UHLS8V2LB49AV8G.pcm
-        UIKit-AMON9SOWHVWMPR7R22I0RCNMQ.pcm
-        UIUtilities-8UCVE1EAVY82OL27UOOFZBWSZ.pcm
-        UIUtilities-AUVQEZR7M8TTFJ0BVR1PUSYAW.pcm
-        UniformTypeIdentifiers-1CEKZKZA7Q2V31W3R4H54VYT9.pcm
-        UniformTypeIdentifiers-7UUL7M7ZM51ZH1CJJ9XD95TKM.pcm
-        UserNotifications-2WGGTCYVD2XSP3XO7FK74MZ2D.pcm
-        UserNotifications-7LWRGXLXNQXD9I7MLD69CZGI7.pcm
-        WebKit-6OXMZ4TV43VF3KIT3IA0WFB5C.pcm
-        WebKit-74L4P05AE10TO0ZY2H3PIH23J.pcm
-        XHPQNXQAPH3/
-        XPC-46MW4OAJD3SKO23F4KOJNOXPY.pcm
-        XPC-O8L71359O347KTOOECSZSG2Z.pcm
-      SDKStatCaches.noindex/
-        iphoneos26.4-23E237-68a138bb55de9ba35ce6c8c40d12849e.sdkstatcache
-      SourcePackages/
-        artifacts/
-        checkouts/
-        repositories/
-        workspace-state.json
 knip.json
 local.log
 log/
@@ -405,6 +269,40 @@ src/
     IphoneFrame.jsx
     layout/
       layout.ts
+      ScreenShell.tsx
+      Section.jsx
+    primitives/
+      ButtonBase.jsx
+      Row.jsx
+      Stack.jsx
+    Switch.jsx
+  vite-env.d.ts
+supabase/
+  migrations/
+    0001_init_profiles.sql
+    0002_profiles_avatar_email.sql
+    0003_waitme_alerts_and_dm.sql
+    0004_waitme_purchase_requests.sql
+    0005_waitme_alerts_and_dm.sql
+test/
+  appScreenState.test.js
+  authService.test.js
+  errorBoundaryReset.test.js
+  location.test.js
+  loginLayoutInvariant.test.js
+  loginStructure.test.js
+  mapbox.test.js
+  navigationShellInvariant.test.js
+  oauthUrl.test.js
+  profileCompleteness.test.js
+  ui/
+    app.critical.test.jsx
+    vitest.setup.js
+test-results/  [omitido]
+tsconfig.json
+vercel.json
+vite.config.js
+vitest.config.js
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
@@ -448,6 +346,6 @@ ninguno
 - Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).
 - Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.
 - PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.
-- Capacitor iOS: Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync); ios/App/App/capacitor.config.json (generado) server.url = http://192.168.0.50:5173. webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por `cap sync`.
+- Capacitor iOS: Capacitor raíz: capacitor.config.ts (server.url solo si WAITME_CAP_DEV_SERVER_URL al ejecutar cap sync); ios/App/App/capacitor.config.json (generado) server.url = (no configurado; WKWebView usa dist local). webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por `cap sync`.
 
 === FIN ===

@@ -92,7 +92,6 @@ const authTreeInnerStyle = {
   flex: '1 1 0%',
   minHeight: 0,
   width: '100%',
-  height: '100%',
   display: 'flex',
   flexDirection: 'column',
   boxSizing: 'border-box',
@@ -129,7 +128,8 @@ const authenticatedPersistentStageStyle = {
 /** Contenedor del árbol mapa+Home: flex; el apilamiento mapa/chrome vive en MainLayout (isolate). */
 const authenticatedPersistentMapLayerStyle = {
   position: 'relative',
-  flex: 1,
+  flex: '1 1 0%',
+  alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
   display: 'flex',

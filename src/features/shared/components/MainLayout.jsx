@@ -13,10 +13,12 @@ const s = LAYOUT.spacing
 export const mainLayoutRootStyle = {
   position: 'relative',
   isolation: 'isolate',
+  alignSelf: 'stretch',
   flex: '1 1 0%',
   minHeight: 0,
   minWidth: 0,
   width: '100%',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
   overflowX: 'hidden',
@@ -35,20 +37,26 @@ export const mainLayoutHomeSlotStyle = {
   zIndex: 1,
   display: 'flex',
   flexDirection: 'column',
-  flex: 1,
+  flex: '1 1 0%',
+  alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
+  /** WKWebView: caja con altura definida para que MainLayoutChrome (hijos absolute) no colapse a 0. */
+  height: '100%',
 }
 /** Velo + hero + CTAs: ocupa el slot Home con altura real (no compite el map-shell en hit-test). */
 const mainLayoutChromeStackStyle = {
   position: 'relative',
-  flex: 1,
+  flex: '1 1 0%',
+  alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
+  height: '100%',
   pointerEvents: 'none',
   isolation: 'isolate',
   display: 'flex',
   flexDirection: 'column',
+  overflow: 'hidden',
 }
 /** Mismo fondo que la capa mapa mientras carga el chunk async (sin parpadeo de color). */
 const mapLazyFallbackStyle = {
