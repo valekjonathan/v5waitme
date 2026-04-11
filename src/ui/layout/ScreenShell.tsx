@@ -1,6 +1,5 @@
 /**
- * Shell: columna flex — raíz `height: 100%`, `<main>` `flex: 1` (sin alturas calculadas en main).
- * El scroll del contenido inset vive en el slot bajo `main`.
+ * Shell: columna flex — raíz y `<main>` en cadena flex (WKWebView); scroll inset en el slot.
  */
 import { type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
@@ -12,7 +11,6 @@ const shellRootStyle: CSSProperties = {
   flexDirection: 'column',
   flex: '1 1 0%',
   minHeight: 0,
-  height: '100%',
   width: '100%',
   overflow: 'hidden',
   boxSizing: 'border-box',
@@ -53,12 +51,13 @@ export default function ScreenShell({
     position: 'relative',
     overflow: 'hidden',
     alignSelf: 'stretch',
+    display: 'flex',
+    flexDirection: 'column',
   }
 
   const mainOverflowResolved =
     mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED ? 'hidden' : mainOverflow
 
-  /** Base inequívoca (WKWebView); `contentStyle` añade overflow/anchos en mapa fullBleed. */
   const contentSlotStyle: CSSProperties = {
     flex: '1 1 0%',
     minHeight: 0,

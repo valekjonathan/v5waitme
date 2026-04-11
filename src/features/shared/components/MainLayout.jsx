@@ -1,4 +1,4 @@
-import { Children, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 
 import { useNativeDebugMount } from '../../../debug/nativeRuntimeDebugMounts.js'
 
@@ -11,17 +11,17 @@ import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
 const s = LAYOUT.spacing
-/** Contenedor único: mapa (fondo) + chrome en capas deterministas (WKWebView). */
+/** Contenedor único: mapa (fondo) + chrome (cadena flex WKWebView). */
 export const mainLayoutRootStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  flex: '1 1 0%',
+  minHeight: 0,
   position: 'relative',
   isolation: 'isolate',
   alignSelf: 'stretch',
-  flex: '1 1 0%',
-  minHeight: 0,
   minWidth: 0,
   width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
   overflowX: 'hidden',
   overflowY: 'hidden',
 }
@@ -34,13 +34,13 @@ export const mainLayoutMapBackgroundStyle = {
 }
 /** Capa Home/chrome delante del mapa (mismo shell que login). */
 export const mainLayoutHomeSlotStyle = {
-  position: 'relative',
-  zIndex: 1,
   display: 'flex',
   flexDirection: 'column',
   flex: '1 1 0%',
-  alignSelf: 'stretch',
   minHeight: 0,
+  position: 'relative',
+  zIndex: 1,
+  alignSelf: 'stretch',
   width: '100%',
 }
 /**
@@ -61,19 +61,20 @@ const mainLayoutChromeFlowStyle = {
 const mainLayoutChromeStackStyle = {
   position: 'relative',
   flex: '1 1 0%',
-  alignSelf: 'stretch',
   minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignSelf: 'stretch',
   width: '100%',
   pointerEvents: 'none',
   isolation: 'isolate',
-  display: 'flex',
-  flexDirection: 'column',
   overflow: 'hidden',
 }
 /** Mismo fondo que la capa mapa mientras carga el chunk async (sin parpadeo de color). */
 const mapLazyFallbackStyle = {
-  width: '100%',
-  height: '100%',
+  position: 'absolute',
+  inset: 0,
+  minHeight: 0,
   backgroundColor: colors.background,
 }
 const overlayStyleBase = {
@@ -178,7 +179,7 @@ function overlayLayerStyle(background) {
  */
 export function MainLayoutChrome({ children = null }) {
   useNativeDebugMount('MainLayoutChrome')
-  const hasCta = Children.count(children) > 0
+  const hasCta = children != null
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 

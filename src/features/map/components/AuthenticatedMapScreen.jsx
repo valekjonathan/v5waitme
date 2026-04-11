@@ -26,8 +26,8 @@ const mapSlotSearchParkStyle = {
 }
 
 /**
- * Home: `MainLayout` → `MainLayoutChrome` → `HomePage` como children (mapa solo en `mapLayer`).
- * Search/park: mapa + overlay, sin `HomePage`.
+ * Home: `MainLayout` → `MainLayoutChrome` → `HomePage` como children; mapa en `mapLayer`.
+ * Search/park: sin `HomePage`.
  */
 export default function AuthenticatedMapScreen() {
   const { mapMode } = useAppScreen()
@@ -57,10 +57,6 @@ export default function AuthenticatedMapScreen() {
               inset: 0,
               zIndex: 0,
               pointerEvents: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: 0,
-              minWidth: 0,
             }}
           >
             <Map {...mapProps} />
