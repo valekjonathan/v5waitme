@@ -542,7 +542,7 @@ function AuthenticatedRoutes() {
 }
 
 function AppGate() {
-  const { user, isProfileComplete } = useAuth()
+  const { user, isProfileComplete, profileBootstrapReady } = useAuth()
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -564,7 +564,11 @@ function AppGate() {
               onClose={closeIncompleteModal}
             />
             <WaitMeIncomingPurchaseModal />
-            {!isProfileComplete ? <ProfilePage /> : <AuthenticatedRoutes />}
+            {profileBootstrapReady && !isProfileComplete ? (
+              <ProfilePage />
+            ) : (
+              <AuthenticatedRoutes />
+            )}
           </div>
         </AppLayout>
       </ProfileIncompleteNoticeProvider>
