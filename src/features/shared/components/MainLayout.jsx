@@ -41,17 +41,28 @@ export const mainLayoutHomeSlotStyle = {
   alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
-  /** WKWebView: caja con altura definida para que MainLayoutChrome (hijos absolute) no colapse a 0. */
-  height: '100%',
 }
-/** Velo + hero + CTAs: ocupa el slot Home con altura real (no compite el map-shell en hit-test). */
+/**
+ * WKWebView: un flex con solo hijos `position:absolute` puede tener altura de contenido 0.
+ * Este bloque está en flujo normal y recibe la altura del padre flex (cadena root → Home slot).
+ */
+const mainLayoutChromeFlowStyle = {
+  position: 'relative',
+  flex: '1 1 0%',
+  minHeight: 0,
+  width: '100%',
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+}
+/** Contenedor del velo + hero + CTAs: relativo + flex para altura fiable (no solo capas absolute sueltas). */
 const mainLayoutChromeStackStyle = {
   position: 'relative',
   flex: '1 1 0%',
   alignSelf: 'stretch',
   minHeight: 0,
   width: '100%',
-  height: '100%',
   pointerEvents: 'none',
   isolation: 'isolate',
   display: 'flex',
@@ -162,40 +173,42 @@ export function MainLayoutChrome({ children = null }) {
 
   return (
     <div style={mainLayoutChromeStackStyle}>
-      <div style={overlayLayerStyle(overlayBackground)} />
+      <div style={mainLayoutChromeFlowStyle}>
+        <div style={overlayLayerStyle(overlayBackground)} />
 
-      <div style={centeredLayerStyle}>
-        <div style={contentViewportStyle}>
-          <div style={contentColumnStyle}>
-            <Section gap={0} align="center" style={heroSectionBaseStyle}>
-              <div style={heroLogoOuterStyle}>
-                <div style={heroLogoBoxStyle}>
-                  <img
-                    src="/logo.png"
-                    alt="WaitMe"
-                    style={logoImageStyle}
-                    loading="eager"
-                    draggable={false}
-                  />
+        <div style={centeredLayerStyle}>
+          <div style={contentViewportStyle}>
+            <div style={contentColumnStyle}>
+              <Section gap={0} align="center" style={heroSectionBaseStyle}>
+                <div style={heroLogoOuterStyle}>
+                  <div style={heroLogoBoxStyle}>
+                    <img
+                      src="/logo.png"
+                      alt="WaitMe"
+                      style={logoImageStyle}
+                      loading="eager"
+                      draggable={false}
+                    />
+                  </div>
                 </div>
-              </div>
-              <h1 style={heroTitleStyle}>
-                Wait<span style={meTextStyle}>Me!</span>
-              </h1>
-              <p data-home-subtitle style={heroSubtitleStyle}>
-                Aparca donde te <span style={meTextStyle}>avisen!</span>
-              </p>
-              <div style={heroPinRowStyle} aria-hidden>
-                <CenterPin waitmePinTipAnchor />
-              </div>
-            </Section>
-            {hasCta ? (
-              <Section gap={s.md} style={ctaSectionBaseStyle}>
-                <div data-home-cta-region style={homeCtaRegionWrapStyle}>
-                  {children}
+                <h1 style={heroTitleStyle}>
+                  Wait<span style={meTextStyle}>Me!</span>
+                </h1>
+                <p data-home-subtitle style={heroSubtitleStyle}>
+                  Aparca donde te <span style={meTextStyle}>avisen!</span>
+                </p>
+                <div style={heroPinRowStyle} aria-hidden>
+                  <CenterPin waitmePinTipAnchor />
                 </div>
               </Section>
-            ) : null}
+              {hasCta ? (
+                <Section gap={s.md} style={ctaSectionBaseStyle}>
+                  <div data-home-cta-region style={homeCtaRegionWrapStyle}>
+                    {children}
+                  </div>
+                </Section>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
