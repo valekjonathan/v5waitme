@@ -1,14 +1,14 @@
-import MainLayout from '../../shared/components/MainLayout'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import Button from '../../../ui/Button'
 import MagnifierIcon from '../../../ui/icons/MagnifierIcon'
 import CarIconHome from '../../../ui/icons/CarIconHome'
 
+/** CTAs de inicio; el chrome (hero, velo) lo monta `AuthenticatedMapScreen` o `MainLayout` (login). */
 export default function HomePage() {
   const { openSearchParking, openParkHere } = useAppScreen()
 
   return (
-    <MainLayout>
+    <>
       <Button
         type="button"
         variant="primary"
@@ -27,6 +27,6 @@ export default function HomePage() {
         <CarIconHome />
         ¡Estoy aparcado aquí!
       </Button>
-    </MainLayout>
+    </>
   )
 }

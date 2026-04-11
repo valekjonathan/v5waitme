@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-11T10:43:40.605Z
-Git revision: 73bffbc3c69406a721b13746713e88593d0f8083
+Generated: 2026-04-11T13:35:17.493Z
+Git revision: 02c91c801b52a23b02dc14168754b14a3b09e340
 Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.
 Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).
 
@@ -145,11 +145,14 @@ src/
         HomePage.jsx
     map/
       components/
+        AuthenticatedMapScreen.jsx
+        MainLayoutMapStack.jsx
         Map.jsx
         MapViewportCenterPin.jsx
         SimulatedCarsOnMap.jsx
       constants/
         mapbox.js
+        mapboxConstants.js
       mapControls.js
       mapGapSelectors.js
       mapInstance.js
@@ -159,7 +162,6 @@ src/
     parking/
       components/
         SearchParkingOverlay.jsx
-      MapParkingPage.jsx
       waitme/
         carUtils.js
         CreateAlertCard.jsx
@@ -309,7 +311,7 @@ src/main.jsx, src/app/App.jsx, src/lib/AuthContext.jsx, src/lib/AppScreenContext
 src/lib/AuthContext.jsx  ← 5 import(s) relativos (muestra): ../services/supabase.js, ../services/auth.js, ../services/profile.js, ../services/location.js, ./devFlowLog.js
 src/ui/layout/ScreenShell.tsx  ← 3 import(s) relativos (muestra): ../Header, ../BottomNav, ./layout
 src/services/reviews.ts  ← 3 import(s) relativos (muestra): ../lib/reviewsModel, ../features/map/simulatedUsers.js, ./waitmeChats.js
-Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 6, map 10
+Módulos en grafo alcanzable (aprox. por ruta): auth-path 5, layout 4, reviews 6, map 13
 
 === ORPHAN_MODULES (src no alcanzable desde main.jsx; .d.ts excluidos) ===
 ninguno

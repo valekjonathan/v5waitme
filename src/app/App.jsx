@@ -18,6 +18,7 @@ import {
   useState,
 } from 'react'
 import HomePage from '../features/home/components/HomePage'
+import MainLayout from '../features/shared/components/MainLayout.jsx'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
 import LoginPage from '../features/auth/components/LoginPage'
@@ -29,7 +30,9 @@ function lazyWithPreload(factory) {
   return Component
 }
 
-const MapParkingPage = lazyWithPreload(() => import('../features/parking/MapParkingPage'))
+const AuthenticatedMapScreen = lazyWithPreload(() =>
+  import('../features/map/components/AuthenticatedMapScreen.jsx')
+)
 const AlertsPage = lazyWithPreload(() => import('../features/alerts/AlertsPage'))
 const ChatsPage = lazyWithPreload(() => import('../features/chats/ChatsPage'))
 const ChatThreadView = lazyWithPreload(() => import('../features/chats/ChatThreadView.jsx'))
@@ -393,7 +396,7 @@ function AuthenticatedRoutes() {
     ChatsPage.preload()
     ChatThreadView.preload()
     AlertsPage.preload()
-    MapParkingPage.preload()
+    AuthenticatedMapScreen.preload()
     ReviewsPage.preload()
     UserReviewsPage.preload()
     MainLayoutMapStackPreload.preload()
@@ -439,22 +442,31 @@ function AuthenticatedRoutes() {
   } else if (activeScreen === ACTIVE_SCREEN_PROFILE) {
     body = <ProfilePage />
   } else if (activeScreen === ACTIVE_SCREEN_MAP) {
-    if (mapMode === 'home') {
-      body = (
-        <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+    const shellMapProps =
+      mapMode !== 'home'
+        ? {
+            contentStyle: { overflow: 'visible' },
+            screenMainStyle: { overflow: 'visible' },
+          }
+        : {}
+    body = (
+      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED} {...shellMapProps}>
+        {mapMode === 'home' ? (
           <HomeActionGate>
-            <HomePage />
+            <AuthenticatedMapScreen />
           </HomeActionGate>
-        </ScreenShell>
-      )
-    } else {
-      body = <MapParkingPage />
-    }
+        ) : (
+          <AuthenticatedMapScreen />
+        )}
+      </ScreenShell>
+    )
   } else {
     body = (
       <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
         <HomeActionGate>
-          <HomePage />
+          <MainLayout>
+            <HomePage />
+          </MainLayout>
         </HomeActionGate>
       </ScreenShell>
     )

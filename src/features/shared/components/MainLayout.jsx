@@ -9,7 +9,7 @@ import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
 const s = LAYOUT.spacing
-const rootStyle = {
+export const mainLayoutRootStyle = {
   position: 'relative',
   flex: '1 1 0%',
   minHeight: 0,
@@ -21,7 +21,7 @@ const rootStyle = {
   overflowX: 'hidden',
   overflowY: 'hidden',
 }
-const mapLayerStyle = {
+export const mainLayoutMapLayerStyle = {
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.map,
@@ -122,25 +122,15 @@ function overlayLayerStyle(background) {
 }
 
 /**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, frase, pin, CTAs).
- * Ancla GPS: `MapViewportCenterPin` en Map (medición, punta en centro); pin visible en columna (mismo CenterPin).
- * `loginEntrance` se acepta por compatibilidad con LoginPage; la entrada es instantánea.
+ * Velo + hero + CTAs (sin capa de mapa). Login y `AuthenticatedMapScreen` (home) comparten el mismo chrome.
  */
-export default function MainLayout({ children = null, loginEntrance: _loginEntrance = false }) {
-  const simulatedUsers = useSimulatedParkingUsers()
+export function MainLayoutChrome({ children = null }) {
   const hasCta = children != null
-
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 
   return (
-    <div style={rootStyle}>
-      <div style={mapLayerStyle} aria-label="Capa de mapa">
-        <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
-          <MainLayoutMapStack simulatedUsers={simulatedUsers} />
-        </Suspense>
-      </div>
-
+    <>
       <div style={overlayLayerStyle(overlayBackground)} />
 
       <div style={centeredLayerStyle}>
@@ -178,6 +168,27 @@ export default function MainLayout({ children = null, loginEntrance: _loginEntra
           </div>
         </div>
       </div>
+    </>
+  )
+}
+
+/**
+ * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, frase, pin, CTAs).
+ * Ancla GPS: `MapViewportCenterPin` en Map (medición, punta en centro); pin visible en columna (mismo CenterPin).
+ * `loginEntrance` se acepta por compatibilidad con LoginPage; la entrada es instantánea.
+ */
+export default function MainLayout({ children = null, loginEntrance: _loginEntrance = false }) {
+  const simulatedUsers = useSimulatedParkingUsers()
+
+  return (
+    <div style={mainLayoutRootStyle}>
+      <div style={mainLayoutMapLayerStyle} aria-label="Capa de mapa">
+        <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
+          <MainLayoutMapStack simulatedUsers={simulatedUsers} />
+        </Suspense>
+      </div>
+
+      <MainLayoutChrome>{children}</MainLayoutChrome>
     </div>
   )
 }

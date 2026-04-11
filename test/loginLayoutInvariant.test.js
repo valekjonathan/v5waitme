@@ -52,14 +52,14 @@ test('ButtonBase: icono y texto comparten el mismo contenedor directo', () => {
   )
 })
 
-test('MainLayout: hero frase → CenterPin → CTAs; Map readOnly + hideViewportCenterPin (ancla MapViewportCenterPin); HomePage delega en MainLayout', () => {
+test('MainLayout / AuthenticatedMapScreen: hero frase → CenterPin → CTAs; Map readOnly + hideViewportCenterPin (ancla MapViewportCenterPin); Home CTAs en HomePage', () => {
   const main = read('src/features/shared/components/MainLayout.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
   const map = read('src/features/map/components/Map.jsx')
   const mapStack = read('src/features/map/components/MainLayoutMapStack.jsx')
+  const authMap = read('src/features/map/components/AuthenticatedMapScreen.jsx')
 
-  assert.match(home, /import\s+MainLayout\s+from\s+'.*MainLayout'/i)
-  assert.match(home, /<MainLayout\b/)
+  assert.equal(/import\s+MainLayout/.test(home), false)
   assert.match(home, /¿Dónde quieres aparcar\?/)
   assert.match(home, /¡Estoy aparcado aquí!/)
 
@@ -76,7 +76,10 @@ test('MainLayout: hero frase → CenterPin → CTAs; Map readOnly + hideViewport
   assert.match(main, /<CenterPin\b/)
   assert.match(mapStack, /hideViewportCenterPin/)
   assert.match(mapStack, /<Map\s+readOnly\s+hideViewportCenterPin\s*\/>/)
-  assert.match(main, /\{hasCta \?/)
+  assert.match(main, /function\s+MainLayoutChrome/)
+  assert.match(main, /hasCta/)
+  assert.match(authMap, /MainLayoutChrome/)
+  assert.match(authMap, /hideViewportCenterPin/)
 })
 
 test('HomePage: sin UI de alertas', () => {
