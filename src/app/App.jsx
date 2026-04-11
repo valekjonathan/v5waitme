@@ -576,8 +576,30 @@ function AuthenticatedRoutes() {
   )
 }
 
+/** Una vez por uid: MAP + home al tener sesión, sin esperar bootstrap/completitud (AppGate ya no deja hueco). */
+const initialMapHomeEnsuredForUid = new Set()
+
+function AuthenticatedInitialMapHome() {
+  const { user } = useAuth()
+  const { openMap } = useAppScreen()
+
+  useLayoutEffect(() => {
+    const uid = user?.id != null ? String(user.id) : ''
+    if (!uid) return
+    if (initialMapHomeEnsuredForUid.has(uid)) return
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || ''
+      if (/^#\/(user|chat)\//.test(hash)) return
+    }
+    initialMapHomeEnsuredForUid.add(uid)
+    openMap()
+  }, [user?.id, openMap])
+
+  return null
+}
+
 function AppGate() {
-  const { user, isProfileComplete, profileBootstrapReady } = useAuth()
+  const { user } = useAuth()
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -599,11 +621,8 @@ function AppGate() {
               onClose={closeIncompleteModal}
             />
             <WaitMeIncomingPurchaseModal />
-            {!profileBootstrapReady ? null : !isProfileComplete ? (
-              <ProfilePage />
-            ) : (
-              <AuthenticatedRoutes />
-            )}
+            <AuthenticatedInitialMapHome />
+            <AuthenticatedRoutes />
           </div>
         </AppLayout>
       </ProfileIncompleteNoticeProvider>
