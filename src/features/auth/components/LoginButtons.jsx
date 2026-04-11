@@ -156,7 +156,7 @@ const oauthStackStyle = {
   flexDirection: 'column',
   width: '100%',
   alignItems: 'stretch',
-  gap: LAYOUT.spacing.md,
+  gap: 14,
 }
 
 const oauthSpinStyleTag = `
