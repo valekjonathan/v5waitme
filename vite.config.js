@@ -166,6 +166,16 @@ export default defineConfig(({ mode, command }) => {
       port: 5173,
       strictPort: true,
       open: false,
+      /**
+       * Túneles HTTPS (ngrok, Cloudflare quick tunnel): el Host de la petición no es localhost.
+       * Sin esto Vite 8+ puede responder 403 a la URL pública.
+       */
+      allowedHosts: [
+        '.ngrok-free.app',
+        '.ngrok.io',
+        '.ngrok.app',
+        '.trycloudflare.com',
+      ],
       /** HMR estable; sin overlay agresivo. Safari solo desde `npm run dev:ios`. */
       hmr: {
         overlay: false,
