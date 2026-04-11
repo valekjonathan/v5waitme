@@ -7,11 +7,13 @@ function read(rel) {
   return fs.readFileSync(path.join(process.cwd(), rel), 'utf8')
 }
 
-test('LoginPage -> MainLayout con LoginButtons como children', () => {
-  const code = read('src/features/auth/components/LoginPage.jsx')
-  assert.match(code, /<MainLayout\b/i)
-  assert.match(code, /<LoginButtons\s*\/?>/i)
-  assert.match(code, /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i)
+test('App.jsx -> MainLayout login con LoginPage (LoginButtons)', () => {
+  const app = read('src/app/App.jsx')
+  const login = read('src/features/auth/components/LoginPage.jsx')
+  assert.match(app, /<MainLayout\s+loginEntrance/i)
+  assert.match(app, /<LoginPage\s*\/?>/i)
+  assert.match(login, /<LoginButtons\s*\/?>/i)
+  assert.match(login, /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i)
 })
 
 test('LoginButtons -> ambos CTAs OAuth + usa ButtonBase', () => {

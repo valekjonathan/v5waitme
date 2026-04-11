@@ -1,10 +1,6 @@
-import MainLayout from '../../shared/components/MainLayout'
 import LoginButtons from './LoginButtons'
 
+/** Solo CTAs; `MainLayout` envuelve el login en `App.jsx` (un solo shell compartido). */
 export default function LoginPage() {
-  return (
-    <MainLayout loginEntrance>
-      <LoginButtons />
-    </MainLayout>
-  )
+  return <LoginButtons />
 }

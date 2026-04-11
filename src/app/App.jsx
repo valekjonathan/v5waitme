@@ -20,6 +20,7 @@ import {
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReservationsPage from '../features/reservations/ReservationsPage'
 import LoginPage from '../features/auth/components/LoginPage'
+import MainLayout from '../features/shared/components/MainLayout.jsx'
 
 /** Misma fábrica que `lazy()` para `Component.preload()` sin duplicar rutas de import. */
 function lazyWithPreload(factory) {
@@ -565,7 +566,9 @@ function AppGate() {
         <div style={gateColumnStyle}>
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-              <LoginPage />
+              <MainLayout loginEntrance>
+                <LoginPage />
+              </MainLayout>
             </ScreenShell>
           </AppLayout>
         </div>

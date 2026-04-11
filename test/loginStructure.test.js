@@ -11,22 +11,15 @@ function assertNotIncludes(haystack, needle, message) {
   assert.equal(haystack.includes(needle), false, message)
 }
 
-test('LoginPage: MainLayout envuelve LoginButtons', () => {
-  const code = read('src/features/auth/components/LoginPage.jsx')
-  assert.match(code, /<MainLayout\b/i, 'LoginPage debe usar MainLayout')
+test('App.jsx: MainLayout login envuelve LoginPage (un solo shell; LoginPage solo CTAs)', () => {
+  const app = read('src/app/App.jsx')
+  const login = read('src/features/auth/components/LoginPage.jsx')
+  assert.match(app, /<MainLayout\s+loginEntrance/i, 'App debe envolver el login con MainLayout loginEntrance')
+  assert.match(app, /<LoginPage\s*\/?>/i, 'App debe renderizar LoginPage dentro de MainLayout')
+  assert.match(login, /<LoginButtons\s*\/?>/i, 'LoginPage debe renderizar LoginButtons')
+  assert.equal(/import\s+MainLayout/.test(login), false, 'LoginPage no debe importar MainLayout')
   assert.match(
-    code,
-    /loginEntrance/i,
-    'LoginPage sigue pasando loginEntrance (MainLayout lo acepta; entrada instantánea)'
-  )
-  assert.match(code, /<LoginButtons\s*\/?>/i, 'LoginPage debe renderizar LoginButtons')
-  assert.match(
-    code,
-    /import\s+MainLayout\s+from\s+'.*MainLayout'/i,
-    'LoginPage debe importar MainLayout'
-  )
-  assert.match(
-    code,
+    login,
     /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i,
     'LoginPage debe importar LoginButtons'
   )
