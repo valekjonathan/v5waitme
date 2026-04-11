@@ -134,10 +134,6 @@ function applyPostLoadStyle(map, readOnly) {
   }
 }
 
-function centerMapOnUser(map, loc) {
-  centerMapOnUserImmediate(map, loc)
-}
-
 /** Primera pintura: solo `jumpTo` (sin ease) para evitar parpadeo / montaje a trozos. */
 function centerMapOnUserImmediate(map, loc) {
   if (!map || !loc) return
@@ -577,7 +573,7 @@ export default function Map({
           return
         }
         if (followUserGpsRef.current) {
-          centerMapOnUser(map, loc)
+          centerMapOnUserImmediate(map, loc)
         }
       })
     }
