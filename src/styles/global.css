@@ -41,7 +41,7 @@ body {
 
 /**
  * Capacitor (iPhone físico): cadena de altura útil real. Sin el centrado tipo “marco escritorio”
- * de body/#root, que encogía el árbol respecto al WebView. IphoneFrame añade esta clase en nativo.
+ * de body/#root. IphoneFrame añade esta clase en nativo; en nativo no envuelve en div extra.
  */
 html.waitme-capacitor {
   height: 100%;
@@ -55,15 +55,38 @@ html.waitme-capacitor body {
   justify-content: flex-start;
   min-height: 100%;
   min-height: -webkit-fill-available;
+  height: 100%;
 }
 
 html.waitme-capacitor #root {
   flex: 1;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+}
+
+/* Rellena #root → hijos (fade/shell/auth) → nieto (p. ej. ScreenShell tras Fragment en IphoneFrame). */
+html.waitme-capacitor #root > * {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+html.waitme-capacitor #root > * > * {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+html.waitme-capacitor [data-waitme-screen-shell] {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
 }
 
 *,

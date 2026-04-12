@@ -1,6 +1,6 @@
 /**
  * Marco del dispositivo: en navegador (Safari escritorio) viewport lógico 390×844 escalado.
- * En Capacitor/iPhone físico: sin marco ni escala; el WebView debe usar altura real.
+ * En Capacitor: sin marco, sin escala y sin wrapper extra; la altura la define html/body/#root + ScreenShell.
  * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
  */
 import { Capacitor } from '@capacitor/core'
@@ -11,17 +11,6 @@ import { shadows } from '../design/shadows'
 const FRAME_W = 390
 const FRAME_H = 844
 const VIEW_PAD = 24
-
-const nativeRootStyle = {
-  flex: 1,
-  width: '100%',
-  minHeight: 0,
-  alignSelf: 'stretch',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-  position: 'relative',
-}
 
 function readScale() {
   const vv = window.visualViewport
@@ -52,7 +41,7 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   if (Capacitor.isNativePlatform()) {
-    return <div style={nativeRootStyle}>{children}</div>
+    return <>{children}</>
   }
 
   const s = scale

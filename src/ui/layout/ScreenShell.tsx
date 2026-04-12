@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
@@ -9,10 +10,12 @@ import {
 } from './layout'
 
 const shellRootStyle: CSSProperties = {
-  height: '100%',
-  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+  minHeight: 0,
+  ...(Capacitor.isNativePlatform()
+    ? { flex: 1, height: 'auto', width: '100%' }
+    : { height: '100%' }),
 }
 
 /**
