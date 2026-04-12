@@ -36,6 +36,8 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  /** Sin esto la capa fullscreen recibe el hit-test en iOS; los CTAs debajo no. */
+  pointerEvents: 'none',
 }
 const contentViewportStyle = {
   pointerEvents: 'none',
@@ -49,6 +51,7 @@ const contentViewportStyle = {
   padding: `0 ${LAYOUT.spacing.xl}px`,
 }
 const contentColumnStyle = {
+  /** Columna interactiva; el resto del centeredLayer pasa el toque al mapa. */
   pointerEvents: 'auto',
   position: 'relative',
   zIndex: LAYOUT.z.content,
