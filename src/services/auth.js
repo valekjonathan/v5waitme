@@ -2,8 +2,17 @@
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
 import { Browser } from '@capacitor/browser'
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, registerPlugin } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from './supabase.js'
+
+/** ASWebAuthenticationSession nativo (iOS); evita SFSafariViewController en blanco con custom scheme. */
+const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
+  web: () => ({
+    start: async () => {
+      throw new Error('WaitmeWebAuth: solo iOS nativo')
+    },
+  }),
+})
 
 /**
  * Debe coincidir con CFBundleURLSchemes y con `redirectTo` en signInWithOAuth (iOS).
@@ -15,7 +24,7 @@ export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
  */
-export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12d'
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12e'
 
 /**
  * True si la URL es el redirect nativo acordado (scheme/host/path), sin depender de includes('auth/callback').
@@ -109,7 +118,10 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
     }
     if (!code) return { session: null, error: null }
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) return { session: null, error }
+    if (error) {
+      console.warn('[WaitMe][OAuth][diag] exchangeCodeForSession error', error.message ?? error)
+      return { session: null, error }
+    }
     const {
       data: { session: refreshed },
       error: refreshErr,
@@ -200,9 +212,11 @@ export async function signInWithGoogle() {
     const isNative =
       typeof window !== 'undefined' && Capacitor.isNativePlatform()
     /**
-     * iOS: `skipBrowserRedirect: true` evita el redirect del WebView (Safari externo / pantalla en blanco).
-     * La URL OAuth se abre con @capacitor/browser; el retorno es por deep link + appUrlOpen.
-     * Web: redirect normal en la misma ventana (`skipBrowserRedirect` false).
+     * iOS: `skipBrowserRedirect: true` + flujo nativo.
+     * En iPhone, `Browser.open` (SFSafariViewController) suele dejar pantalla en blanco al volver al custom scheme;
+     * usamos `WaitmeWebAuth` (ASWebAuthenticationSession), que entrega la URL de callback al JS sin depender solo de appUrlOpen.
+     * Android: `Browser.open` + deep link como antes.
+     * Web: redirect en la misma ventana.
      */
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -218,7 +232,25 @@ export async function signInWithGoogle() {
       return { data: null, error }
     }
     if (isNative && data?.url) {
-      await Browser.open({ url: data.url })
+      if (Capacitor.getPlatform() === 'ios') {
+        console.warn('[WaitMe][OAuth][diag] iOS: abriendo OAuth con ASWebAuthenticationSession, redirectTo=', NATIVE_OAUTH_REDIRECT_URL)
+        const { callbackUrl } = await WaitmeWebAuth.start({
+          url: data.url,
+          callbackScheme: 'es.waitme.v5waitme',
+        })
+        console.warn('[WaitMe][OAuth][diag] iOS: callbackUrl recibida en JS:', callbackUrl)
+        const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
+        if (iosExErr) {
+          console.warn('[WaitMe][OAuth][diag] iOS: fallo tras callback', iosExErr.message ?? iosExErr)
+          return { data: null, error: iosExErr }
+        }
+        console.warn(
+          '[WaitMe][OAuth][diag] iOS: sesión tras exchange',
+          iosSession?.user?.id ? `user=${iosSession.user.id}` : 'sin user'
+        )
+      } else {
+        await Browser.open({ url: data.url })
+      }
     }
     return {
       data:

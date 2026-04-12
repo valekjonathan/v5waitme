@@ -265,7 +265,10 @@ export function AuthProvider({ children }) {
           if (Capacitor.isNativePlatform()) {
             try {
               const launch = await App.getLaunchUrl()
-              if (launch?.url) urlsToTry.push(launch.url)
+              if (launch?.url) {
+                console.warn('[WaitMe][OAuth][diag] getLaunchUrl', launch.url)
+                urlsToTry.push(launch.url)
+              }
             } catch {
               /* */
             }
@@ -379,8 +382,25 @@ export function AuthProvider({ children }) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
             if (cancelled || !url) return
-            const lower = url.toLowerCase()
-            const isOurScheme = lower.startsWith('es.waitme.v5waitme:')
+            console.warn('[WaitMe][OAuth][diag] appUrlOpen url=', url)
+            if (Capacitor.getPlatform() === 'ios' && supabase) {
+              const {
+                data: { session: already },
+              } = await supabase.auth.getSession()
+              if (already?.user && urlHasOAuthCode(url)) {
+                console.warn(
+                  '[WaitMe][OAuth][diag] appUrlOpen: sesión ya existe (p. ej. tras ASWebAuth), sincronizando sin re-exchange'
+                )
+                try {
+                  await Browser.close()
+                } catch {
+                  /* */
+                }
+                await syncFromSession(already)
+                return
+              }
+            }
+            const isOurScheme = url.toLowerCase().startsWith('es.waitme.v5waitme:')
             const isExactCallback = isNativeOAuthCallbackUrl(url)
             const isSchemeOAuthReturn =
               isOurScheme && (urlHasOAuthCode(url) || urlHasOAuthErrorParams(url))

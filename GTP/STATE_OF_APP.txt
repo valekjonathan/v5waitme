@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T02:57:22.722Z
-Git HEAD: b2c980a3a015a31ab708a57c4598cf9d4a93b462
+Generated: 2026-04-12T03:05:48.747Z
+Git HEAD: 7945182ea3b6ccd1830085bfb36b321e0593b2b0
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -52,6 +52,12 @@ ios/
       project.xcworkspace/
         xcshareddata/
         xcuserdata/
+      xcuserdata/
+        jonathanalvarez.xcuserdatad/
+    App.xcworkspace/
+      contents.xcworkspacedata
+      xcshareddata/
+        swiftpm/
       xcuserdata/
         jonathanalvarez.xcuserdatad/
     CapApp-SPM/
