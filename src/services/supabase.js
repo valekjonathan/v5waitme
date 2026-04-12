@@ -8,6 +8,9 @@ const viteEnv = typeof import.meta !== 'undefined' && import.meta.env != null ? 
 const urlRaw = String(viteEnv.VITE_SUPABASE_URL ?? '').trim()
 const keyRaw = String(viteEnv.VITE_SUPABASE_ANON_KEY ?? '').trim()
 
+/** Valor de `VITE_SUPABASE_URL` (validación OAuth nativo vs `data.url` de signInWithOAuth). */
+export const SUPABASE_PROJECT_URL = urlRaw
+
 const MISSING_ENV_MSG =
   '[WaitMe][Supabase] Faltan VITE_SUPABASE_URL y/o VITE_SUPABASE_ANON_KEY. Auth y perfil no estarán disponibles.'
 

@@ -28,6 +28,8 @@ public class WaitmeWebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
             self.authSession?.cancel()
             self.authSession = nil
 
+            print("[WaitMe][OAuth][diag] ASWebAuthenticationSession URL OAuth que se abre:", url.absoluteString)
+
             let session = ASWebAuthenticationSession(
                 url: url,
                 callbackURLScheme: scheme

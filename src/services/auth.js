@@ -3,7 +3,7 @@
  */
 import { Browser } from '@capacitor/browser'
 import { Capacitor, registerPlugin } from '@capacitor/core'
-import { supabase, isSupabaseConfigured } from './supabase.js'
+import { supabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from './supabase.js'
 
 /** ASWebAuthenticationSession nativo (iOS); evita SFSafariViewController en blanco con custom scheme. */
 const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
@@ -24,7 +24,7 @@ export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
  */
-export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12e'
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12f'
 
 /**
  * True si la URL es el redirect nativo acordado (scheme/host/path), sin depender de includes('auth/callback').
@@ -86,6 +86,55 @@ export function getOAuthErrorMessageFromUrl(urlString) {
 }
 
 /** Indica si la URL trae código PKCE (query; hash por compatibilidad). */
+/**
+ * En Capacitor nativo, la URL a abrir debe ser la de Supabase `/auth/v1/authorize` (https),
+ * nunca loopback: el host sale de VITE_SUPABASE_URL embebido en el build.
+ */
+function validateNativeOAuthAuthorizeUrl(oauthUrlString, projectUrlString) {
+  if (!oauthUrlString || typeof oauthUrlString !== 'string') {
+    return { ok: false, message: 'signInWithOAuth no devolvió data.url (OAuth no iniciado).' }
+  }
+  let oauthUrl
+  try {
+    oauthUrl = new URL(oauthUrlString)
+  } catch {
+    return { ok: false, message: 'data.url no es una URL absoluta válida.' }
+  }
+  const host = oauthUrl.hostname.toLowerCase()
+  const isLoopback =
+    host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '0.0.0.0'
+  if (isLoopback) {
+    return {
+      ok: false,
+      message:
+        'La URL de autorización apunta a loopback (p. ej. localhost). El IPA debe compilarse con VITE_SUPABASE_URL=https://<ref>.supabase.co, no con Supabase CLI local.',
+    }
+  }
+  if (oauthUrl.protocol !== 'https:') {
+    return {
+      ok: false,
+      message: `La URL OAuth debe usar https (obtenido: ${oauthUrl.protocol}).`,
+    }
+  }
+  let projectUrl
+  try {
+    projectUrl = new URL(projectUrlString)
+  } catch {
+    return { ok: false, message: 'VITE_SUPABASE_URL no es una URL válida en el build.' }
+  }
+  if (oauthUrl.hostname.toLowerCase() !== projectUrl.hostname.toLowerCase()) {
+    return {
+      ok: false,
+      message: `Host de data.url (${oauthUrl.hostname}) no coincide con VITE_SUPABASE_URL (${projectUrl.hostname}).`,
+    }
+  }
+  const path = oauthUrl.pathname.toLowerCase()
+  if (!path.includes('authorize')) {
+    return { ok: false, message: 'data.url no parece el endpoint /authorize de Supabase Auth.' }
+  }
+  return { ok: true }
+}
+
 export function urlHasOAuthCode(urlString) {
   if (!urlString) return false
   try {
@@ -122,12 +171,18 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
       console.warn('[WaitMe][OAuth][diag] exchangeCodeForSession error', error.message ?? error)
       return { session: null, error }
     }
+    console.warn('[WaitMe][OAuth][diag] exchangeCodeForSession OK')
     const {
       data: { session: refreshed },
       error: refreshErr,
     } = await supabase.auth.getSession()
     if (refreshErr) return { session: data?.session ?? null, error: null }
-    return { session: refreshed ?? data?.session ?? null, error: null }
+    const session = refreshed ?? data?.session ?? null
+    console.warn(
+      '[WaitMe][OAuth][diag] getSession tras exchangeCodeForSession:',
+      session?.user?.id ? `user=${session.user.id}` : 'sin sesión'
+    )
+    return { session, error: null }
   } catch (e) {
     return { session: null, error: e instanceof Error ? e : new Error(String(e)) }
   }
@@ -232,24 +287,47 @@ export async function signInWithGoogle() {
       return { data: null, error }
     }
     if (isNative && data?.url) {
+      const oauthOpenUrl = String(data.url).trim()
+      console.warn('[WaitMe][OAuth][diag] URL OAuth que se va a abrir:', oauthOpenUrl)
+      console.warn(
+        '[WaitMe][OAuth][diag] signInWithOAuth data (sin abrir redirectTo):',
+        'provider=',
+        data.provider,
+        'projectHost=',
+        (() => {
+          try {
+            return new URL(SUPABASE_PROJECT_URL).hostname
+          } catch {
+            return '(inválido)'
+          }
+        })()
+      )
+      const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
+      if (!check.ok) {
+        console.error('[WaitMe][OAuth][diag] OAuth URL inválida para nativo:', check.message)
+        return { data: null, error: new Error(check.message) }
+      }
       if (Capacitor.getPlatform() === 'ios') {
-        console.warn('[WaitMe][OAuth][diag] iOS: abriendo OAuth con ASWebAuthenticationSession, redirectTo=', NATIVE_OAUTH_REDIRECT_URL)
+        console.warn(
+          '[WaitMe][OAuth][diag] iOS: abriendo solo data.url con ASWebAuthenticationSession; redirectTo (solo vuelta)=',
+          NATIVE_OAUTH_REDIRECT_URL
+        )
         const { callbackUrl } = await WaitmeWebAuth.start({
-          url: data.url,
+          url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
         })
-        console.warn('[WaitMe][OAuth][diag] iOS: callbackUrl recibida en JS:', callbackUrl)
+        console.warn('[WaitMe][OAuth][diag] callbackUrl recibida al volver:', callbackUrl)
         const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
         if (iosExErr) {
           console.warn('[WaitMe][OAuth][diag] iOS: fallo tras callback', iosExErr.message ?? iosExErr)
           return { data: null, error: iosExErr }
         }
         console.warn(
-          '[WaitMe][OAuth][diag] iOS: sesión tras exchange',
+          '[WaitMe][OAuth][diag] iOS: sesión confirmada tras OAuth',
           iosSession?.user?.id ? `user=${iosSession.user.id}` : 'sin user'
         )
       } else {
-        await Browser.open({ url: data.url })
+        await Browser.open({ url: oauthOpenUrl })
       }
     }
     return {
