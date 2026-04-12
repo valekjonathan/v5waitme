@@ -55,6 +55,8 @@ export default function IphoneFrame({ children }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
+        /** Marco letterbox: no debe participar en hit-test (Safari + transform en hijo). */
+        pointerEvents: 'none',
       }}
     >
       <div
@@ -63,6 +65,7 @@ export default function IphoneFrame({ children }) {
           height: FRAME_H * s,
           position: 'relative',
           flexShrink: 0,
+          pointerEvents: 'auto',
         }}
       >
         <div
@@ -80,6 +83,7 @@ export default function IphoneFrame({ children }) {
             display: 'flex',
             flexDirection: 'column',
             boxShadow: shadows.iphoneFrame,
+            pointerEvents: 'auto',
           }}
         >
           {children}

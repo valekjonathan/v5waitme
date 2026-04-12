@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T03:37:25.548Z
-Git HEAD: 7b439c64f2b75e772a9a4e826686126708a9dc9a
+Generated: 2026-04-12T03:42:24.353Z
+Git HEAD: bf012575a055364164393f99f3ec1ab6eaf76549
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -101,7 +101,7 @@ ios/
       Localization/
         LogStoreManifest.plist
       Package/
-        087EE86A-8294-4444-AAE8-4E4F7B0BEC6B.xcactivitylog
+        D5D652F0-1054-4DAC-8761-EBA46BDC1F30.xcactivitylog
         LogStoreManifest.plist
       Test/
         LogStoreManifest.plist
