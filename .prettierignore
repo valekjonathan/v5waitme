@@ -2,3 +2,7 @@ node_modules
 dist
 package-lock.json
 GTP/FULL_REPO_CONTEXT.txt
+log
+test-results
+playwright-report
+ios/App/App/public

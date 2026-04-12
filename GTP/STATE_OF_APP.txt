@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T03:13:44.359Z
-Git HEAD: 4f860c731199461b04e13b0d6808ecc351f4718f
+Generated: 2026-04-12T03:16:28.471Z
+Git HEAD: 4745249fd1019b10ed070b4b19e579c2007236f4
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -73,13 +73,6 @@ ios/
 knip.json
 local.log
 log/
-  events.json
-  performance-report/
-    modified-key-metrics.json
-    performance-report-36285-0.json
-  sdk-cli.log
-  sdk-debug-utility.log
-  usage.log
 node_modules/  [omitido]
 package-lock.json
 package.json
