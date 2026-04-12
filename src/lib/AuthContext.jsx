@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { App } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from '../services/supabase.js'
 import {
@@ -374,7 +375,15 @@ export function AuthProvider({ children }) {
       if (Capacitor.isNativePlatform()) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
-            if (cancelled || !url || !urlHasOAuthCode(url)) return
+            if (cancelled || !url) return
+            if (url.includes('auth/callback')) {
+              try {
+                await Browser.close()
+              } catch {
+                /* sin vista de Browser abierta */
+              }
+            }
+            if (!urlHasOAuthCode(url)) return
             oauthPendingRef.current = true
             try {
               const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)

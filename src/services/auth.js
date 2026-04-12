@@ -1,6 +1,7 @@
 /**
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
+import { Browser } from '@capacitor/browser'
 import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
@@ -131,18 +132,28 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
+    const isNative =
+      typeof window !== 'undefined' && Capacitor.isNativePlatform()
+    /**
+     * iOS: `skipBrowserRedirect: true` evita el redirect del WebView (Safari externo / pantalla en blanco).
+     * La URL OAuth se abre con @capacitor/browser; el retorno es por deep link + appUrlOpen.
+     * Web: redirect normal en la misma ventana (`skipBrowserRedirect` false).
+     */
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo:
-          typeof window !== 'undefined' && Capacitor.isNativePlatform()
-            ? 'es.waitme.v5waitme://auth/callback'
-            : window.location.origin,
+        redirectTo: isNative
+          ? 'es.waitme.v5waitme://auth/callback'
+          : window.location.origin,
+        skipBrowserRedirect: isNative,
       },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
+    }
+    if (isNative && data?.url) {
+      await Browser.open({ url: data.url })
     }
     return { data, error: null }
   } catch (e) {
