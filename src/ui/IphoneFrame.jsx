@@ -55,8 +55,11 @@ export default function IphoneFrame({ children }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        /** Marco letterbox: no debe participar en hit-test (Safari + transform en hijo). */
-        pointerEvents: 'none',
+        /**
+         * Safari macOS: un antecesor con `pointer-events: none` impide que los clics lleguen a hijos
+         * con `auto` (véase comentario en MainLayout). El marco debe usar `auto`; el letterbox
+         * solo absorbe clics fuera del teléfono, sin cambiar layout.
+         */
       }}
     >
       <div

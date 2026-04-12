@@ -266,7 +266,6 @@ export function AuthProvider({ children }) {
             try {
               const launch = await App.getLaunchUrl()
               if (launch?.url) {
-                console.warn('[WaitMe][OAuth][diag] getLaunchUrl', launch.url)
                 urlsToTry.push(launch.url)
               }
             } catch {
@@ -288,8 +287,8 @@ export function AuthProvider({ children }) {
             const { session: exchanged, error: exchangeError } =
               await exchangeSessionFromOAuthUrl(urlStr)
             if (exchangeError) {
-              console.warn(
-                '[WaitMe][OAuth] OAUTH_EXCHANGE_FAIL',
+              console.error(
+                '[WaitMe][Auth] OAUTH_EXCHANGE_FAIL',
                 exchangeError.message ?? exchangeError
               )
               try {
@@ -382,15 +381,11 @@ export function AuthProvider({ children }) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
             if (cancelled || !url) return
-            console.warn('[WaitMe][OAuth][diag] appUrlOpen url=', url)
             if (Capacitor.getPlatform() === 'ios' && supabase) {
               const {
                 data: { session: already },
               } = await supabase.auth.getSession()
               if (already?.user && urlHasOAuthCode(url)) {
-                console.warn(
-                  '[WaitMe][OAuth][diag] appUrlOpen: sesión ya existe (p. ej. tras ASWebAuth), sincronizando sin re-exchange'
-                )
                 try {
                   await Browser.close()
                 } catch {
@@ -422,7 +417,7 @@ export function AuthProvider({ children }) {
             try {
               const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
               if (exErr) {
-                console.warn('[WaitMe][OAuth] appUrlOpen', exErr.message ?? exErr)
+                console.error('[WaitMe][Auth] appUrlOpen exchange', exErr.message ?? exErr)
                 return
               }
               await syncFromSession(next)

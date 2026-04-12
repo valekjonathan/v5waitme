@@ -170,20 +170,15 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
     if (!code) return { session: null, error: null }
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
-      console.warn('[WaitMe][OAuth][diag] exchangeCodeForSession error', error.message ?? error)
+      console.error('[WaitMe][Auth] exchangeCodeForSession', error.message ?? error)
       return { session: null, error }
     }
-    console.warn('[WaitMe][OAuth][diag] exchangeCodeForSession OK')
     const {
       data: { session: refreshed },
       error: refreshErr,
     } = await supabase.auth.getSession()
     if (refreshErr) return { session: data?.session ?? null, error: null }
     const session = refreshed ?? data?.session ?? null
-    console.warn(
-      '[WaitMe][OAuth][diag] getSession tras exchangeCodeForSession:',
-      session?.user?.id ? `user=${session.user.id}` : 'sin sesión'
-    )
     return { session, error: null }
   } catch (e) {
     return { session: null, error: e instanceof Error ? e : new Error(String(e)) }
@@ -292,46 +287,24 @@ export async function signInWithGoogle() {
     }
     if (isNative && data?.url) {
       const oauthOpenUrl = String(data.url).trim()
-      console.log('[OAUTH URL]', oauthOpenUrl)
-      console.warn('[WaitMe][OAuth][diag] URL OAuth que se va a abrir:', oauthOpenUrl)
-      console.warn(
-        '[WaitMe][OAuth][diag] signInWithOAuth data (sin abrir redirectTo):',
-        'provider=',
-        data.provider,
-        'projectHost=',
-        (() => {
-          try {
-            return new URL(SUPABASE_PROJECT_URL).hostname
-          } catch {
-            return '(inválido)'
-          }
-        })()
-      )
       const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
       if (!check.ok) {
-        console.error('[WaitMe][OAuth][diag] OAuth URL inválida para nativo:', check.message)
+        console.error('[WaitMe][Auth] OAuth URL inválida para nativo:', check.message)
         return { data: null, error: new Error(check.message) }
       }
       if (Capacitor.getPlatform() === 'ios') {
-        console.warn(
-          '[WaitMe][OAuth][diag] iOS: abriendo solo data.url con ASWebAuthenticationSession; redirectTo (solo vuelta)=',
-          NATIVE_OAUTH_REDIRECT_URL
-        )
         const { callbackUrl } = await WaitmeWebAuth.start({
           url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
         })
-        console.log('[CALLBACK URL]', callbackUrl)
-        console.warn('[WaitMe][OAuth][diag] callbackUrl recibida al volver:', callbackUrl)
         const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
         if (iosExErr) {
-          console.warn('[WaitMe][OAuth][diag] iOS: fallo tras callback', iosExErr.message ?? iosExErr)
+          console.error('[WaitMe][Auth] iOS OAuth tras callback', iosExErr.message ?? iosExErr)
           return { data: null, error: iosExErr }
         }
-        console.warn(
-          '[WaitMe][OAuth][diag] iOS: sesión confirmada tras OAuth',
-          iosSession?.user?.id ? `user=${iosSession.user.id}` : 'sin user'
-        )
+        if (!iosSession?.user) {
+          return { data: null, error: new Error('oauth_session_missing') }
+        }
       } else {
         await Browser.open({ url: oauthOpenUrl })
       }
