@@ -31,6 +31,15 @@ const ballShadow = {
 
 const stemShadow = { boxShadow: shadows.centerPinStem }
 
+/** Posición común de anillos absolutos; no deben interceptar toques (Safari/WKWebView). */
+const absRingBase = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  pointerEvents: 'none',
+}
+
 export default function CenterPin() {
   return (
     <div
@@ -72,40 +81,31 @@ export default function CenterPin() {
         <div
           className="center-pin-halo-ring"
           style={{
-            position: 'absolute',
+            ...absRingBase,
             width: 48,
             height: 48,
             borderRadius: 999,
             border: `2px solid ${colors.centerPinLilac}`,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
           }}
         />
         <div
           className="center-pin-radar-ring"
           style={{
-            position: 'absolute',
+            ...absRingBase,
             width: 64,
             height: 64,
             borderRadius: 999,
             border: `1px solid ${colors.centerPinLilacStrong}`,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
           }}
         />
         <div
           className="center-pin-radar-ring"
           style={{
-            position: 'absolute',
+            ...absRingBase,
             width: 64,
             height: 64,
             borderRadius: 999,
             border: `1px solid ${colors.centerPinLilacStrong}`,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
             animationDelay: '0.8s',
           }}
         />

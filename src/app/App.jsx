@@ -5,6 +5,7 @@ import {
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
+import HitTestDebug from '../lib/hitTestDebug.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -124,7 +125,7 @@ function HomeActionGate({ children }) {
   }, [complete, notice])
 
   return (
-    <div ref={rootRef} data-waitme-home-gate style={homeGateStyle}>
+    <div ref={rootRef} data-waitme-hit="homeGate" data-waitme-home-gate style={homeGateStyle}>
       {children}
     </div>
   )
@@ -133,7 +134,13 @@ function HomeActionGate({ children }) {
 function AuthenticatedShellWithBoundary({ opacity, children }) {
   const { screen } = useAppScreen()
   return (
-    <div style={{ ...fade200Style, opacity }}>
+    <div
+      style={{
+        ...fade200Style,
+        opacity,
+        pointerEvents: opacity === 0 ? 'none' : 'auto',
+      }}
+    >
       <ErrorBoundary resetKeys={[screen]} name="shell">
         {children}
       </ErrorBoundary>
@@ -225,7 +232,13 @@ function AppGate() {
           </ScreenShell>
         </AppLayout>
       ) : displayedView === 'login' ? (
-        <div style={{ ...fade200Style, opacity }}>
+        <div
+          style={{
+            ...fade200Style,
+            opacity,
+            pointerEvents: opacity === 0 ? 'none' : 'auto',
+          }}
+        >
           <AppLayout>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
               <LoginPage />
@@ -252,6 +265,7 @@ function AppGate() {
 export default function App() {
   return (
     <ErrorBoundary name="root">
+      {import.meta.env.VITE_WAITME_HIT_DEBUG === '1' ? <HitTestDebug /> : null}
       <AppAuthRoot>
         <AppGate />
       </AppAuthRoot>

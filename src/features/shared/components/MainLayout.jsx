@@ -12,6 +12,7 @@ const mapSuspenseFallbackStyle = {
   width: '100%',
   height: '100%',
   backgroundColor: colors.background,
+  pointerEvents: 'none',
 }
 
 const s = LAYOUT.spacing
@@ -22,6 +23,8 @@ const mapLayerStyle = {
   inset: 0,
   zIndex: LAYOUT.z.map,
   backgroundColor: colors.background,
+  /** Toda la capa (canvas Mapbox / fallback Suspense) no debe robar hits; WebKit + apilado puede desordenar. */
+  pointerEvents: 'none',
 }
 const overlayStyleBase = {
   position: 'absolute',
@@ -36,11 +39,14 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /** Sin esto la capa fullscreen intercepta toques en iOS/WKWebView; el mapa y huecos no reciben eventos. */
-  pointerEvents: 'none',
+  /**
+   * Bajo IphoneFrame (transform: scale) WebKit falla a entregar eventos a hijos con pointer-events: auto
+   * si demasiados ancestros usan pointer-events: none. La capa de contenido debe participar en hit-test
+   * como superficie; el mapa ya tiene pointer-events: none en mapLayerStyle.
+   */
+  pointerEvents: 'auto',
 }
 const contentViewportStyle = {
-  pointerEvents: 'none',
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.content,
@@ -49,10 +55,9 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
+  pointerEvents: 'auto',
 }
 const contentColumnStyle = {
-  /** Columna sin capturar toques en el hueco completo; cada Section pone pointer-events: auto. */
-  pointerEvents: 'none',
   position: 'relative',
   zIndex: LAYOUT.z.content,
   display: 'flex',
@@ -64,6 +69,7 @@ const contentColumnStyle = {
   justifyContent: 'center',
   gap: s.sm,
   textAlign: 'center',
+  pointerEvents: 'auto',
 }
 const sectionInteractiveStyle = { pointerEvents: 'auto' }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
@@ -171,8 +177,13 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 
   return (
-    <div style={rootStyle}>
-      <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
+    <div data-waitme-hit="mainLayoutRoot" style={rootStyle}>
+      <div
+        data-waitme-hit="mapLayer"
+        style={mapLayerStyle}
+        aria-busy={!mapLayerSettled}
+        aria-label="Capa de mapa"
+      >
         <Suspense fallback={<div style={mapSuspenseFallbackStyle} />}>
           <Map onSettled={onMapSettled} />
         </Suspense>
@@ -180,9 +191,9 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
 
       <div style={overlayLayerStyle(overlayBackground)} />
 
-      <div style={centeredLayerStyle}>
-        <div style={contentViewportStyle}>
-          <div style={contentColumnStyle}>
+      <div data-waitme-hit="centeredLayer" style={centeredLayerStyle}>
+        <div data-waitme-hit="contentViewport" style={contentViewportStyle}>
+          <div data-waitme-hit="contentColumn" style={contentColumnStyle}>
             <Section gap={0} align="center" style={heroSectionInteractiveStyle(loginEntrance, loginHeroIn)}>
               <div style={heroLogoOuterStyle}>
                 <div style={heroLogoBoxStyle}>

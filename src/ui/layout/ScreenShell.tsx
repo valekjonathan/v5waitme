@@ -76,9 +76,14 @@ export default function ScreenShell({
   }, [fullBleed])
 
   return (
-    <div data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
+    <div
+      data-waitme-hit="screenShell"
+      data-waitme-screen-shell={mainMode}
+      style={{ ...shellRootStyle, ...style }}
+    >
       <Header ref={headerRef} interactive={interactive} />
       <main
+        data-waitme-hit="screenMain"
         data-waitme-main={mainMode}
         style={{
           flex: 1,
