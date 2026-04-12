@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T01:43:59.257Z
-Git HEAD: 5cdeff6eddcd624b41d3cb3183bab30ce3a372b3
+Generated: 2026-04-12T01:48:11.965Z
+Git HEAD: 96ecd7ecf4ef60de2beed2637b1a1c837ca8dbff
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -171,7 +171,6 @@ src/
     devFlowLog.js
     ErrorBoundary.jsx
     errorBoundaryReset.js
-    hitTestDebug.jsx
     ProfileIncompleteNoticeContext.jsx
     ratingStars.js
   main.jsx

@@ -47,18 +47,13 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   if (Capacitor.isNativePlatform()) {
-    return (
-      <div data-waitme-hit="iphoneFrame" style={nativeRootStyle}>
-        {children}
-      </div>
-    )
+    return <div style={nativeRootStyle}>{children}</div>
   }
 
   const s = scale
 
   return (
     <div
-      data-waitme-hit="iphoneFrameOuter"
       style={{
         flex: 1,
         minHeight: 0,
@@ -78,7 +73,6 @@ export default function IphoneFrame({ children }) {
         }}
       >
         <div
-          data-waitme-hit="iphoneFrame"
           style={{
             position: 'absolute',
             top: 0,

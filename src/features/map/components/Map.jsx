@@ -434,11 +434,8 @@ export default function Map({ onSettled: onSettledProp }) {
   const showMapFallback = mapFailed
 
   return (
-    <div
-      data-waitme-hit="mapRoot"
-      style={{ width: '100%', height: '100%', position: 'relative', pointerEvents: 'none' }}
-    >
-      <div ref={containerRef} style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
       {showMapFallback ? (
         <div
           style={{
