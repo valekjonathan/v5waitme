@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import {
   ACCURACY_RECENTER_THRESHOLD,
@@ -97,9 +96,6 @@ export default function Map({ onSettled: onSettledProp }) {
     let map
     let loadTimeoutId = null
     let loadCompleted = false
-    let removeVisualViewportListeners = null
-    let removeWindowResizeListener = null
-    let containerSizeObserver = null
 
     const failMap = (detail, err) => {
       console.error('Mapbox failed to load', detail, err ?? '')
@@ -114,8 +110,6 @@ export default function Map({ onSettled: onSettledProp }) {
       resizeTimeout400Ref.current = null
       resizeObserverRef.current?.disconnect?.()
       resizeObserverRef.current = null
-      containerSizeObserver?.disconnect?.()
-      containerSizeObserver = null
       setMapReady(false)
       setMapFailed(true)
       fireMapSettled()
@@ -147,150 +141,89 @@ export default function Map({ onSettled: onSettledProp }) {
       failMap('mapbox error event', e?.error ?? e)
     }
 
-    const attemptCreateMap = () => {
-      if (cancelled || mapRef.current) return
-
+    try {
       const token = getMapboxAccessToken()
       if (!token) {
         console.warn('[WaitMe][Map] Mapbox omitido: sin VITE_MAPBOX_ACCESS_TOKEN')
-        containerSizeObserver?.disconnect?.()
-        containerSizeObserver = null
         setMapFailed(true)
         fireMapSettled()
-        return
+        return () => {}
       }
-
-      const w = container.clientWidth
-      const h = container.clientHeight
-      console.log('MAP CONTAINER SIZE', w, h)
-      if (w < 2 || h < 2) return
-
-      console.log('MAP INIT')
-
-      try {
-        map = createMap(container, { token, interactive: false })
-      } catch (err) {
-        console.error('Mapbox failed to load', 'initialization', err)
-        containerSizeObserver?.disconnect?.()
-        containerSizeObserver = null
-        setMapReady(false)
-        setMapFailed(true)
-        fireMapSettled()
-        return
-      }
-
+      map = createMap(container, { token, interactive: false })
       if (!map) {
         console.warn('[WaitMe][Map] Mapbox omitido: createMap devolvió null')
-        containerSizeObserver?.disconnect?.()
-        containerSizeObserver = null
         setMapFailed(true)
         fireMapSettled()
-        return
+        return () => {}
       }
+    } catch (err) {
+      console.error('Mapbox failed to load', 'initialization', err)
+      setMapReady(false)
+      setMapFailed(true)
+      fireMapSettled()
+      return () => {}
+    }
 
-      console.log('MAP TOKEN', mapboxgl.accessToken)
-
-      containerSizeObserver?.disconnect?.()
-      containerSizeObserver = null
-
-      if (cancelled) {
-        try {
-          map.remove()
-        } catch {
-          /* */
-        }
-        return
-      }
-
+    if (cancelled) {
       try {
-        mapRef.current = map
-        map.on('error', onMapError)
-
-        loadTimeoutId = setTimeout(() => {
-          if (cancelled || loadCompleted) return
-          failMap('style load timeout', new Error('exceeded 8s'))
-        }, 8000)
-
-        map.on('load', () => {
-          if (cancelled) return
-          loadCompleted = true
-          if (loadTimeoutId) clearTimeout(loadTimeoutId)
-          loadTimeoutId = null
-          try {
-            setupMapStyleOnLoad(map)
-            applyRoadStyleForCreate(map)
-            applyMapReadOnly(map, true)
-            map.resize()
-            setTimeout(() => {
-              if (mapRef.current) mapRef.current.resize()
-            }, 0)
-            setTimeout(() => {
-              if (mapRef.current) mapRef.current.resize()
-            }, 300)
-          } catch (err) {
-            failMap('post-load setup', err)
-            return
-          }
-
-          const resizeDelayed = () => {
-            if (mapRef.current) mapRef.current.resize()
-          }
-
-          resizeTimeout100Ref.current = setTimeout(resizeDelayed, 100)
-          resizeTimeout400Ref.current = setTimeout(resizeDelayed, 400)
-
-          if (typeof ResizeObserver !== 'undefined') {
-            const ro = new ResizeObserver(resizeDelayed)
-            resizeObserverRef.current = ro
-            ro.observe(container)
-          }
-
-          const onWinResize = () => resizeDelayed()
-          window.addEventListener('resize', onWinResize)
-          removeWindowResizeListener = () => window.removeEventListener('resize', onWinResize)
-
-          const vv = window.visualViewport
-          if (vv) {
-            const onVv = () => resizeDelayed()
-            vv.addEventListener('resize', onVv)
-            vv.addEventListener('scroll', onVv)
-            removeVisualViewportListeners = () => {
-              vv.removeEventListener('resize', onVv)
-              vv.removeEventListener('scroll', onVv)
-            }
-          }
-
-          map.on('dragend', onMapUserInteraction)
-          map.on('zoomend', onZoomEnd)
-
-          setMapReady(true)
-          setMapFailed(false)
-          fireMapSettled()
-        })
-      } catch (err) {
-        failMap('map setup', err)
+        map.remove()
+      } catch {
+        /* */
       }
+      return
     }
 
-    if (typeof ResizeObserver !== 'undefined') {
-      containerSizeObserver = new ResizeObserver(() => {
-        attemptCreateMap()
+    try {
+      mapRef.current = map
+      map.on('error', onMapError)
+
+      loadTimeoutId = setTimeout(() => {
+        if (cancelled || loadCompleted) return
+        failMap('style load timeout', new Error('exceeded 8s'))
+      }, 8000)
+
+      map.on('load', () => {
+        if (cancelled) return
+        loadCompleted = true
+        if (loadTimeoutId) clearTimeout(loadTimeoutId)
+        loadTimeoutId = null
+        try {
+          setupMapStyleOnLoad(map)
+          applyRoadStyleForCreate(map)
+          applyMapReadOnly(map, true)
+          map.resize()
+        } catch (err) {
+          failMap('post-load setup', err)
+          return
+        }
+
+        const resizeDelayed = () => {
+          if (mapRef.current) mapRef.current.resize()
+        }
+
+        resizeTimeout100Ref.current = setTimeout(resizeDelayed, 100)
+        resizeTimeout400Ref.current = setTimeout(resizeDelayed, 400)
+
+        if (typeof ResizeObserver !== 'undefined') {
+          const ro = new ResizeObserver(resizeDelayed)
+          resizeObserverRef.current = ro
+          ro.observe(container)
+        }
+
+        map.on('dragend', onMapUserInteraction)
+        map.on('zoomend', onZoomEnd)
+
+        setMapReady(true)
+        setMapFailed(false)
+        fireMapSettled()
       })
-      containerSizeObserver.observe(container)
+    } catch (err) {
+      failMap('map setup', err)
+      return () => {}
     }
-    attemptCreateMap()
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => attemptCreateMap())
-    })
 
     return () => {
       cancelled = true
-      containerSizeObserver?.disconnect?.()
-      containerSizeObserver = null
-      removeWindowResizeListener?.()
-      removeWindowResizeListener = null
-      removeVisualViewportListeners?.()
-      removeVisualViewportListeners = null
       if (loadTimeoutId) clearTimeout(loadTimeoutId)
       setMapReady(false)
       setMapFailed(false)

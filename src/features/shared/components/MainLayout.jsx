@@ -36,8 +36,6 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /** Sin esto la capa fullscreen intercepta toques en iOS/WKWebView; el mapa y huecos no reciben eventos. */
-  pointerEvents: 'none',
 }
 const contentViewportStyle = {
   pointerEvents: 'none',
@@ -51,8 +49,7 @@ const contentViewportStyle = {
   padding: `0 ${LAYOUT.spacing.xl}px`,
 }
 const contentColumnStyle = {
-  /** Columna sin capturar toques en el hueco completo; cada Section pone pointer-events: auto. */
-  pointerEvents: 'none',
+  pointerEvents: 'auto',
   position: 'relative',
   zIndex: LAYOUT.z.content,
   display: 'flex',
@@ -65,7 +62,6 @@ const contentColumnStyle = {
   gap: s.sm,
   textAlign: 'center',
 }
-const sectionInteractiveStyle = { pointerEvents: 'auto' }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
 const heroPinWrapStyle = { display: 'flex', justifyContent: 'center', padding: `${s.lg}px 0` }
@@ -112,20 +108,6 @@ function withLoginEntrance(baseStyle, isLoginLayout, visible) {
 
 function overlayLayerStyle(background) {
   return { ...overlayStyleBase, background }
-}
-
-function heroSectionInteractiveStyle(loginEntrance, loginHeroIn) {
-  return {
-    ...withLoginEntrance(heroSectionBaseStyle, loginEntrance, loginHeroIn),
-    ...sectionInteractiveStyle,
-  }
-}
-
-function ctaSectionInteractiveStyle(loginEntrance, loginCtaIn) {
-  return {
-    ...withLoginEntrance(ctaSectionBaseStyle, loginEntrance, loginCtaIn),
-    ...sectionInteractiveStyle,
-  }
 }
 
 /**
@@ -183,7 +165,11 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
       <div style={centeredLayerStyle}>
         <div style={contentViewportStyle}>
           <div style={contentColumnStyle}>
-            <Section gap={0} align="center" style={heroSectionInteractiveStyle(loginEntrance, loginHeroIn)}>
+            <Section
+              gap={0}
+              align="center"
+              style={withLoginEntrance(heroSectionBaseStyle, loginEntrance, loginHeroIn)}
+            >
               <div style={heroLogoOuterStyle}>
                 <div style={heroLogoBoxStyle}>
                   <img
@@ -206,7 +192,10 @@ export default function MainLayout({ children = null, loginEntrance = false }) {
               </div>
             </Section>
             {hasCta ? (
-              <Section gap={s.md} style={ctaSectionInteractiveStyle(loginEntrance, loginCtaIn)}>
+              <Section
+                gap={s.md}
+                style={withLoginEntrance(ctaSectionBaseStyle, loginEntrance, loginCtaIn)}
+              >
                 {children}
               </Section>
             ) : null}
