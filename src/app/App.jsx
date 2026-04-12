@@ -543,7 +543,22 @@ function AppGate() {
 
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
-  const authenticatedDefault = (
+  /** Un solo flujo por sesión: nunca login + autenticado en paralelo (evita doble shell en runtime). */
+  if (!user) {
+    return (
+      <div style={gateColumnStyle}>
+        <AppLayout>
+          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+            <MainLayout loginEntrance>
+              <LoginPage />
+            </MainLayout>
+          </ScreenShell>
+        </AppLayout>
+      </div>
+    )
+  }
+
+  return (
     <AuthenticatedShellWithBoundary>
       <ProfileIncompleteNoticeProvider value={noticeValue}>
         <AppLayout>
@@ -558,24 +573,6 @@ function AppGate() {
         </AppLayout>
       </ProfileIncompleteNoticeProvider>
     </AuthenticatedShellWithBoundary>
-  )
-
-  return (
-    <AppScreenProvider>
-      {!user ? (
-        <div style={gateColumnStyle}>
-          <AppLayout>
-            <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-              <MainLayout loginEntrance>
-                <LoginPage />
-              </MainLayout>
-            </ScreenShell>
-          </AppLayout>
-        </div>
-      ) : (
-        authenticatedDefault
-      )}
-    </AppScreenProvider>
   )
 }
 
@@ -620,7 +617,9 @@ function AuthenticatedMainChrome() {
     <div className="waitme-app-root" style={appRootLayoutStyle}>
       <div className="waitme-iphone-frame-fullbleed">
         <AppAuthRoot>
-          <AppGate />
+          <AppScreenProvider>
+            <AppGate />
+          </AppScreenProvider>
         </AppAuthRoot>
       </div>
     </div>
