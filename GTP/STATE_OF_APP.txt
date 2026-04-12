@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T03:50:36.130Z
-Git HEAD: 9093378c0ae8ca4b232ea7eefe1304e762a31cb0
+Generated: 2026-04-12T03:51:35.022Z
+Git HEAD: e691e8ff1de0c9b915cc39b95aeccea7d490e3f9
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -96,6 +96,7 @@ ios/
     Logs/
       Build/
         0DED8EB7-4DAF-45E0-A352-56DF52994704.xcactivitylog
+        80214683-0A1B-4550-B879-E15CDECD4833.xcactivitylog
         LogStoreManifest.plist
       Launch/
         LogStoreManifest.plist
@@ -104,6 +105,7 @@ ios/
       Package/
         61DB77EF-DF7A-4188-85FB-2F1D2DA9CD89.xcactivitylog
         D5D652F0-1054-4DAC-8761-EBA46BDC1F30.xcactivitylog
+        D956DE6A-55FA-4AEA-AD30-84903191CD96.xcactivitylog
         LogStoreManifest.plist
       Test/
         LogStoreManifest.plist
@@ -401,8 +403,6 @@ ios/
       CommonCrypto-CN5FB2DGZT2U8VF529XBD31HM.pcm
       CoreData-AYF4SUPS8DM0XLYADIH7OB11B.pcm
       CoreFoundation-6GGX2KMOIS1U7MQ445DW1LT41.pcm
-      CoreFoundation-9BYVF0OGIWE49255KIVUM0XA5.pcm
-      CoreGraphics-4KFALOLLP2Q6D0M1BB28ZX0V6.pcm
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
