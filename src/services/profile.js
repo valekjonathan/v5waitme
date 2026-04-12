@@ -18,6 +18,8 @@ import { supabase, isSupabaseConfigured } from './supabase.js'
  * }} AppProfile
  */
 
+export const PROFILE_INCOMPLETE_MESSAGE = 'Completa tu perfil para usar la app'
+
 /**
  * Perfil mínimo usable para alertas / flujo de aparcamiento.
  */
@@ -118,7 +120,7 @@ export function seedProfileStateFromSession(sessionUser) {
 /**
  * Fila `profiles` → estado del formulario (allow_phone_calls no está en BD).
  */
-function rowToAppProfile(row) {
+export function rowToAppProfile(row) {
   if (!row) return null
   return {
     full_name: row.name ?? '',

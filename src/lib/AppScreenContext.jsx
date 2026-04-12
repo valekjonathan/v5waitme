@@ -1,30 +1,22 @@
-import { createContext, useContext, useMemo } from 'react'
-import { NavigationProvider, useNavigation } from '../context/navigation/NavigationContext.jsx'
-import { WaitMeProvider, useWaitMe } from '../context/waitme/WaitMeContext.jsx'
+import { createContext, useContext, useMemo, useReducer } from 'react'
+import { APP_SCREEN_HOME, reduceAppScreen } from './appScreenState.js'
 
 const AppScreenContext = createContext(null)
 
-function AppScreenComposer({ children }) {
-  const navigation = useNavigation()
-  const waitme = useWaitMe()
+export function AppScreenProvider({ children }) {
+  const [screen, dispatch] = useReducer(reduceAppScreen, APP_SCREEN_HOME)
+
   const value = useMemo(
     () => ({
-      ...navigation,
-      ...waitme,
+      screen,
+      openProfile: () => dispatch({ type: 'openProfile' }),
+      openReviews: () => dispatch({ type: 'openReviews' }),
+      openHome: () => dispatch({ type: 'openHome' }),
     }),
-    [navigation, waitme]
+    [screen]
   )
-  return <AppScreenContext.Provider value={value}>{children}</AppScreenContext.Provider>
-}
 
-export function AppScreenProvider({ children }) {
-  return (
-    <NavigationProvider>
-      <WaitMeProvider>
-        <AppScreenComposer>{children}</AppScreenComposer>
-      </WaitMeProvider>
-    </NavigationProvider>
-  )
+  return <AppScreenContext.Provider value={value}>{children}</AppScreenContext.Provider>
 }
 
 export function useAppScreen() {

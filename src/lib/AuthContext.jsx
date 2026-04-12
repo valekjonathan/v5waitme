@@ -10,7 +10,6 @@ import {
   checkProfileComplete,
   ensureProfileForOAuthUser,
 } from '../services/profile.js'
-import { startLocationTracking } from '../services/location.js'
 import { logFlow } from './devFlowLog.js'
 
 const AuthContext = createContext(null)
@@ -75,137 +74,42 @@ function readMergedDevProfileForCheck(user) {
   }
 }
 
-function buildDevLocalProfileState(user) {
-  const merged = readMergedDevProfileForCheck(user)
-  return { merged, isComplete: checkProfileComplete(merged) }
-}
-
-/** Fila Supabase ya normalizada sobre `buildResolvedHeaderProfile` (sin duplicar reglas de merge). */
-function mergeOAuthProfileRow(base, row) {
-  if (!row) return base
-  return {
-    ...base,
-    ...row,
-    full_name: row.full_name || base.full_name,
-    email: row.email || base.email,
-    avatar_url: row.avatar_url || base.avatar_url,
-  }
-}
-
 export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading')
   const [user, setUser] = useState(null)
   const [session, setSession] = useState(null)
-  const [profile, _setProfile] = useState(() => buildResolvedHeaderProfile(null, user))
+  const [profile, setProfile] = useState(() => buildResolvedHeaderProfile(null, user))
   const [profileBootstrapReady, setProfileBootstrapReady] = useState(false)
   const [isNewUser, setIsNewUser] = useState(false)
   const [isProfileComplete, setIsProfileComplete] = useState(false)
   const [authError, setAuthError] = useState(null)
-  const [authActionLoading, setAuthActionLoading] = useState(false)
-  const authActionLoadingRef = useRef(false)
   const authStatusRef = useRef(status)
 
   useEffect(() => {
     authStatusRef.current = status
   }, [status])
 
-  const isValidProfileValue = useCallback((v) => {
-    if (!v || typeof v !== 'object') return false
-    try {
-      return Object.keys(v).length > 0
-    } catch {
-      return false
-    }
-  }, [])
-
-  const setProfile = useCallback(
-    (next) => {
-      if (typeof next === 'function') {
-        _setProfile((prev) => {
-          const computed = next(prev)
-          return isValidProfileValue(computed) ? computed : prev
-        })
-        return
-      }
-      if (!isValidProfileValue(next)) return
-      _setProfile(next)
-    },
-    [isValidProfileValue]
-  )
-
-  /** Tras OAuth el `finally` puede no ejecutarse antes del unload; al volver (bfcache) el ref quedaba true y el clic no hacía nada. */
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
-    const resetOAuthLoading = () => {
-      authActionLoadingRef.current = false
-      setAuthActionLoading(false)
-    }
-    resetOAuthLoading()
-    const onPageShow = (e) => {
-      if (e.persisted) resetOAuthLoading()
-    }
-    window.addEventListener('pageshow', onPageShow)
-    return () => window.removeEventListener('pageshow', onPageShow)
-  }, [])
-
-  /** Único camino a sesión vacía + flags de arranque (tokens, perfil, errores opcionales). */
-  const setUnauthenticatedState = useCallback((clearAuthError) => {
-    setUser(null)
-    setSession(null)
-    setStatus('unauthenticated')
-    setProfileBootstrapReady(true)
-    setIsNewUser(false)
-    setIsProfileComplete(false)
-    if (clearAuthError) setAuthError(null)
-  }, [])
-
-  /** Único camino a identidad Supabase/dev autenticada (user + session + status); no toca perfil bootstrap. */
-  const setAuthenticatedState = useCallback((nextUser, nextSession) => {
-    setUser(nextUser)
-    setSession(nextSession ?? null)
-    setStatus('authenticated')
-  }, [])
-
-  /** Perfil dev-local tras `user` ya fijado (Supabase desactivado o rama sin API). */
-  const commitDevLocalProfileBoot = useCallback((devUser) => {
-    const { merged, isComplete } = buildDevLocalProfileState(devUser)
-    setProfile(merged)
-    setIsNewUser(false)
-    setIsProfileComplete(isComplete)
-    setProfileBootstrapReady(true)
-    if (!isComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
-  }, [setProfile])
-
-  /** Dev sin Supabase: sesión + perfil draft; `logDevLoginSuccess` solo en flujo explícito de login. */
-  const applyDevAuthenticatedCore = useCallback(
-    (devUser, { logDevLoginSuccess }) => {
-      setAuthenticatedState(devUser, { user: devUser })
-      commitDevLocalProfileBoot(devUser)
-      if (logDevLoginSuccess) logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
-    },
-    [commitDevLocalProfileBoot, setAuthenticatedState]
-  )
-
-  useEffect(() => {
-    const stop = startLocationTracking()
-    return typeof stop === 'function' ? stop : undefined
-  }, [])
-
   useEffect(() => {
     if (user && !profile) {
       setProfile(buildResolvedHeaderProfile(null, user))
     }
-  }, [user, profile, setProfile])
+  }, [user, profile])
 
   useEffect(() => {
     const bootTimer = window.setTimeout(() => {
       // Evitar ruido: si la sesión ya se resolvió antes del timeout, no hacemos log/dispatch.
       if (authStatusRef.current !== 'loading') return
-      setUnauthenticatedState(false)
+      setUser(null)
+      setSession(null)
+      setStatus('unauthenticated')
+      setProfileBootstrapReady(true)
+      setIsNewUser(false)
+      setIsProfileComplete(false)
+      setProfile(null)
       console.error('[WaitMe][Auth] Arranque de sesión superó el tiempo; se continúa sin sesión.')
     }, AUTH_BOOTSTRAP_MAX_MS)
     return () => window.clearTimeout(bootTimer)
-  }, [setUnauthenticatedState])
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -221,27 +125,44 @@ export function AuthProvider({ children }) {
 
       if (!nextUser) {
         lastProfileBootUserId = null
-        setUnauthenticatedState(false)
+        setUser(null)
+        setSession(null)
+        setProfile(null)
+        setStatus('unauthenticated')
+        setProfileBootstrapReady(true)
+        setIsNewUser(false)
+        setIsProfileComplete(false)
         return
       }
 
-      setAuthenticatedState(nextUser, session)
       /**
-       * Mismo usuario ya arrancado: solo tokens/sesión; no resetear bootstrap ni perfil.
+       * Mismo usuario ya arrancado: actualizar sesión/tokens sin resetear bootstrap.
        * Antes: setProfileBootstrapReady(false) y return temprano dejaba profileBootstrapReady
        * en false para siempre → AppGate en loading perpetuo / sensación de “pantalla negra”.
        */
       if (isSupabaseConfigured() && supabase && lastProfileBootUserId === nextUser.id) {
+        setUser(nextUser)
+        setSession(session ?? null)
+        setStatus('authenticated')
         return
       }
 
+      setUser(nextUser)
+      setSession(session ?? null)
+      setStatus('authenticated')
       setAuthError(null)
       setProfileBootstrapReady(false)
       if (!wasAuthenticated) logFlow('LOGIN_SUCCESS', { mode: 'supabase' })
 
       if (!isSupabaseConfigured() || !supabase) {
+        const merged = readMergedDevProfileForCheck(nextUser)
+        const profileComplete = checkProfileComplete(merged)
         lastProfileBootUserId = nextUser.id
-        commitDevLocalProfileBoot(nextUser)
+        setProfile(merged)
+        setIsNewUser(false)
+        setIsProfileComplete(profileComplete)
+        setProfileBootstrapReady(true)
+        if (!profileComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
         return
       }
 
@@ -253,7 +174,16 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = nextUser.id
       setProfile(() => {
         const base = buildResolvedHeaderProfile(null, nextUser)
-        return mergeOAuthProfileRow(base, result.data)
+
+        return result.data
+          ? {
+              ...base,
+              ...result.data,
+              full_name: result.data.full_name || base.full_name,
+              email: result.data.email || base.email,
+              avatar_url: result.data.avatar_url || base.avatar_url,
+            }
+          : base
       })
       setIsNewUser(result.isNewUser)
       setIsProfileComplete(result.isProfileComplete)
@@ -264,10 +194,27 @@ export function AuthProvider({ children }) {
       if (!isSupabaseConfigured() || !supabase) {
         if (!cancelled) {
           if (readLocalFlag(DEV_AUTH_KEY)) {
-            applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: false })
+            const devUser = buildDevUser()
+            setUser(devUser)
+            setSession({ user: devUser })
+            setStatus('authenticated')
+            const merged = readMergedDevProfileForCheck(devUser)
+            const profileComplete = checkProfileComplete(merged)
+            setProfile(merged)
+            setIsNewUser(false)
+            setIsProfileComplete(profileComplete)
+            setProfileBootstrapReady(true)
+            if (!profileComplete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
             return
           }
-          setUnauthenticatedState(true)
+          setUser(null)
+          setSession(null)
+          setStatus('unauthenticated')
+          setProfileBootstrapReady(true)
+          setProfile(null)
+          setIsNewUser(false)
+          setIsProfileComplete(false)
+          setAuthError(null)
         }
         return
       }
@@ -288,7 +235,13 @@ export function AuthProvider({ children }) {
             sessionError.message ?? sessionError
           )
           if (!cancelled) {
-            setUnauthenticatedState(false)
+            setUser(null)
+            setSession(null)
+            setStatus('unauthenticated')
+            setProfileBootstrapReady(true)
+            setProfile(null)
+            setIsNewUser(false)
+            setIsProfileComplete(false)
           }
           return
         }
@@ -346,7 +299,14 @@ export function AuthProvider({ children }) {
           } catch {
             /* */
           }
-          setUnauthenticatedState(true)
+          setUser(null)
+          setSession(null)
+          setStatus('unauthenticated')
+          setProfileBootstrapReady(true)
+          setProfile(null)
+          setIsNewUser(false)
+          setIsProfileComplete(false)
+          setAuthError(null)
         }
       }
     }
@@ -363,18 +323,13 @@ export function AuthProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return
-
-      queueMicrotask(() => {
-        if (cancelled) return
-
-        ;(async () => {
-          try {
-            await syncFromSession(session)
-          } catch (e) {
-            console.error('[Auth] sync error', e)
-          }
-        })()
-      })
+      void (async () => {
+        try {
+          await syncFromSession(session)
+        } catch (e) {
+          console.error('[WaitMe][Auth] onAuthStateChange: error al sincronizar sesión', e)
+        }
+      })()
     })
 
     return () => {
@@ -383,38 +338,40 @@ export function AuthProvider({ children }) {
       lastProfileBootUserId = null
       subscription.unsubscribe()
     }
-  }, [
-    setUnauthenticatedState,
-    setAuthenticatedState,
-    applyDevAuthenticatedCore,
-    commitDevLocalProfileBoot,
-    setProfile,
-  ])
+  }, [])
 
   const signInWithGoogle = useCallback(async () => {
     logFlow('LOGIN_CLICK')
-    if (authActionLoadingRef.current) return
-    authActionLoadingRef.current = true
-    setAuthActionLoading(true)
+    setAuthError(null)
+    if (!isSupabaseConfigured()) {
+      const devUser = buildDevUser()
+      writeLocalFlag(DEV_AUTH_KEY, true)
+      setUser(devUser)
+      setSession({ user: devUser })
+      setStatus('authenticated')
+      setIsNewUser(false)
+      const merged = readMergedDevProfileForCheck(devUser)
+      const complete = checkProfileComplete(merged)
+      setProfile(merged)
+      setIsProfileComplete(complete)
+      setProfileBootstrapReady(true)
+      logFlow('LOGIN_SUCCESS', { mode: 'dev-local' })
+      if (!complete) logFlow('PROFILE_REQUIRED', { mode: 'dev-local' })
+      return
+    }
     try {
-      setAuthError(null)
-      if (!isSupabaseConfigured()) {
-        console.log('LOGIN START')
-        writeLocalFlag(DEV_AUTH_KEY, true)
-        applyDevAuthenticatedCore(buildDevUser(), { logDevLoginSuccess: true })
+      const { error } = await signInWithGoogleRequest()
+      if (error) {
+        const msg = error.message || String(error)
+        setAuthError(msg)
         return
       }
-      const { error } = await signInWithGoogleRequest()
-      if (error) setAuthError(error.message || String(error))
+      /** Navegación: solo App.jsx según user + isProfileComplete; onAuthStateChange sincroniza sesión. */
     } catch (e) {
-      console.error('GOOGLE LOGIN ERROR', e)
       console.error('[WaitMe][Auth] signInWithGoogle excepción no prevista', e)
       setAuthError(e instanceof Error ? e.message : String(e))
-    } finally {
-      authActionLoadingRef.current = false
-      setAuthActionLoading(false)
     }
-  }, [applyDevAuthenticatedCore])
+  }, [])
 
   const signOut = useCallback(async () => {
     setAuthError(null)
@@ -424,8 +381,14 @@ export function AuthProvider({ children }) {
     } catch (e) {
       console.error('[WaitMe][Auth] signOut falló; estado local se limpia igual.', e)
     }
-    setUnauthenticatedState(false)
-  }, [setUnauthenticatedState])
+    setUser(null)
+    setSession(null)
+    setProfile(null)
+    setStatus('unauthenticated')
+    setProfileBootstrapReady(true)
+    setIsNewUser(false)
+    setIsProfileComplete(false)
+  }, [])
 
   const headerProfile = useMemo(() => {
     return buildResolvedHeaderProfile(profile, user)
@@ -440,7 +403,7 @@ export function AuthProvider({ children }) {
     }
     setIsNewUser(false)
     setProfileBootstrapReady(true)
-  }, [setProfile])
+  }, [])
 
   const value = useMemo(
     () => ({
@@ -451,12 +414,12 @@ export function AuthProvider({ children }) {
       setProfile,
       headerProfile,
       authError,
-      authActionLoading,
       signInWithGoogle,
       signOut,
       profileBootstrapReady,
       isNewUser,
       isProfileComplete,
+      profileComplete: isProfileComplete,
       checkProfileComplete,
       markProfileComplete,
     }),
@@ -468,7 +431,6 @@ export function AuthProvider({ children }) {
       setProfile,
       headerProfile,
       authError,
-      authActionLoading,
       signInWithGoogle,
       signOut,
       profileBootstrapReady,
@@ -493,3 +455,5 @@ export function useAuth() {
   }
   return value
 }
+
+export { checkProfileComplete } from '../services/profile.js'

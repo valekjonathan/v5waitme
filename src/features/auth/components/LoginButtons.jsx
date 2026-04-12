@@ -107,7 +107,7 @@ const slowNoticeWrapStyle = {
   width: '100%',
   display: 'flex',
   justifyContent: 'center',
-  marginTop: 0,
+  marginTop: LAYOUT.spacing.sm,
 }
 
 const slowNoticePillStyle = {
@@ -142,6 +142,7 @@ const spinnerStyle = {
 
 const alertStyle = {
   margin: 0,
+  marginTop: LAYOUT.spacing.sm,
   width: '100%',
   fontSize: 13,
   fontWeight: 500,
@@ -186,7 +187,7 @@ function oauthPointerHandlers(setHover, setPressed, clearPress) {
   }
 }
 
-function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label, ...rest }) {
+function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label }) {
   return (
     <Button
       type="button"
@@ -195,7 +196,6 @@ function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label,
       onClick={onClick}
       {...handlers}
       style={style}
-      {...rest}
     >
       <ButtonBase icon={icon} label={<span style={oauthLabel}>{label}</span>} />
     </Button>
@@ -203,7 +203,8 @@ function OAuthButton({ variant, disabled, onClick, handlers, style, icon, label,
 }
 
 export default function LoginButtons() {
-  const { authError, status, signInWithGoogle, authActionLoading } = useAuth()
+  const { authError, signInWithGoogle, status } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const [appleMessage, setAppleMessage] = useState('')
   const [googleHover, setGoogleHover] = useState(false)
   const [googlePressed, setGooglePressed] = useState(false)
@@ -221,13 +222,27 @@ export default function LoginButtons() {
   }, [status])
 
   useEffect(() => {
-    if (!authActionLoading) {
+    if (!isLoading) {
       setShowSlowNotice(false)
       return undefined
     }
     const t = window.setTimeout(() => setShowSlowNotice(true), 1000)
     return () => window.clearTimeout(t)
-  }, [authActionLoading])
+  }, [isLoading])
+
+  const onGoogle = async () => {
+    if (isLoading) return
+    setIsLoading(true)
+    setAppleMessage('')
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(10)
+    }
+    try {
+      await signInWithGoogle()
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const onApple = () => {
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -255,7 +270,7 @@ export default function LoginButtons() {
     transform: googleTransform,
     transition: googleTransition,
     filter: googleHover && !googlePressed ? 'brightness(1.04)' : 'none',
-    opacity: authActionLoading ? 0.86 : 1,
+    opacity: isLoading ? 0.86 : 1,
   }
 
   const appleTransform = applePressed ? 'scale(0.96)' : 'scale(1)'
@@ -279,21 +294,16 @@ export default function LoginButtons() {
       <style>{oauthSpinStyleTag}</style>
       <OAuthButton
         variant="primary"
-        disabled={authActionLoading}
-        onClick={async () => {
-          if (authActionLoading) return
-          setAppleMessage('')
-          await signInWithGoogle()
-        }}
+        disabled={isLoading}
+        onClick={onGoogle}
         handlers={googleHandlers}
-        data-home-google-button=""
         style={googleStyle}
         icon={
           <IconSlot {...googleIconStyle}>
-            {authActionLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
+            {isLoading ? <span style={spinnerStyle} /> : <GoogleMark />}
           </IconSlot>
         }
-        label={authActionLoading ? 'Conectando...' : 'Continuar con Google'}
+        label={isLoading ? 'Conectando...' : 'Continuar con Google'}
       />
       {showSlowNotice ? (
         <div role="status" aria-live="polite" style={slowNoticeWrapStyle}>
@@ -305,7 +315,7 @@ export default function LoginButtons() {
       ) : null}
       <OAuthButton
         variant="secondary"
-        disabled={authActionLoading}
+        disabled={isLoading}
         onClick={onApple}
         handlers={appleHandlers}
         style={appleStyle}

@@ -8,8 +8,11 @@
     "@vitest/coverage-v8",
     "@babel/preset-react",
     "@capacitor/cli",
+    "@capacitor/app",
+    "@capacitor/browser",
     "@capacitor/core",
     "@capacitor/ios",
+    "@sentry/react",
     "waitme-web-auth"
   ]
 }

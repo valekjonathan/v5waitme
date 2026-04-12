@@ -1,78 +1,26 @@
-import { lazy, Suspense } from 'react'
-
-const MainLayoutMapStack = lazy(() => import('../../map/components/MainLayoutMapStack.jsx'))
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import CenterPin from '../../home/components/CenterPin'
-import { useSimulatedParkingUsers } from '../../map/useSimulatedParkingUsers'
+import logo from '../../../assets/logo.png'
 import { colors } from '../../../design/colors'
 import { radius } from '../../../design/radius'
 import { LAYOUT } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 
-const s = LAYOUT.spacing
-/** Contenedor único: mapa (fondo) + chrome (cadena flex WKWebView). */
-export const mainLayoutRootStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: '1 1 0%',
-  minHeight: 0,
-  position: 'relative',
-  isolation: 'isolate',
-  alignSelf: 'stretch',
-  minWidth: 0,
+const Map = lazy(() => import('../../map/components/Map'))
+
+const mapSuspenseFallbackStyle = {
   width: '100%',
-  overflowX: 'hidden',
-  overflowY: 'hidden',
+  height: '100%',
+  backgroundColor: colors.background,
 }
-/** Capa mapa detrás: absolute z0; en Home (AuthenticatedMapScreen) se añade pointerEvents: none. */
-export const mainLayoutMapBackgroundStyle = {
+
+const s = LAYOUT.spacing
+const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
+const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'hidden' }
+const mapLayerStyle = {
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.map,
-  backgroundColor: colors.background,
-}
-/** Capa Home/chrome delante del mapa (mismo shell que login). */
-export const mainLayoutHomeSlotStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  flex: '1 1 0%',
-  minHeight: 0,
-  position: 'relative',
-  zIndex: 1,
-  alignSelf: 'stretch',
-  width: '100%',
-}
-/**
- * WKWebView: un flex con solo hijos `position:absolute` puede tener altura de contenido 0.
- * Este bloque está en flujo normal y recibe la altura del padre flex (cadena root → Home slot).
- */
-const mainLayoutChromeFlowStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  alignSelf: 'stretch',
-  display: 'flex',
-  flexDirection: 'column',
-  overflow: 'hidden',
-}
-/** Contenedor del velo + hero + CTAs: relativo + flex para altura fiable (no solo capas absolute sueltas). */
-const mainLayoutChromeStackStyle = {
-  position: 'relative',
-  flex: '1 1 0%',
-  minHeight: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  alignSelf: 'stretch',
-  width: '100%',
-  pointerEvents: 'none',
-  isolation: 'isolate',
-  overflow: 'hidden',
-}
-/** Mismo fondo que la capa mapa mientras carga el chunk async (sin parpadeo de color). */
-const mapLazyFallbackStyle = {
-  position: 'absolute',
-  inset: 0,
-  minHeight: 0,
   backgroundColor: colors.background,
 }
 const overlayStyleBase = {
@@ -98,15 +46,14 @@ const contentViewportStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   overflow: 'visible',
-  padding: 0,
+  padding: `0 ${LAYOUT.spacing.xl}px`,
 }
 const contentColumnStyle = {
   pointerEvents: 'auto',
   position: 'relative',
   zIndex: LAYOUT.z.content,
   display: 'flex',
-  flex: '1 1 0%',
-  minHeight: 0,
+  height: '100%',
   width: '100%',
   maxWidth: 340,
   flexDirection: 'column',
@@ -117,6 +64,7 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
+const heroPinWrapStyle = { display: 'flex', justifyContent: 'center', padding: `${s.lg}px 0` }
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {
   margin: 0,
@@ -137,16 +85,6 @@ const heroSubtitleStyle = {
   lineHeight: 1,
   color: colors.textPrimary,
 }
-/** Pin entre frase y CTAs: encima del velo (z content); medición/ancla real sigue en MapViewportCenterPin (opacity 0). */
-const heroPinRowStyle = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'flex-start',
-  width: '100%',
-  paddingTop: s.lg,
-  paddingBottom: s.lg,
-  pointerEvents: 'none',
-}
 const ctaSectionBaseStyle = { marginTop: s.lg }
 const heroLogoOuterStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const heroLogoBoxStyle = {
@@ -157,17 +95,15 @@ const heroLogoBoxStyle = {
   justifyContent: 'center',
   borderRadius: radius.logo,
 }
-/**
- * WKWebView: `display: contents` en el envoltorio de CTAs puede romper caja de formato / hit-test;
- * flujo flex real conserva medición `[data-home-cta-region] button`.
- */
-const homeCtaRegionWrapStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  width: '100%',
-  /** Espaciado vertical entre CTAs (login OAuth, home); requiere hijos directos en columna, no un solo wrapper. */
-  gap: 14,
+
+function withLoginEntrance(baseStyle, isLoginLayout, visible) {
+  if (!isLoginLayout) return baseStyle
+  return {
+    ...baseStyle,
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(20px)',
+    transition: loginEntranceEase,
+  }
 }
 
 function overlayLayerStyle(background) {
@@ -175,89 +111,96 @@ function overlayLayerStyle(background) {
 }
 
 /**
- * Velo + hero + CTAs (sin capa de mapa). Login y `AuthenticatedMapScreen` (home) comparten el mismo chrome.
+ * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, pin).
+ * `loginEntrance`: solo Login; Home puede tener children (botones) sin animación escalonada.
+ * @param {object} props
+ * @param {import('react').ReactNode} [props.children]
+ * @param {boolean} [props.loginEntrance]
  */
-export function MainLayoutChrome({ children = null }) {
+export default function MainLayout({ children = null, loginEntrance = false }) {
   const hasCta = children != null
+  const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
+  const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
+  const [mapLayerSettled, setMapLayerSettled] = useState(false)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setMapLayerSettled(true), 2000)
+    return () => window.clearTimeout(t)
+  }, [])
+
+  const onMapSettled = useCallback(() => {
+    setMapLayerSettled(true)
+  }, [])
+
+  useEffect(() => {
+    if (!loginEntrance) {
+      setLoginHeroIn(true)
+      setLoginCtaIn(true)
+      return
+    }
+    setLoginHeroIn(false)
+    setLoginCtaIn(false)
+    const raf = requestAnimationFrame(() => setLoginHeroIn(true))
+    const t = window.setTimeout(() => setLoginCtaIn(true), 120)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearTimeout(t)
+    }
+  }, [loginEntrance])
+
+  /** Mismo tratamiento que Login: Home queda idéntico salvo el bloque CTA (children). */
   const overlayBackground =
     'linear-gradient(180deg, rgba(55, 20, 90, 0.34) 0%, rgba(40, 16, 70, 0.42) 100%)'
 
   return (
-    <div style={mainLayoutChromeStackStyle}>
-      <div style={mainLayoutChromeFlowStyle}>
-        <div style={overlayLayerStyle(overlayBackground)} />
+    <div style={rootStyle}>
+      <div style={mapLayerStyle} aria-busy={!mapLayerSettled} aria-label="Capa de mapa">
+        <Suspense fallback={<div style={mapSuspenseFallbackStyle} />}>
+          <Map onSettled={onMapSettled} />
+        </Suspense>
+      </div>
 
-        <div style={centeredLayerStyle}>
-          <div style={contentViewportStyle}>
-            <div style={contentColumnStyle}>
-              <Section gap={0} align="center" style={heroSectionBaseStyle}>
-                <div style={heroLogoOuterStyle}>
-                  <div style={heroLogoBoxStyle}>
-                    <img
-                      src="/logo.png"
-                      alt="WaitMe"
-                      style={logoImageStyle}
-                      loading="eager"
-                      draggable={false}
-                    />
-                  </div>
+      <div style={overlayLayerStyle(overlayBackground)} />
+
+      <div style={centeredLayerStyle}>
+        <div style={contentViewportStyle}>
+          <div style={contentColumnStyle}>
+            <Section
+              gap={0}
+              align="center"
+              style={withLoginEntrance(heroSectionBaseStyle, loginEntrance, loginHeroIn)}
+            >
+              <div style={heroLogoOuterStyle}>
+                <div style={heroLogoBoxStyle}>
+                  <img
+                    src={logo}
+                    alt="WaitMe"
+                    style={logoImageStyle}
+                    loading="eager"
+                    draggable={false}
+                  />
                 </div>
-                <h1 style={heroTitleStyle}>
-                  Wait<span style={meTextStyle}>Me!</span>
-                </h1>
-                <p data-home-subtitle style={heroSubtitleStyle}>
-                  Aparca donde te <span style={meTextStyle}>avisen!</span>
-                </p>
-                <div style={heroPinRowStyle} aria-hidden>
-                  <CenterPin waitmePinTipAnchor />
-                </div>
+              </div>
+              <h1 style={heroTitleStyle}>
+                Wait<span style={meTextStyle}>Me!</span>
+              </h1>
+              <p style={heroSubtitleStyle}>
+                Aparca donde te <span style={meTextStyle}>avisen!</span>
+              </p>
+              <div style={heroPinWrapStyle}>
+                <CenterPin />
+              </div>
+            </Section>
+            {hasCta ? (
+              <Section
+                gap={s.md}
+                style={withLoginEntrance(ctaSectionBaseStyle, loginEntrance, loginCtaIn)}
+              >
+                {children}
               </Section>
-              {hasCta ? (
-                <Section gap={s.md} style={ctaSectionBaseStyle}>
-                  <div data-home-cta-region style={homeCtaRegionWrapStyle}>
-                    {children}
-                  </div>
-                </Section>
-              ) : null}
-            </div>
+            ) : null}
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, frase, pin, CTAs).
- * `mapLayer` opcional sustituye `MainLayoutMapStack` (p. ej. mapa autenticado en home).
- */
-export default function MainLayout({
-  children = null,
-  loginEntrance: _loginEntrance = false,
-  mapLayer = null,
-  mapBackgroundExtraStyle = undefined,
-}) {
-  const simulatedUsers = useSimulatedParkingUsers()
-
-  const mapBgStyle =
-    mapBackgroundExtraStyle != null
-      ? { ...mainLayoutMapBackgroundStyle, ...mapBackgroundExtraStyle }
-      : mainLayoutMapBackgroundStyle
-
-  return (
-    <div style={mainLayoutRootStyle}>
-      <div style={mapBgStyle} aria-label="Capa de mapa">
-        {mapLayer != null ? (
-          mapLayer
-        ) : (
-          <Suspense fallback={<div style={mapLazyFallbackStyle} aria-hidden />}>
-            <MainLayoutMapStack simulatedUsers={simulatedUsers} />
-          </Suspense>
-        )}
-      </div>
-
-      <div style={mainLayoutHomeSlotStyle}>
-        <MainLayoutChrome>{children}</MainLayoutChrome>
       </div>
     </div>
   )

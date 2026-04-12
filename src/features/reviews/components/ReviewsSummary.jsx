@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { colors } from '../../../design/colors'
 import { Row } from '../../../ui/primitives/Row'
-import { average5ToDisplay10 } from '../../../lib/ratingStars'
-import { buildRatingDistributionFourBars, computeAverageRating } from '../../../services/reviews'
+import { buildRatingDistribution, computeAverageRating } from '../../../services/reviews'
 
 const cardStyle = {
   width: '100%',
@@ -53,7 +52,7 @@ const circleColumnStyle = {
 
 const labelStyle = {
   margin: 0,
-  minWidth: 20,
+  minWidth: 14,
   fontSize: 12,
   fontWeight: 700,
   color: colors.textSecondary,
@@ -87,13 +86,11 @@ const barsColumnStyle = {
   gap: 6,
 }
 
-function rowsWithRatios(distribution, totalReviews) {
-  const total = Math.max(0, totalReviews) || 1
-  return (distribution || []).map((row) => ({
-    stars: row.stars,
-    count: row.count,
-    ratio: row.count / total,
-  }))
+function normalizeDistribution(distribution) {
+  const map = new Map((distribution || []).map((item) => [item.stars, item.count]))
+  const rows = [4, 3, 2, 1].map((stars) => ({ stars, count: Number(map.get(stars) || 0) }))
+  const total = rows.reduce((sum, row) => sum + row.count, 0) || 1
+  return rows.map((row) => ({ ...row, ratio: row.count / total }))
 }
 
 function AnimatedBarFill({ ratio }) {
@@ -116,19 +113,15 @@ function AnimatedBarFill({ ratio }) {
 }
 
 export default function ReviewsSummary({ reviews = [] }) {
-  const distribution = useMemo(() => buildRatingDistributionFourBars(reviews), [reviews])
-  const average5 = useMemo(() => computeAverageRating(reviews), [reviews])
-  const avg10 = useMemo(() => average5ToDisplay10(average5), [average5])
+  const distribution = useMemo(() => buildRatingDistribution(reviews), [reviews])
+  const average = useMemo(() => computeAverageRating(reviews), [reviews])
+  const rows = normalizeDistribution(distribution)
   const totalSafe = Math.max(0, reviews.length)
-  const rows = useMemo(
-    () => rowsWithRatios(distribution, totalSafe),
-    [distribution, totalSafe]
-  )
   return (
     <section style={cardStyle} aria-label="Resumen de reseñas">
       <div style={summaryContainer}>
         <div style={circleColumnStyle}>
-          <div style={ratingCircle}>{avg10.toFixed(1)}</div>
+          <div style={ratingCircle}>{Number(average).toFixed(1)}</div>
           <div style={ratingMeta}>
             {totalSafe} reseña{totalSafe === 1 ? '' : 's'}
           </div>

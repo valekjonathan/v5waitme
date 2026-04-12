@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Stack } from '../../../ui/primitives/Stack'
 import ReviewItem from './ReviewItem'
 
@@ -27,6 +28,8 @@ const keyframesStyle = (
 )
 
 export default function ReviewsList({ reviews = [] }) {
+  const [selectedId, setSelectedId] = useState(null)
+
   return (
     <section style={listWrapStyle} aria-label="Lista de reseñas">
       {keyframesStyle}
@@ -37,6 +40,8 @@ export default function ReviewsList({ reviews = [] }) {
             review={review}
             animationDelayMs={index * 45}
             avatarIndex={index}
+            isSelected={selectedId === review.id}
+            onSelect={() => setSelectedId((prev) => (prev === review.id ? null : review.id))}
           />
         ))}
       </Stack>

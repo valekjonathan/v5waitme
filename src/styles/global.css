@@ -1,97 +1,19 @@
-:root {
-  /* Sobrescrito en runtime por `syncWaitmeViewportCssVars()` solo con `visualViewport.height` (sin innerHeight). */
-  --app-height: 100dvh;
-  --vv-height: 100dvh;
-  --vv-offset-top: 0px;
-  --vv-offset-left: 0px;
-  /* Desktop: env(...) suele ser 0; segundo valor = fallback explícito. */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
 html,
 body,
 #root {
   height: 100%;
-  min-height: 0;
-}
-
-.waitme-app-root {
-  flex: 1 1 0%;
-  min-height: 0;
-  width: 100%;
-  height: var(--app-height);
-  max-height: var(--app-height);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/**
- * Franja vertical = altura del visual viewport (`--app-height`).
- * Entre header y bottom nav: scroll solo en `<main>` (ScreenShell), nunca aquí.
- */
-.waitme-iphone-frame-fullbleed {
-  box-sizing: border-box;
-  width: 100%;
-  height: var(--app-height);
-  max-height: var(--app-height);
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/**
- * Solo dev web (clase en `html` desde App.jsx): ancho lógico tipo iPhone en Safari Mac.
- * Nativo Capacitor no añade esta clase.
- */
-.force-iphone .waitme-app-root,
-.force-iphone .waitme-iphone-frame-fullbleed {
-  max-width: 390px;
-  margin: 0 auto;
-  border-radius: 40px;
-  overflow: hidden;
-}
-
-/**
- * Modo preview: Safari con `?iphone=true` (LAN). Tamaño y safe areas fijas tipo iPhone; no sustituye al dispositivo real.
- */
-html.iphone-preview {
-  width: 390px;
-  height: 844px;
-  margin: 0 auto;
-  overflow: hidden;
-  background: black;
-  --safe-top: 47px;
-  --safe-bottom: 34px;
-}
-
-html {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background: #000;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
 html,
 body {
-  overscroll-behavior: none;
+  overflow: hidden !important;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  width: 100%;
-  flex: 1 1 0%;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
   background: black;
   font-family:
     'Inter',
@@ -109,77 +31,16 @@ body {
 
 #root {
   margin: 0;
-  padding: 0;
-  width: 100%;
-  flex: 1 1 0%;
   display: flex;
-  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
-  background: #000;
-  box-sizing: border-box;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-}
-
-/* Mapbox: atribución y logo visibles (cumplimiento); estilo discreto. */
-.mapboxgl-ctrl-attrib {
-  font-size: 10px !important;
-  opacity: 0.5 !important;
-  background: rgba(0, 0, 0, 0.2) !important;
-  backdrop-filter: blur(4px);
-  border-radius: 6px;
-  padding: 2px 6px;
-}
-
-.mapboxgl-ctrl-logo {
-  opacity: 0.4 !important;
-  transform: scale(0.85);
-}
-
-/**
- * iOS Safari: el zoom al enfocar inputs ocurre si font-size computado < 16px.
- * Base mínima en la app; los buscadores WaitMe también fijan 16px inline.
- */
-.waitme-app-root input,
-.waitme-app-root textarea,
-.waitme-app-root select {
-  font-size: 16px;
-}
-
-@keyframes waitme-reservation-dot-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.85;
-  }
-}
-
-.waitme-reservation-nav-dot {
-  animation: waitme-reservation-dot-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes waitme-nav-cta-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 0 rgba(37, 99, 235, 0.45),
-      0 2px 8px rgba(0, 0, 0, 0.25);
-  }
-  50% {
-    box-shadow:
-      0 0 0 6px rgba(37, 99, 235, 0),
-      0 2px 12px rgba(37, 99, 235, 0.35);
-  }
-}
-
-button.btn-ir-navigate-waitme:not(:disabled) {
-  animation: waitme-nav-cta-pulse 1.25s ease-in-out infinite;
 }

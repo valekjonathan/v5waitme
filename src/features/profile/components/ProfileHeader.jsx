@@ -10,15 +10,13 @@ import { Stack } from '../../../ui/primitives/Stack'
 import { Row } from '../../../ui/primitives/Row'
 import { LAYOUT } from '../../../ui/layout/layout'
 import { useAppScreen } from '../../../lib/AppScreenContext'
-import { useAuth } from '../../../lib/AuthContext'
-import { filledStarsFromAverage5, renderHeaderStarSlots } from '../../../lib/ratingStars'
+import { renderHeaderStarSlots } from '../../../lib/ratingStars'
 import { profileDisplayFirstName } from '../../../services/profile.js'
 import {
   PROFILE_REVIEWS_MAX_WIDTH,
   innerPurplePaddingX,
   outerCardTopPadding,
   profileHeaderCardMarginBottomPx,
-  profileScreenAvatarBorder,
   reviewsAvatarWidth,
   reviewsBadgeLayerStyle,
 } from '../../shared/profileReviewsLayout'
@@ -46,11 +44,6 @@ const outerYellowCardStyle = {
   boxSizing: 'border-box',
   overflow: 'visible',
   background: `${colors.accentYellow}10`,
-  cursor: 'default',
-}
-/** Tarjeta amarilla en perfil propio: cursor indica que abre reseñas. */
-const outerYellowCardProfileNavStyle = {
-  ...outerYellowCardStyle,
   cursor: 'pointer',
 }
 const emailContainerStyle = {
@@ -89,11 +82,12 @@ const innerPurpleCardStyle = {
   border: `1.5px solid ${colors.primary}`,
   background: colors.background,
 }
-const avatarStyleBase = {
+const avatarStyle = {
   width: reviewsAvatarWidth,
   height: 128,
   borderRadius: radius.xl,
   overflow: 'hidden',
+  border: `1px solid ${colors.primary}`,
   background: colors.surfaceMuted,
   flexShrink: 0,
   display: 'flex',
@@ -124,19 +118,6 @@ const reviewsButtonStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   boxSizing: 'border-box',
-}
-/** Misma pintura que `Button` variant reviews; solo lectura (pantalla reseñas). */
-const reviewsBadgeReadOnlyStyle = {
-  ...reviewsButtonStyle,
-  borderRadius: radius.large,
-  border: `1.5px solid ${colors.accentYellow}`,
-  background: colors.accentYellowStrong,
-  color: colors.whiteAlt,
-  fontSize: 14,
-  fontWeight: 700,
-  fontFamily: 'inherit',
-  cursor: 'default',
-  userSelect: 'none',
 }
 const avatarFallbackLetterStyle = { fontSize: 30, fontWeight: 700, color: colors.textPrimary }
 const infoColStyle = {
@@ -212,28 +193,8 @@ const avatarImgStyle = {
  * Tarjeta amarilla única (Perfil y Reseñas montan este mismo componente).
  * Estructura: tokens `reviewsBadgeLayerStyle` + email en esquina + bloque morado con nombre único.
  */
-export default function ProfileHeader({
-  profile,
-  avatarBorder,
-  averageRating = 0,
-  /** `profile`: tarjeta amarilla puede abrir tus reseñas. `reviews`: sin navegación. */
-  surface = 'reviews',
-  /** Id del usuario mostrado en cabecera (sesión en perfil; peer id en reseñas de otro). */
-  subjectUserId = '',
-}) {
+export default function ProfileHeader({ profile }) {
   const { openReviews } = useAppScreen()
-  const { user: currentUser } = useAuth()
-  if (!profile) return null
-
-  const subject = String(subjectUserId ?? '').trim()
-  const sessionId = String(currentUser?.id ?? '').trim()
-  const isOwnProfile = Boolean(subject && sessionId && subject === sessionId)
-  const yellowCardNavigates = surface === 'profile' && isOwnProfile
-
-  const avatarStyle = {
-    ...avatarStyleBase,
-    border: avatarBorder ?? profileScreenAvatarBorder,
-  }
   const displayName = profileDisplayFirstName(profile?.full_name)
   const carText =
     String(
@@ -245,47 +206,30 @@ export default function ProfileHeader({
   const colorKey = String(profile?.color || 'gris').toLowerCase()
   const vehicleType = profile?.vehicle_type || 'car'
   const fallbackLetter = (displayName || profile?.email || 'U').charAt(0)
-  const headerStarFill = filledStarsFromAverage5(averageRating)
-
-  const handleYellowCardNav = () => {
-    if (!yellowCardNavigates) return
-    openReviews?.()
-  }
 
   return (
     <div style={rootStyle}>
       <div
-        style={yellowCardNavigates ? outerYellowCardProfileNavStyle : outerYellowCardStyle}
-        onClick={yellowCardNavigates ? handleYellowCardNav : undefined}
-        onKeyDown={
-          yellowCardNavigates
-            ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handleYellowCardNav()
-                }
-              }
-            : undefined
-        }
-        role={yellowCardNavigates ? 'button' : undefined}
-        tabIndex={yellowCardNavigates ? 0 : undefined}
+        style={outerYellowCardStyle}
+        onClick={() => openReviews?.()}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') openReviews?.()
+        }}
       >
         <div style={reviewsBadgeLayerStyle}>
-          {yellowCardNavigates ? (
-            <Button
-              type="button"
-              variant="reviews"
-              style={reviewsButtonStyle}
-              onClick={(e) => {
-                e.stopPropagation()
-                openReviews?.()
-              }}
-            >
-              Reseñas
-            </Button>
-          ) : (
-            <div style={reviewsBadgeReadOnlyStyle}>Reseñas</div>
-          )}
+          <Button
+            type="button"
+            variant="reviews"
+            style={reviewsButtonStyle}
+            onClick={(event) => {
+              event.stopPropagation()
+              openReviews?.()
+            }}
+          >
+            Reseñas
+          </Button>
         </div>
         {displayEmail ? (
           <div style={emailContainerStyle}>
@@ -312,7 +256,7 @@ export default function ProfileHeader({
             <Row gap={s.sm} align="flex-start" style={nameRowStyle}>
               <p style={nameTextStyle}>{displayName}</p>
               <div style={starsWrapStyle}>
-                {renderHeaderStarSlots(headerStarFill).map((star, i) => (
+                {renderHeaderStarSlots(1).map((star, i) => (
                   <span key={i} style={star === '★' ? starStyle : starEmptyStyle}>
                     {star}
                   </span>

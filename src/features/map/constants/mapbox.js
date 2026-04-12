@@ -1,35 +1,23 @@
 import mapboxgl from 'mapbox-gl'
-import { DEFAULT_PITCH, DEFAULT_ZOOM, OVIEDO_LAT, OVIEDO_LNG } from './mapboxConstants.js'
 
-export {
-  DEFAULT_PITCH,
-  DEFAULT_ZOOM,
-  OVIEDO_LAT,
-  OVIEDO_LNG,
-  getMapboxAccessToken,
-} from './mapboxConstants.js'
-
+/** Single source for default map / GPS fallback (Map + config). */
+export const OVIEDO_LAT = 43.3619
+export const OVIEDO_LNG = -5.8494
 const OVIEDO_CENTER = [OVIEDO_LNG, OVIEDO_LAT]
 const DARK_STYLE = 'mapbox://styles/mapbox/dark-v11'
 const ROAD_COLOR = '#8b5cf6'
 
-/**
- * Tras `setStyle` o primera carga: capas de lectura, carretera, interacción.
- * @param {import('mapbox-gl').Map} map
- * @param {boolean} mapReadOnly
- */
-export function reapplyMapVisualLayers(map, mapReadOnly) {
-  if (!map) return
-  try {
-    setupMapStyleOnLoad(map)
-    applyRoadStyleForCreate(map)
-    applyMapReadOnly(map, mapReadOnly)
-  } catch {
-    /* */
-  }
+export const DEFAULT_ZOOM = 16.5
+export const DEFAULT_PITCH = 30
+export const ACCURACY_RECENTER_THRESHOLD = 80
+
+export function getMapboxAccessToken(env = import.meta.env) {
+  const t = env?.VITE_MAPBOX_ACCESS_TOKEN
+  if (typeof t === 'string' && t.trim()) return t.trim()
+  return null
 }
 
-function setupMapStyleOnLoad(map) {
+export function setupMapStyleOnLoad(map) {
   try {
     if (map.getTerrain()) map.setTerrain(null)
   } catch {
@@ -58,7 +46,7 @@ function setupMapStyleOnLoad(map) {
   }
 }
 
-function applyMapReadOnly(map, readOnly) {
+export function applyMapReadOnly(map, readOnly) {
   if (!map) return
   const d = readOnly ? 'disable' : 'enable'
   try {
@@ -74,7 +62,7 @@ function applyMapReadOnly(map, readOnly) {
   }
 }
 
-function applyRoadStyleForCreate(map) {
+export function applyRoadStyleForCreate(map) {
   if (!map) return
   const style = map.getStyle()
   if (!style?.layers) return
@@ -93,10 +81,6 @@ function applyRoadStyleForCreate(map) {
   }
 }
 
-/**
- * Opciones tipo minZoom/maxZoom en el Map no deben añadirse aquí sin decisión explícita:
- * limitan cámara y pueden cambiar lo que ve el usuario aunque el estilo ya filtre capas.
- */
 export function createMap(container, { token, interactive = true }) {
   if (!container || !(container instanceof HTMLElement)) {
     return null
@@ -110,33 +94,19 @@ export function createMap(container, { token, interactive = true }) {
   }
 
   mapboxgl.accessToken = tokenStr
-  /** WebGL puede fallar (headless, políticas GPU, Safari restringido): no propagar → root vacío. */
-  let map
-  try {
-    map = new mapboxgl.Map({
-      container,
-      style: DARK_STYLE,
-      center: OVIEDO_CENTER,
-      zoom: DEFAULT_ZOOM,
-      pitch: DEFAULT_PITCH,
-      bearing: 0,
-      antialias: true,
-      attributionControl: false,
-      logoPosition: 'bottom-right',
-      dragPan: interactive,
-      touchZoomRotate: interactive,
-      scrollZoom: interactive,
-      doubleClickZoom: interactive,
-    })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.warn('[WaitMe][Mapbox] createMap failed (no WebGL o entorno)', msg)
-    return null
-  }
-  try {
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
-  } catch {
-    /* */
-  }
-  return map
+  return new mapboxgl.Map({
+    container,
+    style: DARK_STYLE,
+    center: OVIEDO_CENTER,
+    zoom: DEFAULT_ZOOM,
+    pitch: DEFAULT_PITCH,
+    bearing: 0,
+    antialias: true,
+    attributionControl: false,
+    logoPosition: 'bottom-right',
+    dragPan: interactive,
+    touchZoomRotate: interactive,
+    scrollZoom: interactive,
+    doubleClickZoom: interactive,
+  })
 }

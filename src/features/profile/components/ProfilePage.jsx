@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ProfileForm from './ProfileForm'
 import ProfileHeader from './ProfileHeader'
 import Button from '../../../ui/Button'
@@ -15,9 +15,9 @@ import {
   seedProfileStateFromSession,
   updateProfile,
 } from '../../../services/profile'
-import { getReviewsForScreen } from '../../../services/reviews'
-import { getAverage } from '../../../lib/reviewsModel'
 import { logFlow } from '../../../lib/devFlowLog.js'
+import ScreenShell from '../../../ui/layout/ScreenShell'
+import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
 import ProfileReviewsLayout, {
   profileReviewsShellContentStyle,
@@ -26,23 +26,14 @@ import {
   layoutActionsStyle,
   profileActionsFooterStyle,
   profileFormSectionLayoutStyle,
-  profileFormVerticalSlotStyleNoScroll,
+  profileFormVerticalSlotStyle,
   profileReviewsFullWidthButtonStyle,
-  profileScreenAvatarBorder,
 } from '../../shared/profileReviewsLayout'
-import { EmbeddedShellContent } from '../../../lib/AuthenticatedOverlayEmbeddedContext.jsx'
 
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
 const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
 const AUTOSAVE_DEBOUNCE_MS = 600
-
-/** Shell estable mientras `canRenderProfile` es false (evita pantalla en blanco). */
-const profileBootstrapPlaceholderStyle = {
-  width: '100%',
-  minHeight: '100%',
-  flex: 1,
-  backgroundColor: colors.background,
-}
+const shellStyle = { backgroundColor: colors.background }
 
 export default function ProfilePage() {
   const { openHome } = useAppScreen()
@@ -53,11 +44,7 @@ export default function ProfilePage() {
     headerProfile,
     profile,
     setProfile,
-    profileBootstrapReady,
   } = useAuth()
-
-  const canRenderProfile = Boolean(profileBootstrapReady && sessionUser && profile)
-
   const [savedProfile, setSavedProfile] = useState(() => {
     const seed = profile ?? seedProfileStateFromSession(sessionUser ?? null)
     return { ...seed }
@@ -152,16 +139,14 @@ export default function ProfilePage() {
           }
           return
         }
-        const remoteUser = await getCurrentUser()
+        const user = await getCurrentUser()
         if (cancelled) return
-        /** `getUser()` puede fallar o ir vacío un instante tras OAuth; no cerrar sesión si el contexto sigue con id. */
-        const userId = remoteUser?.id ?? sessionUser?.id
-        if (!userId) {
+        if (!user?.id) {
           void signOut()
           return
         }
 
-        const { data, error } = await getProfile(userId)
+        const { data, error } = await getProfile(user.id)
         if (cancelled) return
         if (error) return
         if (data) {
@@ -242,13 +227,12 @@ export default function ProfilePage() {
         setAutosaveStatus('idle')
         logFlow('AUTOSAVE_SUCCESS', { mode: 'dev-local' })
       } else {
-        const remoteUser = await getCurrentUser()
-        const userId = remoteUser?.id ?? sessionUserIdRef.current
-        if (!userId) {
+        const user = await getCurrentUser()
+        if (!user?.id) {
           void signOut()
           return
         }
-        const { data, error } = await updateProfile(userId, currentProfile)
+        const { data, error } = await updateProfile(user.id, currentProfile)
         if (error) throw error
         const merged = data
           ? {
@@ -380,65 +364,51 @@ export default function ProfilePage() {
     logFlow('PROFILE_SAVED', { mode: isSupabaseConfigured() ? 'supabase' : 'dev-local' })
     logFlow('NAVIGATE_HOME')
     openHome?.()
-  }, [profile, canContinue, hasChanges, isSaving, flushAutosave, markProfileComplete, openHome])
+  }, [
+    profile,
+    canContinue,
+    hasChanges,
+    isSaving,
+    flushAutosave,
+    markProfileComplete,
+    openHome,
+  ])
 
   const handleLogout = useCallback(async () => {
     await signOut()
   }, [signOut])
 
-  const profileHeaderReviewsAvg = useMemo(() => getAverage(getReviewsForScreen()), [])
-
-  if (!canRenderProfile) {
-    /** Nunca devolver null: evita pantalla en blanco mientras arranca perfil / sesión. */
-    const bootstrapInner = <div style={profileBootstrapPlaceholderStyle} />
-    /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
-    return <EmbeddedShellContent>{bootstrapInner}</EmbeddedShellContent>
-  }
-
-  const inner = (
-    <ProfileReviewsLayout
-      scrollBody={false}
-      header={
-        <ProfileHeader
-          profile={headerProfile}
-          avatarBorder={profileScreenAvatarBorder}
-          averageRating={profileHeaderReviewsAvg}
-          surface="profile"
-          subjectUserId={sessionUser?.id ?? ''}
-        />
-      }
-    >
-      <div style={profileFormVerticalSlotStyleNoScroll}>
-        <Section style={profileFormSectionLayoutStyle}>
-          <ProfileForm
-            value={profile ?? EMPTY_APP_PROFILE}
-            onChange={setProfile}
-            errors={fieldErrors}
-          />
-        </Section>
-      </div>
-      <div style={profileActionsFooterStyle}>
-        <div style={layoutActionsStyle}>
-          <Button
-            type="button"
-            variant="profileSave"
-            disabled={!hasChanges}
-            onClick={handleContinue}
-            style={profileReviewsFullWidthButtonStyle}
-          >
-            Guardar
-          </Button>
-          <ProfileLogoutButton
-            onLogout={handleLogout}
-            style={profileReviewsFullWidthButtonStyle}
-          />
-        </div>
-      </div>
-    </ProfileReviewsLayout>
-  )
-
-  /** `ScreenShell` global en `App.jsx`; aquí solo el slot de contenido. */
   return (
-    <EmbeddedShellContent contentStyle={profileReviewsShellContentStyle}>{inner}</EmbeddedShellContent>
+    <ScreenShell
+      style={shellStyle}
+      contentStyle={profileReviewsShellContentStyle}
+      mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
+      mainOverflow="hidden"
+    >
+      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
+        <div style={profileFormVerticalSlotStyle}>
+          <Section style={profileFormSectionLayoutStyle}>
+            <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
+          </Section>
+        </div>
+        <div style={profileActionsFooterStyle}>
+          <div style={layoutActionsStyle}>
+            <Button
+              type="button"
+              variant="profileSave"
+              disabled={!hasChanges}
+              onClick={handleContinue}
+              style={profileReviewsFullWidthButtonStyle}
+            >
+              Guardar
+            </Button>
+            <ProfileLogoutButton
+              onLogout={handleLogout}
+              style={profileReviewsFullWidthButtonStyle}
+            />
+          </div>
+        </div>
+      </ProfileReviewsLayout>
+    </ScreenShell>
   )
 }

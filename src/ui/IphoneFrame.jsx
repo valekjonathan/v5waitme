@@ -1,52 +1,76 @@
+/**
+ * Marco del dispositivo: define el viewport lógico (390×844) escalado.
+ * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
+ */
+import { useLayoutEffect, useState } from 'react'
+import { radius } from '../design/radius'
+import { shadows } from '../design/shadows'
+
+const FRAME_W = 390
+const FRAME_H = 844
+const VIEW_PAD = 24
+
+function readScale() {
+  const vv = window.visualViewport
+  const vh = (vv?.height ?? window.innerHeight) - VIEW_PAD * 2
+  const vw = (vv?.width ?? window.innerWidth) - VIEW_PAD * 2
+  return Math.min(1, vh / FRAME_H, vw / FRAME_W)
+}
+
 export default function IphoneFrame({ children }) {
-  const isDesktop = window.innerWidth > 500
+  const [scale, setScale] = useState(1)
 
-  if (!isDesktop) {
-    // MODO REAL (iPhone / Safari móvil)
-    /** `flex` + `minHeight:0` llena el padre en columna; `height:100%` solo suele fallar en WKWebView. */
-    return (
-      <div
-        style={{
-          width: '100%',
-          flex: '1 1 0%',
-          minHeight: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          background: '#000',
-        }}
-      >
-        {children}
-      </div>
-    )
-  }
+  useLayoutEffect(() => {
+    const update = () => setScale(readScale())
+    update()
+    window.addEventListener('resize', update)
+    window.visualViewport?.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.visualViewport?.removeEventListener('resize', update)
+    }
+  }, [])
 
-  // MODO ESCRITORIO (simulación iPhone)
+  const s = scale
+
   return (
     <div
       style={{
         width: '100%',
         height: '100%',
         display: 'flex',
-        justifyContent: 'center',
         alignItems: 'center',
-        background: 'black',
+        justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
       <div
         style={{
-          width: '100%',
-          maxWidth: 390,
-          height: '100%',
-          maxHeight: 844,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          borderRadius: 40,
-          background: '#000',
+          width: FRAME_W * s,
+          height: FRAME_H * s,
+          position: 'relative',
+          flexShrink: 0,
         }}
       >
-        {children}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: FRAME_W,
+            height: FRAME_H,
+            transform: `scale(${s})`,
+            transformOrigin: 'top left',
+            borderRadius: radius.phoneFrame,
+            overflow: 'hidden',
+            background: 'transparent',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: shadows.iphoneFrame,
+          }}
+        >
+          {children}
+        </div>
       </div>
     </div>
   )

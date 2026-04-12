@@ -1,4 +1,3 @@
-/** Cobertura de createPositionGuard — fuera del pipeline en cabecera de src/services/location.js. */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createPositionGuard, sendEventToBackend } from '../src/services/location.js'

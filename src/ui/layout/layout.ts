@@ -1,20 +1,9 @@
 /**
  * Contrato maestro de layout (v5waitme).
- * Cadena: `html/body/#root` → `.waitme-app-root` → `.waitme-iphone-frame-fullbleed` → ScreenShell.
- * ScreenShell: `height: var(--app-height)`; `<main>` = `calc(...)` menos header/nav medidos; slot `100%` en fullBleed.
- * Mapa / overlays: bajo `data-waitme-content-slot` dentro de `<main>`.
+ * Jerarquía: IphoneFrame → ScreenShell (Header + main + BottomNav).
+ * En modo inset, el padding del `<main>` usa las alturas **medidas** de Header/BottomNav (ver ScreenShell).
  */
-
-/** Coordenadas en px relativas únicamente a `[data-waitme-map-slot]`. */
-export const MAP_SLOT = {
-  searchTop: 12,
-  controlsTop: 82,
-  filterRight: 16,
-  cardBottomSearch: 24,
-  cardBottomParked: 16,
-  /** Alto visible al colapsar la tarjeta inferior (fila peek). */
-  cardPeek: 44,
-} as const
+import type { CSSProperties } from 'react'
 
 export const LAYOUT = {
   screen: {
@@ -34,19 +23,6 @@ export const LAYOUT = {
     overlay: 5,
     content: 10,
     nav: 20,
-    /** Controles flotantes en slot de mapa (zoom, etc.). */
-    mapZoomControls: 15,
-    /** Botón filtros parking (encima del buscador, bajo modales). */
-    mapFilterButton: 18,
-    /** Tarjeta inferior (alerta / crear) sobre capas base del overlay. */
-    parkingCardStack: 9999,
-    /** Scrim y panel de filtros (orden relativo preservado). */
-    mapFiltersBackdrop: 199999,
-    mapFiltersPanel: 200000,
-    /** Lista de resultados StreetSearch por encima del stack de parking. */
-    streetSearchResults: 300000,
-    /** Apilamiento local dentro del input (icono vs caja). */
-    streetSearchLayer: 1,
   },
 } as const
 
@@ -57,3 +33,21 @@ export const SCREEN_SHELL_MAIN_MODE = {
 
 export type ScreenShellMainMode =
   (typeof SCREEN_SHELL_MAIN_MODE)[keyof typeof SCREEN_SHELL_MAIN_MODE]
+
+/**
+ * Padding del `<main>` en modo inset.
+ * `headerHeightPx` / `bottomNavHeightPx` deben ser las alturas reales de los nodos fijos
+ * (`getBoundingClientRect().height` o `offsetHeight`), que ya incluyen safe-area en sus cajas.
+ */
+export function shellInsetMainPaddingStyle(
+  paddingX: number,
+  headerHeightPx: number,
+  bottomNavHeightPx: number
+): CSSProperties {
+  return {
+    paddingLeft: paddingX,
+    paddingRight: paddingX,
+    paddingTop: `${headerHeightPx}px`,
+    paddingBottom: `${bottomNavHeightPx}px`,
+  }
+}

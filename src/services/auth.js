@@ -1,17 +1,7 @@
 /**
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
-import { Browser } from '@capacitor/browser'
-import { Capacitor } from '@capacitor/core'
-import {
-  armNativeOAuthReturnWatch,
-  deliverNativeOAuthCallback,
-} from '../lib/nativeOAuthDeepLink.js'
-import { WaitmeWebAuth } from '../plugins/waitmeWebAuth.js'
 import { supabase, isSupabaseConfigured } from './supabase.js'
-
-/** Único redirect PKCE en iOS/Android nativo; debe estar en Supabase Auth → Redirect URLs. */
-const NATIVE_OAUTH_REDIRECT_URL = 'capacitor://localhost'
 
 /**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
@@ -89,65 +79,6 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
-    if (Capacitor.isNativePlatform()) {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: NATIVE_OAUTH_REDIRECT_URL,
-          skipBrowserRedirect: true,
-        },
-      })
-      if (error) {
-        console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
-        return { data: null, error }
-      }
-      if (!data?.url) {
-        console.error('[WaitMe][Auth] signInWithGoogle nativo: respuesta OAuth sin url')
-        return { data: null, error: new Error('oauth_no_url') }
-      }
-
-      if (Capacitor.getPlatform() === 'ios') {
-        try {
-          console.log('[OAuth][iOS] URL enviada a WebAuth:', data.url)
-          const res = await WaitmeWebAuth.start({
-            url: data.url,
-            /** Debe coincidir con el scheme de `NATIVE_OAUTH_REDIRECT_URL` (capacitor://…). */
-            callbackScheme: 'capacitor',
-          })
-          console.log('[OAuth][iOS] respuesta plugin:', res)
-          const callbackUrl = res?.callbackUrl
-          console.log('[OAuth][iOS] callbackUrl:', callbackUrl)
-          if (!callbackUrl) {
-            return { data: null, error: new Error('oauth_no_callback_url') }
-          }
-          const ok = await deliverNativeOAuthCallback(callbackUrl, 'webAuthSession')
-          if (!ok) {
-            return { data: null, error: new Error('oauth_callback_failed') }
-          }
-          return { data, error: null }
-        } catch (e) {
-          const code =
-            e && typeof e === 'object' && 'code' in e
-              ? String(/** @type {{ code?: string }} */ (e).code)
-              : ''
-          const msg =
-            e && typeof e === 'object' && 'message' in e
-              ? String(/** @type {{ message?: string }} */ (e).message)
-              : ''
-          if (code === 'USER_CANCELED' || /canceled|cancelled/i.test(msg)) {
-            return { data: null, error: null }
-          }
-          console.error('[WaitMe][Auth] signInWithGoogle iOS WebAuth', e)
-          return { data: null, error: e instanceof Error ? e : new Error(String(e)) }
-        }
-      }
-
-      console.log('[WaitMe][OAuth] in-app browser (Android u otro nativo)')
-      armNativeOAuthReturnWatch()
-      await Browser.open({ url: data.url })
-      return { data, error: null }
-    }
-
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -155,7 +86,7 @@ export async function signInWithGoogle() {
       },
     })
     if (error) {
-      console.error('[WaitMe][Auth] signInWithGoogle', error.message ?? error, error)
+      console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
     }
     return { data, error: null }

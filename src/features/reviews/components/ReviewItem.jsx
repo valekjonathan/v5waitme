@@ -1,6 +1,6 @@
-import { useState } from 'react'
 import { colors } from '../../../design/colors'
 import { renderStars } from '../../../lib/ratingStars'
+import { useAppScreen } from '../../../lib/AppScreenContext'
 
 const fallbackAvatars = [
   'https://i.pravatar.cc/150?img=12',
@@ -10,7 +10,7 @@ const fallbackAvatars = [
   'https://i.pravatar.cc/150?img=22',
 ]
 
-const cardOuterBase = {
+const cardOuterStyle = {
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'stretch',
@@ -22,7 +22,7 @@ const cardOuterBase = {
   transition: 'border 0.2s ease',
   width: '100%',
   boxSizing: 'border-box',
-  cursor: 'default',
+  cursor: 'pointer',
 }
 
 const reviewRowStyle = {
@@ -43,8 +43,7 @@ const avatarStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   background: colors.surfaceMuted,
-  cursor: 'default',
-  pointerEvents: 'none',
+  cursor: 'pointer',
 }
 
 const contentStyle = {
@@ -83,10 +82,29 @@ const starsStyle = {
 
 const starCharStyle = { fontSize: 14 }
 
-export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex = 0 }) {
-  const [expanded, setExpanded] = useState(false)
+function commentBoxStyle(isExpanded) {
+  return {
+    fontSize: 13,
+    color: '#ccc',
+    marginTop: 6,
+    lineHeight: 1.4,
+    overflow: isExpanded ? 'visible' : 'hidden',
+    display: isExpanded ? 'block' : '-webkit-box',
+    WebkitLineClamp: isExpanded ? undefined : 2,
+    WebkitBoxOrient: 'vertical',
+  }
+}
+
+export default function ReviewItem({
+  review,
+  animationDelayMs = 0,
+  avatarIndex = 0,
+  isSelected = false,
+  onSelect = () => {},
+}) {
+  const { openProfile } = useAppScreen()
   const userName = String(review?.name ?? '').trim()
-  const displayName = userName.split(/\s+/)[0] || 'Cliente'
+  const displayName = userName.split(/\s+/)[0] || 'Usuario'
   const comment = String(review?.comment ?? '').trim() || 'Sin comentario.'
   const date = String(review?.date ?? '').trim() || ''
   const rating = Number(review?.rating ?? 0)
@@ -94,16 +112,13 @@ export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex =
   const avatarSrc = avatarUrl || fallbackAvatars[avatarIndex % fallbackAvatars.length]
   const starChars = renderStars(rating).split('')
 
-  const commentInteractiveStyle = {
-    fontSize: 13,
-    color: '#ccc',
-    marginTop: 6,
-    lineHeight: 1.4,
-    overflow: expanded ? 'visible' : 'hidden',
-    display: expanded ? 'block' : '-webkit-box',
-    WebkitLineClamp: expanded ? undefined : 2,
-    WebkitBoxOrient: 'vertical',
-    cursor: 'pointer',
+  const handleAvatarClick = (e) => {
+    e.stopPropagation()
+    openProfile?.()
+  }
+
+  const handleClick = () => {
+    onSelect()
   }
 
   return (
@@ -115,16 +130,25 @@ export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex =
       }}
     >
       <div
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleClick()
+          }
+        }}
         style={{
-          ...cardOuterBase,
-          border: expanded ? '1px solid #8B5CF6' : '1.5px solid rgba(255,255,255,0.35)',
+          ...cardOuterStyle,
+          border: isSelected ? '2px solid #7C3AED' : '1.5px solid rgba(255,255,255,0.35)',
         }}
       >
         <div style={reviewRowStyle}>
-          <div style={avatarStyle}>
+          <div style={avatarStyle} onClick={handleAvatarClick}>
             <img
               src={avatarSrc}
-              alt=""
+              alt={`Avatar de ${displayName}`}
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
@@ -142,20 +166,7 @@ export default function ReviewItem({ review, animationDelayMs = 0, avatarIndex =
               </div>
             </div>
 
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => setExpanded((v) => !v)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  setExpanded((v) => !v)
-                }
-              }}
-              style={commentInteractiveStyle}
-            >
-              {comment}
-            </div>
+            <div style={commentBoxStyle(isSelected)}>{comment}</div>
           </div>
         </div>
       </div>

@@ -6,15 +6,6 @@ import fs from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
-import {
-  APP_SCREEN_ALERTS,
-  APP_SCREEN_CHATS,
-  APP_SCREEN_HOME,
-  APP_SCREEN_PARK_HERE,
-  APP_SCREEN_PROFILE,
-  APP_SCREEN_REVIEWS,
-  APP_SCREEN_SEARCH_PARKING,
-} from '../src/lib/appScreenState.js'
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const srcDir = join(root, 'src')
@@ -171,47 +162,12 @@ function readPackageJson() {
   }
 }
 
-function readJsonFile(absPath) {
-  try {
-    return JSON.parse(fs.readFileSync(absPath, 'utf8'))
-  } catch {
-    return null
-  }
-}
-
-function summarizeCapacitorServerUrl() {
-  const iosCap = readJsonFile(join(root, 'ios', 'App', 'App', 'capacitor.config.json'))
-  const iosUrl = iosCap?.server && typeof iosCap.server === 'object' ? iosCap.server.url : undefined
-
-  const parts = [
-    'Capacitor raíz: capacitor.config.ts (sin server; Live Reload: scripts inyectan server.url tras cap sync)',
-  ]
-  if (typeof iosUrl === 'string' && iosUrl.trim())
-    parts.push(`ios/App/App/capacitor.config.json (generado) server.url = ${iosUrl}`)
-  else
-    parts.push(
-      'ios/App/App/capacitor.config.json (generado) server.url = (no configurado; WKWebView usa dist local)'
-    )
-
-  return parts.join('; ')
-}
-
-function gitRevisionMetadata() {
-  const ciSha = (process.env.GITHUB_SHA || '').trim()
-  if (ciSha.length >= 7) {
-    return { revision: ciSha, source: 'GITHUB_SHA', dirty: false }
-  }
+function gitHead() {
   const r = spawnSync('git', ['rev-parse', 'HEAD'], {
     cwd: root,
     encoding: 'utf8',
   })
-  const head = (r.stdout || '').trim() || '(no git)'
-  const st = spawnSync('git', ['status', '--porcelain'], {
-    cwd: root,
-    encoding: 'utf8',
-  })
-  const dirty = Boolean((st.stdout || '').trim())
-  return { revision: head, source: 'git', dirty }
+  return (r.stdout || '').trim() || '(no git)'
 }
 
 function listDir(rel) {
@@ -260,21 +216,10 @@ function buildDocument(orphans, reachable) {
   const deps = Object.keys(pkg.dependencies || {}).sort()
   const devDeps = Object.keys(pkg.devDependencies || {}).sort()
 
-  const gitMeta = gitRevisionMetadata()
   const lines = []
   lines.push('=== STATE_OF_APP v1 ===')
   lines.push(`Generated: ${new Date().toISOString()}`)
-  lines.push(`Git revision: ${gitMeta.revision}`)
-  lines.push(
-    'Git revision (nota): al commitear solo GTP/STATE_OF_APP.txt el hash del archivo puede quedar un commit detrás del tip hasta la siguiente generación; contrastar con `git rev-parse HEAD`.'
-  )
-  lines.push(
-    gitMeta.source === 'GITHUB_SHA'
-      ? 'Git source: GITHUB_SHA (CI checkout; inventario coincide con el commit bajo prueba; working tree asumido clean post-checkout).'
-      : gitMeta.dirty
-        ? 'Git source: local HEAD (working tree dirty: revisar `git status`; el hash arriba es HEAD, no necesariamente todo lo pendiente).'
-        : 'Git source: local HEAD (working tree clean al generar; `git status` vacío).'
-  )
+  lines.push(`Git HEAD: ${gitHead()}`)
   lines.push('')
   lines.push('=== ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===')
   lines.push(...treeLines(root, '', 4, 0).slice(0, 400))
@@ -290,19 +235,11 @@ function buildDocument(orphans, reachable) {
   lines.push(
     'Entry: src/main.jsx → src/app/App.jsx. Vistas: loading | login | autenticado (perfil incompleto → ProfilePage; completo → home / profile / reviews según AppScreenContext).'
   )
-  const appScreens = [
-    APP_SCREEN_HOME,
-    APP_SCREEN_PROFILE,
-    APP_SCREEN_REVIEWS,
-    APP_SCREEN_SEARCH_PARKING,
-    APP_SCREEN_PARK_HERE,
-    APP_SCREEN_ALERTS,
-    APP_SCREEN_CHATS,
-  ].join(', ')
-  lines.push('Pantallas:')
-  lines.push(appScreens)
   lines.push(
-    'Componentes: HomePage, LoginPage, ProfilePage, ReviewsPage, MapParkingPage (búsqueda y aparcado), AlertsPage, ChatsPage; Map import estático en MapParkingPage/MainLayout (sin React.lazy/Suspense).'
+    'Pantallas internas (appScreenState): home | profile | reviews — ver reduceAppScreen en src/lib/appScreenState.js'
+  )
+  lines.push(
+    'Componentes de pantalla: HomePage, LoginPage, ProfilePage, ReviewsPage (mapa: Map lazy).'
   )
   lines.push('')
   lines.push('=== ARCHIVOS CRÍTICOS (arranque y shell) ===')
@@ -319,27 +256,12 @@ function buildDocument(orphans, reachable) {
   lines.push('')
   lines.push('=== RIESGOS / NOTAS ===')
   lines.push(
-    '- Cabecera Git: «Git revision» refleja HEAD o GITHUB_SHA en el momento de generar; si regeneras antes de hacer commit (p. ej. `npm run quality`), el texto puede adelantar o NO coincidir con el hash del commit que cierras — usar `git rev-parse HEAD` y línea «Git source» (dirty/clean) como verdad. En CI, GITHUB_SHA es el commit bajo prueba.',
     '- Cambios en ScreenShell/layout afectan todas las pantallas con shell.',
     '- AuthContext + perfil incompleto redirigen a ProfilePage sin pasar por Home.',
-    '- Mapa Mapbox: instancia única en src/features/map/mapInstance.js; build Vite: chunk separado típico solo `@supabase` (mapbox suele ir en el bundle principal salvo que el bundler parta por tamaño).',
-    '- Map bundle es pesado (mapbox-gl en el árbol desde main → App → Home/Login/Parking).',
-    '- E2E: Playwright chromium + webkit (motor tipo Safari); no sustituye Safari real en dispositivo — permisos y builds pueden diferir.',
-    '- E2E: CI instala solo chromium + webkit tras `npm run quality`.',
+    '- Map bundle es pesado (lazy load en App).',
     orphans.length > 0
       ? `- HUÉRFANOS detectados: ${orphans.length} archivo(s); revisar o enlazar desde main.jsx.`
       : '- Sin huérfanos detectados en el grafo actual.'
-  )
-  lines.push('')
-  lines.push('=== CHECKPOINT PRODUCCIÓN (2026-04) ===')
-  lines.push(
-    '- Producción Vercel: https://v5waitme.vercel.app — despliegues Production en estado Ready; build OK; sin depender de localhost.',
-    '- APIs: Mapbox (VITE_MAPBOX_ACCESS_TOKEN); Supabase (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) en env Production Vercel.',
-    '- Altura útil iOS nativo (Capacitor/WKWebView, fix 2026-04): `readStandaloneDisplayMode()` en `App.jsx`, `ScreenShell.tsx` e `IphoneFrame.jsx` incluye `Capacitor.isNativePlatform()` porque la app nativa no activa `(display-mode: standalone)` ni `navigator.standalone`. Sin ello no corrían `useStandaloneAppHeightCssVar` (sin `--app-height` / clase `waitme-standalone-height`), `ScreenShell` trataba el shell como “browser” (nav en flujo, sin reserva de nav) y el mapa/login no ocupaban el alto real. `ScreenShell` raíz sin `max-height: 100%` (evita techo mal resuelto en % sobre WKWebView). Scroll vertical solo en `<main>`.',
-    '- Cadena flex documentada en `src/styles/global.css`: `html → body → #root → .waitme-app-root → .waitme-iphone-frame-fullbleed` → `ScreenShell`; sin scroll en raíces. Gates flex en App (fade200Style / homeGateStyle).',
-    '- Pruebas en repo: lint, tests, test:ui, build, quality, e2e (chromium + webkit). No sustituyen Safari en hardware ni la PWA instalada desde icono.',
-    '- PWA instalada: si el síntoma persiste, vaciar caché del sitio en Safari, borrar el icono de inicio y volver a instalar para descartar bundle antiguo.',
-    `- Capacitor iOS: ${summarizeCapacitorServerUrl()}. webDir 'dist' en configs; si server.url no está configurado, WKWebView sirve el bundle local copiado por \`cap sync\`.`
   )
   lines.push('')
   lines.push('=== FIN ===')

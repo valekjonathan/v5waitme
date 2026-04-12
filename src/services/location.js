@@ -1,21 +1,5 @@
-/**
- * Fuente global de ubicación: un solo `watchPosition`, sin debounce/throttle ni descarte de ticks.
- * Cada lectura válida → coordenadas crudas del navegador → `notify()` (sin smoothing: cero lag artificial).
- * Sin batching: un tick GPS procesado → una emisión.
- *
- * Simulación de deriva (solo dev explícito): `import.meta.env.DEV && import.meta.env.VITE_SIMULATE_GPS === '1'`.
- * Mac / PWA / WebView iOS: mismo código; `navigator.geolocation` (permisos del sistema / navegador).
- *
- * `createPositionGuard()` no interviene en este pipeline (tests u observabilidad opcional).
- */
-
-/** Punto de partida solo para `VITE_SIMULATE_GPS` (no se usa como sustituto del GPS en dev). */
-const DEV_BROWSER_MOCK_LAT = 43.3619
-const DEV_BROWSER_MOCK_LNG = -5.8494
-
-/** Opciones exigidas por producto: máxima frescura y alta precisión cuando el SO lo permite. */
 const GEO_OPTS = { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
-
+const MAX_REASONABLE_ACCURACY_M = 1500
 const MAX_PLAUSIBLE_SPEED_MPS = 75
 const MIN_IMPOSSIBLE_JUMP_M = 120
 
@@ -23,19 +7,6 @@ function isValidGps(lat, lng) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return false
   return true
-}
-
-/** Lectura del `GeolocationPosition` del navegador → campos canónicos (sin filtrar por distancia). */
-function payloadFromBrowserPosition(pos) {
-  const lat = pos?.coords?.latitude
-  const lng = pos?.coords?.longitude
-  if (!isValidGps(lat, lng)) return null
-  const c = pos?.coords
-  const ts = Number.isFinite(pos?.timestamp) ? pos.timestamp : Date.now()
-  const acc = typeof c?.accuracy === 'number' && Number.isFinite(c.accuracy) ? c.accuracy : null
-  const heading = typeof c?.heading === 'number' && Number.isFinite(c.heading) ? c.heading : null
-  const speed = typeof c?.speed === 'number' && Number.isFinite(c.speed) ? c.speed : null
-  return { lat, lng, accuracy: acc, ts, heading, speed }
 }
 
 export function distanceMeters(lat1, lng1, lat2, lng2) {
@@ -56,6 +27,18 @@ function clamp(v, min, max) {
 function normalizeGeoError(err) {
   const type = err?.code === 1 ? 'denied' : err?.code === 3 ? 'timeout' : 'error'
   return { type, code: err?.code ?? 0, raw: err }
+}
+
+function validateRawPosition(pos) {
+  const lat = pos?.coords?.latitude
+  const lng = pos?.coords?.longitude
+  if (!isValidGps(lat, lng)) return null
+
+  const acc = typeof pos?.coords?.accuracy === 'number' ? pos.coords.accuracy : 100
+  if (!Number.isFinite(acc) || acc < 0 || acc > MAX_REASONABLE_ACCURACY_M) return null
+
+  const ts = Number.isFinite(pos?.timestamp) ? pos.timestamp : Date.now()
+  return { lat, lng, accuracy: acc, ts }
 }
 
 function normalizeEvent(type, payload = {}) {
@@ -96,186 +79,36 @@ function emit(emitEvent, persistEvent, type, payload) {
 }
 
 export function getCurrentPosition(onSuccess, onError) {
-  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+  if (!navigator.geolocation) {
     onError?.({ type: 'unavailable', code: 0, raw: null })
     return
   }
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => onSuccess?.(payloadFromBrowserPosition(pos)),
+    (pos) => onSuccess?.(validateRawPosition(pos)),
     (err) => onError?.(normalizeGeoError(err)),
     GEO_OPTS
   )
 }
 
-let currentLocation = null
-/** @type {Array<(loc: NonNullable<typeof currentLocation>) => void>} */
-let subscribers = []
-let locationTrackingStarted = false
-/** @type {number | null} */
-let geoWatchId = null
-
-try {
-  const cached = typeof localStorage !== 'undefined' ? localStorage.getItem('last_location') : null
-  if (cached) {
-    const parsed = JSON.parse(cached)
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      Number.isFinite(parsed.latitude) &&
-      Number.isFinite(parsed.longitude)
-    ) {
-      currentLocation = {
-        latitude: parsed.latitude,
-        longitude: parsed.longitude,
-        timestamp: Number.isFinite(parsed.timestamp) ? parsed.timestamp : Date.now(),
-        accuracy: Number.isFinite(parsed.accuracy) ? parsed.accuracy : null,
-        heading: Number.isFinite(parsed.heading) ? parsed.heading : null,
-        speed: Number.isFinite(parsed.speed) ? parsed.speed : null,
-      }
-    }
-  }
-} catch {
-  /* */
-}
-
-/**
- * Un tick del pipeline GPS → payload canónico (misma forma que `notify`).
- */
-function notifyFromGpsPayload(p) {
-  if (!p) return
-  notify({
-    latitude: p.lat,
-    longitude: p.lng,
-    accuracy: p.accuracy,
-    timestamp: p.ts,
-    heading: p.heading ?? null,
-    speed: p.speed ?? null,
-  })
-}
-
-/**
- * Única escritura de `currentLocation` desde el stream GPS / simulación.
- * Forma canónica: lat/lng obligatorios; resto opcional pero estable (null si no aplica).
- */
-function notify(location) {
-  if (
-    !location ||
-    !Number.isFinite(location.latitude) ||
-    !Number.isFinite(location.longitude)
-  ) {
-    return
-  }
-  currentLocation = {
-    latitude: location.latitude,
-    longitude: location.longitude,
-    timestamp: Number.isFinite(location.timestamp) ? location.timestamp : Date.now(),
-    accuracy: Number.isFinite(location.accuracy) ? location.accuracy : null,
-    heading:
-      location.heading != null && Number.isFinite(location.heading) ? location.heading : null,
-    speed: location.speed != null && Number.isFinite(location.speed) ? location.speed : null,
-  }
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('last_location', JSON.stringify(currentLocation))
-    }
-  } catch {
-    /* */
-  }
-  subscribers.forEach((cb) => {
-    try {
-      cb(currentLocation)
-    } catch {
-      /* */
-    }
-  })
-}
-
-/**
- * Un único `watchPosition` global para toda la app. Idempotente.
- * Sin `getCurrentPosition` previo: el stream es la única fuente continua (evita doble notify inicial).
- *
- * Simulación de deriva GPS (solo dev, opcional): `VITE_SIMULATE_GPS=1` en `.env.local`.
- * @returns {void | (() => void)} cleanup solo si se activó el simulador (para `clearInterval`).
- */
-export function startLocationTracking() {
-  if (locationTrackingStarted) return
-  locationTrackingStarted = true
-
-  const simulateGpsEnabled =
-    import.meta.env.DEV &&
-    import.meta.env.VITE_SIMULATE_GPS === '1' &&
-    typeof window !== 'undefined'
-
-  if (simulateGpsEnabled) {
-    let lat = DEV_BROWSER_MOCK_LAT
-    let lng = DEV_BROWSER_MOCK_LNG
-    const simulate = () => {
-      lat += 0.00002
-      lng += 0.00002
-      notify({
-        latitude: lat,
-        longitude: lng,
-        accuracy: 5,
-        timestamp: Date.now(),
-        heading: null,
-        speed: null,
-      })
-    }
-    simulate()
-    const interval = window.setInterval(simulate, 1000)
-    return () => {
-      window.clearInterval(interval)
-      locationTrackingStarted = false
-    }
+export function watchPosition(onSuccess, onError) {
+  if (!navigator.geolocation) {
+    onError?.({ type: 'unavailable', code: 0, raw: null })
+    return null
   }
 
-  if (typeof navigator === 'undefined' || !navigator.geolocation) return
-
-  if (geoWatchId != null) {
-    try {
-      navigator.geolocation.clearWatch(geoWatchId)
-    } catch {
-      /* */
-    }
-    geoWatchId = null
-  }
-
-  geoWatchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      const p = payloadFromBrowserPosition(pos)
-      notifyFromGpsPayload(p)
-    },
-    () => {
-      /* errores puntuales: el stream sigue vivo */
-    },
+  return navigator.geolocation.watchPosition(
+    (pos) => onSuccess?.(validateRawPosition(pos)),
+    (err) => onError?.(normalizeGeoError(err)),
     GEO_OPTS
   )
 }
 
-export function subscribeToLocation(cb) {
-  if (typeof cb !== 'function') return () => {}
-
-  subscribers.push(cb)
-  if (currentLocation) {
-    try {
-      cb(currentLocation)
-    } catch {
-      /* */
-    }
-  }
-
-  return () => {
-    subscribers = subscribers.filter((x) => x !== cb)
-  }
-}
-
-function getCurrentLocation() {
-  return currentLocation
-}
-
-export const getCurrentLocationFast = getCurrentLocation
-
+// API remains backward compatible: createPositionGuard() still works.
+// Optional hooks:
+// - onEvent(event): lightweight local observability
+// - persistEvent(event): external persistence override
+// - trajectoryValidator(sample): future trust integration
 export function createPositionGuard(options = {}) {
   const { onEvent: emitEvent, persistEvent = sendEventToBackend, trajectoryValidator } = options
 
@@ -417,21 +250,4 @@ export function createPositionGuard(options = {}) {
     prevAccepted = accepted
     return accepted
   }
-}
-
-/**
- * Comprueba si el usuario está lo bastante cerca del punto de la reserva (desbloqueo simulado).
- * @param {{ status?: string, location?: { latitude?: number, longitude?: number } | null }} reservation
- * @param {{ latitude?: number, longitude?: number } | null} userLocation
- * @returns {boolean}
- */
-export function checkReservationProximity(reservation, userLocation) {
-  if (!reservation || reservation.status !== 'locked') return false
-  if (!userLocation || !Number.isFinite(userLocation.latitude) || !Number.isFinite(userLocation.longitude)) {
-    return false
-  }
-  const loc = reservation.location
-  if (!loc || !Number.isFinite(loc.latitude) || !Number.isFinite(loc.longitude)) return false
-  const d = distanceMeters(userLocation.latitude, userLocation.longitude, loc.latitude, loc.longitude)
-  return d < 5
 }

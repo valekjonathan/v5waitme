@@ -1,5 +1,3 @@
-import '../styles/global.css'
-import './bootstrapApp.js'
 import { AppScreenProvider, useAppScreen } from '../lib/AppScreenContext'
 import { AppAuthRoot, useAuth } from '../lib/AuthContext'
 import {
@@ -7,105 +5,20 @@ import {
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
-import ReservationsPage from '../features/reservations/ReservationsPage'
+import ReviewsPage from '../features/reviews/pages/ReviewsPage'
 import LoginPage from '../features/auth/components/LoginPage'
-import MainLayout from '../features/shared/components/MainLayout.jsx'
-
-/** Misma fábrica que `lazy()` para `Component.preload()` sin duplicar rutas de import. */
-function lazyWithPreload(factory) {
-  const Component = lazy(factory)
-  Component.preload = factory
-  return Component
-}
-
-const AuthenticatedMapScreen = lazyWithPreload(() =>
-  import('../features/map/components/AuthenticatedMapScreen.jsx')
-)
-const AlertsPage = lazyWithPreload(() => import('../features/alerts/AlertsPage'))
-const ChatsPage = lazyWithPreload(() => import('../features/chats/ChatsPage'))
-const ChatThreadView = lazyWithPreload(() => import('../features/chats/ChatThreadView.jsx'))
-const ReviewsPage = lazyWithPreload(() => import('../features/reviews/pages/ReviewsPage'))
-const UserReviewsPage = lazyWithPreload(() => import('../features/reviews/UserReviewsPage'))
-import { DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH } from '../lib/devWebIphoneSim.js'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import Button from '../ui/Button'
 import { colors } from '../design/colors'
-import {
-  ACTIVE_SCREEN_ALERTS,
-  ACTIVE_SCREEN_CHATS,
-  ACTIVE_SCREEN_MAP,
-  ACTIVE_SCREEN_PROFILE,
-  ACTIVE_SCREEN_RESERVATIONS,
-  ACTIVE_SCREEN_REVIEWS,
-  ACTIVE_SCREEN_THREAD,
-} from '../lib/appScreenState.js'
-import { isDmDevFallbackThread } from '../services/waitmeChats.js'
-import { fetchProfileDisplayName } from '../services/waitmePurchaseRequests.js'
+import { APP_SCREEN_PROFILE, APP_SCREEN_REVIEWS } from '../lib/appScreenState.js'
 
-/**
- * Raíz React: llena #root (flex). `--app-height` se suscribe en `bootstrapApp.js` (`waitmeViewport`).
- */
-const appRootLayoutStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  flex: '1 1 0%',
-  minHeight: 0,
-  overflowX: 'hidden',
-  /** `visible` evita recortar modales `position:fixed` hijos en algunos motores. */
-  overflowY: 'visible',
-  boxSizing: 'border-box',
-}
-
-/** Columna shell sin transición (evita parpadeo / opacidad intermedia). */
-const gateColumnStyle = {
-  minHeight: 0,
-  flex: '1 1 0%',
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  boxSizing: 'border-box',
-}
-
-/** Un solo hijo columna bajo IphoneFrame: evita colapso con varios nodos hermanos (p. ej. modal + perfil). */
-const authTreeInnerStyle = {
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  boxSizing: 'border-box',
-}
-
-const homeGateStyle = {
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-}
-
-/** Mismo fondo que la capa mapa (`MainLayout` mapLazyFallback) mientras carga el chunk lazy; `fallback={null}` dejaba ver el negro de `html`. */
-const authenticatedRoutesSuspenseFallbackStyle = {
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  height: '100%',
-  backgroundColor: colors.background,
-}
+const fade200Style = { transition: 'opacity 200ms ease-out' }
+const homeGateStyle = { height: '100%', width: '100%' }
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -140,16 +53,13 @@ const modalTextStyle = {
 }
 
 function IncompleteProfileModal({ open, onClose, onConfirm }) {
+  if (!open) return null
   return (
     <div
       role="dialog"
-      aria-modal={open}
-      aria-hidden={!open}
+      aria-modal="true"
       aria-labelledby="waitme-incomplete-profile-title"
-      style={{
-        ...modalOverlayStyle,
-        display: open ? 'flex' : 'none',
-      }}
+      style={modalOverlayStyle}
       onClick={onClose}
     >
       <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
@@ -164,163 +74,17 @@ function IncompleteProfileModal({ open, onClose, onConfirm }) {
   )
 }
 
-function IncompleteProfileModalHost({ onClose }) {
+function IncompleteProfileModalHost({ open, onClose }) {
   const { openProfile } = useAppScreen()
   return (
     <IncompleteProfileModal
-      open
+      open={open}
       onClose={onClose}
       onConfirm={() => {
         openProfile()
         onClose()
       }}
     />
-  )
-}
-
-const buyerWaitmeToastStyle = {
-  position: 'fixed',
-  top: 'max(12px, env(safe-area-inset-top, 12px))',
-  left: 16,
-  right: 16,
-  zIndex: 2147483645,
-  padding: '12px 14px',
-  borderRadius: 12,
-  backgroundColor: 'rgba(17,24,39,0.96)',
-  border: '1px solid rgba(139,92,246,0.45)',
-  color: colors.textPrimary,
-  fontSize: 14,
-  fontWeight: 600,
-  textAlign: 'center',
-  boxSizing: 'border-box',
-  pointerEvents: 'none',
-}
-
-function BuyerWaitmeToast({ message, untilMs }) {
-  const [leftMs, setLeftMs] = useState(0)
-  useEffect(() => {
-    if (typeof untilMs !== 'number' || !Number.isFinite(untilMs)) {
-      setLeftMs(0)
-      return undefined
-    }
-    const tick = () => setLeftMs(Math.max(0, untilMs - Date.now()))
-    tick()
-    const t = window.setInterval(tick, 1000)
-    return () => window.clearInterval(t)
-  }, [untilMs])
-  const totalSec = Math.max(0, Math.ceil(leftMs / 1000))
-  const m = Math.floor(totalSec / 60)
-  const s = totalSec % 60
-  const showCd =
-    typeof untilMs === 'number' && Number.isFinite(untilMs) && untilMs > Date.now() && totalSec > 0
-  return (
-    <div style={buyerWaitmeToastStyle} role="status">
-      <p style={{ margin: 0 }}>{message}</p>
-      {showCd ? (
-        <p
-          style={{
-            margin: '10px 0 0',
-            fontVariantNumeric: 'tabular-nums',
-            fontSize: 22,
-            fontWeight: 800,
-            color: '#c084fc',
-          }}
-        >
-          {String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function WaitMeIncomingPurchaseModal() {
-  const {
-    incomingWaitmePurchase,
-    dismissIncomingWaitmeModal,
-    respondIncomingWaitme,
-    buyerWaitmeNotice,
-    buyerWaitmeArrivalUntilMs,
-  } = useAppScreen()
-  const [busy, setBusy] = useState(false)
-  const [buyerName, setBuyerName] = useState('Usuario')
-
-  useEffect(() => {
-    const row = incomingWaitmePurchase
-    if (!row || typeof row !== 'object' || !row.buyerId) {
-      setBuyerName('Usuario')
-      return undefined
-    }
-    let cancelled = false
-    void fetchProfileDisplayName(String(row.buyerId)).then((n) => {
-      if (!cancelled) setBuyerName(n || 'Usuario')
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [incomingWaitmePurchase])
-
-  const open = Boolean(incomingWaitmePurchase && incomingWaitmePurchase.id)
-
-  return (
-    <>
-      {buyerWaitmeNotice ? (
-        <BuyerWaitmeToast message={buyerWaitmeNotice} untilMs={buyerWaitmeArrivalUntilMs} />
-      ) : null}
-      <div
-        role="dialog"
-        aria-modal={open}
-        aria-hidden={!open}
-        style={{
-          ...modalOverlayStyle,
-          display: open ? 'flex' : 'none',
-          zIndex: 2147483646,
-        }}
-        onClick={busy ? undefined : dismissIncomingWaitmeModal}
-      >
-        <div style={modalBoxStyle} onClick={(e) => e.stopPropagation()}>
-          <p style={modalTextStyle}>
-            {buyerName} quiere comprar tu WaitMe!
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                type="button"
-                variant="primary"
-                style={{ flex: 1 }}
-                disabled={busy}
-                onClick={() => {
-                  setBusy(true)
-                  void respondIncomingWaitme(true).finally(() => setBusy(false))
-                }}
-              >
-                Aceptar
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                style={{ flex: 1 }}
-                disabled={busy}
-                onClick={() => {
-                  setBusy(true)
-                  void respondIncomingWaitme(false).finally(() => setBusy(false))
-                }}
-              >
-                Rechazar
-              </Button>
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              style={{ width: '100%' }}
-              disabled={busy}
-              onClick={dismissIncomingWaitmeModal}
-            >
-              Cerrar
-            </Button>
-          </div>
-        </div>
-      </div>
-    </>
   )
 }
 
@@ -366,11 +130,11 @@ function HomeActionGate({ children }) {
   )
 }
 
-function AuthenticatedShellWithBoundary({ children }) {
-  const { activeScreen, activeThreadId } = useAppScreen()
+function AuthenticatedShellWithBoundary({ opacity, children }) {
+  const { screen } = useAppScreen()
   return (
-    <div style={gateColumnStyle}>
-      <ErrorBoundary resetKeys={[activeScreen, activeThreadId]} name="shell">
+    <div style={{ ...fade200Style, opacity }}>
+      <ErrorBoundary resetKeys={[screen]} name="shell">
         {children}
       </ErrorBoundary>
     </div>
@@ -381,157 +145,51 @@ function AppLayout({ children }) {
   return <IphoneFrame>{children}</IphoneFrame>
 }
 
-function clearChatHashFromUrl() {
-  if (typeof window !== 'undefined' && window.location.hash.startsWith('#/chat/')) {
-    const { pathname, search } = window.location
-    window.history.replaceState(null, '', pathname + search)
-  }
-}
-
-/** Una pantalla por `activeScreen`: mapa solo en MAP; resto ocupa el main sin mapa persistente debajo. */
-function authenticatedScreenShellProps(activeScreen) {
-  return {
-    interactive: true,
-    style: { backgroundColor: colors.background },
-    mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
-    mainOverflow: activeScreen === ACTIVE_SCREEN_ALERTS ? 'auto' : 'hidden',
-  }
-}
-
-function AuthenticatedRoutes() {
-  const { user } = useAuth()
-  const nav = useAppScreen()
-
-  useEffect(() => {
-    ChatsPage.preload()
-    ChatThreadView.preload()
-    AlertsPage.preload()
-    AuthenticatedMapScreen.preload()
-    ReviewsPage.preload()
-    UserReviewsPage.preload()
-  }, [])
-
-  const {
-    activeScreen,
-    mapMode,
-    activeThreadId,
-    activeThreadSummary,
-    viewingUserReviewsId,
-    closeThread,
-    clearPendingDmVisual,
-  } = nav
-
-  const sessionUid = user?.id != null ? String(user.id) : ''
-
-  const shellMapProps =
-    mapMode !== 'home'
-      ? {
-          contentStyle: { overflow: 'visible' },
-          screenMainStyle: { overflow: 'visible' },
-        }
-      : {}
-
-  let body
-  if (activeScreen === ACTIVE_SCREEN_MAP) {
-    body = (
-      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED} {...shellMapProps}>
-        <HomeActionGate>
-          <AuthenticatedMapScreen />
-        </HomeActionGate>
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_THREAD && activeThreadId && activeThreadSummary) {
-    const tid = String(activeThreadId).trim()
-    const localFb = isDmDevFallbackThread(tid)
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        <ChatThreadView
-          summary={activeThreadSummary}
-          userId={sessionUid}
-          localFallback={localFb}
-          onBack={() => {
-            closeThread()
-            clearPendingDmVisual?.()
-            clearChatHashFromUrl()
-          }}
-        />
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_REVIEWS && viewingUserReviewsId) {
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        {viewingUserReviewsId === sessionUid ? <ReviewsPage /> : <UserReviewsPage />}
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_CHATS) {
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        <ChatsPage />
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_RESERVATIONS) {
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        <ReservationsPage />
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_ALERTS) {
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        <AlertsPage />
-      </ScreenShell>
-    )
-  } else if (activeScreen === ACTIVE_SCREEN_PROFILE) {
-    body = (
-      <ScreenShell {...authenticatedScreenShellProps(activeScreen)}>
-        <ProfilePage />
-      </ScreenShell>
-    )
-  } else {
-    body = (
-      <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-        <HomeActionGate>
-          <AuthenticatedMapScreen />
-        </HomeActionGate>
-      </ScreenShell>
-    )
-  }
-
+/** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
+function AuthenticatedMainChrome() {
+  const { screen } = useAppScreen()
+  if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
+  if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
   return (
-    <Suspense
-      fallback={
-        <div style={authenticatedRoutesSuspenseFallbackStyle} aria-hidden />
-      }
-    >
-      {body}
-    </Suspense>
+    <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+      <HomeActionGate>
+        <HomePage />
+      </HomeActionGate>
+    </ScreenShell>
   )
 }
 
-/** Una vez por uid: MAP + home al tener sesión, sin esperar bootstrap/completitud (AppGate ya no deja hueco). */
-const initialMapHomeEnsuredForUid = new Set()
+function AuthBootScreen() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        minHeight: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.background,
+        color: colors.textMuted,
+        fontSize: 14,
+        fontWeight: 500,
+      }}
+    >
+      Cargando…
+    </div>
+  )
+}
 
-function AuthenticatedInitialMapHome() {
-  const { user } = useAuth()
-  const { openMap } = useAppScreen()
-
-  useLayoutEffect(() => {
-    const uid = user?.id != null ? String(user.id) : ''
-    if (!uid) return
-    if (initialMapHomeEnsuredForUid.has(uid)) return
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash || ''
-      if (/^#\/(user|chat)\//.test(hash)) return
-    }
-    initialMapHomeEnsuredForUid.add(uid)
-    openMap()
-  }, [user?.id, openMap])
-
-  return null
+function computeTargetView(status, user, profileBootstrapReady) {
+  if (status === 'loading') return 'loading'
+  if (status === 'authenticated' && user && !profileBootstrapReady) return 'loading'
+  if (!user || status === 'unauthenticated') return 'login'
+  return 'authenticated'
 }
 
 function AppGate() {
-  const { user } = useAuth()
+  const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
+  const [displayedView, setDisplayedView] = useState('loading')
+  const [opacity, setOpacity] = useState(1)
+  const [targetView, setTargetView] = useState('loading')
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -541,91 +199,62 @@ function AppGate() {
     []
   )
 
+  useEffect(() => {
+    const next = computeTargetView(status, user, profileBootstrapReady)
+    setTargetView(next)
+  }, [status, user, profileBootstrapReady])
+
+  useEffect(() => {
+    if (displayedView === targetView) return
+    setOpacity(0)
+    const swapTimer = setTimeout(() => {
+      setDisplayedView(targetView)
+      setOpacity(1)
+    }, 200)
+    return () => clearTimeout(swapTimer)
+  }, [displayedView, targetView])
+
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
-  /** Un solo flujo por sesión: nunca login + autenticado en paralelo (evita doble shell en runtime). */
-  if (!user) {
-    return (
-      <div style={gateColumnStyle}>
+  return (
+    <AppScreenProvider>
+      {displayedView === 'loading' ? (
         <AppLayout>
           <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-            <MainLayout loginEntrance>
-              <LoginPage />
-            </MainLayout>
+            <AuthBootScreen />
           </ScreenShell>
         </AppLayout>
-      </div>
-    )
-  }
-
-  return (
-    <AuthenticatedShellWithBoundary>
-      <ProfileIncompleteNoticeProvider value={noticeValue}>
-        <AppLayout>
-          <div style={authTreeInnerStyle}>
-            {incompleteModalOpen ? (
-              <IncompleteProfileModalHost onClose={closeIncompleteModal} />
-            ) : null}
-            <WaitMeIncomingPurchaseModal />
-            <AuthenticatedInitialMapHome />
-            <AuthenticatedRoutes />
-          </div>
-        </AppLayout>
-      </ProfileIncompleteNoticeProvider>
-    </AuthenticatedShellWithBoundary>
-  )
-}
-
-function AuthenticatedMainChrome() {
-  /** Preview Safari ≈ WKWebView: `http://<host>/?iphone=true` (solo layout; no afecta producción sin query). */
-  useEffect(() => {
-    const isSafariPreview = window.location.search.includes('iphone=true')
-    const rootEl = document.documentElement
-    if (isSafariPreview) {
-      rootEl.classList.add('iphone-preview')
-    } else {
-      rootEl.classList.remove('iphone-preview')
-    }
-    return () => {
-      rootEl.classList.remove('iphone-preview')
-    }
-  }, [])
-
-  useLayoutEffect(() => {
-    const updateDevLayoutClass = () => {
-      const narrowChromeSim =
-        !window.Capacitor?.isNativePlatform?.() &&
-        window.innerWidth > DEV_WEB_IPHONE_SIM_MIN_INNER_WIDTH
-      if (narrowChromeSim) {
-        document.documentElement.classList.add('force-iphone')
-      } else {
-        document.documentElement.classList.remove('force-iphone')
-      }
-    }
-
-    updateDevLayoutClass()
-    /** `--app-height`: una sola suscripción en `bootstrapApp.js` (evita listeners duplicados). */
-    window.addEventListener('resize', updateDevLayoutClass)
-
-    return () => {
-      window.removeEventListener('resize', updateDevLayoutClass)
-      document.documentElement.classList.remove('force-iphone')
-    }
-  }, [])
-
-  return (
-    <div className="waitme-app-root" style={appRootLayoutStyle}>
-      <div className="waitme-iphone-frame-fullbleed">
-        <AppAuthRoot>
-          <AppScreenProvider>
-            <AppGate />
-          </AppScreenProvider>
-        </AppAuthRoot>
-      </div>
-    </div>
+      ) : displayedView === 'login' ? (
+        <div style={{ ...fade200Style, opacity }}>
+          <AppLayout>
+            <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+              <LoginPage />
+            </ScreenShell>
+          </AppLayout>
+        </div>
+      ) : (
+        <AuthenticatedShellWithBoundary opacity={opacity}>
+          <ProfileIncompleteNoticeProvider value={noticeValue}>
+            <AppLayout>
+              <IncompleteProfileModalHost
+                open={incompleteModalOpen}
+                onClose={closeIncompleteModal}
+              />
+              {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
+            </AppLayout>
+          </ProfileIncompleteNoticeProvider>
+        </AuthenticatedShellWithBoundary>
+      )}
+    </AppScreenProvider>
   )
 }
 
 export default function App() {
-  return <AuthenticatedMainChrome />
+  return (
+    <ErrorBoundary name="root">
+      <AppAuthRoot>
+        <AppGate />
+      </AppAuthRoot>
+    </ErrorBoundary>
+  )
 }

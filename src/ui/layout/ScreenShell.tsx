@@ -1,33 +1,35 @@
-/**
- * Shell: columna flex — raíz y `<main>` en cadena flex (WKWebView); scroll inset en el slot.
- */
-import { type CSSProperties, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import Header from '../Header'
 import BottomNav from '../BottomNav'
-import { SCREEN_SHELL_MAIN_MODE, type ScreenShellMainMode } from './layout'
+import {
+  LAYOUT,
+  SCREEN_SHELL_MAIN_MODE,
+  shellInsetMainPaddingStyle,
+  type ScreenShellMainMode,
+} from './layout'
 
 const shellRootStyle: CSSProperties = {
+  height: '100%',
+  minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  flex: '1 1 0%',
-  minHeight: 0,
-  width: '100%',
-  overflow: 'hidden',
-  boxSizing: 'border-box',
 }
 
-type ScreenShellProps = {
+/**
+ * Valores previos a la primera medición (solo evitan 0px un frame). Deben ser sustituidos
+ * al instante por ResizeObserver; no son el contrato de layout (eso son las medidas reales).
+ */
+const CHROME_MEASURE_FALLBACK_HEADER_PX = 64
+const CHROME_MEASURE_FALLBACK_NAV_PX = 88
+
+export type ScreenShellProps = {
   children: ReactNode
   interactive?: boolean
   style?: CSSProperties
   contentStyle?: CSSProperties
-  /** Se fusiona en `<main>` (p. ej. `overflow: 'visible'` en mapa fullBleed para dropdowns). */
-  screenMainStyle?: CSSProperties
   mainMode?: ScreenShellMainMode
-  /** En modo inset: si `auto`, el scroll vive en el slot de contenido. */
+  /** Solo modo inset: `hidden` evita scroll en `<main>` (p. ej. pantalla perfil). */
   mainOverflow?: 'auto' | 'hidden'
-  /** @deprecated Sin efecto; reservado por compatibilidad con llamadas antiguas. */
-  fullBleedMainOverflow?: 'auto' | 'hidden' | 'visible'
 }
 
 export default function ScreenShell({
@@ -35,49 +37,86 @@ export default function ScreenShell({
   interactive = true,
   style = {},
   contentStyle = {},
-  screenMainStyle = {},
   mainMode = SCREEN_SHELL_MAIN_MODE.INSET,
   mainOverflow = 'auto',
-  fullBleedMainOverflow: _fullBleedMainOverflow = 'auto',
 }: ScreenShellProps) {
-  const rootStyleMerged: CSSProperties = {
-    ...shellRootStyle,
-    ...style,
-  }
+  const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
+  const headerRef = useRef<HTMLElement>(null)
+  const navRef = useRef<HTMLElement>(null)
+  const [chromePx, setChromePx] = useState<{ header: number; nav: number }>({
+    header: CHROME_MEASURE_FALLBACK_HEADER_PX,
+    nav: CHROME_MEASURE_FALLBACK_NAV_PX,
+  })
 
-  const mainStyle: CSSProperties = {
-    flex: '1 1 0%',
-    minHeight: 0,
-    position: 'relative',
-    overflow: 'hidden',
-    alignSelf: 'stretch',
-    display: 'flex',
-    flexDirection: 'column',
-  }
+  useLayoutEffect(() => {
+    if (fullBleed) return undefined
 
-  const mainOverflowResolved =
-    mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED ? 'hidden' : mainOverflow
+    const headerEl = headerRef.current
+    const navEl = navRef.current
+    if (!headerEl || !navEl) return undefined
 
-  const contentSlotStyle: CSSProperties = {
-    flex: '1 1 0%',
-    minHeight: 0,
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    alignSelf: 'stretch',
-    overflow: mainOverflowResolved,
-    WebkitOverflowScrolling: mainOverflowResolved === 'auto' ? 'touch' : undefined,
-  }
+    const measure = () => {
+      setChromePx({
+        header: Math.round(headerEl.getBoundingClientRect().height),
+        nav: Math.round(navEl.getBoundingClientRect().height),
+      })
+    }
+
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    if (ro) {
+      ro.observe(headerEl)
+      ro.observe(navEl)
+    }
+    window.addEventListener('resize', measure)
+    return () => {
+      ro?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [fullBleed])
 
   return (
-    <div data-waitme-screen-shell={mainMode} style={rootStyleMerged}>
-      <Header interactive={interactive} />
-      <main data-waitme-main={mainMode} style={{ ...mainStyle, ...screenMainStyle }}>
-        <div data-waitme-content-slot style={{ ...contentSlotStyle, ...contentStyle }}>
+    <div data-waitme-screen-shell={mainMode} style={{ ...shellRootStyle, ...style }}>
+      <Header ref={headerRef} interactive={interactive} />
+      <main
+        data-waitme-main={mainMode}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+          overflowY: fullBleed ? 'hidden' : mainOverflow,
+          overflowX: 'hidden',
+          boxSizing: 'border-box',
+          ...(fullBleed
+            ? {}
+            : shellInsetMainPaddingStyle(LAYOUT.screen.paddingX, chromePx.header, chromePx.nav)),
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            minHeight: 0,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            boxSizing: 'border-box',
+            ...(fullBleed
+              ? { alignSelf: 'stretch' }
+              : {
+                  maxWidth: LAYOUT.screen.maxWidth,
+                  marginLeft: 'auto',
+                  marginRight: 'auto',
+                }),
+            ...contentStyle,
+          }}
+        >
           {children}
         </div>
       </main>
-      <BottomNav interactive={interactive} />
+      <BottomNav ref={navRef} interactive={interactive} />
     </div>
   )
 }

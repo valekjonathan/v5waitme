@@ -120,18 +120,6 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
-  it('arranque: ScreenShell montado con contenido (jsdom no usa #root de main.jsx)', async () => {
-    render(<App />)
-    await waitFor(
-      () => {
-        const shell = document.querySelector('[data-waitme-screen-shell]')
-        expect(shell).not.toBeNull()
-        expect((shell.textContent || '').trim().length).toBeGreaterThan(5)
-      },
-      { timeout: 15_000 }
-    )
-  })
-
   it('Login completo: click Google -> authenticated -> Home si perfil completo (fallback mapa)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     render(<App />)
@@ -144,7 +132,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
 
     await waitFor(
       () => {
-        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
+        expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
       },
       { timeout: 15_000 }
     )
@@ -157,7 +145,8 @@ describe('UI crítica (React): auth, errores y navegación', () => {
 
     await waitFor(
       () => {
-        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
+        const els = screen.queryAllByText(/Vista de mapa no disponible por ahora/i)
+        expect(els.length).toBeGreaterThanOrEqual(1)
       },
       { timeout: 15_000 }
     )
@@ -171,7 +160,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     // Espera a que el home autenticado esté montado (evita clicar durante "Cargando…"/AppLayout no interactivo).
     await waitFor(
       () => {
-        expect(document.querySelector('[data-waitme-map-unavailable="true"]')).not.toBeNull()
+        expect(screen.queryByText(/Vista de mapa no disponible por ahora/i)).not.toBeNull()
       },
       { timeout: 15_000 }
     )
@@ -194,7 +183,7 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
-  it('Error de auth: signInWithOAuth falla -> permanece en login (no pasa a Home)', async () => {
+  it('Error de auth: signInWithOAuth falla -> muestra alerta con mensaje', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     signInError = 'auth_error'
     render(<App />)
@@ -206,10 +195,9 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
 
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: /continuar con google/i })).not.toBeNull()
-      expect(document.querySelector('[data-home-google-button=""]')).not.toBeNull()
-      /** Login y Home comparten `MainLayout` + fallback de mapa; Home no tiene CTA Google. */
-      expect(screen.queryByRole('button', { name: /¿Dónde quieres aparcar/i })).toBeNull()
+      const alert = screen.queryByRole('alert')
+      expect(alert).not.toBeNull()
+      expect(alert.textContent).toMatch(/auth_error/i)
     })
   })
 
@@ -240,7 +228,7 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
   function ResetBoundary({ children }) {
     const { screen } = useAppScreen()
     return (
-      <ErrorBoundaryUi key={screen} resetKeys={[screen]} name="navTest">
+      <ErrorBoundaryUi resetKeys={[screen]} name="navTest">
         {children}
       </ErrorBoundaryUi>
     )
@@ -264,7 +252,7 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
       </AuthProvider>
     )
 
-    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('map')
+    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('home')
 
     await act(async () => {
       const headerPerfilBtn = document.querySelector(
@@ -286,6 +274,6 @@ describe('Navegación lógica (home ↔ profile) + resetKeys', () => {
       expect(screen.queryByText('La app se está recuperando')).toBeNull()
       expect(screen.queryByText('OK_HOME')).not.toBeNull()
     })
-    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('map')
+    expect(screen.getByTestId('route-probe').getAttribute('data-screen')).toBe('home')
   })
 })

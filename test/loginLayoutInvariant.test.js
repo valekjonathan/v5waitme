@@ -7,13 +7,11 @@ function read(rel) {
   return fs.readFileSync(path.join(process.cwd(), rel), 'utf8')
 }
 
-test('App.jsx -> MainLayout login con LoginPage (LoginButtons)', () => {
-  const app = read('src/app/App.jsx')
-  const login = read('src/features/auth/components/LoginPage.jsx')
-  assert.match(app, /<MainLayout\s+loginEntrance/i)
-  assert.match(app, /<LoginPage\s*\/?>/i)
-  assert.match(login, /<LoginButtons\s*\/?>/i)
-  assert.match(login, /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i)
+test('LoginPage -> MainLayout con LoginButtons como children', () => {
+  const code = read('src/features/auth/components/LoginPage.jsx')
+  assert.match(code, /<MainLayout\b/i)
+  assert.match(code, /<LoginButtons\s*\/?>/i)
+  assert.match(code, /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i)
 })
 
 test('LoginButtons -> ambos CTAs OAuth + usa ButtonBase', () => {
@@ -54,14 +52,12 @@ test('ButtonBase: icono y texto comparten el mismo contenedor directo', () => {
   )
 })
 
-test('MainLayout / AuthenticatedMapScreen: hero frase → CenterPin → CTAs; Map readOnly + hideViewportCenterPin (ancla MapViewportCenterPin); Home CTAs en HomePage', () => {
+test('MainLayout: hero WaitMe!->subtítulo + pin; HomePage delega en MainLayout', () => {
   const main = read('src/features/shared/components/MainLayout.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
-  const map = read('src/features/map/components/Map.jsx')
-  const mapStack = read('src/features/map/components/MainLayoutMapStack.jsx')
-  const authMap = read('src/features/map/components/AuthenticatedMapScreen.jsx')
 
-  assert.equal(/import\s+MainLayout/.test(home), false)
+  assert.match(home, /import\s+MainLayout\s+from\s+'.*MainLayout'/i)
+  assert.match(home, /<MainLayout\b/)
   assert.match(home, /¿Dónde quieres aparcar\?/)
   assert.match(home, /¡Estoy aparcado aquí!/)
 
@@ -71,17 +67,10 @@ test('MainLayout / AuthenticatedMapScreen: hero frase → CenterPin → CTAs; Ma
   )
   assert.match(
     main,
-    /<p\s+data-home-subtitle\s+style=\{heroSubtitleStyle\}>[\s\S]*Aparca[\s\S]*donde\s+te[\s\S]*<span\s+style=\{meTextStyle\}>avisen!<\/span>[\s\S]*<\/p>/
+    /<p\s+style=\{heroSubtitleStyle\}>[\s\S]*Aparca[\s\S]*donde\s+te[\s\S]*<span\s+style=\{meTextStyle\}>avisen!<\/span>[\s\S]*<\/p>/
   )
-  assert.match(map, /MapViewportCenterPin/)
-  assert.match(main, /import\s+CenterPin\b/)
-  assert.match(main, /<CenterPin\b/)
-  assert.match(mapStack, /hideViewportCenterPin/)
-  assert.match(mapStack, /<Map\s+readOnly\s+hideViewportCenterPin\s*\/>/)
-  assert.match(main, /function\s+MainLayoutChrome/)
-  assert.match(main, /hasCta/)
-  assert.match(authMap, /MainLayoutChrome/)
-  assert.match(authMap, /hideViewportCenterPin/)
+  assert.match(main, /<CenterPin\s*\/>/)
+  assert.match(main, /\{hasCta \?/)
 })
 
 test('HomePage: sin UI de alertas', () => {
