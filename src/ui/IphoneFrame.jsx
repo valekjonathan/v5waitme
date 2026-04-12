@@ -1,7 +1,10 @@
 /**
- * Marco del dispositivo: define el viewport lógico (390×844) escalado.
+ * Marco del dispositivo: define el viewport lógico (390×844) escalado **solo en navegador**.
+ * En app nativa (Capacitor) no se aplica `transform: scale`: Mapbox/WKWebView necesitan geometría
+ * real del WebView; el escalado rompe resize del canvas y desincroniza respecto a Safari de escritorio.
  * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
  */
+import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useState } from 'react'
 import { radius } from '../design/radius'
 import { shadows } from '../design/shadows'
@@ -17,10 +20,21 @@ function readScale() {
   return Math.min(1, vh / FRAME_H, vw / FRAME_W)
 }
 
+const nativeRootStyle = {
+  width: '100%',
+  height: '100%',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  position: 'relative',
+}
+
 export default function IphoneFrame({ children }) {
   const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
+    if (Capacitor.isNativePlatform()) return undefined
     const update = () => setScale(readScale())
     update()
     window.addEventListener('resize', update)
@@ -30,6 +44,10 @@ export default function IphoneFrame({ children }) {
       window.visualViewport?.removeEventListener('resize', update)
     }
   }, [])
+
+  if (Capacitor.isNativePlatform()) {
+    return <div style={nativeRootStyle}>{children}</div>
+  }
 
   const s = scale
 

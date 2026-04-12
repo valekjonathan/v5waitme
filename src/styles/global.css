@@ -4,6 +4,17 @@ body,
   height: 100%;
 }
 
+/**
+ * WKWebView (app Capacitor): una sola cadena de altura útil, sin depender de hacks duplicados.
+ * -webkit-fill-available evita #root a 0px cuando el 100% del padre no resuelve como en desktop.
+ */
+html.waitme-native-app,
+html.waitme-native-app body,
+html.waitme-native-app #root {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+}
+
 html,
 body {
   overflow: hidden !important;

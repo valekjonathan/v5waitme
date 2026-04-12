@@ -96,6 +96,8 @@ export default function Map({ onSettled: onSettledProp }) {
     let map
     let loadTimeoutId = null
     let loadCompleted = false
+    /** Limpieza de listeners de visualViewport (iOS: barra de URL / teclado). */
+    let removeVisualViewportListeners = null
 
     const failMap = (detail, err) => {
       console.error('Mapbox failed to load', detail, err ?? '')
@@ -210,6 +212,17 @@ export default function Map({ onSettled: onSettledProp }) {
           ro.observe(container)
         }
 
+        const vv = window.visualViewport
+        if (vv) {
+          const onVv = () => resizeDelayed()
+          vv.addEventListener('resize', onVv)
+          vv.addEventListener('scroll', onVv)
+          removeVisualViewportListeners = () => {
+            vv.removeEventListener('resize', onVv)
+            vv.removeEventListener('scroll', onVv)
+          }
+        }
+
         map.on('dragend', onMapUserInteraction)
         map.on('zoomend', onZoomEnd)
 
@@ -224,6 +237,8 @@ export default function Map({ onSettled: onSettledProp }) {
 
     return () => {
       cancelled = true
+      removeVisualViewportListeners?.()
+      removeVisualViewportListeners = null
       if (loadTimeoutId) clearTimeout(loadTimeoutId)
       setMapReady(false)
       setMapFailed(false)
