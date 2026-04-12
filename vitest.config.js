@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [react()],
   define: {
     'import.meta.env.VITE_DEV_LAN_ORIGIN': JSON.stringify('http://192.168.99.1:5173'),
+    // UI tests expect fallback copy when Mapbox is omitted; do not inherit .env token in jsdom.
+    'import.meta.env.VITE_MAPBOX_ACCESS_TOKEN': JSON.stringify(''),
   },
   resolve: {
     alias: {
