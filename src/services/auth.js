@@ -1,7 +1,42 @@
 /**
  * @fileoverview Sesión Supabase: OAuth, getSession, signOut. Sin Supabase configurado, operaciones son no-op seguras.
  */
+import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from './supabase.js'
+
+/**
+ * Debe coincidir con CFBundleURLSchemes (p. ej. `es.waitme.v5waitme`) y estar en Supabase Auth → Redirect URLs.
+ */
+export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
+
+function getOAuthRedirectTo() {
+  if (typeof window === 'undefined') return ''
+  try {
+    if (Capacitor.isNativePlatform()) return NATIVE_OAUTH_REDIRECT_URL
+  } catch {
+    /* */
+  }
+  return window.location.origin
+}
+
+/**
+ * Intercambia ?code= PKCE desde la URL completa (retorno OAuth en app nativa o WebView).
+ */
+export async function exchangeSessionFromOAuthUrl(urlString) {
+  if (!isSupabaseConfigured() || !supabase || !urlString) {
+    return { session: null, error: null }
+  }
+  try {
+    const u = new URL(urlString)
+    const code = u.searchParams.get('code')
+    if (!code) return { session: null, error: null }
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) return { session: null, error }
+    return { session: data?.session ?? null, error: null }
+  } catch (e) {
+    return { session: null, error: e instanceof Error ? e : new Error(String(e)) }
+  }
+}
 
 /**
  * Tras el redirect OAuth, si falla el proveedor suele quedar error en query o hash.
@@ -82,7 +117,7 @@ export async function signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: getOAuthRedirectTo(),
       },
     })
     if (error) {

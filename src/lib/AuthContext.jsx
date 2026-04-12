@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from '../services/supabase.js'
 import {
   consumeOAuthUrlError,
+  exchangeSessionFromOAuthUrl,
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
 } from '../services/auth.js'
@@ -219,8 +221,6 @@ export function AuthProvider({ children }) {
         return
       }
 
-      let pkceExchangeConsumed = false
-
       try {
         let {
           data: { session },
@@ -246,41 +246,64 @@ export function AuthProvider({ children }) {
           return
         }
 
-        const code =
-          typeof window !== 'undefined'
-            ? new URLSearchParams(window.location.search).get('code')
-            : null
-        // PKCE: un solo intercambio por retorno OAuth; luego limpiar URL.
-        if (!session?.user && code && !pkceExchangeConsumed) {
-          pkceExchangeConsumed = true
-          const { data: exchanged, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code)
-          if (exchangeError) {
-            console.warn(
-              '[WaitMe][OAuth] OAUTH_EXCHANGE_FAIL',
-              exchangeError.message ?? exchangeError
-            )
+        /**
+         * PKCE: en iOS el retorno va por deep link (appUrlOpen); el WebView suele no tener ?code= en location.
+         * Probamos launch URL nativa y luego la URL del WebView; un solo intercambio exitoso basta.
+         */
+        if (!session?.user) {
+          const urlsToTry = []
+          if (Capacitor.isNativePlatform()) {
             try {
-              await signOutRequest()
+              const { App } = await import('@capacitor/app')
+              const launch = await App.getLaunchUrl()
+              if (launch?.url) urlsToTry.push(launch.url)
             } catch {
               /* */
             }
-            try {
-              window.history.replaceState(
-                {},
-                '',
-                `${window.location.pathname}${window.location.hash || ''}`
+          }
+          if (typeof window !== 'undefined') {
+            urlsToTry.push(window.location.href)
+          }
+          const seen = new Set()
+          for (const urlStr of urlsToTry) {
+            if (!urlStr || seen.has(urlStr)) continue
+            seen.add(urlStr)
+            const { session: exchanged, error: exchangeError } =
+              await exchangeSessionFromOAuthUrl(urlStr)
+            if (exchangeError) {
+              console.warn(
+                '[WaitMe][OAuth] OAUTH_EXCHANGE_FAIL',
+                exchangeError.message ?? exchangeError
               )
-            } catch {
-              /* */
+              try {
+                await signOutRequest()
+              } catch {
+                /* */
+              }
+              try {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState(
+                    {},
+                    '',
+                    `${window.location.pathname}${window.location.hash || ''}`
+                  )
+                }
+              } catch {
+                /* */
+              }
+              session = null
+              break
             }
-            session = null
-          } else {
-            session = exchanged?.session ?? null
-            try {
-              window.history.replaceState({}, '', window.location.pathname || '/')
-            } catch {
-              /* */
+            if (exchanged?.user) {
+              session = exchanged
+              try {
+                if (typeof window !== 'undefined') {
+                  window.history.replaceState({}, '', window.location.pathname || '/')
+                }
+              } catch {
+                /* */
+              }
+              break
             }
           }
         }
@@ -332,11 +355,35 @@ export function AuthProvider({ children }) {
       })()
     })
 
+    let removeAppUrlOpen = () => {}
+    void (async () => {
+      if (!Capacitor.isNativePlatform()) return
+      try {
+        const { App } = await import('@capacitor/app')
+        if (cancelled) return
+        const handle = await App.addListener('appUrlOpen', async ({ url }) => {
+          if (cancelled) return
+          const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
+          if (exErr) {
+            console.warn('[WaitMe][OAuth] appUrlOpen', exErr.message ?? exErr)
+            return
+          }
+          if (next?.user) await syncFromSession(next)
+        })
+        removeAppUrlOpen = () => {
+          void handle.remove()
+        }
+      } catch (e) {
+        console.error('[WaitMe][Auth] appUrlOpen listener', e)
+      }
+    })()
+
     return () => {
       cancelled = true
       profileBootSeq += 1000
       lastProfileBootUserId = null
       subscription.unsubscribe()
+      removeAppUrlOpen()
     }
   }, [])
 
