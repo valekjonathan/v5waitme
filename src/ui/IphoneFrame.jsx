@@ -1,7 +1,9 @@
 /**
- * Marco del dispositivo: define el viewport lógico (390×844) escalado.
+ * Marco del dispositivo: en navegador (Safari escritorio) viewport lógico 390×844 escalado.
+ * En Capacitor/iPhone físico: sin marco ni escala; el WebView debe usar altura real.
  * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
  */
+import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useState } from 'react'
 import { radius } from '../design/radius'
 import { shadows } from '../design/shadows'
@@ -9,6 +11,17 @@ import { shadows } from '../design/shadows'
 const FRAME_W = 390
 const FRAME_H = 844
 const VIEW_PAD = 24
+
+const nativeRootStyle = {
+  flex: 1,
+  width: '100%',
+  minHeight: 0,
+  alignSelf: 'stretch',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+  position: 'relative',
+}
 
 function readScale() {
   const vv = window.visualViewport
@@ -21,6 +34,13 @@ export default function IphoneFrame({ children }) {
   const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined
+    document.documentElement.classList.add('waitme-capacitor')
+    return () => document.documentElement.classList.remove('waitme-capacitor')
+  }, [])
+
+  useLayoutEffect(() => {
+    if (Capacitor.isNativePlatform()) return undefined
     const update = () => setScale(readScale())
     update()
     window.addEventListener('resize', update)
@@ -30,6 +50,10 @@ export default function IphoneFrame({ children }) {
       window.visualViewport?.removeEventListener('resize', update)
     }
   }, [])
+
+  if (Capacitor.isNativePlatform()) {
+    return <div style={nativeRootStyle}>{children}</div>
+  }
 
   const s = scale
 
