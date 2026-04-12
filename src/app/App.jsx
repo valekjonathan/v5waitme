@@ -5,7 +5,6 @@ import {
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
-import { Capacitor } from '@capacitor/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -251,30 +250,6 @@ function AppGate() {
 }
 
 export default function App() {
-  /**
-   * Diagnóstico Safari (web): prueba real de hit-test. Ejecutar en Safari Mac → Consola.
-   * No aplica a build nativa (Capacitor).
-   */
-  useEffect(() => {
-    if (typeof document === 'undefined' || Capacitor.isNativePlatform()) return undefined
-
-    const handler = (e) => {
-      console.log('[CLICK REAL]', e.target)
-    }
-
-    document.addEventListener('click', handler)
-
-    const timerId = window.setTimeout(() => {
-      const el = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)
-      console.log('[TOP ELEMENT]', el)
-    }, 1000)
-
-    return () => {
-      document.removeEventListener('click', handler)
-      window.clearTimeout(timerId)
-    }
-  }, [])
-
   return (
     <ErrorBoundary name="root">
       <AppAuthRoot>

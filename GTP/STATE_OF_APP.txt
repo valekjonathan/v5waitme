@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T03:54:44.927Z
-Git HEAD: 711795dceffc06a09ffc90f8928c2d354b95cffb
+Generated: 2026-04-12T04:02:05.819Z
+Git HEAD: 17b6e9358f9c6c8bd8237f9aa3d7adec77a35a91
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -95,19 +95,13 @@ ios/
     info.plist
     Logs/
       Build/
-        0DED8EB7-4DAF-45E0-A352-56DF52994704.xcactivitylog
-        408B47BC-5C9A-462B-A57A-A7191AB81859.xcactivitylog
-        80214683-0A1B-4550-B879-E15CDECD4833.xcactivitylog
         LogStoreManifest.plist
       Launch/
         LogStoreManifest.plist
       Localization/
         LogStoreManifest.plist
       Package/
-        2F13C795-50EB-4893-9FC7-930C3D9CE29F.xcactivitylog
-        61DB77EF-DF7A-4188-85FB-2F1D2DA9CD89.xcactivitylog
-        D5D652F0-1054-4DAC-8761-EBA46BDC1F30.xcactivitylog
-        D956DE6A-55FA-4AEA-AD30-84903191CD96.xcactivitylog
+        FCDDC81E-A7A9-418C-A9E8-06A0303674C0.xcactivitylog
         LogStoreManifest.plist
       Test/
         LogStoreManifest.plist
@@ -403,6 +397,12 @@ ios/
       CFNetwork-BAMA6NHS99AKT3BI58QYTOXII.pcm
       CommonCrypto-7P0I98MLPZEGMPQQ21FI5U04B.pcm
       CommonCrypto-CN5FB2DGZT2U8VF529XBD31HM.pcm
+      CoreData-AYF4SUPS8DM0XLYADIH7OB11B.pcm
+      CoreFoundation-6GGX2KMOIS1U7MQ445DW1LT41.pcm
+      CoreFoundation-9BYVF0OGIWE49255KIVUM0XA5.pcm
+      CoreGraphics-4KFALOLLP2Q6D0M1BB28ZX0V6.pcm
+      CoreGraphics-6EC2GVC5PQTTI1HNSCS7UNEF0.pcm
+      CoreImage-266K88VY9OAR13K3NG9G59NEI.pcm
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
