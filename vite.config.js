@@ -55,6 +55,48 @@ function preferredLanIPv4() {
   return (en0 ?? candidates[0]).address
 }
 
+/** Relleno de CI/quality (`scripts/build-env.mjs`); no es un proyecto Supabase real. */
+const CI_PLACEHOLDER_SUPABASE_URL = 'https://build-config-missing.invalid'
+
+/**
+ * `vite build` embebe `VITE_SUPABASE_URL` en el JS de `dist/` (Capacitor iOS). Si .env.local apunta a
+ * Supabase CLI (127.0.0.1:54321), OAuth en el iPhone abre esa URL → fallo. Solo cloud https://*.supabase.co.
+ */
+function assertViteSupabaseUrlForProductionBuild(url) {
+  const raw = String(url).trim()
+  if (raw === CI_PLACEHOLDER_SUPABASE_URL) return
+  let parsed
+  try {
+    parsed = new URL(raw)
+  } catch {
+    throw new Error(`[vite] VITE_SUPABASE_URL no es una URL válida: ${raw}`)
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error(
+      '[vite] VITE_SUPABASE_URL debe ser https. Para IPA / Capacitor usa https://<ref>.supabase.co (no http ni Supabase local).'
+    )
+  }
+  const host = parsed.hostname.toLowerCase()
+  if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+    throw new Error(
+      '[vite] VITE_SUPABASE_URL no puede ser loopback en `vite build` (se embebe en el iPhone). Añade `.env.production.local` con https://<ref>.supabase.co o quita la URL local de `.env.local` para builds de dispositivo.'
+    )
+  }
+  if (
+    /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(host) ||
+    /^169\.254\./.test(host)
+  ) {
+    throw new Error(
+      '[vite] VITE_SUPABASE_URL no puede ser IP privada/link-local en `vite build`. Usa https://<ref>.supabase.co'
+    )
+  }
+  if (!host.endsWith('.supabase.co')) {
+    throw new Error(
+      '[vite] VITE_SUPABASE_URL en build debe ser el proyecto en Supabase cloud: https://<ref>.supabase.co'
+    )
+  }
+}
+
 export default defineConfig(({ mode, command }) => {
   const fileEnv = loadEnv(mode, process.cwd(), '')
   const url = String(fileEnv.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim()
@@ -70,6 +112,8 @@ export default defineConfig(({ mode, command }) => {
     console.warn(
       '[vite] Sin VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY: `npm run dev` continúa; auth y perfil quedan desactivados hasta configurar el entorno.'
     )
+  } else if (command === 'build') {
+    assertViteSupabaseUrlForProductionBuild(url)
   }
 
   const sentryAuth = String(process.env.SENTRY_AUTH_TOKEN || '').trim()

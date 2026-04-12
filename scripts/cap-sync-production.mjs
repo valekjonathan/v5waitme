@@ -18,7 +18,8 @@ function npmRun(script) {
 }
 
 console.info(
-  '[waitme] Producción iOS: npm run build + cap sync ios (sin WAITME_CAP_DEV_SERVER_URL)\n'
+  '[waitme] Producción iOS: npm run build + cap sync ios (sin WAITME_CAP_DEV_SERVER_URL)\n' +
+    '[waitme] Asegura VITE_SUPABASE_URL=https://<ref>.supabase.co en build (p. ej. .env.production.local); no localhost.\n'
 )
 
 const b = npmRun('build')
