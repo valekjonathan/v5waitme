@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import CenterPin from '../../home/components/CenterPin'
 import logo from '../../../assets/logo.png'
@@ -36,8 +37,11 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /** Sin esto la capa fullscreen recibe el hit-test en iOS; los CTAs debajo no. */
-  pointerEvents: 'none',
+  /**
+   * Solo Capacitor/WebKit móvil: la capa fullscreen no debe robar el hit-test respecto a la columna.
+   * En Safari macOS, `pointer-events: none` en este antecesor flex rompe el reparto de clics a hijos con `auto` (CTAs).
+   */
+  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : {}),
 }
 const contentViewportStyle = {
   pointerEvents: 'none',
