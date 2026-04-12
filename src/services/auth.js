@@ -5,22 +5,30 @@ import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from './supabase.js'
 
 /**
- * Debe coincidir con CFBundleURLSchemes (p. ej. `es.waitme.v5waitme`) y estar en Supabase Auth → Redirect URLs.
+ * Debe coincidir con CFBundleURLSchemes y con `redirectTo` en signInWithOAuth (iOS).
+ * Añadir la misma URL en Supabase Auth → Redirect URLs.
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
 
-function getOAuthRedirectTo() {
-  if (typeof window === 'undefined') return ''
+/** Indica si la URL trae código PKCE (query; hash por compatibilidad). */
+export function urlHasOAuthCode(urlString) {
+  if (!urlString) return false
   try {
-    if (Capacitor.isNativePlatform()) return NATIVE_OAUTH_REDIRECT_URL
+    const u = new URL(urlString)
+    if (u.searchParams.get('code')) return true
+    if (u.hash) {
+      const h = new URLSearchParams(u.hash.replace(/^#/, ''))
+      if (h.get('code')) return true
+    }
+    return false
   } catch {
-    /* */
+    return false
   }
-  return window.location.origin
 }
 
 /**
  * Intercambia ?code= PKCE desde la URL completa (retorno OAuth en app nativa o WebView).
+ * Tras exchange, vuelve a leer la sesión persistida con getSession().
  */
 export async function exchangeSessionFromOAuthUrl(urlString) {
   if (!isSupabaseConfigured() || !supabase || !urlString) {
@@ -28,11 +36,20 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
   }
   try {
     const u = new URL(urlString)
-    const code = u.searchParams.get('code')
+    let code = u.searchParams.get('code')
+    if (!code && u.hash) {
+      const h = new URLSearchParams(u.hash.replace(/^#/, ''))
+      code = h.get('code')
+    }
     if (!code) return { session: null, error: null }
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) return { session: null, error }
-    return { session: data?.session ?? null, error: null }
+    const {
+      data: { session: refreshed },
+      error: refreshErr,
+    } = await supabase.auth.getSession()
+    if (refreshErr) return { session: data?.session ?? null, error: null }
+    return { session: refreshed ?? data?.session ?? null, error: null }
   } catch (e) {
     return { session: null, error: e instanceof Error ? e : new Error(String(e)) }
   }
@@ -117,7 +134,10 @@ export async function signInWithGoogle() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: getOAuthRedirectTo(),
+        redirectTo:
+          typeof window !== 'undefined' && Capacitor.isNativePlatform()
+            ? 'es.waitme.v5waitme://auth/callback'
+            : window.location.origin,
       },
     })
     if (error) {

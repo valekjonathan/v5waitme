@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { supabase, isSupabaseConfigured } from '../services/supabase.js'
 import {
@@ -6,6 +7,7 @@ import {
   exchangeSessionFromOAuthUrl,
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
+  urlHasOAuthCode,
 } from '../services/auth.js'
 import {
   buildResolvedHeaderProfile,
@@ -86,6 +88,8 @@ export function AuthProvider({ children }) {
   const [isProfileComplete, setIsProfileComplete] = useState(false)
   const [authError, setAuthError] = useState(null)
   const authStatusRef = useRef(status)
+  /** Evita que el timeout de arranque pase a login mientras hay intercambio PKCE en curso (iOS). */
+  const oauthPendingRef = useRef(false)
 
   useEffect(() => {
     authStatusRef.current = status
@@ -101,6 +105,7 @@ export function AuthProvider({ children }) {
     const bootTimer = window.setTimeout(() => {
       // Evitar ruido: si la sesión ya se resolvió antes del timeout, no hacemos log/dispatch.
       if (authStatusRef.current !== 'loading') return
+      if (oauthPendingRef.current) return
       setUser(null)
       setSession(null)
       setStatus('unauthenticated')
@@ -248,13 +253,13 @@ export function AuthProvider({ children }) {
 
         /**
          * PKCE: en iOS el retorno va por deep link (appUrlOpen); el WebView suele no tener ?code= en location.
-         * Probamos launch URL nativa y luego la URL del WebView; un solo intercambio exitoso basta.
+         * getLaunchUrl + URL del WebView; un solo intercambio exitoso basta.
          */
+        let pkceResolutionPending = false
         if (!session?.user) {
           const urlsToTry = []
           if (Capacitor.isNativePlatform()) {
             try {
-              const { App } = await import('@capacitor/app')
               const launch = await App.getLaunchUrl()
               if (launch?.url) urlsToTry.push(launch.url)
             } catch {
@@ -263,6 +268,11 @@ export function AuthProvider({ children }) {
           }
           if (typeof window !== 'undefined') {
             urlsToTry.push(window.location.href)
+          }
+          const shouldHoldTimeout = urlsToTry.some((u) => u && urlHasOAuthCode(u))
+          if (shouldHoldTimeout) {
+            pkceResolutionPending = true
+            oauthPendingRef.current = true
           }
           const seen = new Set()
           for (const urlStr of urlsToTry) {
@@ -313,8 +323,13 @@ export function AuthProvider({ children }) {
           if (oauthErr) setAuthError(oauthErr)
         }
 
-        await syncFromSession(session)
+        try {
+          await syncFromSession(session)
+        } finally {
+          if (pkceResolutionPending) oauthPendingRef.current = false
+        }
       } catch (e) {
+        oauthPendingRef.current = false
         console.error('[WaitMe][Auth] arranque de sesión falló; se continúa sin sesión.', e)
         if (!cancelled) {
           try {
@@ -334,9 +349,8 @@ export function AuthProvider({ children }) {
       }
     }
 
-    void bootstrap()
-
     if (!isSupabaseConfigured() || !supabase) {
+      void bootstrap()
       return () => {
         cancelled = true
       }
@@ -356,27 +370,33 @@ export function AuthProvider({ children }) {
     })
 
     let removeAppUrlOpen = () => {}
-    void (async () => {
-      if (!Capacitor.isNativePlatform()) return
-      try {
-        const { App } = await import('@capacitor/app')
-        if (cancelled) return
-        const handle = await App.addListener('appUrlOpen', async ({ url }) => {
-          if (cancelled) return
-          const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
-          if (exErr) {
-            console.warn('[WaitMe][OAuth] appUrlOpen', exErr.message ?? exErr)
-            return
+    const startAuth = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const handle = await App.addListener('appUrlOpen', async ({ url }) => {
+            if (cancelled || !url || !urlHasOAuthCode(url)) return
+            oauthPendingRef.current = true
+            try {
+              const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
+              if (exErr) {
+                console.warn('[WaitMe][OAuth] appUrlOpen', exErr.message ?? exErr)
+                return
+              }
+              await syncFromSession(next)
+            } finally {
+              oauthPendingRef.current = false
+            }
+          })
+          removeAppUrlOpen = () => {
+            void handle.remove()
           }
-          if (next?.user) await syncFromSession(next)
-        })
-        removeAppUrlOpen = () => {
-          void handle.remove()
+        } catch (e) {
+          console.error('[WaitMe][Auth] appUrlOpen listener', e)
         }
-      } catch (e) {
-        console.error('[WaitMe][Auth] appUrlOpen listener', e)
       }
-    })()
+      await bootstrap()
+    }
+    void startAuth()
 
     return () => {
       cancelled = true
