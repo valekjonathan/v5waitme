@@ -15,8 +15,10 @@ const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
 })
 
 /**
- * Debe coincidir con CFBundleURLSchemes y con `redirectTo` en signInWithOAuth (iOS).
- * Añadir la misma URL en Supabase Auth → Redirect URLs.
+ * Debe coincidir con CFBundleURLSchemes y con `redirectTo` en signInWithOAuth (iOS/Android nativo).
+ * En Supabase Dashboard → Authentication → URL configuration:
+ * - Redirect URLs: incluir exactamente esta URL; quitar localhost / 127.0.0.1 si no usas Supabase local.
+ * - Site URL: tu HTTPS de producción (p. ej. Vercel); no dejar solo http://localhost como única URL de sitio si usas OAuth en cloud.
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
 
@@ -24,7 +26,7 @@ export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
  */
-export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12f'
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12g'
 
 /**
  * True si la URL es el redirect nativo acordado (scheme/host/path), sin depender de includes('auth/callback').
@@ -267,18 +269,20 @@ export async function signInWithGoogle() {
     const isNative =
       typeof window !== 'undefined' && Capacitor.isNativePlatform()
     /**
-     * iOS: `skipBrowserRedirect: true` + flujo nativo.
-     * En iPhone, `Browser.open` (SFSafariViewController) suele dejar pantalla en blanco al volver al custom scheme;
-     * usamos `WaitmeWebAuth` (ASWebAuthenticationSession), que entrega la URL de callback al JS sin depender solo de appUrlOpen.
-     * Android: `Browser.open` + deep link como antes.
-     * Web: redirect en la misma ventana.
+     * Nativo (iOS/Android): `redirectTo` fijo al custom scheme; nunca localhost/origen web.
+     * Web: debe ser un HTTPS (u origen dev) registrado en Supabase → Redirect URLs; el esquema app no aplica en el navegador.
+     * iOS: `skipBrowserRedirect: true` + WaitmeWebAuth (ASWebAuthenticationSession).
+     * Android: `Browser.open` + deep link.
      */
+    const redirectTo = isNative
+      ? NATIVE_OAUTH_REDIRECT_URL
+      : typeof window !== 'undefined'
+        ? window.location.origin
+        : ''
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: isNative
-          ? 'es.waitme.v5waitme://auth/callback'
-          : window.location.origin,
+        redirectTo,
         skipBrowserRedirect: isNative,
       },
     })
@@ -288,6 +292,7 @@ export async function signInWithGoogle() {
     }
     if (isNative && data?.url) {
       const oauthOpenUrl = String(data.url).trim()
+      console.log('[OAUTH URL]', oauthOpenUrl)
       console.warn('[WaitMe][OAuth][diag] URL OAuth que se va a abrir:', oauthOpenUrl)
       console.warn(
         '[WaitMe][OAuth][diag] signInWithOAuth data (sin abrir redirectTo):',
@@ -316,6 +321,7 @@ export async function signInWithGoogle() {
           url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
         })
+        console.log('[CALLBACK URL]', callbackUrl)
         console.warn('[WaitMe][OAuth][diag] callbackUrl recibida al volver:', callbackUrl)
         const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
         if (iosExErr) {
