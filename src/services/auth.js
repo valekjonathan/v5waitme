@@ -11,6 +11,12 @@ import { supabase, isSupabaseConfigured } from './supabase.js'
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
 
+/**
+ * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
+ * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
+ */
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12c'
+
 /** Indica si la URL trae código PKCE (query; hash por compatibilidad). */
 export function urlHasOAuthCode(urlString) {
   if (!urlString) return false
@@ -155,7 +161,13 @@ export async function signInWithGoogle() {
     if (isNative && data?.url) {
       await Browser.open({ url: data.url })
     }
-    return { data, error: null }
+    return {
+      data:
+        data != null
+          ? { ...data, _waitmeOAuthIosBundle: OAUTH_IOS_BUNDLE_ID }
+          : data,
+      error: null,
+    }
   } catch (e) {
     console.error('[WaitMe][Auth] signInWithGoogle excepción', e)
     return { data: null, error: e }
