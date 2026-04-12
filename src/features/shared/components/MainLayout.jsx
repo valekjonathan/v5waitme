@@ -44,7 +44,6 @@ const centeredLayerStyle = {
   ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : {}),
 }
 const contentViewportStyle = {
-  pointerEvents: 'none',
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.content,
@@ -53,6 +52,11 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
+  /**
+   * Misma razón que `centeredLayerStyle`: en Safari (web) varios ancestros con `pointer-events: none`
+   * impiden el hit-test correcto hacia la columna interactiva. En nativo, `none` deja pasar toques al mapa fuera de la columna.
+   */
+  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : { pointerEvents: 'auto' }),
 }
 const contentColumnStyle = {
   /** Columna interactiva; el resto del centeredLayer pasa el toque al mapa. */

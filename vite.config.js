@@ -160,6 +160,11 @@ export default defineConfig(({ mode, command }) => {
         },
       },
     },
+    preview: {
+      host: true,
+      port: 4173,
+      strictPort: true,
+    },
     server: {
       /** `true`: escucha en todas las interfaces (LAN + localhost). Mantiene 5173 fijo. */
       host: true,
