@@ -36,6 +36,8 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  /** Sin esto la capa fullscreen intercepta toques en iOS/WKWebView; el mapa y huecos no reciben eventos. */
+  pointerEvents: 'none',
 }
 const contentViewportStyle = {
   pointerEvents: 'none',

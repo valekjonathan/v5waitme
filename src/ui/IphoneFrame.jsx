@@ -21,9 +21,10 @@ function readScale() {
 }
 
 const nativeRootStyle = {
+  flex: 1,
   width: '100%',
-  height: '100%',
   minHeight: 0,
+  alignSelf: 'stretch',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
