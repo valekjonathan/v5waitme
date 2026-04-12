@@ -48,7 +48,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
         bottom: 0,
         left: 0,
         right: 0,
-        zIndex: 2147483647,
+        zIndex: LAYOUT.z.nav,
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
         paddingTop: navPaddingTop,
