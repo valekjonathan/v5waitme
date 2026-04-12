@@ -6,9 +6,12 @@ import { supabase, isSupabaseConfigured } from '../services/supabase.js'
 import {
   consumeOAuthUrlError,
   exchangeSessionFromOAuthUrl,
+  getOAuthErrorMessageFromUrl,
+  isNativeOAuthCallbackUrl,
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
   urlHasOAuthCode,
+  urlHasOAuthErrorParams,
 } from '../services/auth.js'
 import {
   buildResolvedHeaderProfile,
@@ -376,12 +379,23 @@ export function AuthProvider({ children }) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
             if (cancelled || !url) return
-            if (url.includes('auth/callback')) {
+            const lower = url.toLowerCase()
+            const isOurScheme = lower.startsWith('es.waitme.v5waitme:')
+            const isExactCallback = isNativeOAuthCallbackUrl(url)
+            const isSchemeOAuthReturn =
+              isOurScheme && (urlHasOAuthCode(url) || urlHasOAuthErrorParams(url))
+            if (isExactCallback || isSchemeOAuthReturn) {
               try {
                 await Browser.close()
               } catch {
                 /* sin vista de Browser abierta */
               }
+            }
+            if (!isExactCallback && !isSchemeOAuthReturn) return
+            if (urlHasOAuthErrorParams(url) && !urlHasOAuthCode(url)) {
+              const msg = getOAuthErrorMessageFromUrl(url)
+              if (msg) setAuthError(msg)
+              return
             }
             if (!urlHasOAuthCode(url)) return
             oauthPendingRef.current = true

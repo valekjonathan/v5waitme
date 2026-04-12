@@ -1,6 +1,12 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { getCurrentUser, getSession, signInWithGoogle, signOut } from '../src/services/auth.js'
+import {
+  getCurrentUser,
+  getSession,
+  isNativeOAuthCallbackUrl,
+  signInWithGoogle,
+  signOut,
+} from '../src/services/auth.js'
 
 test('getCurrentUser sin Supabase configurado devuelve null', async () => {
   const user = await getCurrentUser()
@@ -23,4 +29,10 @@ test('signInWithGoogle sin Supabase devuelve error controlado', async () => {
   assert.equal(data, null)
   assert.ok(error instanceof Error)
   assert.match(error.message, /supabase_not_configured/i)
+})
+
+test('isNativeOAuthCallbackUrl reconoce redirect iOS y variantes de mayúsculas', () => {
+  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://auth/callback?code=x'), true)
+  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://Auth/Callback?code=x'), true)
+  assert.equal(isNativeOAuthCallbackUrl('https://example.com/callback?code=x'), false)
 })

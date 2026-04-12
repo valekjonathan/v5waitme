@@ -15,7 +15,66 @@ export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
  */
-export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12c'
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12d'
+
+/**
+ * True si la URL es el redirect nativo acordado (scheme/host/path), sin depender de includes('auth/callback').
+ * iOS puede variar mayúsculas; el parser WHATWG normaliza hostname; el path se compara sin slash final extra.
+ */
+export function isNativeOAuthCallbackUrl(urlString) {
+  if (!urlString) return false
+  try {
+    const actual = new URL(urlString)
+    const expected = new URL(NATIVE_OAUTH_REDIRECT_URL)
+    const normPath = (p) => {
+      const t = p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p
+      return t.toLowerCase()
+    }
+    return (
+      actual.protocol.toLowerCase() === expected.protocol.toLowerCase() &&
+      actual.hostname.toLowerCase() === expected.hostname.toLowerCase() &&
+      normPath(actual.pathname) === normPath(expected.pathname)
+    )
+  } catch {
+    return false
+  }
+}
+
+/** error / error_description en query o hash (retorno OAuth fallido). */
+export function urlHasOAuthErrorParams(urlString) {
+  if (!urlString) return false
+  try {
+    const u = new URL(urlString)
+    if (u.searchParams.get('error') || u.searchParams.get('error_description')) return true
+    if (u.hash) {
+      const h = new URLSearchParams(u.hash.replace(/^#/, ''))
+      if (h.get('error') || h.get('error_description')) return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
+export function getOAuthErrorMessageFromUrl(urlString) {
+  if (!urlString) return null
+  try {
+    const u = new URL(urlString)
+    let msg = u.searchParams.get('error_description') || u.searchParams.get('error')
+    if (!msg && u.hash) {
+      const h = new URLSearchParams(u.hash.replace(/^#/, ''))
+      msg = h.get('error_description') || h.get('error')
+    }
+    if (!msg) return null
+    try {
+      return decodeURIComponent(String(msg).replace(/\+/g, ' '))
+    } catch {
+      return String(msg)
+    }
+  } catch {
+    return null
+  }
+}
 
 /** Indica si la URL trae código PKCE (query; hash por compatibilidad). */
 export function urlHasOAuthCode(urlString) {
