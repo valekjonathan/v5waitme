@@ -1,3 +1,8 @@
+html {
+  height: 100%;
+  min-height: -webkit-fill-available;
+}
+
 html,
 body,
 #root {
@@ -5,45 +10,19 @@ body,
 }
 
 /**
- * WKWebView (app Capacitor): cadena de altura útil real.
- * `body`/`#root` usan por defecto flex + centrado (Safari escritorio + marco); en nativo eso
- * impide que el hijo raíz estire → main/map quedan con alto 0 o mínimo → centro negro (body).
- * Aquí: columna + stretch para que IphoneFrame → ScreenShell → main llenen el WebView.
+ * Una sola cadena de altura: columna + stretch en body/#root.
+ * El centrado del “marco móvil” vive dentro de IphoneFrame (navegador), no en el root global;
+ * align-items/justify-content center aquí colapsaba main/map (centro negro) en Safari y WKWebView.
  */
-html.waitme-native-app {
-  height: 100%;
-  min-height: -webkit-fill-available;
-}
-
-html.waitme-native-app body {
-  height: 100%;
-  min-height: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
-html.waitme-native-app #root {
-  flex: 1 1 auto;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-}
-
-html,
-body {
-  overflow: hidden !important;
-}
-
 body {
   margin: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  overflow: hidden !important;
   background: black;
   font-family:
     'Inter',
@@ -61,11 +40,13 @@ body {
 
 #root {
   margin: 0;
-  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   overflow: hidden;
 }
 
