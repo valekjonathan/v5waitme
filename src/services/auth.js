@@ -286,7 +286,6 @@ export async function signInWithGoogle() {
       return { data: null, error }
     }
     if (isNative && data?.url) {
-      console.log('[OAUTH URL]', data.url)
       const oauthOpenUrl = String(data.url).trim()
       const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
       if (!check.ok) {
@@ -298,7 +297,6 @@ export async function signInWithGoogle() {
           url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
         })
-        console.log('[CALLBACK URL]', callbackUrl)
         const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
         if (iosExErr) {
           console.error('[WaitMe][Auth] iOS OAuth tras callback', iosExErr.message ?? iosExErr)

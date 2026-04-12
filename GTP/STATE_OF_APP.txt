@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-12T04:02:05.819Z
-Git HEAD: 17b6e9358f9c6c8bd8237f9aa3d7adec77a35a91
+Generated: 2026-04-12T04:07:11.487Z
+Git HEAD: 98ec05ab90c4ac4201cf508343d8d0e372b92d23
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -95,12 +95,14 @@ ios/
     info.plist
     Logs/
       Build/
+        E5038998-B60E-4DAF-8E33-B41FDC2DB1B6.xcactivitylog
         LogStoreManifest.plist
       Launch/
         LogStoreManifest.plist
       Localization/
         LogStoreManifest.plist
       Package/
+        6A263F17-B467-408E-8F5E-025E11457CFD.xcactivitylog
         FCDDC81E-A7A9-418C-A9E8-06A0303674C0.xcactivitylog
         LogStoreManifest.plist
       Test/
@@ -401,8 +403,6 @@ ios/
       CoreFoundation-6GGX2KMOIS1U7MQ445DW1LT41.pcm
       CoreFoundation-9BYVF0OGIWE49255KIVUM0XA5.pcm
       CoreGraphics-4KFALOLLP2Q6D0M1BB28ZX0V6.pcm
-      CoreGraphics-6EC2GVC5PQTTI1HNSCS7UNEF0.pcm
-      CoreImage-266K88VY9OAR13K3NG9G59NEI.pcm
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth

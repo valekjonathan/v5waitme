@@ -78,8 +78,11 @@ export default function IphoneFrame({ children }) {
             left: 0,
             width: FRAME_W,
             height: FRAME_H,
-            transform: `scale(${s})`,
-            transformOrigin: 'top left',
+            /**
+             * WebKit/Safari: `transform: scale()` en el marco desalineaba hit-testing respecto a los clics.
+             * `zoom` escala pintura y caja de interacción de forma coherente (misma apariencia que scale sobre 390×844).
+             */
+            zoom: s,
             borderRadius: radius.phoneFrame,
             overflow: 'hidden',
             background: 'transparent',
