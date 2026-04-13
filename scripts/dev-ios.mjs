@@ -36,21 +36,22 @@ const root = path.join(__dirname, '..')
 const VITE_PORT = VITE_DEV_PORT
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
-/** Safari debe usar `localhost` para que `window.location.origin` sea `http://localhost:5173` (Supabase OAuth redirect URLs). */
-const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}`
+/**
+ * Preview tipo iPhone en Mac: `IphoneFrame` se activa con `?iphone=true` (mismo origin OAuth: localhost:5173).
+ */
+const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}/?iphone=true`
 const LOCALHOST_HTTP_ROOT = `http://localhost:${VITE_PORT}/`
 const VITE_HTTP_WAIT_MS = 60_000
 
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
-  const iphonePreview = `http://localhost:${VITE_PORT}/?iphone=true`
+  const iphonePreviewUrl = `http://localhost:${VITE_PORT}/?iphone=true`
   console.log('\n')
   console.log(
-    `👉 URL Safari (Mac, local) → http://localhost:${VITE_PORT} (se abre sola si el servidor responde 200; origen OAuth)`
+    `👉 Safari Mac (preview tipo iPhone, marco interno) → ${iphonePreviewUrl} (se abre sola; origin OAuth sigue siendo http://localhost:${VITE_PORT})`
   )
-  console.log(`   Vista previa iPhone en Mac (opcional) → ${iphonePreview}`)
-  console.log(`👉 URL iPhone misma red (local) → ${baseDevUrl}`)
+  console.log(`👉 URL iPhone misma red (Capacitor live reload) → ${baseDevUrl}`)
   console.log('')
   console.log(
     '🏠 Fuera de casa / PC apagado → usa el despliegue Vercel (preview o production), no este dev server.'

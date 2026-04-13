@@ -4,7 +4,7 @@
 
 | Entorno                                | Uso                                                                                                                         |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Safari en Mac (`npm run dev:ios`)**  | Por defecto **vista web normal** en `http://localhost:5173/` (sin query). Marco tipo iPhone **solo** si abres `?iphone=true` o `?iphone=1` a propósito. Misma origen LAN que el iPhone para el dispositivo. |
+| **Safari en Mac (`npm run dev:ios`)**  | Preview tipo iPhone (marco interno `IphoneFrame`): el script abre **`http://localhost:5173/?iphone=true`**. Sin query, vista web a pantalla completa. Origin OAuth sigue siendo `http://localhost:5173`. |
 | **iPhone + Capacitor + Vite**          | Live reload real (`server.url` solo en dev, misma URL que `VITE_DEV_LAN_ORIGIN` en `.env.local`).                           |
 | **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                               |
 | **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                    |
@@ -24,11 +24,11 @@ npm run dev:ios
 2. Escribe/actualiza **`.env.local`** → `VITE_DEV_LAN_ORIGIN=http://<IP>:5173`.
 3. Define `WAITME_LAN_IP` y `WAITME_CAP_DEV_SERVER_URL` (origen LAN sin query) y ejecuta **`npx cap sync ios`** → `server.url` + `cleartext: true` en la config generada (solo con esa variable; nunca en prod sin ella).
 4. Arranca **Vite** en **5173**, `host: true`, HMR sin overlay agresivo, **sin** abrir navegador desde Vite.
-5. Tras comprobar el servidor (incl. `http://localhost:5173/` para el **origen OAuth**), en macOS abre **solo Safari** en `http://localhost:5173/` (no `127.0.0.1`: Supabase `redirectTo` usa `window.location.origin`). Esa URL es la vista **normal** de edición; el marco opcional es `http://localhost:5173/?iphone=true`.
+5. Tras comprobar el servidor (incl. `http://localhost:5173/` para el **origen OAuth**), en macOS abre **solo Safari** en **`http://localhost:5173/?iphone=true`** (preview tipo iPhone). Sin `?iphone=true`, edición a pantalla completa en la misma origin.
 
 **Logs**
 
-- Consola Vite: URL LAN útil para el iPhone; Safari en Mac usa `localhost:5173/` sin query para vista normal.
+- Consola Vite: URL LAN útil para el iPhone; Safari en Mac (preview tipo iPhone) usa `http://localhost:5173/?iphone=true`.
 - `IPHONE USING:` → `http://<LAN>:5173` (Capacitor `server.url`, sin query).
 
 **Solo Vite / sin sync iOS:** `npm run dev:vite`  

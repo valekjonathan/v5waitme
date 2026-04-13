@@ -23,7 +23,8 @@ const root = path.join(__dirname, '..')
 
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_DEV_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_DEV_PORT}/@vite/client`
-const SAFARI_DEV_URL = `http://localhost:${VITE_DEV_PORT}`
+/** Marco tipo iPhone (`IphoneFrame`) vía query; origin OAuth = http://localhost:5173 */
+const SAFARI_DEV_URL = `http://localhost:${VITE_DEV_PORT}/?iphone=true`
 const LOCALHOST_HTTP_ROOT = `http://localhost:${VITE_DEV_PORT}/`
 const VITE_HTTP_WAIT_MS = 60_000
 
@@ -87,7 +88,7 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('[waitme] HTTP OK → abriendo Safari (localhost:5173)')
+  console.log('[waitme] HTTP OK → abriendo Safari (preview tipo iPhone ?iphone=true)')
   openDarwinSafari(SAFARI_DEV_URL)
   console.log(
     '[waitme] Listo. Otros comandos: npm run dev (iOS+cap sync) · npm run dev:safari (live-reload :5175)'
