@@ -35,10 +35,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/**
- * LOCAL_DEV_MAC (`?iphone=true`): centrar el marco en el viewport real; letterbox #0b0b0f.
- */
-html.waitme-iphone-preview body {
+/** LOCAL_DEV_MAC: preview `?iphone=true` — centrar marco; letterbox #0b0b0f (IphoneFrame pone el atributo). */
+html[data-waitme-preview='iphone'] body {
   align-items: center;
   justify-content: center;
   background: #0b0b0f;
@@ -52,20 +50,18 @@ html.waitme-iphone-preview body {
   justify-content: flex-start;
 }
 
-html.waitme-iphone-preview #root {
+html[data-waitme-preview='iphone'] #root {
   align-items: center;
   justify-content: center;
 }
 
-/**
- * Capacitor (binario): cadena flex; misma `--app-height` que web/PWA.
- */
-html.waitme-capacitor {
+/** Capacitor: cadena flex; misma `--app-height` que web/PWA. */
+html[data-waitme-runtime='capacitor'] {
   height: var(--app-height);
   min-height: -webkit-fill-available;
 }
 
-html.waitme-capacitor body {
+html[data-waitme-runtime='capacitor'] body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -75,7 +71,7 @@ html.waitme-capacitor body {
   height: var(--app-height);
 }
 
-html.waitme-capacitor #root {
+html[data-waitme-runtime='capacitor'] #root {
   flex: 1;
   min-height: 0;
   height: var(--app-height);
@@ -85,21 +81,21 @@ html.waitme-capacitor #root {
   justify-content: flex-start;
 }
 
-html.waitme-capacitor #root > * {
+html[data-waitme-runtime='capacitor'] #root > * {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-html.waitme-capacitor #root > * > * {
+html[data-waitme-runtime='capacitor'] #root > * > * {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
-html.waitme-capacitor [data-waitme-screen-shell] {
+html[data-waitme-runtime='capacitor'] [data-waitme-screen-shell] {
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;

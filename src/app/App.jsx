@@ -312,11 +312,11 @@ export default function App() {
 
   return (
     <Providers>
-      <ErrorBoundary name="root">
-        <AppLayout>
+      <AppLayout>
+        <ErrorBoundary name="root">
           <AppScreenShell />
-        </AppLayout>
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </AppLayout>
     </Providers>
   )
 }

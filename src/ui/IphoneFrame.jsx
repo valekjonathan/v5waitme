@@ -1,7 +1,7 @@
 /**
  * Navegador con `?iphone=true|1`: marco 390×844 escalado al viewport (`--app-height` + visualViewport).
  * Escala con `transform` (no `zoom`): comportamiento más estable en Safari Mac con el preview.
- * Capacitor: sin marco; clase `waitme-capacitor` en `documentElement` (global.css).
+ * Capacitor: sin marco; `data-waitme-runtime="capacitor"` en `documentElement` (global.css).
  */
 import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useState } from 'react'
@@ -46,8 +46,8 @@ export default function IphoneFrame({ children }) {
 
   useLayoutEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined
-    document.documentElement.classList.add('waitme-capacitor')
-    return () => document.documentElement.classList.remove('waitme-capacitor')
+    document.documentElement.setAttribute('data-waitme-runtime', 'capacitor')
+    return () => document.documentElement.removeAttribute('data-waitme-runtime')
   }, [])
 
   useLayoutEffect(() => {
@@ -67,12 +67,10 @@ export default function IphoneFrame({ children }) {
 
   useLayoutEffect(() => {
     if (Capacitor.isNativePlatform()) return undefined
-    const root = document.documentElement
-    if (iphonePreview) root.classList.add('waitme-iphone-preview')
-    else root.classList.remove('waitme-iphone-preview')
-    return () => {
-      root.classList.remove('waitme-iphone-preview')
-    }
+    const el = document.documentElement
+    if (iphonePreview) el.setAttribute('data-waitme-preview', 'iphone')
+    else el.removeAttribute('data-waitme-preview')
+    return () => el.removeAttribute('data-waitme-preview')
   }, [iphonePreview])
 
   if (Capacitor.isNativePlatform()) {
