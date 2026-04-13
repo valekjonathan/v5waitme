@@ -8,7 +8,7 @@
 
 | Objetivo | Cómo | Qué **no** mezclar |
 |----------|------|-------------------|
-| **Iterar UI en el Mac** | `npm run dev` (Vite :5173). En Safari: `http://localhost:5173/?iphone=true` | No es la app Xcode; es solo navegador |
+| **Iterar UI en el Mac** | `npm run dev` (Vite :5173; en macOS abre Safari cuando responde OK). URL: `http://localhost:5173/?iphone=true` | No es la app Xcode; es solo navegador |
 | **App instalada en iPhone** | `npm run ios:embed:sync` → `dist/` dentro de `ios/` → compilar en Xcode | Sin `server.url`, sin IP LAN, sin Vite en el iPhone |
 | **Web pública** | Deploy Vercel (preview/production) | OAuth HTTPS; ver Supabase Redirect URLs |
 
@@ -16,8 +16,8 @@
 
 ## A) Preview web (Mac)
 
-1. `npm run dev`
-2. Abre Safari en **`http://localhost:5173/?iphone=true`** (marco opcional vía query).
+1. `npm run dev` (libera :5173 si hace falta; luego Vite).
+2. En **macOS**, Safari abre **`http://localhost:5173/?iphone=true`** cuando el servidor responde (marco opcional vía query). En otros sistemas, abre esa URL manualmente o usa `WAITME_SKIP_SAFARI_OPEN=1` si no quieres abrir Safari.
 
 Para OAuth en **otro dispositivo en la misma red**, puedes poner en `.env.local` una `VITE_DEV_LAN_ORIGIN` con la IP de tu Mac (ver `.env.example`); eso **no** afecta a la app nativa iOS.
 

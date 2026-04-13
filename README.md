@@ -6,7 +6,7 @@ WaitMe v5 — React 19 + Vite 8. Contrato de layout: `src/ui/layout/layout.ts`, 
 
 | Modo | Qué es | Comando / URL |
 |------|--------|----------------|
-| **Preview web (Mac)** | Vite en caliente, Safari u otro navegador | `npm run dev` → abre **`http://localhost:5173/?iphone=true`** para el marco tipo iPhone (`IphoneFrame`) |
+| **Preview web (Mac)** | Vite en caliente; en macOS abre Safari cuando el servidor responde | `npm run dev` → **`http://localhost:5173/?iphone=true`** (marco `IphoneFrame`). `WAITME_SKIP_SAFARI_OPEN=1` evita abrir Safari |
 | **App iOS real** | `dist/` copiado dentro del proyecto Xcode; **sin** servidor de desarrollo, **sin** `server.url` | `npm run ios:embed:sync` (equiv. `cap:sync:prod`) → instalar desde Xcode / TestFlight |
 
 La app nativa **no** usa localhost ni el Mac: embebe solo archivos estáticos tras `vite build`.
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-**Preview:** con el servidor en marcha, en Safari (Mac) entra a `http://localhost:5173/?iphone=true`.
+**Preview:** en macOS, Safari se abre solo cuando la URL anterior responde (HTTP OK). Fuera de macOS, usa el mismo enlace en tu navegador.
 
 **iOS (IPA / dispositivo):** `npm run ios:embed:sync` y abre `ios/` en Xcode. No hay live reload ni `WAITME_CAP_DEV_SERVER_URL` en este flujo.
 

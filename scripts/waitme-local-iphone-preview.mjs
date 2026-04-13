@@ -1,22 +1,19 @@
 /**
- * LOCAL_DEV_MAC — única fuente de verdad para el preview tipo iPhone en Safari (Mac).
+ * LOCAL_DEV_MAC — única fuente de verdad para la URL del preview tipo iPhone en Safari (Mac).
  *
  * No mezclar con:
  * - App iOS instalada: carga solo `dist/` embebido (`npm run ios:embed:sync`), sin Vite ni localhost.
  * - WEB_PREVIEW_CLOUD (Vercel): origen HTTPS público.
  *
- * URL final típica: http://localhost:5173/?iphone=true
+ * URL canónica: http://localhost:5173/?iphone=true
  */
 import { VITE_DEV_PORT } from './vite-dev-5173.mjs'
 
-/** Query canónica (IphoneFrame.jsx lee `iphone=true` o `iphone=1`). */
+/** Query canónica (`IphoneFrame.jsx` acepta `iphone=true` o `iphone=1`). */
 export const WAITME_IPHONE_PREVIEW_SEARCH = '?iphone=true'
 
-/** BrowserSync proxy (dev-safari-live-reload): mismo query sobre el puerto del proxy. */
-export const WAITME_BROWSER_SYNC_PREVIEW_PORT = 5175
-
 /**
- * @param {number} [port=VITE_DEV_PORT] puerto del servidor (Vite directo o proxy).
+ * @param {number} [port=VITE_DEV_PORT] puerto del servidor de desarrollo Vite.
  * @returns {string}
  */
 export function waitmeLocalIphonePreviewUrl(port = VITE_DEV_PORT) {
