@@ -22,7 +22,8 @@ const Header = forwardRef(function Header({ interactive = true }, ref) {
       ref={ref}
       data-waitme-header
       style={{
-        pointerEvents: 'auto',
+        /** Con chrome no interactivo (login/carga), no robar hit-test sobre el main (z del contenido < header). */
+        pointerEvents: interactive ? 'auto' : 'none',
         position: 'fixed',
         left: 0,
         right: 0,

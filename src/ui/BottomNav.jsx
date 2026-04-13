@@ -43,7 +43,8 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       ref={ref}
       data-waitme-nav
       style={{
-        pointerEvents: 'auto',
+        /** Mismo contrato que Header: barra fija no debe tapar CTAs del login cuando interactive=false. */
+        pointerEvents: interactive ? 'auto' : 'none',
         position: 'fixed',
         bottom: 0,
         left: 0,

@@ -120,6 +120,17 @@ describe('UI crítica (React): auth, errores y navegación', () => {
     })
   })
 
+  it('Login: header y bottom nav no interceptan punteros cuando el shell es no interactivo', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: /continuar con google/i })
+    const header = document.querySelector('header[data-waitme-header]')
+    const nav = document.querySelector('nav[data-waitme-nav]')
+    expect(header).not.toBeNull()
+    expect(nav).not.toBeNull()
+    expect(header.style.pointerEvents).toBe('none')
+    expect(nav.style.pointerEvents).toBe('none')
+  })
+
   it('Login completo: click Google -> authenticated -> Home si perfil completo (fallback mapa)', async () => {
     localStorage.setItem('hasSeenLogin', 'true')
     render(<App />)
