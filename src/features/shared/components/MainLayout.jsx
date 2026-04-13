@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import CenterPin from '../../home/components/CenterPin'
 import logo from '../../../assets/logo.png'
@@ -37,11 +36,6 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /**
-   * Solo Capacitor/WebKit móvil: la capa fullscreen no debe robar el hit-test respecto a la columna.
-   * En Safari macOS, `pointer-events: none` en este antecesor flex rompe el reparto de clics a hijos con `auto` (CTAs).
-   */
-  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : {}),
 }
 const contentViewportStyle = {
   position: 'absolute',
@@ -134,10 +128,6 @@ function overlayLayerStyle(background) {
  * @param {boolean} [props.loginEntrance]
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
-  useEffect(() => {
-    if (import.meta.env.DEV) console.log('[LAYOUT]')
-  }, [])
-
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)

@@ -43,10 +43,6 @@ export default function ScreenShell({
   const [chromePx, setChromePx] = useState<{ header: number; nav: number }>({ header: 0, nav: 0 })
 
   useLayoutEffect(() => {
-    if (import.meta.env.DEV) console.log('[SHELL]')
-  }, [])
-
-  useLayoutEffect(() => {
     if (fullBleed) return undefined
 
     const headerEl = headerRef.current

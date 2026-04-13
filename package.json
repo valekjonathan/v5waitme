@@ -3,11 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Dev web: npm run dev (Vite :5173 + Safari). iOS+LAN: npm run dev:ios. Prod web: npm run build:web. iOS embebido: npm run ios:embed:sync. E2E :5174. CI: quality.",
+  "description": "Dev: npm run dev (Vite :5173). Safari+preview: npm run dev:web. iOS+LAN: npm run dev:ios. Prod: npm run build:web. CI: quality.",
   "scripts": {
     "dev:ios": "node scripts/dev-ios.mjs",
     "get:lan-ip": "node scripts/get-lan-ip.mjs",
-    "dev": "node scripts/dev-web.mjs",
+    "dev": "vite",
     "dev:web": "node scripts/dev-web.mjs",
     "dev:public": "node scripts/ngrok-public.mjs",
     "dev:vite": "vite",

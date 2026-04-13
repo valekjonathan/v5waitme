@@ -216,58 +216,42 @@ function MainApp() {
   )
 }
 
-/**
- * Auth listo para UI distinta de boot: sesión resuelta y, si hay usuario, perfil bootstrap listo.
- */
 function isAuthReady(status, user, profileBootstrapReady) {
   if (status === 'loading') return false
   if (status === 'authenticated' && user && !profileBootstrapReady) return false
   return true
 }
 
-function AppGate() {
-  const { status, user, profileBootstrapReady } = useAuth()
-
-  const authReady = useMemo(
+/**
+ * Auth y ramas login/main: solo aquí (no en el shell raíz).
+ * `user ? MainApp : Login` tras sesión resuelta.
+ */
+function AppRouter() {
+  const { user, status, profileBootstrapReady } = useAuth()
+  const authResolved = useMemo(
     () => isAuthReady(status, user, profileBootstrapReady),
     [status, user, profileBootstrapReady]
   )
+  if (!authResolved) return <Boot />
+  return user ? <MainApp /> : <Login />
+}
+
+/**
+ * Primer tick: montaje estable de `AppLayout` (`IphoneFrame`) sin depender de auth en este componente.
+ */
+function AppBootstrap() {
+  const [appReady, setAppReady] = useState(false)
 
   useEffect(() => {
-    if (!import.meta.env.DEV) return
-    console.log('[APP MOUNT]')
+    setAppReady(true)
   }, [])
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    console.log('[AUTH]', status, user)
-  }, [status, user])
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return undefined
-    const handler = (e) => {
-      console.log('[CLICK]', e.target)
-    }
-    document.addEventListener('click', handler)
-    return () => document.removeEventListener('click', handler)
-  }, [])
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return undefined
-    const t = window.setTimeout(() => {
-      console.log(
-        '[TOP]',
-        document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)
-      )
-    }, 1500)
-    return () => window.clearTimeout(t)
-  }, [])
+  if (!appReady) return null
 
   return (
     <AppScreenProvider>
       <AppLayout>
-        {!authReady && <Boot />}
-        {authReady && (user ? <MainApp /> : <Login />)}
+        <AppRouter />
       </AppLayout>
     </AppScreenProvider>
   )
@@ -277,7 +261,7 @@ export default function App() {
   return (
     <ErrorBoundary name="root">
       <AppAuthRoot>
-        <AppGate />
+        <AppBootstrap />
       </AppAuthRoot>
     </ErrorBoundary>
   )
