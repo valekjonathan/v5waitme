@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   getSession,
   isNativeOAuthCallbackUrl,
+  resolveWebOAuthRedirectTo,
   signInWithGoogle,
   signOut,
 } from '../src/services/auth.js'
@@ -35,4 +36,52 @@ test('isNativeOAuthCallbackUrl reconoce redirect iOS y variantes de mayúsculas'
   assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://auth/callback?code=x'), true)
   assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://Auth/Callback?code=x'), true)
   assert.equal(isNativeOAuthCallbackUrl('https://example.com/callback?code=x'), false)
+})
+
+test('resolveWebOAuthRedirectTo: prod usa origen de la pestaña + /auth/callback', () => {
+  assert.equal(
+    resolveWebOAuthRedirectTo({
+      windowOrigin: 'https://app.example.com',
+      hostname: 'app.example.com',
+      isProd: true,
+      devLanOrigin: '',
+    }),
+    'https://app.example.com/auth/callback'
+  )
+})
+
+test('resolveWebOAuthRedirectTo: dev en loopback con VITE_DEV_LAN_ORIGIN usa LAN (iPhone OAuth)', () => {
+  assert.equal(
+    resolveWebOAuthRedirectTo({
+      windowOrigin: 'http://localhost:5173',
+      hostname: 'localhost',
+      isProd: false,
+      devLanOrigin: 'http://192.168.0.55:5173',
+    }),
+    'http://192.168.0.55:5173/auth/callback'
+  )
+})
+
+test('resolveWebOAuthRedirectTo: dev ya en IP LAN no sustituye por LAN', () => {
+  assert.equal(
+    resolveWebOAuthRedirectTo({
+      windowOrigin: 'http://192.168.0.55:5173',
+      hostname: '192.168.0.55',
+      isProd: false,
+      devLanOrigin: 'http://192.168.0.99:5173',
+    }),
+    'http://192.168.0.55:5173/auth/callback'
+  )
+})
+
+test('resolveWebOAuthRedirectTo: dev loopback sin LAN cae en origen actual', () => {
+  assert.equal(
+    resolveWebOAuthRedirectTo({
+      windowOrigin: 'http://127.0.0.1:5173',
+      hostname: '127.0.0.1',
+      isProd: false,
+      devLanOrigin: '',
+    }),
+    'http://127.0.0.1:5173/auth/callback'
+  )
 })

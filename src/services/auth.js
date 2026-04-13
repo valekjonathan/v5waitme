@@ -5,6 +5,50 @@ import { Browser } from '@capacitor/browser'
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { supabase, isSupabaseConfigured, SUPABASE_PROJECT_URL } from './supabase.js'
 
+const viteEnv = typeof import.meta !== 'undefined' && import.meta.env != null ? import.meta.env : {}
+const isViteProd = viteEnv.PROD === true
+
+/**
+ * URL absoluta de retorno OAuth en navegador (PKCE). Una sola fuente de verdad para `redirectTo`.
+ *
+ * - Producción / staging / túnel: `window.location.origin` (HTTPS u origen real de la pestaña).
+ * - Desarrollo en `localhost` / `127.0.0.1`: si Vite inyectó `VITE_DEV_LAN_ORIGIN`, se usa ese origen
+ *   para que Google → Supabase no redirijan al loopback del Mac (el iPhone no puede abrirlo → pantalla en blanco).
+ * - Desarrollo ya abierto por IP LAN o ngrok: se respeta el origen actual.
+ *
+ * Ruta fija `/auth/callback`: registrar en Supabase → Auth → Redirect URLs (y Site URL coherente).
+ *
+ * @param {{ windowOrigin: string, hostname: string, isProd: boolean, devLanOrigin: string }} p
+ * @returns {string}
+ */
+export function resolveWebOAuthRedirectTo(p) {
+  const { windowOrigin, hostname, isProd, devLanOrigin } = p
+  const host = String(hostname || '').toLowerCase()
+  const isLoopback = host === 'localhost' || host === '127.0.0.1' || host === '[::1]'
+
+  let base = String(windowOrigin || '').replace(/\/$/, '')
+  if (!isProd && isLoopback) {
+    const lan = String(devLanOrigin || '').trim().replace(/\/$/, '')
+    if (lan) {
+      try {
+        const u = new URL(lan)
+        if (u.protocol === 'http:' || u.protocol === 'https:') {
+          base = u.origin
+        }
+      } catch {
+        /* mantener base (origen de la pestaña) */
+      }
+    }
+  }
+
+  if (!base) return ''
+  try {
+    return new URL('/auth/callback', `${base}/`).href
+  } catch {
+    return ''
+  }
+}
+
 /** ASWebAuthenticationSession nativo (iOS); evita SFSafariViewController en blanco con custom scheme. */
 const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
   web: () => ({
@@ -272,7 +316,12 @@ export async function signInWithGoogle() {
     const redirectTo = isNative
       ? NATIVE_OAUTH_REDIRECT_URL
       : typeof window !== 'undefined'
-        ? window.location.origin
+        ? resolveWebOAuthRedirectTo({
+            windowOrigin: window.location.origin,
+            hostname: window.location.hostname,
+            isProd: isViteProd,
+            devLanOrigin: String(viteEnv.VITE_DEV_LAN_ORIGIN ?? ''),
+          })
         : ''
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
