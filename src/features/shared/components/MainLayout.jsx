@@ -27,6 +27,8 @@ const overlayStyleBase = {
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.overlay,
+  /** Solo tinte visual: no interceptar toques (mapa / columna con `auto`). */
+  pointerEvents: 'none',
 }
 const centeredLayerStyle = {
   position: 'absolute',
@@ -35,7 +37,8 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  pointerEvents: 'auto',
+  /** Contenedor de centrado: sin captura; la columna lleva `auto`. */
+  pointerEvents: 'none',
 }
 const contentViewportStyle = {
   position: 'absolute',
@@ -46,7 +49,7 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
-  pointerEvents: 'auto',
+  pointerEvents: 'none',
 }
 const contentColumnStyle = {
   /** Columna interactiva; el resto del centeredLayer pasa el toque al mapa. */
