@@ -32,15 +32,18 @@ export function shouldUseNativeOAuthFlow(signals) {
     return p === 'capacitor:' || p === 'ionic:'
   }
   if (typeof window === 'undefined') return false
+  const win = window
+  /**
+   * Misma heurística que `getPlatformId` en `@capacitor/core`: puente nativo **antes** que `getPlatform()`.
+   * Si el bridge existe, el flujo OAuth debe ser nativo (evita `window.location.assign` → Site URL / Vercel).
+   */
+  if (win.androidBridge || win.webkit?.messageHandlers?.bridge) return true
   try {
     const plat = Capacitor.getPlatform()
     if (plat === 'ios' || plat === 'android') return true
   } catch {
     /* */
   }
-  const win = window
-  /** Misma señal que `@capacitor/core` usa para iOS/Android frente a `web`. */
-  if (win.androidBridge || win.webkit?.messageHandlers?.bridge) return true
   try {
     if (Capacitor.isNativePlatform()) return true
   } catch {
@@ -171,11 +174,24 @@ const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth-callback'
 
-/** Diagnóstico OAuth solo en desarrollo (Vite `import.meta.env.DEV`); sin ruido en builds de producción. */
-export function oauthDiagLog(phase, payload) {
-  if (typeof import.meta !== 'undefined' && import.meta.env != null && import.meta.env.DEV !== true) {
-    return
+/**
+ * Diagnóstico OAuth: Vite DEV y, en binario iOS/Android, también Release (Consola del dispositivo / Web Inspector).
+ */
+function oauthDiagLogEnabled() {
+  if (typeof import.meta !== 'undefined' && import.meta.env != null && import.meta.env.DEV === true) {
+    return true
   }
+  try {
+    const p = Capacitor.getPlatform()
+    return p === 'ios' || p === 'android'
+  } catch {
+    return false
+  }
+}
+
+/** Diagnóstico OAuth (ver `oauthDiagLogEnabled`). */
+export function oauthDiagLog(phase, payload) {
+  if (!oauthDiagLogEnabled()) return
   try {
     console.info(`[WaitMe][OAuth][diag] ${phase}`, payload)
   } catch {
@@ -245,7 +261,7 @@ export function parseSupabaseAuthorizeUrlDiagnostics(authorizeUrl) {
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
  */
-export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12g'
+export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-13h'
 
 /**
  * True si la URL es el redirect nativo acordado (scheme + host `auth-callback`).

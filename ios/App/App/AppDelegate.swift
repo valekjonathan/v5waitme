@@ -1,5 +1,8 @@
-import UIKit
 import Capacitor
+import OSLog
+import UIKit
+
+private let waitmeAppDelegateLog = Logger(subsystem: "es.waitme.v5waitme", category: "AppDelegate")
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,9 +22,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
 
-        #if DEBUG
-        print("WAITME URL OPEN:", url.absoluteString)
-        #endif
+        waitmeAppDelegateLog.info("application open url=\(url.absoluteString, privacy: .public)")
 
         // Obligatorio: sin esto el bridge Capacitor no entrega la URL al WKWebView (appUrlOpen / OAuth).
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)

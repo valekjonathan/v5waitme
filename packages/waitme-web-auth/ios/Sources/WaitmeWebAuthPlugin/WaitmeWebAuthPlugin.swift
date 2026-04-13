@@ -1,6 +1,9 @@
 import AuthenticationServices
 import Capacitor
+import OSLog
 import UIKit
+
+private let waitmeOAuthLog = Logger(subsystem: "es.waitme.v5waitme", category: "WaitmeWebAuth")
 
 @objc(WaitmeWebAuthPlugin)
 public class WaitmeWebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding {
@@ -28,9 +31,7 @@ public class WaitmeWebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
             self.authSession?.cancel()
             self.authSession = nil
 
-            #if DEBUG
-            print("[WaitMe][OAuth][diag] ASWebAuthenticationSession URL OAuth que se abre:", url.absoluteString)
-            #endif
+            waitmeOAuthLog.info("ASWebAuthenticationSession open url=\(url.absoluteString, privacy: .public)")
 
             let session = ASWebAuthenticationSession(
                 url: url,
@@ -57,9 +58,7 @@ public class WaitmeWebAuthPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticati
                         return
                     }
 
-                    #if DEBUG
-                    print("WAITME URL OPEN:", callbackURL.absoluteString)
-                    #endif
+                    waitmeOAuthLog.info("OAuth callback url=\(callbackURL.absoluteString, privacy: .public)")
                     call.resolve(["callbackUrl": callbackURL.absoluteString])
                 }
             }
