@@ -1,10 +1,12 @@
-import { AppScreenProvider, useAppScreen } from '../lib/AppScreenContext'
-import { AppAuthRoot, useAuth } from '../lib/AuthContext'
+import { useAppScreen } from '../lib/AppScreenContext'
+import { useAuth } from '../lib/AuthContext'
 import {
   ProfileIncompleteNoticeProvider,
   useProfileIncompleteNotice,
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
+import { Providers } from './Providers.jsx'
+import { useAppHeight } from './useAppHeight.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -288,20 +290,15 @@ function AppRouter() {
 }
 
 export default function App() {
-  useEffect(() => {
-    const height = window.visualViewport?.height ?? window.innerHeight
-    document.documentElement.style.setProperty('--app-height', `${height}px`)
-  }, [])
+  useAppHeight()
 
   return (
     <ErrorBoundary name="root">
-      <AppAuthRoot>
-        <AppScreenProvider>
-          <AppLayout>
-            <AppRouter />
-          </AppLayout>
-        </AppScreenProvider>
-      </AppAuthRoot>
+      <Providers>
+        <AppLayout>
+          <AppRouter />
+        </AppLayout>
+      </Providers>
     </ErrorBoundary>
   )
 }

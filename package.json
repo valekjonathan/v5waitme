@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "LOCAL_DEV_MAC: npm run dev (libera :5173, Vite, Safari → http://localhost:5173/?iphone=true). WEB_PREVIEW_CLOUD: Vercel. IOS_BETA_REAL: npm run ios:embed:sync (dist embebido). CI: quality.",
+  "description": "Base: Providers→AppLayout(IphoneFrame)→ScreenShell; LOCAL_DEV_MAC: npm run dev → http://localhost:5173/?iphone=true; WEB: Vercel+PWA; iOS: ios:embed:sync. CI: quality.",
   "scripts": {
     "get:lan-ip": "node scripts/get-lan-ip.mjs",
     "dev": "node scripts/dev-local-mac.mjs",

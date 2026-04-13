@@ -1,8 +1,6 @@
 /**
- * Marco del dispositivo: en navegador solo si la URL lleva `?iphone=true` o `?iphone=1` (preview opcional).
- * Sin esa query, el contenido ocupa el viewport como web normal (Safari escritorio / edición).
- * En Capacitor: sin marco, sin escala y sin wrapper extra; la altura la define html/body/#root + ScreenShell.
- * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
+ * Navegador con `?iphone=true|1`: marco 390×844 escalado al viewport (`--app-height` + visualViewport).
+ * Capacitor: sin marco; `waitme-capacitor` en `documentElement` (global.css).
  */
 import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useState } from 'react'
@@ -11,7 +9,6 @@ import { shadows } from '../design/shadows'
 
 const FRAME_W = 390
 const FRAME_H = 844
-/** Margen alrededor del marco al calcular escala (visualViewport − padding). */
 const VIEW_PAD = 28
 
 function readIphonePreviewQuery() {
@@ -67,7 +64,6 @@ export default function IphoneFrame({ children }) {
     }
   }, [iphonePreview])
 
-  /** LOCAL_DEV_MAC: mismo fondo que la app en `global.css` (evita letterbox negro puro fuera del marco). */
   useLayoutEffect(() => {
     if (Capacitor.isNativePlatform()) return undefined
     const root = document.documentElement
@@ -97,11 +93,6 @@ export default function IphoneFrame({ children }) {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        /**
-         * Safari macOS: un antecesor con `pointer-events: none` impide que los clics lleguen a hijos
-         * con `auto` (véase comentario en MainLayout). El marco debe usar `auto`; el letterbox
-         * solo absorbe clics fuera del teléfono, sin cambiar layout.
-         */
       }}
     >
       <div
@@ -120,10 +111,6 @@ export default function IphoneFrame({ children }) {
             left: 0,
             width: FRAME_W,
             height: FRAME_H,
-            /**
-             * WebKit/Safari: `transform: scale()` en el marco desalineaba hit-testing respecto a los clics.
-             * `zoom` escala pintura y caja de interacción de forma coherente (misma apariencia que scale sobre 390×844).
-             */
             zoom: s,
             borderRadius: radius.phoneFrame,
             overflow: 'hidden',
