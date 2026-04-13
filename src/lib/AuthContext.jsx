@@ -8,7 +8,7 @@ import {
   exchangeSessionFromOAuthUrl,
   getOAuthErrorMessageFromUrl,
   isNativeOAuthCallbackUrl,
-  oauthDiagLog,
+  oauthRuntimeTrace,
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
   urlHasOAuthCode,
@@ -368,7 +368,11 @@ export function AuthProvider({ children }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return
       if (event === 'SIGNED_IN') {
-        oauthDiagLog('onAuthStateChange', { event, userId: session?.user?.id ?? null })
+        oauthRuntimeTrace('7_onAuthStateChange', {
+          event,
+          userId: session?.user?.id ?? null,
+          hasSession: Boolean(session),
+        })
       }
       void (async () => {
         try {
@@ -385,7 +389,7 @@ export function AuthProvider({ children }) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
             if (cancelled || !url) return
-            oauthDiagLog('appUrlOpen', { url })
+            oauthRuntimeTrace('appUrl_open_listener', { url })
             if (Capacitor.getPlatform() === 'ios' && supabase) {
               const {
                 data: { session: already },
@@ -423,10 +427,13 @@ export function AuthProvider({ children }) {
               const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
               if (exErr) {
                 console.error('[WaitMe][Auth] appUrlOpen exchange', exErr.message ?? exErr)
-                oauthDiagLog('appUrlOpen:exchange_error', { message: exErr.message ?? String(exErr) })
+                oauthRuntimeTrace('appUrl_open_exchange', { ok: false, message: exErr.message ?? String(exErr) })
                 return
               }
-              oauthDiagLog('appUrlOpen:exchange_ok', { userId: next?.user?.id ?? null })
+              oauthRuntimeTrace('appUrl_open_exchange', {
+                ok: true,
+                userId: next?.user?.id ?? null,
+              })
               await syncFromSession(next)
             } finally {
               oauthPendingRef.current = false
