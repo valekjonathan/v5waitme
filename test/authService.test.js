@@ -34,8 +34,9 @@ test('signInWithGoogle sin Supabase devuelve error controlado', async () => {
 })
 
 test('isNativeOAuthCallbackUrl reconoce redirect iOS y variantes de mayúsculas', () => {
-  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://auth/callback?code=x'), true)
-  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://Auth/Callback?code=x'), true)
+  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://auth-callback?code=x'), true)
+  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://Auth-Callback?code=x'), true)
+  assert.equal(isNativeOAuthCallbackUrl('es.waitme.v5waitme://auth/callback?code=x'), false)
   assert.equal(isNativeOAuthCallbackUrl('https://example.com/callback?code=x'), false)
 })
 

@@ -45,7 +45,7 @@ export function shouldUseNativeOAuthFlow(signals) {
  *   para que Google → Supabase no redirijan al loopback del Mac (el iPhone no puede abrirlo → pantalla en blanco).
  * - Desarrollo ya abierto por IP LAN o ngrok: se respeta el origen actual.
  *
- * Ruta fija `/auth/callback`: registrar en Supabase → Auth → Redirect URLs (y Site URL coherente).
+ * Ruta fija `/auth/callback` solo para **web** (http/https) en Redirect URLs; nativo ≠ ver `NATIVE_OAUTH_REDIRECT_URL`.
  *
  * @param {{ windowOrigin: string, hostname: string, isProd: boolean, devLanOrigin: string }} p
  * @returns {string}
@@ -88,12 +88,11 @@ const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
 })
 
 /**
- * Debe coincidir con CFBundleURLSchemes y con `redirectTo` en signInWithOAuth (iOS/Android nativo).
- * En Supabase Dashboard → Authentication → URL configuration:
- * - Redirect URLs: incluir exactamente esta URL; quitar localhost / 127.0.0.1 si no usas Supabase local.
- * - Site URL: tu HTTPS de producción (p. ej. Vercel); no dejar solo http://localhost como única URL de sitio si usas OAuth en cloud.
+ * Única URL de retorno OAuth nativo iOS/Android; debe ser **idéntica** a la entrada en Supabase → Redirect URLs
+ * (`es.waitme.v5waitme://auth-callback`, host `auth-callback` — no usar `…/auth/callback`).
+ * Coincide con CFBundleURLSchemes (`es.waitme.v5waitme`) y `redirectTo` en signInWithOAuth.
  */
-export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
+export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth-callback'
 
 /**
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
@@ -102,7 +101,7 @@ export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth/callback'
 export const OAUTH_IOS_BUNDLE_ID = 'waitme-oauth-ios-2026-04-12g'
 
 /**
- * True si la URL es el redirect nativo acordado (scheme/host/path), sin depender de includes('auth/callback').
+ * True si la URL es el redirect nativo acordado (scheme + host `auth-callback`).
  * iOS puede variar mayúsculas; el parser WHATWG normaliza hostname; el path se compara sin slash final extra.
  */
 export function isNativeOAuthCallbackUrl(urlString) {
