@@ -289,7 +289,8 @@ function AppRouter() {
 }
 
 /**
- * Primer tick: montaje estable de `AppLayout` (`IphoneFrame`) sin depender de auth en este componente.
+ * Misma envoltura desde el primer frame: `AppScreenProvider` → `IphoneFrame` → contenido.
+ * El placeholder de arranque va **dentro** del frame (evita un paint sin marco/`--app-height` y un segundo paint con salto — LOCAL_DEV_MAC y WKWebView).
  */
 function AppBootstrap() {
   const [appReady, setAppReady] = useState(false)
@@ -298,28 +299,22 @@ function AppBootstrap() {
     setAppReady(true)
   }, [])
 
-  /**
-   * Primer paint: `#root` con hijo `null` deja visible `body { background: black }` (global.css) → “pantalla negra”.
-   * Mismo color de fondo que la app; sin UI de producto nueva.
-   */
-  if (!appReady) {
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          minHeight: '100%',
-          backgroundColor: colors.background,
-        }}
-        aria-hidden
-      />
-    )
-  }
-
   return (
     <AppScreenProvider>
       <AppLayout>
-        <AppRouter />
+        {!appReady ? (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '100%',
+              backgroundColor: colors.background,
+            }}
+            aria-hidden
+          />
+        ) : (
+          <AppRouter />
+        )}
       </AppLayout>
     </AppScreenProvider>
   )
