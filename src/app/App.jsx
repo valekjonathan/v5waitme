@@ -234,14 +234,17 @@ function AppGate() {
   )
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     console.log('[APP MOUNT]')
   }, [])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
     console.log('[AUTH]', status, user)
   }, [status, user])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return undefined
     const handler = (e) => {
       console.log('[CLICK]', e.target)
     }
@@ -250,6 +253,7 @@ function AppGate() {
   }, [])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return undefined
     const t = window.setTimeout(() => {
       console.log(
         '[TOP]',

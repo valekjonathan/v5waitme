@@ -135,7 +135,7 @@ function overlayLayerStyle(background) {
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
   useEffect(() => {
-    console.log('[LAYOUT]')
+    if (import.meta.env.DEV) console.log('[LAYOUT]')
   }, [])
 
   const hasCta = children != null

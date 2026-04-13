@@ -35,7 +35,7 @@ export default function IphoneFrame({ children }) {
   const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
-    console.log('[FRAME]')
+    if (import.meta.env.DEV) console.log('[FRAME]')
     setIphonePreview(readIphonePreviewQuery())
   }, [])
 
