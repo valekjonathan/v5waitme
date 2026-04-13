@@ -175,18 +175,26 @@ function AuthBootScreen() {
   )
 }
 
-/**
- * Auth resuelto para pintar UI distinta de "Cargando…": sesión conocida y, si hay usuario, perfil bootstrap listo.
- * No usar solo `user` en el primer render: `null` es válido para "sin sesión" tras resolver.
- */
-function isAuthUiReady(status, user, profileBootstrapReady) {
-  if (status === 'loading') return false
-  if (status === 'authenticated' && user && !profileBootstrapReady) return false
-  return true
+function Boot() {
+  return (
+    <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+      <AuthBootScreen />
+    </ScreenShell>
+  )
 }
 
-function AppGate() {
-  const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
+function LoginShell() {
+  return (
+    <div style={{ height: '100%', width: '100%', minHeight: '100%' }}>
+      <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+        <LoginPage />
+      </ScreenShell>
+    </div>
+  )
+}
+
+function MainApp() {
+  const { isProfileComplete } = useAuth()
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -198,46 +206,40 @@ function AppGate() {
 
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
-  const authUiReady = useMemo(
-    () => isAuthUiReady(status, user, profileBootstrapReady),
+  return (
+    <AuthenticatedShellWithBoundary>
+      <ProfileIncompleteNoticeProvider value={noticeValue}>
+        <IncompleteProfileModalHost open={incompleteModalOpen} onClose={closeIncompleteModal} />
+        {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
+      </ProfileIncompleteNoticeProvider>
+    </AuthenticatedShellWithBoundary>
+  )
+}
+
+/**
+ * Auth listo para UI distinta de boot: sesión resuelta y, si hay usuario, perfil bootstrap listo.
+ */
+function isAuthReady(status, user, profileBootstrapReady) {
+  if (status === 'loading') return false
+  if (status === 'authenticated' && user && !profileBootstrapReady) return false
+  return true
+}
+
+function AppGate() {
+  const { status, user, profileBootstrapReady } = useAuth()
+
+  const authReady = useMemo(
+    () => isAuthReady(status, user, profileBootstrapReady),
     [status, user, profileBootstrapReady]
   )
 
-  const showLogin = authUiReady && (!user || status === 'unauthenticated')
-  const showAuthenticated = authUiReady && Boolean(user) && status === 'authenticated'
+  const showMain = authReady && Boolean(user) && status === 'authenticated'
 
-  /**
-   * Un solo `AppLayout` (IphoneFrame): no se desmonta. Los hijos cambian sin `displayedView`/opacity
-   * retardado (evita doble fase de render y problemas de hit-test en WKWebView).
-   */
   return (
     <AppScreenProvider>
       <AppLayout>
-        {!authUiReady ? (
-          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-            <AuthBootScreen />
-          </ScreenShell>
-        ) : showLogin ? (
-          <div style={{ height: '100%', width: '100%', minHeight: '100%' }}>
-            <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-              <LoginPage />
-            </ScreenShell>
-          </div>
-        ) : showAuthenticated ? (
-          <AuthenticatedShellWithBoundary>
-            <ProfileIncompleteNoticeProvider value={noticeValue}>
-              <IncompleteProfileModalHost
-                open={incompleteModalOpen}
-                onClose={closeIncompleteModal}
-              />
-              {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
-            </ProfileIncompleteNoticeProvider>
-          </AuthenticatedShellWithBoundary>
-        ) : (
-          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-            <AuthBootScreen />
-          </ScreenShell>
-        )}
+        {!authReady && <Boot />}
+        {authReady && (showMain ? <MainApp /> : <LoginShell />)}
       </AppLayout>
     </AppScreenProvider>
   )

@@ -18,13 +18,6 @@ const shellRootStyle: CSSProperties = {
     : { height: '100%' }),
 }
 
-/**
- * Valores previos a la primera medición (solo evitan 0px un frame). Deben ser sustituidos
- * al instante por ResizeObserver; no son el contrato de layout (eso son las medidas reales).
- */
-const CHROME_MEASURE_FALLBACK_HEADER_PX = 64
-const CHROME_MEASURE_FALLBACK_NAV_PX = 88
-
 export type ScreenShellProps = {
   children: ReactNode
   interactive?: boolean
@@ -46,10 +39,8 @@ export default function ScreenShell({
   const fullBleed = mainMode === SCREEN_SHELL_MAIN_MODE.FULL_BLEED
   const headerRef = useRef<HTMLElement>(null)
   const navRef = useRef<HTMLElement>(null)
-  const [chromePx, setChromePx] = useState<{ header: number; nav: number }>({
-    header: CHROME_MEASURE_FALLBACK_HEADER_PX,
-    nav: CHROME_MEASURE_FALLBACK_NAV_PX,
-  })
+  /** Inset: sin fallback fijo (evita salto 64/88 → real). Primera medición en useLayoutEffect. */
+  const [chromePx, setChromePx] = useState<{ header: number; nav: number }>({ header: 0, nav: 0 })
 
   useLayoutEffect(() => {
     if (fullBleed) return undefined
