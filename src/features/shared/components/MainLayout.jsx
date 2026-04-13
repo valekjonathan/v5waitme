@@ -65,12 +65,15 @@ const contentColumnStyle = {
 }
 const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
-/** Espacio superior para halos/radar del pin sin recorte por `overflow: hidden` del layout raíz. */
+/**
+ * Espacio para halos/radar arriba y para el tallo del pin abajo (tallo ~36px) sin recorte por
+ * `overflow: hidden` del layout raíz al centrar el bloque hero.
+ */
 const heroPinWrapStyle = {
   display: 'flex',
   justifyContent: 'center',
   paddingTop: 48,
-  paddingBottom: s.lg,
+  paddingBottom: 48,
 }
 const heroSectionBaseStyle = { alignItems: 'center' }
 const heroTitleStyle = {

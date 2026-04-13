@@ -29,7 +29,7 @@
 
 ## A) En casa (única forma correcta de iterar cambios)
 
-**Comando único:** **`npm run dev:ios`** (equivalente a **`npm run dev`**).
+**Comando único en casa con iPhone:** **`npm run dev:ios`**. **Solo Safari Mac + marco iPhone:** **`npm run dev`** (URL `http://localhost:5173/?iphone=true`). **Solo Vite sin abrir Safari:** **`npm run vite:only`**.
 
 **Cursor / VS Code:** tarea **`dev:ios`** o **`dev`**.
 
@@ -45,7 +45,7 @@
 
 **Autoactualización:** con **`npm run dev:ios`** activo, los cambios en código se reflejan solos en **Safari (LAN)** y en el **WKWebView del iPhone** (mismo servidor Vite).
 
-**Solo web sin tocar Capacitor:** `npm run dev` (sigue siendo IP LAN para OAuth; ver `.env.local`).
+**Solo web sin tocar Capacitor:** `npm run dev` (Safari + preview) o `npm run vite:only` (solo Vite). IP LAN para OAuth en iPhone: ver `.env.local` y `dev:ios`.
 
 ---
 

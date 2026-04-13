@@ -4,7 +4,7 @@
 
 | Entorno                                | Uso                                                                                                                         |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| **Safari en Mac (`npm run dev:ios`)**  | Preview tipo iPhone (marco interno `IphoneFrame`): el script abre **`http://localhost:5173/?iphone=true`**. Sin query, vista web a pantalla completa. Origin OAuth sigue siendo `http://localhost:5173`. |
+| **Safari en Mac (`npm run dev`)**      | Preview tipo iPhone (`IphoneFrame`): **`http://localhost:5173/?iphone=true`**. Sin query, vista web a pantalla completa. OAuth en Mac: `http://localhost:5173`. |
 | **iPhone + Capacitor + Vite**          | Live reload real (`server.url` solo en dev, misma URL que `VITE_DEV_LAN_ORIGIN` en `.env.local`).                           |
 | **Safari → Develop**                   | Inspección del **WKWebView real** en el iPhone (build Debug).                                                               |
 | **Duplicación de pantalla del iPhone** | Monitor físico del dispositivo (función del sistema Apple), no del repo.                                                    |
@@ -16,7 +16,7 @@
 npm run dev:ios
 ```
 
-(`npm run dev` es el mismo flujo.) **Pantallas, botones y layout:** trabaja siempre así en casa; Safari e iPhone comparten la misma URL LAN y se actualizan solos con HMR.
+(`npm run dev` en Mac abre Safari con `?iphone=true`; `npm run dev:ios` añade sync Capacitor + URL LAN.) **Pantallas, botones y layout:** en iPhone usa la URL LAN del script; HMR mientras Vite sigue en marcha.
 
 **Qué hace el script**
 
@@ -31,7 +31,7 @@ npm run dev:ios
 - Consola Vite: URL LAN útil para el iPhone; Safari en Mac (preview tipo iPhone) usa `http://localhost:5173/?iphone=true`.
 - `IPHONE USING:` → `http://<LAN>:5173` (Capacitor `server.url`, sin query).
 
-**Solo Vite / sin sync iOS:** `npm run dev`  
+**Solo Vite en terminal (sin abrir Safari):** `npm run vite:only`  
 **Solo sync iOS (sin Vite):** `npm run cap:live:on`  
 **IP manual:** `CAP_LAN_IP=192.168.x.x npm run dev:ios`  
 **Solo imprimir IP / variables:** `npm run get:lan-ip` · `node scripts/get-lan-ip.mjs --export-env` (líneas `WAITME_LAN_IP=…` y `WAITME_CAP_DEV_SERVER_URL=…`).
@@ -81,7 +81,7 @@ Si quieres que la nube acceda a tu **`http://localhost:5173`**, la vía habitual
 
 ## Tareas en Cursor / VS Code
 
-En `.vscode/tasks.json` la tarea **dev** ejecuta `npm run dev` (= `dev:ios`).
+En `.vscode/tasks.json` la tarea **dev** ejecuta `npm run dev` (Safari Mac + preview); **dev:ios** es Capacitor + LAN.
 
 **Verdad operativa (casa / fuera / prod):** [FLUJO_JONATHAN.md](./FLUJO_JONATHAN.md).  
 **Staging (solo si lo montaste en Vercel):** [STAGING_VERCEL.md](./STAGING_VERCEL.md).

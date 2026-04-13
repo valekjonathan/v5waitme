@@ -2,9 +2,9 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "dev:web",
+      "label": "dev",
       "type": "shell",
-      "command": "npm run dev:web",
+      "command": "npm run dev",
       "problemMatcher": [],
       "runOptions": {
         "instanceLimit": 1
@@ -24,9 +24,9 @@
       }
     },
     {
-      "label": "dev",
+      "label": "vite:only",
       "type": "shell",
-      "command": "npm run dev",
+      "command": "npm run vite:only",
       "problemMatcher": [],
       "runOptions": {
         "instanceLimit": 1

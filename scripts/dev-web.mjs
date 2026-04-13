@@ -92,7 +92,7 @@ async function main() {
 
   console.log('[waitme] HTTP OK → abriendo Safari (preview tipo iPhone ?iphone=true)')
   openDarwinSafari(SAFARI_DEV_URL)
-  console.log('[waitme] Listo. iOS+LAN+cap: npm run dev:ios · live-reload :5175: npm run dev:safari')
+  console.log('[waitme] Listo. iOS+LAN+cap: npm run dev:ios · opcional BrowserSync :5175: npm run dev:safari')
 
   const exitCode = await new Promise((resolve) => {
     vite.on('exit', (code, signal) => {

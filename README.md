@@ -6,20 +6,22 @@ WaitMe v5 — React 19 + Vite 8. Contrato de layout: `src/ui/layout/layout.ts`, 
 
 ```bash
 npm install
-npm run dev:ios
+npm run dev
 ```
 
-**Safari en el Mac (marco tipo iPhone, misma URL que el repo):** `npm run dev:preview:mac` (alias `npm run dev:web`). Libera :5173 si hace falta, arranca Vite, espera HTTP 200 y abre Safari en **`http://localhost:5173/?iphone=true`**. Solo Vite sin sync: **`npm run dev`**.
+**LOCAL_DEV_MAC (único comando canónico):** **`npm run dev`** libera el puerto **5173** si hace falta, arranca Vite (`host: true`, `strictPort`), espera **HTTP 200** y abre Safari en **`http://localhost:5173/?iphone=true`** (marco tipo iPhone vía `IphoneFrame`). HMR mientras el proceso sigue.
 
-**En casa (iPhone físico + LAN):** **`npm run dev:ios`**. Misma **URL LAN** en consola para el WebView; HMR mientras el proceso sigue. **No** uses `localhost` en el iPhone para ese flujo.
+**Sin abrir Safari** (solo Vite en terminal, p. ej. CI o automatización): **`npm run vite:only`**.
 
-**Fuera de casa (Mac apagado):** usa el **preview o production de Vercel** (HTTPS); ver **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**. Nativo: **TestFlight** (IPA con `npm run cap:sync:prod` o flujo documentado).
+**En casa (iPhone físico + LAN + Capacitor):** **`npm run dev:ios`**. **No** uses `localhost` en el iPhone para OAuth en ese flujo; la consola imprime la URL LAN.
 
-**Producción iOS sin `server.url`:** **`npm run cap:sync:prod`**.
+**Fuera de casa (Mac apagado):** **Vercel** preview/production (HTTPS); PWA: `manifest.json` + “Añadir a pantalla de inicio”. Ver **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**.
 
-**Índice único:** **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
+**IOS_BETA_REAL / TestFlight:** build sin `server.url` embebido: **`npm run cap:sync:prod`** (o `ios:embed:sync`). Supabase cloud en el build; OAuth nativo `es.waitme.v5waitme://auth-callback`.
 
-**Android:** no hay carpeta `android/` en este repo; distribución Play Internal queda fuera del árbol actual.
+**Índice:** **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
+
+**Android:** no hay carpeta `android/` en este repo.
 
 ## Calidad
 
