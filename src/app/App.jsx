@@ -206,8 +206,7 @@ function isAuthReady(status, user, profileBootstrapReady) {
 }
 
 /**
- * Un solo `ScreenShell` montado durante toda la sesión de UI (evita re-mount en WKWebView).
- * Contenido: Boot | Login | Main según auth.
+ * Único árbol: `AppLayout` (IphoneFrame) → `ScreenShell` siempre montado; solo cambia el hijo (boot / login / main).
  */
 function AppRouter() {
   const { user, status, profileBootstrapReady, isProfileComplete } = useAuth()
@@ -288,66 +287,20 @@ function AppRouter() {
   )
 }
 
-/**
- * Misma envoltura desde el primer frame: `AppScreenProvider` → `IphoneFrame` → contenido.
- * El placeholder de arranque va **dentro** del frame (evita un paint sin marco/`--app-height` y un segundo paint con salto — LOCAL_DEV_MAC y WKWebView).
- */
-function AppBootstrap() {
-  const [appReady, setAppReady] = useState(false)
-
-  useEffect(() => {
-    setAppReady(true)
-  }, [])
-
-  return (
-    <AppScreenProvider>
-      <AppLayout>
-        {!appReady ? (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              minHeight: '100%',
-              backgroundColor: colors.background,
-            }}
-            aria-hidden
-          />
-        ) : (
-          <AppRouter />
-        )}
-      </AppLayout>
-    </AppScreenProvider>
-  )
-}
-
 export default function App() {
   useEffect(() => {
-    const setAppHeight = () => {
-      const height = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight
-
-      document.documentElement.style.setProperty('--app-height', `${height}px`)
-    }
-
-    setAppHeight()
-
-    const vv = window.visualViewport
-    vv?.addEventListener('resize', setAppHeight)
-    vv?.addEventListener('scroll', setAppHeight)
-    window.addEventListener('resize', setAppHeight)
-
-    return () => {
-      vv?.removeEventListener('resize', setAppHeight)
-      vv?.removeEventListener('scroll', setAppHeight)
-      window.removeEventListener('resize', setAppHeight)
-    }
+    const height = window.visualViewport?.height ?? window.innerHeight
+    document.documentElement.style.setProperty('--app-height', `${height}px`)
   }, [])
 
   return (
     <ErrorBoundary name="root">
       <AppAuthRoot>
-        <AppBootstrap />
+        <AppScreenProvider>
+          <AppLayout>
+            <AppRouter />
+          </AppLayout>
+        </AppScreenProvider>
       </AppAuthRoot>
     </ErrorBoundary>
   )
