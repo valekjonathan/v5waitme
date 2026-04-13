@@ -216,35 +216,35 @@ function AppGate() {
 
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
+  /**
+   * Un solo `AppLayout` (IphoneFrame) para loading / login / autenticado: evita desmontar el marco
+   * y el árbol bajo ScreenShell en la transición OAuth → home (WKWebKit / hit-test).
+   */
   return (
     <AppScreenProvider>
-      {displayedView === 'loading' ? (
-        <AppLayout>
+      <AppLayout>
+        {displayedView === 'loading' ? (
           <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
             <AuthBootScreen />
           </ScreenShell>
-        </AppLayout>
-      ) : displayedView === 'login' ? (
-        <div style={{ ...fade200Style, opacity }}>
-          <AppLayout>
+        ) : displayedView === 'login' ? (
+          <div style={{ ...fade200Style, opacity, height: '100%', width: '100%' }}>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
               <LoginPage />
             </ScreenShell>
-          </AppLayout>
-        </div>
-      ) : (
-        <AuthenticatedShellWithBoundary opacity={opacity}>
-          <ProfileIncompleteNoticeProvider value={noticeValue}>
-            <AppLayout>
+          </div>
+        ) : (
+          <AuthenticatedShellWithBoundary opacity={opacity}>
+            <ProfileIncompleteNoticeProvider value={noticeValue}>
               <IncompleteProfileModalHost
                 open={incompleteModalOpen}
                 onClose={closeIncompleteModal}
               />
               {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
-            </AppLayout>
-          </ProfileIncompleteNoticeProvider>
-        </AuthenticatedShellWithBoundary>
-      )}
+            </ProfileIncompleteNoticeProvider>
+          </AuthenticatedShellWithBoundary>
+        )}
+      </AppLayout>
     </AppScreenProvider>
   )
 }

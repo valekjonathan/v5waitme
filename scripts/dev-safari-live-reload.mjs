@@ -12,7 +12,12 @@ import process from 'node:process'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import {
+  checkPort5173Available,
+  ensurePort5173Free,
+  printLsof5173,
+  VITE_DEV_PORT,
+} from './vite-dev-5173.mjs'
 import { openDarwinSafari, waitForHttpOk } from './ngrok-tunnel-lib.mjs'
 import {
   waitmeLocalIphonePreviewUrl,
@@ -30,6 +35,13 @@ const safariUrl = waitmeLocalIphonePreviewUrl(BS_PORT)
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
 
 async function main() {
+  try {
+    await ensurePort5173Free()
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e)
+    printLsof5173()
+    process.exit(1)
+  }
   if (!(await checkPort5173Available())) {
     console.error('[waitme] PORT 5173 ALREADY IN USE (necesario para Vite antes del proxy).')
     printLsof5173()

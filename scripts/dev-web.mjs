@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Desarrollo web (sin Capacitor): Vite :5173, comprobación de puerto, readiness HTTP, abre Safari en localhost.
- * Misma semántica de arranque que dev-ios respecto a Vite (node + vite/bin/vite.js), sin cap sync ni LAN.
+ * Desarrollo web por defecto (`npm run dev`): libera :5173 si hace falta, Vite, HTTP 200, abre Safari.
+ * Sin Capacitor. Misma semántica de arranque que dev-ios respecto a Vite (node + vite/bin/vite.js).
  *
- * @see scripts/dev-ios.mjs (flujo completo iOS + dispositivo físico)
+ * @see scripts/dev-ios.mjs (flujo completo iOS + cap sync + LAN)
  */
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import { ensurePort5173Free, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
 import { waitmeLocalIphonePreviewUrl } from './waitme-local-iphone-preview.mjs'
 import {
   mergeDevEnvFromFiles,
@@ -38,10 +38,11 @@ function viteExitPromise(vite) {
 }
 
 async function main() {
-  if (!(await checkPort5173Available())) {
-    console.error('[waitme] PORT 5173 ALREADY IN USE')
+  try {
+    await ensurePort5173Free()
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e)
     printLsof5173()
-    console.error('[waitme] Cierra el proceso que usa el puerto o usa otro entorno.')
     process.exit(1)
   }
 
@@ -91,9 +92,7 @@ async function main() {
 
   console.log('[waitme] HTTP OK → abriendo Safari (preview tipo iPhone ?iphone=true)')
   openDarwinSafari(SAFARI_DEV_URL)
-  console.log(
-    '[waitme] Listo. Otros comandos: npm run dev (iOS+cap sync) · npm run dev:safari (live-reload :5175)'
-  )
+  console.log('[waitme] Listo. iOS+LAN+cap: npm run dev:ios · live-reload :5175: npm run dev:safari')
 
   const exitCode = await new Promise((resolve) => {
     vite.on('exit', (code, signal) => {

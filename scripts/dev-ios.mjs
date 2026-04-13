@@ -26,7 +26,12 @@ import {
   spawnNgrokHttp,
   NGROK_DEV_PORT,
 } from './ngrok-tunnel-lib.mjs'
-import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import {
+  checkPort5173Available,
+  ensurePort5173Free,
+  printLsof5173,
+  VITE_DEV_PORT,
+} from './vite-dev-5173.mjs'
 import { waitmeLocalIphonePreviewUrl } from './waitme-local-iphone-preview.mjs'
 import { injectIosCapacitorDevServerUrl } from './inject-ios-cap-dev-server.mjs'
 import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
@@ -111,10 +116,16 @@ async function main() {
     stripIosEmbeddedWeb(root)
   }
 
-  if (!(await checkPort5173Available())) {
-    console.error('PORT 5173 ALREADY IN USE')
+  try {
+    await ensurePort5173Free()
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : e)
     printLsof5173()
-    console.error('Cierra el proceso que usa el puerto y vuelve a ejecutar npm run dev.')
+    process.exit(1)
+  }
+  if (!(await checkPort5173Available())) {
+    console.error('PORT 5173 ALREADY IN USE tras ensurePort5173Free')
+    printLsof5173()
     process.exit(1)
   }
 

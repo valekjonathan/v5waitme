@@ -3,11 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Prod web: npm run build:web + deploy HTTPS. iOS embebido: npm run ios:embed:sync (sin server.url). Dev: localhost/ngrok/LAN (docs/PARIDAD_PRODUCCION.md). E2E :5174. CI: quality.",
+  "description": "Dev web: npm run dev (Vite :5173 + Safari). iOS+LAN: npm run dev:ios. Prod web: npm run build:web. iOS embebido: npm run ios:embed:sync. E2E :5174. CI: quality.",
   "scripts": {
     "dev:ios": "node scripts/dev-ios.mjs",
     "get:lan-ip": "node scripts/get-lan-ip.mjs",
-    "dev": "npm run dev:ios",
+    "dev": "node scripts/dev-web.mjs",
     "dev:web": "node scripts/dev-web.mjs",
     "dev:public": "node scripts/ngrok-public.mjs",
     "dev:vite": "vite",
