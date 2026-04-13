@@ -13,11 +13,14 @@ import LoginPage from '../features/auth/components/LoginPage'
 import IphoneFrame from '../ui/IphoneFrame'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
+import { profileReviewsShellContentStyle } from '../features/shared/layout/ProfileReviewsLayout'
 import Button from '../ui/Button'
 import { colors } from '../design/colors'
 import { APP_SCREEN_PROFILE, APP_SCREEN_REVIEWS } from '../lib/appScreenState.js'
 
 const homeGateStyle = { height: '100%', width: '100%' }
+
+const insetShellStyle = { backgroundColor: colors.background }
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -142,17 +145,15 @@ function AppLayout({ children }) {
   return <IphoneFrame>{children}</IphoneFrame>
 }
 
-/** Home: ScreenShell fullBleed. Perfil/reseñas: páginas con ScreenShell inset. */
+/** Home: fullBleed bajo el ScreenShell global. Perfil/reseñas: solo contenido (mismo shell). */
 function AuthenticatedMainChrome() {
   const { screen } = useAppScreen()
   if (screen === APP_SCREEN_PROFILE) return <ProfilePage />
   if (screen === APP_SCREEN_REVIEWS) return <ReviewsPage />
   return (
-    <ScreenShell interactive mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-      <HomeActionGate>
-        <HomePage />
-      </HomeActionGate>
-    </ScreenShell>
+    <HomeActionGate>
+      <HomePage />
+    </HomeActionGate>
   )
 }
 
@@ -175,25 +176,7 @@ function AuthBootScreen() {
   )
 }
 
-function Boot() {
-  return (
-    <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-      <AuthBootScreen />
-    </ScreenShell>
-  )
-}
-
-function Login() {
-  return (
-    <div style={{ height: '100%', width: '100%', minHeight: '100%' }}>
-      <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
-        <LoginPage />
-      </ScreenShell>
-    </div>
-  )
-}
-
-function MainApp() {
+function MainAppContent() {
   const { isProfileComplete } = useAuth()
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
@@ -223,17 +206,86 @@ function isAuthReady(status, user, profileBootstrapReady) {
 }
 
 /**
- * Auth y ramas login/main: solo aquí (no en el shell raíz).
- * `user ? MainApp : Login` tras sesión resuelta.
+ * Un solo `ScreenShell` montado durante toda la sesión de UI (evita re-mount en WKWebView).
+ * Contenido: Boot | Login | Main según auth.
  */
 function AppRouter() {
-  const { user, status, profileBootstrapReady } = useAuth()
+  const { user, status, profileBootstrapReady, isProfileComplete } = useAuth()
+  const { screen } = useAppScreen()
+
   const authResolved = useMemo(
     () => isAuthReady(status, user, profileBootstrapReady),
     [status, user, profileBootstrapReady]
   )
-  if (!authResolved) return <Boot />
-  return user ? <MainApp /> : <Login />
+
+  const shellConfig = useMemo(() => {
+    if (!authResolved) {
+      return {
+        interactive: false,
+        mainMode: SCREEN_SHELL_MAIN_MODE.FULL_BLEED,
+        mainOverflow: 'auto',
+        style: {},
+        contentStyle: {},
+      }
+    }
+    if (!user) {
+      return {
+        interactive: false,
+        mainMode: SCREEN_SHELL_MAIN_MODE.FULL_BLEED,
+        mainOverflow: 'auto',
+        style: {},
+        contentStyle: {},
+      }
+    }
+    if (!isProfileComplete) {
+      return {
+        interactive: true,
+        mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
+        mainOverflow: 'hidden',
+        style: insetShellStyle,
+        contentStyle: profileReviewsShellContentStyle,
+      }
+    }
+    if (screen === APP_SCREEN_PROFILE) {
+      return {
+        interactive: true,
+        mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
+        mainOverflow: 'hidden',
+        style: insetShellStyle,
+        contentStyle: profileReviewsShellContentStyle,
+      }
+    }
+    if (screen === APP_SCREEN_REVIEWS) {
+      return {
+        interactive: true,
+        mainMode: SCREEN_SHELL_MAIN_MODE.INSET,
+        mainOverflow: 'hidden',
+        style: insetShellStyle,
+        contentStyle: profileReviewsShellContentStyle,
+      }
+    }
+    return {
+      interactive: true,
+      mainMode: SCREEN_SHELL_MAIN_MODE.FULL_BLEED,
+      mainOverflow: 'auto',
+      style: {},
+      contentStyle: {},
+    }
+  }, [authResolved, user, isProfileComplete, screen])
+
+  return (
+    <ScreenShell
+      interactive={shellConfig.interactive}
+      mainMode={shellConfig.mainMode}
+      mainOverflow={shellConfig.mainOverflow}
+      style={shellConfig.style}
+      contentStyle={shellConfig.contentStyle}
+    >
+      {!authResolved && <AuthBootScreen />}
+      {authResolved && !user && <LoginPage />}
+      {authResolved && user && <MainAppContent />}
+    </ScreenShell>
+  )
 }
 
 /**

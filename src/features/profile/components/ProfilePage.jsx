@@ -5,7 +5,6 @@ import Button from '../../../ui/Button'
 import ProfileLogoutButton from './ProfileLogoutButton'
 import { useAppScreen } from '../../../lib/AppScreenContext'
 import { useAuth } from '../../../lib/AuthContext'
-import { colors } from '../../../design/colors'
 import { isSupabaseConfigured } from '../../../services/supabase.js'
 import { getCurrentUser } from '../../../services/auth'
 import {
@@ -16,12 +15,8 @@ import {
   updateProfile,
 } from '../../../services/profile'
 import { logFlow } from '../../../lib/devFlowLog.js'
-import ScreenShell from '../../../ui/layout/ScreenShell'
-import { SCREEN_SHELL_MAIN_MODE } from '../../../ui/layout/layout'
 import Section from '../../../ui/layout/Section'
-import ProfileReviewsLayout, {
-  profileReviewsShellContentStyle,
-} from '../../shared/layout/ProfileReviewsLayout'
+import ProfileReviewsLayout from '../../shared/layout/ProfileReviewsLayout'
 import {
   layoutActionsStyle,
   profileActionsFooterStyle,
@@ -33,7 +28,6 @@ import {
 const PROFILE_DRAFT_KEY = 'waitme.dev.profileDraft'
 const PROFILE_PENDING_SYNC_KEY = 'waitme.dev.profilePendingSync'
 const AUTOSAVE_DEBOUNCE_MS = 600
-const shellStyle = { backgroundColor: colors.background }
 
 export default function ProfilePage() {
   const { openHome } = useAppScreen()
@@ -379,40 +373,33 @@ export default function ProfilePage() {
   }, [signOut])
 
   return (
-    <ScreenShell
-      style={shellStyle}
-      contentStyle={profileReviewsShellContentStyle}
-      mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
-      mainOverflow="hidden"
-    >
-      <ProfileReviewsLayout
-        header={<ProfileHeader profile={headerProfile} />}
-        footer={
-          <div style={profileActionsFooterStyle}>
-            <div style={layoutActionsStyle}>
-              <Button
-                type="button"
-                variant="profileSave"
-                disabled={!hasChanges}
-                onClick={handleContinue}
-                style={profileReviewsFullWidthButtonStyle}
-              >
-                Guardar
-              </Button>
-              <ProfileLogoutButton
-                onLogout={handleLogout}
-                style={profileReviewsFullWidthButtonStyle}
-              />
-            </div>
+    <ProfileReviewsLayout
+      header={<ProfileHeader profile={headerProfile} />}
+      footer={
+        <div style={profileActionsFooterStyle}>
+          <div style={layoutActionsStyle}>
+            <Button
+              type="button"
+              variant="profileSave"
+              disabled={!hasChanges}
+              onClick={handleContinue}
+              style={profileReviewsFullWidthButtonStyle}
+            >
+              Guardar
+            </Button>
+            <ProfileLogoutButton
+              onLogout={handleLogout}
+              style={profileReviewsFullWidthButtonStyle}
+            />
           </div>
-        }
-      >
-        <div style={profileFormVerticalSlotStyle}>
-          <Section style={profileFormSectionLayoutStyle}>
-            <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
-          </Section>
         </div>
-      </ProfileReviewsLayout>
-    </ScreenShell>
+      }
+    >
+      <div style={profileFormVerticalSlotStyle}>
+        <Section style={profileFormSectionLayoutStyle}>
+          <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
+        </Section>
+      </div>
+    </ProfileReviewsLayout>
   )
 }
