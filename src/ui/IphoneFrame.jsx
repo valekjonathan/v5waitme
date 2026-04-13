@@ -51,6 +51,14 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   useLayoutEffect(() => {
+    if (typeof document === 'undefined') return undefined
+    if (Capacitor.isNativePlatform()) return undefined
+    if (iphonePreview) document.documentElement.classList.add('waitme-iphone-preview')
+    else document.documentElement.classList.remove('waitme-iphone-preview')
+    return () => document.documentElement.classList.remove('waitme-iphone-preview')
+  }, [iphonePreview])
+
+  useLayoutEffect(() => {
     if (Capacitor.isNativePlatform() || !iphonePreview) return undefined
     const update = () => setScale(readScale())
     update()
@@ -80,7 +88,8 @@ export default function IphoneFrame({ children }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
+        /** `visible`: no recortar sombra del marco; el “teléfono” sigue recortando con overflow en la caja interna. */
+        overflow: 'visible',
         /**
          * Safari macOS: un antecesor con `pointer-events: none` impide que los clics lleguen a hijos
          * con `auto` (véase comentario en MainLayout). El marco debe usar `auto`; el letterbox

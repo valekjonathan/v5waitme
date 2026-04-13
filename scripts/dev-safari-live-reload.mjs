@@ -14,15 +14,19 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
 import { openDarwinSafari, waitForHttpOk } from './ngrok-tunnel-lib.mjs'
+import {
+  waitmeIphonePreviewUrl,
+  WAITME_BROWSER_SYNC_PREVIEW_PORT,
+} from './waitme-preview-constants.mjs'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 
 const VITE_PORT = VITE_DEV_PORT
-const BS_PORT = 5175
-/** Mismo marco tipo iPhone que Vite directo; proxy BrowserSync en :5175. */
-const safariUrl = `http://localhost:${BS_PORT}/?iphone=true`
+const BS_PORT = WAITME_BROWSER_SYNC_PREVIEW_PORT
+/** Mismo marco tipo iPhone que Vite directo; proxy BrowserSync (snippet live-reload). */
+const safariUrl = waitmeIphonePreviewUrl(BS_PORT)
 
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
 

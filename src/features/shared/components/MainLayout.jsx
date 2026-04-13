@@ -17,7 +17,8 @@ const mapSuspenseFallbackStyle = {
 
 const s = LAYOUT.spacing
 const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
-const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'hidden' }
+/** `visible`: no recortar hero/pin (palito); capas absolutas del mapa siguen contenidas por inset. */
+const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'visible' }
 const mapLayerStyle = {
   position: 'absolute',
   inset: 0,

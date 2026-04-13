@@ -27,6 +27,7 @@ import {
   NGROK_DEV_PORT,
 } from './ngrok-tunnel-lib.mjs'
 import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
+import { waitmeIphonePreviewUrl } from './waitme-preview-constants.mjs'
 import { injectIosCapacitorDevServerUrl } from './inject-ios-cap-dev-server.mjs'
 import { stripIosEmbeddedWeb } from './strip-ios-embedded-web.mjs'
 
@@ -36,17 +37,15 @@ const root = path.join(__dirname, '..')
 const VITE_PORT = VITE_DEV_PORT
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_PORT}/@vite/client`
-/**
- * Preview tipo iPhone en Mac: `IphoneFrame` se activa con `?iphone=true` (mismo origin OAuth: localhost:5173).
- */
-const SAFARI_DEV_URL = `http://localhost:${VITE_PORT}/?iphone=true`
+/** Preview tipo iPhone en Mac: `IphoneFrame` con `?iphone=true` (mismo origin OAuth: localhost:5173). */
+const SAFARI_DEV_URL = waitmeIphonePreviewUrl(VITE_PORT)
 const LOCALHOST_HTTP_ROOT = `http://localhost:${VITE_PORT}/`
 const VITE_HTTP_WAIT_MS = 60_000
 
 mergeDevEnvFromFiles(root)
 
 function printUrlBanner(baseDevUrl) {
-  const iphonePreviewUrl = `http://localhost:${VITE_PORT}/?iphone=true`
+  const iphonePreviewUrl = waitmeIphonePreviewUrl(VITE_PORT)
   console.log('\n')
   console.log(
     `👉 Safari Mac (preview tipo iPhone, marco interno) → ${iphonePreviewUrl} (se abre sola; origin OAuth sigue siendo http://localhost:${VITE_PORT})`

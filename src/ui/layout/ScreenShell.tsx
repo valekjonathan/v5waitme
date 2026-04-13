@@ -90,7 +90,7 @@ export default function ScreenShell({
           flexDirection: 'column',
           justifyContent: 'flex-start',
           alignItems: 'stretch',
-          overflowY: fullBleed ? 'hidden' : mainOverflow,
+          overflowY: fullBleed ? 'visible' : mainOverflow,
           overflowX: 'hidden',
           boxSizing: 'border-box',
           ...(fullBleed

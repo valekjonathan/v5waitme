@@ -43,8 +43,11 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       ref={ref}
       data-waitme-nav
       style={{
-        /** Mismo contrato que Header: barra fija no debe tapar CTAs del login cuando interactive=false. */
-        pointerEvents: interactive ? 'auto' : 'none',
+        /**
+         * La barra no debe robar hit-test sobre los CTAs de Home: z-index nav > capa contenido.
+         * `none` en el contenedor + `auto` solo en la fila de botones: el fondo deja pasar toques al mapa/CTAs.
+         */
+        pointerEvents: 'none',
         position: 'fixed',
         bottom: 0,
         left: 0,
@@ -61,7 +64,15 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
         paddingBottom: navPaddingBottomCalc,
       }}
     >
-      <div style={{ margin: '0 auto', display: 'flex', maxWidth: 448, alignItems: 'center' }}>
+      <div
+        style={{
+          margin: '0 auto',
+          display: 'flex',
+          maxWidth: 448,
+          alignItems: 'center',
+          pointerEvents: interactive ? 'auto' : 'none',
+        }}
+      >
         <Button type="button" variant="nav" onClick={guardOr(() => {})}>
           <NavAlertIcon />
           <span style={labelStyle}>Alertas</span>
