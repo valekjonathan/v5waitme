@@ -1,5 +1,6 @@
 /**
- * Marco del dispositivo: en navegador (Safari escritorio) viewport lógico 390×844 escalado.
+ * Marco del dispositivo: en navegador solo si la URL lleva `?iphone=true` o `?iphone=1` (preview opcional).
+ * Sin esa query, el contenido ocupa el viewport como web normal (Safari escritorio / edición).
  * En Capacitor: sin marco, sin escala y sin wrapper extra; la altura la define html/body/#root + ScreenShell.
  * El contenido de la app vive en ScreenShell (ver src/ui/layout/layout.ts).
  */
@@ -12,6 +13,16 @@ const FRAME_W = 390
 const FRAME_H = 844
 const VIEW_PAD = 24
 
+function readIphonePreviewQuery() {
+  if (typeof window === 'undefined') return false
+  try {
+    const v = new URLSearchParams(window.location.search).get('iphone')
+    return v === 'true' || v === '1'
+  } catch {
+    return false
+  }
+}
+
 function readScale() {
   const vv = window.visualViewport
   const vh = (vv?.height ?? window.innerHeight) - VIEW_PAD * 2
@@ -20,7 +31,18 @@ function readScale() {
 }
 
 export default function IphoneFrame({ children }) {
+  const [iphonePreview, setIphonePreview] = useState(() => readIphonePreviewQuery())
   const [scale, setScale] = useState(1)
+
+  useLayoutEffect(() => {
+    setIphonePreview(readIphonePreviewQuery())
+  }, [])
+
+  useLayoutEffect(() => {
+    const onPop = () => setIphonePreview(readIphonePreviewQuery())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   useLayoutEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined
@@ -29,7 +51,7 @@ export default function IphoneFrame({ children }) {
   }, [])
 
   useLayoutEffect(() => {
-    if (Capacitor.isNativePlatform()) return undefined
+    if (Capacitor.isNativePlatform() || !iphonePreview) return undefined
     const update = () => setScale(readScale())
     update()
     window.addEventListener('resize', update)
@@ -38,9 +60,13 @@ export default function IphoneFrame({ children }) {
       window.removeEventListener('resize', update)
       window.visualViewport?.removeEventListener('resize', update)
     }
-  }, [])
+  }, [iphonePreview])
 
   if (Capacitor.isNativePlatform()) {
+    return <>{children}</>
+  }
+
+  if (!iphonePreview) {
     return <>{children}</>
   }
 

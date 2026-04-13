@@ -131,6 +131,17 @@ test('shouldUseNativeOAuthFlow: true si hay puente nativo (misma heurística que
   )
 })
 
+test('shouldUseNativeOAuthFlow: plataforma ios fuerza nativo aunque isNativePlatform sea false', () => {
+  assert.equal(
+    shouldUseNativeOAuthFlow({
+      capacitorPlatform: 'ios',
+      isNativePlatform: () => false,
+      locationProtocol: 'https:',
+    }),
+    true
+  )
+})
+
 test('parseSupabaseAuthorizeUrlDiagnostics: extrae redirect_to y detecta localhost', () => {
   const base = 'https://abc.supabase.co/auth/v1/authorize'
   const r = parseSupabaseAuthorizeUrlDiagnostics(

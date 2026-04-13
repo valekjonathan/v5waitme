@@ -21,7 +21,8 @@ const root = path.join(__dirname, '..')
 
 const VITE_PORT = VITE_DEV_PORT
 const BS_PORT = 5175
-const safariUrl = `http://localhost:${BS_PORT}/?iphone=true`
+/** Vista normal de escritorio; añade `?iphone=true` en la barra de direcciones si quieres el marco opcional. */
+const safariUrl = `http://localhost:${BS_PORT}/`
 
 const viteJs = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js')
 

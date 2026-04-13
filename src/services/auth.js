@@ -14,17 +14,29 @@ const isViteProd = viteEnv.PROD === true
  * documento sigue siendo `capacitor://` / `ionic://`, el cliente caía en flujo web: `window.location.assign`
  * (GoTrue) + `redirectTo` tipo localhost → pantalla en blanco "localhost" en el iPhone.
  *
- * @param {{ isNativePlatform?: () => boolean, hasNativeBridge?: boolean, locationProtocol?: string }} [signals] solo tests
+ * Además: con WebView cargando `https://` (p. ej. bundle remoto), si solo se miraba el protocolo se podía
+ * caer en flujo **web** y `redirectTo` = origen de la pestaña (p. ej. `*.vercel.app`) → OAuth termina en Safari web.
+ * `Capacitor.getPlatform() === 'ios'|'android'` fuerza nativo en la app instalada.
+ *
+ * @param {{ isNativePlatform?: () => boolean, hasNativeBridge?: boolean, locationProtocol?: string, capacitorPlatform?: string }} [signals] solo tests
  * @returns {boolean}
  */
 export function shouldUseNativeOAuthFlow(signals) {
   if (signals) {
+    const cp = String(signals.capacitorPlatform || '').toLowerCase()
+    if (cp === 'ios' || cp === 'android') return true
     if (signals.isNativePlatform?.()) return true
     if (signals.hasNativeBridge) return true
     const p = String(signals.locationProtocol || '').toLowerCase()
     return p === 'capacitor:' || p === 'ionic:'
   }
   if (typeof window === 'undefined') return false
+  try {
+    const plat = Capacitor.getPlatform()
+    if (plat === 'ios' || plat === 'android') return true
+  } catch {
+    /* */
+  }
   const win = window
   /** Misma señal que `@capacitor/core` usa para iOS/Android frente a `web`. */
   if (win.androidBridge || win.webkit?.messageHandlers?.bridge) return true
@@ -158,8 +170,11 @@ const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth-callback'
 
-/** Consola: diagnóstico OAuth (sin UI). Buscar prefijo en Xcode / Safari Web Inspector. */
+/** Diagnóstico OAuth solo en desarrollo (Vite `import.meta.env.DEV`); sin ruido en builds de producción. */
 export function oauthDiagLog(phase, payload) {
+  if (typeof import.meta !== 'undefined' && import.meta.env != null && import.meta.env.DEV !== true) {
+    return
+  }
   try {
     console.info(`[WaitMe][OAuth][diag] ${phase}`, payload)
   } catch {
