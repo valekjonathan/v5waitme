@@ -11,7 +11,6 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { checkPort5173Available, printLsof5173, VITE_DEV_PORT } from './vite-dev-5173.mjs'
-import { waitmeIphonePreviewUrl } from './waitme-preview-constants.mjs'
 import {
   mergeDevEnvFromFiles,
   openDarwinSafari,
@@ -25,7 +24,7 @@ const root = path.join(__dirname, '..')
 const VITE_HTTP_ROOT = `http://127.0.0.1:${VITE_DEV_PORT}/`
 const VITE_HTTP_CLIENT = `http://127.0.0.1:${VITE_DEV_PORT}/@vite/client`
 /** Marco tipo iPhone (`IphoneFrame`) vía query; origin OAuth = http://localhost:5173 */
-const SAFARI_DEV_URL = waitmeIphonePreviewUrl(VITE_DEV_PORT)
+const SAFARI_DEV_URL = `http://localhost:${VITE_DEV_PORT}/?iphone=true`
 const LOCALHOST_HTTP_ROOT = `http://localhost:${VITE_DEV_PORT}/`
 const VITE_HTTP_WAIT_MS = 60_000
 
