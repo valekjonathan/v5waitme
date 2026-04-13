@@ -11,7 +11,8 @@ import { shadows } from '../design/shadows'
 
 const FRAME_W = 390
 const FRAME_H = 844
-const VIEW_PAD = 24
+/** Margen alrededor del marco al calcular escala (visualViewport − padding). */
+const VIEW_PAD = 28
 
 function readIphonePreviewQuery() {
   if (typeof window === 'undefined') return false
@@ -25,8 +26,9 @@ function readIphonePreviewQuery() {
 
 function readScale() {
   const vv = window.visualViewport
-  const vh = (vv?.height ?? window.innerHeight) - VIEW_PAD * 2
-  const vw = (vv?.width ?? window.innerWidth) - VIEW_PAD * 2
+  const pad = VIEW_PAD * 2
+  const vh = Math.max(0, (vv?.height ?? window.innerHeight) - pad)
+  const vw = Math.max(0, (vv?.width ?? window.innerWidth) - pad)
   return Math.min(1, vh / FRAME_H, vw / FRAME_W)
 }
 
@@ -55,10 +57,13 @@ export default function IphoneFrame({ children }) {
     const update = () => setScale(readScale())
     update()
     window.addEventListener('resize', update)
-    window.visualViewport?.addEventListener('resize', update)
+    const vv = window.visualViewport
+    vv?.addEventListener('resize', update)
+    vv?.addEventListener('scroll', update)
     return () => {
       window.removeEventListener('resize', update)
-      window.visualViewport?.removeEventListener('resize', update)
+      vv?.removeEventListener('resize', update)
+      vv?.removeEventListener('scroll', update)
     }
   }, [iphonePreview])
 

@@ -32,9 +32,25 @@ body {
 /**
  * LOCAL_DEV_MAC (Safari + `?iphone=true`): alinear letterbox con `colors.background` (#0B0B0F).
  * El marco del teléfono sigue siendo IphoneFrame; esto no afecta IOS_BETA_REAL (waitme-capacitor).
+ *
+ * Safari (sobre todo macOS) usa un layout viewport más alto que el visible; con solo `height: 100%`
+ * el flex centraba el marco en una caja “invisible” y el frame quedaba recortado por arriba.
+ * `100dvh` acota html/body/#root al viewport dinámico visible para centrar el marco completo.
  */
+html.waitme-iphone-preview {
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
 html.waitme-iphone-preview body {
   background: #0b0b0f;
+  height: 100%;
+}
+
+html.waitme-iphone-preview #root {
+  height: 100%;
 }
 
 #root {
