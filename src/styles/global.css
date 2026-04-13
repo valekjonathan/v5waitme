@@ -40,22 +40,6 @@ body {
 }
 
 /**
- * Safari Mac + `?iphone=true`: refuerzo del centrado del #root (IphoneFrame) sin afectar Capacitor
- * (`html.waitme-capacitor` sigue mandando en nativo).
- */
-html.waitme-iphone-preview body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-html.waitme-iphone-preview #root {
-  max-width: 100vw;
-  max-height: 100vh;
-  box-sizing: border-box;
-}
-
-/**
  * Capacitor (iPhone físico): cadena de altura útil real. Sin el centrado tipo “marco escritorio”
  * de body/#root. IphoneFrame añade esta clase en nativo; en nativo no envuelve en div extra.
  */

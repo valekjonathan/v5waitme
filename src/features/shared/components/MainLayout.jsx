@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import CenterPin from '../../home/components/CenterPin'
 import logo from '../../../assets/logo.png'
@@ -16,8 +17,7 @@ const mapSuspenseFallbackStyle = {
 
 const s = LAYOUT.spacing
 const loginEntranceEase = 'opacity 400ms ease-out, transform 400ms ease-out'
-/** `visible`: no recortar hero/pin (palito); capas absolutas del mapa siguen contenidas por inset. */
-const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'visible' }
+const rootStyle = { position: 'relative', height: '100%', width: '100%', overflow: 'hidden' }
 const mapLayerStyle = {
   position: 'absolute',
   inset: 0,
@@ -30,11 +30,6 @@ const overlayStyleBase = {
   zIndex: LAYOUT.z.overlay,
   pointerEvents: 'none',
 }
-/**
- * `pointer-events: auto` en toda la capa (no `none` en ancestros): en WKWebKit iOS, dos niveles de
- * `none` sobre la columna rompía el hit-test hacia botones con `auto`. El mapa va con `interactive: false`
- * (Map.jsx); no hace falta dejar pasar toques al canvas fuera de la columna.
- */
 const centeredLayerStyle = {
   position: 'absolute',
   inset: 0,
@@ -42,7 +37,11 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  pointerEvents: 'auto',
+  /**
+   * Solo Capacitor/WebKit móvil: la capa fullscreen no debe robar el hit-test respecto a la columna.
+   * En Safari macOS, `pointer-events: none` en este antecesor flex rompe el reparto de clics a hijos con `auto` (CTAs).
+   */
+  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : {}),
 }
 const contentViewportStyle = {
   position: 'absolute',
@@ -53,6 +52,9 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
+  /**
+   * Siempre `auto`: en iOS (WKWebKit) dos `none` (centered + viewport) rompían los CTAs; en web ya era `auto`.
+   */
   pointerEvents: 'auto',
 }
 const contentColumnStyle = {
