@@ -208,9 +208,29 @@ function isAuthReady(status, user, profileBootstrapReady) {
 }
 
 /**
- * Único árbol: `AppLayout` (IphoneFrame) → `ScreenShell` siempre montado; solo cambia el hijo (boot / login / main).
+ * Solo rutas / contenido (boot | login | main). Sin ScreenShell aquí: una sola instancia en `AppScreenShell`.
  */
-function AppRouter() {
+function AppRoutes() {
+  const { user, status, profileBootstrapReady } = useAuth()
+
+  const authResolved = useMemo(
+    () => isAuthReady(status, user, profileBootstrapReady),
+    [status, user, profileBootstrapReady]
+  )
+
+  return (
+    <>
+      {!authResolved && <AuthBootScreen />}
+      {authResolved && !user && <LoginPage />}
+      {authResolved && user && <MainAppContent />}
+    </>
+  )
+}
+
+/**
+ * Único `ScreenShell` del producto: bajo `AppLayout` (IphoneFrame), encima de `AppRoutes`.
+ */
+function AppScreenShell() {
   const { user, status, profileBootstrapReady, isProfileComplete } = useAuth()
   const { screen } = useAppScreen()
 
@@ -282,9 +302,7 @@ function AppRouter() {
       style={shellConfig.style}
       contentStyle={shellConfig.contentStyle}
     >
-      {!authResolved && <AuthBootScreen />}
-      {authResolved && !user && <LoginPage />}
-      {authResolved && user && <MainAppContent />}
+      <AppRoutes />
     </ScreenShell>
   )
 }
@@ -296,7 +314,7 @@ export default function App() {
     <Providers>
       <ErrorBoundary name="root">
         <AppLayout>
-          <AppRouter />
+          <AppScreenShell />
         </AppLayout>
       </ErrorBoundary>
     </Providers>
