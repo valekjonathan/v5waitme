@@ -78,6 +78,70 @@ export function resolveWebOAuthRedirectTo(p) {
   }
 }
 
+/** Solo flujo web (navegador / WebView http(s)): callback explícito; nunca cadena vacía ni esquema app. */
+export function buildWebOAuthRedirectToExplicit() {
+  if (typeof window === 'undefined') {
+    return { ok: false, error: new Error('oauth_web_requires_window'), href: null }
+  }
+  const href = resolveWebOAuthRedirectTo({
+    windowOrigin: window.location.origin,
+    hostname: window.location.hostname,
+    isProd: isViteProd,
+    devLanOrigin: String(viteEnv.VITE_DEV_LAN_ORIGIN ?? ''),
+  }).trim()
+  if (!href) {
+    return { ok: false, error: new Error('oauth_web_redirect_empty'), href: null }
+  }
+  let u
+  try {
+    u = new URL(href)
+  } catch {
+    return { ok: false, error: new Error('oauth_web_redirect_invalid_url'), href: null }
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    return {
+      ok: false,
+      error: new Error('oauth_web_redirect_must_be_http_https'),
+      href: null,
+    }
+  }
+  const pathNorm = (u.pathname || '/').replace(/\/$/, '') || '/'
+  if (pathNorm !== '/auth/callback') {
+    return { ok: false, error: new Error('oauth_web_redirect_path_must_be_auth_callback'), href: null }
+  }
+  return { ok: true, error: null, href }
+}
+
+function normalizeRedirectToParam(s) {
+  if (s == null || s === '') return ''
+  try {
+    return decodeURIComponent(String(s)).trim()
+  } catch {
+    return String(s).trim()
+  }
+}
+
+/** Compara `redirect_to` decodificado con la URL nativa acordada (misma lógica que `isNativeOAuthCallbackUrl`, sin exigir query). */
+function nativeOAuthRedirectToParamMatchesExpected(decodedRedirectTo) {
+  const got = String(decodedRedirectTo || '').trim()
+  if (!got) return false
+  try {
+    const actual = new URL(got)
+    const expected = new URL(NATIVE_OAUTH_REDIRECT_URL)
+    const normPath = (p) => {
+      const t = p.length > 1 && p.endsWith('/') ? p.slice(0, -1) : p
+      return t.toLowerCase()
+    }
+    return (
+      actual.protocol.toLowerCase() === expected.protocol.toLowerCase() &&
+      actual.hostname.toLowerCase() === expected.hostname.toLowerCase() &&
+      normPath(actual.pathname) === normPath(expected.pathname)
+    )
+  } catch {
+    return got === NATIVE_OAUTH_REDIRECT_URL
+  }
+}
+
 /** ASWebAuthenticationSession nativo (iOS); evita SFSafariViewController en blanco con custom scheme. */
 const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
   web: () => ({
@@ -405,21 +469,18 @@ export async function signInWithGoogle() {
   try {
     const useNativeOAuth = shouldUseNativeOAuthFlow()
     /**
-     * Nativo (iOS/Android): `redirectTo` fijo al custom scheme; nunca localhost/origen web.
-     * Web: debe ser un HTTPS (u origen dev) registrado en Supabase → Redirect URLs; el esquema app no aplica en el navegador.
-     * iOS: `skipBrowserRedirect: true` + WaitmeWebAuth (ASWebAuthenticationSession).
-     * Android: `Browser.open` + deep link.
+     * Nativo: un único string; web: http(s) explícito vía `buildWebOAuthRedirectToExplicit` (nunca `redirectTo` vacío:
+     * si faltara, GoTrue omitiría `redirect_to` y Supabase usaría Site URL).
      */
     const redirectTo = useNativeOAuth
       ? NATIVE_OAUTH_REDIRECT_URL
-      : typeof window !== 'undefined'
-        ? resolveWebOAuthRedirectTo({
-            windowOrigin: window.location.origin,
-            hostname: window.location.hostname,
-            isProd: isViteProd,
-            devLanOrigin: String(viteEnv.VITE_DEV_LAN_ORIGIN ?? ''),
-          })
-        : ''
+      : (() => {
+          const w = buildWebOAuthRedirectToExplicit()
+          if (!w.ok || !w.href) {
+            throw w.error ?? new Error('oauth_web_redirect_unavailable')
+          }
+          return w.href
+        })()
     let capPlatform = 'unknown'
     try {
       capPlatform = Capacitor.getPlatform()
@@ -446,21 +507,50 @@ export async function signInWithGoogle() {
        */
       queryParamsNativeWorkaround: useNativeOAuth ? { skip_http_redirect: 'true' } : undefined,
     })
+    const oauthOptions = useNativeOAuth
+      ? {
+          redirectTo: NATIVE_OAUTH_REDIRECT_URL,
+          skipBrowserRedirect: true,
+          queryParams: { skip_http_redirect: 'true' },
+        }
+      : {
+          redirectTo,
+          skipBrowserRedirect: false,
+        }
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo,
-        skipBrowserRedirect: useNativeOAuth,
-        ...(useNativeOAuth ? { queryParams: { skip_http_redirect: 'true' } } : {}),
-      },
+      options: oauthOptions,
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
     }
+    if (useNativeOAuth && !data?.url) {
+      const err = new Error(
+        'oauth_native_missing_authorize_url: signInWithOAuth no devolvió URL de autorización.'
+      )
+      console.error('[WaitMe][Auth]', err.message)
+      return { data: null, error: err }
+    }
     if (useNativeOAuth && data?.url) {
       const oauthOpenUrl = String(data.url).trim()
-      oauthDiagLog('post_signInWithOAuth_authorizeUrl', parseSupabaseAuthorizeUrlDiagnostics(oauthOpenUrl))
+      const parsedAuth = parseSupabaseAuthorizeUrlDiagnostics(oauthOpenUrl)
+      oauthDiagLog('post_signInWithOAuth_authorizeUrl', parsedAuth)
+      const gotRedirect = normalizeRedirectToParam(parsedAuth.redirectToEncoded ?? '')
+      if (!gotRedirect) {
+        const err = new Error(
+          'oauth_authorize_missing_redirect_to: Supabase podría estar usando Site URL; revisa Redirect URLs y proyecto.'
+        )
+        console.error('[WaitMe][Auth]', err.message)
+        return { data: null, error: err }
+      }
+      if (!nativeOAuthRedirectToParamMatchesExpected(gotRedirect)) {
+        const err = new Error(
+          `oauth_redirect_mismatch: esperado ${NATIVE_OAUTH_REDIRECT_URL}, recibido en authorize: ${gotRedirect}`
+        )
+        console.error('[WaitMe][Auth]', err.message)
+        return { data: null, error: err }
+      }
       const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
       if (!check.ok) {
         console.error('[WaitMe][Auth] OAuth URL inválida para nativo:', check.message)

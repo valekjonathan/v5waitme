@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  buildWebOAuthRedirectToExplicit,
   getCurrentUser,
   getSession,
   isNativeOAuthCallbackUrl,
@@ -146,4 +147,35 @@ test('parseSupabaseAuthorizeUrlDiagnostics: redirect nativo sin localhost', () =
   const r = parseSupabaseAuthorizeUrlDiagnostics(u)
   assert.equal(r.redirectToDecoded, 'es.waitme.v5waitme://auth-callback')
   assert.equal(r.hasLocalhostInRedirect, false)
+})
+
+test('buildWebOAuthRedirectToExplicit sin window (SSR/tests node)', () => {
+  const prev = globalThis.window
+  try {
+    delete globalThis.window
+    const r = buildWebOAuthRedirectToExplicit()
+    assert.equal(r.ok, false)
+    assert.ok(r.error instanceof Error)
+    assert.match(r.error.message, /oauth_web_requires_window/i)
+  } finally {
+    if (prev !== undefined) globalThis.window = prev
+  }
+})
+
+test('buildWebOAuthRedirectToExplicit ok con origen https y path /auth/callback', () => {
+  const prev = globalThis.window
+  try {
+    globalThis.window = {
+      location: {
+        origin: 'https://app.example.com',
+        hostname: 'app.example.com',
+      },
+    }
+    const r = buildWebOAuthRedirectToExplicit()
+    assert.equal(r.ok, true)
+    assert.equal(r.href, 'https://app.example.com/auth/callback')
+  } finally {
+    if (prev !== undefined) globalThis.window = prev
+    else delete globalThis.window
+  }
 })
