@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-13T17:16:03.635Z
-Git HEAD: b886e3d4daf56298d0dae376ae45e6ac96c0b5d0
+Generated: 2026-04-13T17:23:31.443Z
+Git HEAD: 8bc2c77d889a4a5bff0ca05fc5304dec5b6d790b
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
@@ -14,6 +14,7 @@ docs/
   STAGING_VERCEL.md
 e2e/
   fixtures.ts
+  iphone-preview-webkit.spec.ts
   nav.spec.ts
   percy-snapshot.spec.ts
   README.md
@@ -402,7 +403,6 @@ ios/
       CoreFoundation-9BYVF0OGIWE49255KIVUM0XA5.pcm
       CoreGraphics-4KFALOLLP2Q6D0M1BB28ZX0V6.pcm
       CoreGraphics-6EC2GVC5PQTTI1HNSCS7UNEF0.pcm
-      CoreImage-266K88VY9OAR13K3NG9G59NEI.pcm
 
 === DEPENDENCIAS CLAVE (package.json) ===
 runtime: @capacitor/app, @capacitor/browser, @capacitor/core, @capacitor/ios, @sentry/react, @supabase/supabase-js, mapbox-gl, react, react-dom, waitme-web-auth
