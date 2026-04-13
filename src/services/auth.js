@@ -94,6 +94,57 @@ const WaitmeWebAuth = registerPlugin('WaitmeWebAuth', {
  */
 export const NATIVE_OAUTH_REDIRECT_URL = 'es.waitme.v5waitme://auth-callback'
 
+/** Consola: diagnóstico OAuth (sin UI). Buscar prefijo en Xcode / Safari Web Inspector. */
+export function oauthDiagLog(phase, payload) {
+  try {
+    console.info(`[WaitMe][OAuth][diag] ${phase}`, payload)
+  } catch {
+    /* */
+  }
+}
+
+/**
+ * Extrae parámetros relevantes de la URL `/authorize` devuelta por `signInWithOAuth` (auditoría runtime).
+ * @param {string} authorizeUrl
+ * @returns {Record<string, unknown>}
+ */
+export function parseSupabaseAuthorizeUrlDiagnostics(authorizeUrl) {
+  if (!authorizeUrl || typeof authorizeUrl !== 'string') {
+    return { error: 'empty_authorize_url' }
+  }
+  try {
+    const u = new URL(authorizeUrl)
+    const redirectTo = u.searchParams.get('redirect_to')
+    return {
+      authorizeUrl,
+      host: u.hostname,
+      redirectToEncoded: redirectTo,
+      redirectToDecoded: redirectTo ? (() => {
+        try {
+          return decodeURIComponent(redirectTo)
+        } catch {
+          return redirectTo
+        }
+      })() : null,
+      codeChallenge: u.searchParams.get('code_challenge'),
+      codeChallengeMethod: u.searchParams.get('code_challenge_method'),
+      state: u.searchParams.get('state'),
+      skipHttpRedirect: u.searchParams.get('skip_http_redirect'),
+      provider: u.searchParams.get('provider'),
+      hasLocalhostInRedirect: (() => {
+        if (typeof redirectTo !== 'string') return false
+        try {
+          return /localhost|127\.0\.0\.1/i.test(decodeURIComponent(redirectTo))
+        } catch {
+          return /localhost|127\.0\.0\.1/i.test(redirectTo)
+        }
+      })(),
+    }
+  } catch (e) {
+    return { authorizeUrl, parseError: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 /**
  * Bump al publicar cambios OAuth iOS; referenciado en el retorno de signInWithGoogle
  * para que el hash del chunk principal cambie (evita “misma build” sin cambios de bytes).
@@ -233,13 +284,27 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
     return { session: null, error: null }
   }
   try {
+    let host = ''
+    try {
+      host = new URL(urlString).hostname
+    } catch {
+      /* */
+    }
+    oauthDiagLog('exchangeSessionFromOAuthUrl:input', {
+      urlString,
+      hostname: host,
+      looksLikeLocalhost: /localhost|127\.0\.0\.1/i.test(urlString),
+    })
     const u = new URL(urlString)
     let code = u.searchParams.get('code')
     if (!code && u.hash) {
       const h = new URLSearchParams(u.hash.replace(/^#/, ''))
       code = h.get('code')
     }
-    if (!code) return { session: null, error: null }
+    if (!code) {
+      oauthDiagLog('exchangeSessionFromOAuthUrl:no_code', { urlString })
+      return { session: null, error: null }
+    }
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
       console.error('[WaitMe][Auth] exchangeCodeForSession', error.message ?? error)
@@ -251,8 +316,13 @@ export async function exchangeSessionFromOAuthUrl(urlString) {
     } = await supabase.auth.getSession()
     if (refreshErr) return { session: data?.session ?? null, error: null }
     const session = refreshed ?? data?.session ?? null
+    oauthDiagLog('exchangeSessionFromOAuthUrl:result', {
+      hasUser: Boolean(session?.user?.id),
+      userId: session?.user?.id ?? null,
+    })
     return { session, error: null }
   } catch (e) {
+    oauthDiagLog('exchangeSessionFromOAuthUrl:error', { message: e instanceof Error ? e.message : String(e) })
     return { session: null, error: e instanceof Error ? e : new Error(String(e)) }
   }
 }
@@ -350,11 +420,38 @@ export async function signInWithGoogle() {
             devLanOrigin: String(viteEnv.VITE_DEV_LAN_ORIGIN ?? ''),
           })
         : ''
+    let capPlatform = 'unknown'
+    try {
+      capPlatform = Capacitor.getPlatform()
+    } catch {
+      /* */
+    }
+    oauthDiagLog('pre_signInWithOAuth', {
+      runtimeNativeOAuth: useNativeOAuth,
+      capPlatform,
+      capIsNativePlatform: (() => {
+        try {
+          return Capacitor.isNativePlatform()
+        } catch {
+          return null
+        }
+      })(),
+      redirectToExact: redirectTo,
+      skipBrowserRedirectExact: useNativeOAuth,
+      provider: 'google',
+      windowLocationHref: typeof window !== 'undefined' ? window.location?.href : null,
+      /**
+       * `@supabase/auth-js` no pasa `skipBrowserRedirect` a `_getUrlForProvider` (bug upstream),
+       * así que `skip_http_redirect` no entraba en la query. Lo forzamos vía `queryParams` en nativo.
+       */
+      queryParamsNativeWorkaround: useNativeOAuth ? { skip_http_redirect: 'true' } : undefined,
+    })
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
         skipBrowserRedirect: useNativeOAuth,
+        ...(useNativeOAuth ? { queryParams: { skip_http_redirect: 'true' } } : {}),
       },
     })
     if (error) {
@@ -363,6 +460,7 @@ export async function signInWithGoogle() {
     }
     if (useNativeOAuth && data?.url) {
       const oauthOpenUrl = String(data.url).trim()
+      oauthDiagLog('post_signInWithOAuth_authorizeUrl', parseSupabaseAuthorizeUrlDiagnostics(oauthOpenUrl))
       const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
       if (!check.ok) {
         console.error('[WaitMe][Auth] OAuth URL inválida para nativo:', check.message)
@@ -373,21 +471,32 @@ export async function signInWithGoogle() {
        * ASWebAuthenticationSession vía WaitmeWebAuth; no usar `Browser.open` en iOS (evita flujo distinto).
        */
       if (Capacitor.getPlatform() === 'android') {
+        oauthDiagLog('open_oauth:Browser.open', { url: oauthOpenUrl })
         await Browser.open({ url: oauthOpenUrl })
       } else {
+        oauthDiagLog('open_oauth:WaitmeWebAuth.start', { url: oauthOpenUrl, callbackScheme: 'es.waitme.v5waitme' })
         const { callbackUrl } = await WaitmeWebAuth.start({
           url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
         })
+        oauthDiagLog('WaitmeWebAuth:callbackUrl', { callbackUrl })
         const { session: iosSession, error: iosExErr } = await exchangeSessionFromOAuthUrl(callbackUrl)
         if (iosExErr) {
           console.error('[WaitMe][Auth] iOS OAuth tras callback', iosExErr.message ?? iosExErr)
+          oauthDiagLog('iOS_OAuth_exchange_failed', { message: iosExErr.message ?? String(iosExErr) })
           return { data: null, error: iosExErr }
         }
         if (!iosSession?.user) {
+          oauthDiagLog('iOS_OAuth_session_missing', {})
           return { data: null, error: new Error('oauth_session_missing') }
         }
+        oauthDiagLog('iOS_OAuth_session_ok', { userId: iosSession.user.id })
       }
+    } else if (!useNativeOAuth && data?.url) {
+      oauthDiagLog('web_flow_signInWithOAuth_url', {
+        ...parseSupabaseAuthorizeUrlDiagnostics(String(data.url)),
+        note: 'GoTrue puede hacer window.location.assign si skipBrowserRedirect es false',
+      })
     }
     return {
       data:

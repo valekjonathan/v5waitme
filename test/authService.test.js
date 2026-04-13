@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   getSession,
   isNativeOAuthCallbackUrl,
+  parseSupabaseAuthorizeUrlDiagnostics,
   resolveWebOAuthRedirectTo,
   shouldUseNativeOAuthFlow,
   signInWithGoogle,
@@ -127,4 +128,22 @@ test('shouldUseNativeOAuthFlow: true si hay puente nativo (misma heurística que
     }),
     true
   )
+})
+
+test('parseSupabaseAuthorizeUrlDiagnostics: extrae redirect_to y detecta localhost', () => {
+  const base = 'https://abc.supabase.co/auth/v1/authorize'
+  const r = parseSupabaseAuthorizeUrlDiagnostics(
+    `${base}?provider=google&redirect_to=${encodeURIComponent('http://localhost:5173/')}`
+  )
+  assert.equal(r.redirectToDecoded, 'http://localhost:5173/')
+  assert.equal(r.hasLocalhostInRedirect, true)
+})
+
+test('parseSupabaseAuthorizeUrlDiagnostics: redirect nativo sin localhost', () => {
+  const u =
+    'https://abc.supabase.co/auth/v1/authorize?provider=google&redirect_to=' +
+    encodeURIComponent('es.waitme.v5waitme://auth-callback')
+  const r = parseSupabaseAuthorizeUrlDiagnostics(u)
+  assert.equal(r.redirectToDecoded, 'es.waitme.v5waitme://auth-callback')
+  assert.equal(r.hasLocalhostInRedirect, false)
 })

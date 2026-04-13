@@ -8,6 +8,7 @@ import {
   exchangeSessionFromOAuthUrl,
   getOAuthErrorMessageFromUrl,
   isNativeOAuthCallbackUrl,
+  oauthDiagLog,
   signInWithGoogle as signInWithGoogleRequest,
   signOut as signOutRequest,
   urlHasOAuthCode,
@@ -381,6 +382,7 @@ export function AuthProvider({ children }) {
         try {
           const handle = await App.addListener('appUrlOpen', async ({ url }) => {
             if (cancelled || !url) return
+            oauthDiagLog('appUrlOpen', { url })
             if (Capacitor.getPlatform() === 'ios' && supabase) {
               const {
                 data: { session: already },
@@ -418,8 +420,10 @@ export function AuthProvider({ children }) {
               const { session: next, error: exErr } = await exchangeSessionFromOAuthUrl(url)
               if (exErr) {
                 console.error('[WaitMe][Auth] appUrlOpen exchange', exErr.message ?? exErr)
+                oauthDiagLog('appUrlOpen:exchange_error', { message: exErr.message ?? String(exErr) })
                 return
               }
+              oauthDiagLog('appUrlOpen:exchange_ok', { userId: next?.user?.id ?? null })
               await syncFromSession(next)
             } finally {
               oauthPendingRef.current = false
