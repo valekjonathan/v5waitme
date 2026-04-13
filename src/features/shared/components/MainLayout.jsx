@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import CenterPin from '../../home/components/CenterPin'
 import logo from '../../../assets/logo.png'
@@ -31,6 +30,11 @@ const overlayStyleBase = {
   zIndex: LAYOUT.z.overlay,
   pointerEvents: 'none',
 }
+/**
+ * `pointer-events: auto` en toda la capa (no `none` en ancestros): en WKWebKit iOS, dos niveles de
+ * `none` sobre la columna rompía el hit-test hacia botones con `auto`. El mapa va con `interactive: false`
+ * (Map.jsx); no hace falta dejar pasar toques al canvas fuera de la columna.
+ */
 const centeredLayerStyle = {
   position: 'absolute',
   inset: 0,
@@ -38,11 +42,7 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /**
-   * Solo Capacitor/WebKit móvil: la capa fullscreen no debe robar el hit-test respecto a la columna.
-   * En Safari macOS, `pointer-events: none` en este antecesor flex rompe el reparto de clics a hijos con `auto` (CTAs).
-   */
-  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : {}),
+  pointerEvents: 'auto',
 }
 const contentViewportStyle = {
   position: 'absolute',
@@ -53,11 +53,7 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
-  /**
-   * Misma razón que `centeredLayerStyle`: en Safari (web) varios ancestros con `pointer-events: none`
-   * impiden el hit-test correcto hacia la columna interactiva. En nativo, `none` deja pasar toques al mapa fuera de la columna.
-   */
-  ...(Capacitor.isNativePlatform() ? { pointerEvents: 'none' } : { pointerEvents: 'auto' }),
+  pointerEvents: 'auto',
 }
 const contentColumnStyle = {
   /** Columna interactiva; el resto del centeredLayer pasa el toque al mapa. */
