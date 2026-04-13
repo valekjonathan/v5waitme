@@ -31,7 +31,7 @@ npm run dev:ios
 - Consola Vite: URL LAN útil para el iPhone; Safari en Mac (preview tipo iPhone) usa `http://localhost:5173/?iphone=true`.
 - `IPHONE USING:` → `http://<LAN>:5173` (Capacitor `server.url`, sin query).
 
-**Solo Vite / sin sync iOS:** `npm run dev:vite`  
+**Solo Vite / sin sync iOS:** `npm run dev`  
 **Solo sync iOS (sin Vite):** `npm run cap:live:on`  
 **IP manual:** `CAP_LAN_IP=192.168.x.x npm run dev:ios`  
 **Solo imprimir IP / variables:** `npm run get:lan-ip` · `node scripts/get-lan-ip.mjs --export-env` (líneas `WAITME_LAN_IP=…` y `WAITME_CAP_DEV_SERVER_URL=…`).

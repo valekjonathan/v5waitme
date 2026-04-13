@@ -3,9 +3,9 @@
  * Flujo dev local principal: Vite :5173, cap sync iOS, `.env.local` (VITE_DEV_LAN_ORIGIN).
  * Readiness = solo HTTP (/) y /@vite/client; stdout/stderr solo informativos.
  *
- * Arranque mínimo solo Vite (sin cap, sin waits de este script): `npm run dev:vite`
+ * Arranque mínimo solo Vite (sin cap, sin waits de este script): `npm run dev`
  * (usa `vite.config.js`). Aquí se invoca el binario de Vite con `node` (sin `npm` ni shell)
- * para un solo proceso hijo estable y la misma semántica que `npm run dev:vite`.
+ * para un solo proceso hijo estable y la misma semántica que `npm run dev`.
  *
  * @see docs/DEV_IOS_LIVE_RELOAD.md
  */

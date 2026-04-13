@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 /**
+ * Opcional (no canónico): BrowserSync en :5175 + live-reload snippet.
+ * Preview Mac oficial: `npm run dev:preview:mac` → solo Vite :5173 →
+ * `http://localhost:5173/?iphone=true` (scripts/waitme-local-iphone-preview.mjs).
+ *
  * Safari + BrowserSync proxy (live-reload vía snippet en :5175).
  * 1) Comprueba que :5173 esté libre (mismo criterio que dev-ios / dev-web)
  * 2) Vite en :5173

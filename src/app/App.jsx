@@ -298,7 +298,23 @@ function AppBootstrap() {
     setAppReady(true)
   }, [])
 
-  if (!appReady) return null
+  /**
+   * Primer paint: `#root` con hijo `null` deja visible `body { background: black }` (global.css) → “pantalla negra”.
+   * Mismo color de fondo que la app; sin UI de producto nueva.
+   */
+  if (!appReady) {
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          minHeight: '100%',
+          backgroundColor: colors.background,
+        }}
+        aria-hidden
+      />
+    )
+  }
 
   return (
     <AppScreenProvider>

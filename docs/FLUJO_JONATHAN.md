@@ -45,7 +45,7 @@
 
 **Autoactualización:** con **`npm run dev:ios`** activo, los cambios en código se reflejan solos en **Safari (LAN)** y en el **WKWebView del iPhone** (mismo servidor Vite).
 
-**Solo web sin tocar Capacitor:** `npm run dev:vite` (sigue siendo IP LAN para OAuth; ver `.env.local`).
+**Solo web sin tocar Capacitor:** `npm run dev` (sigue siendo IP LAN para OAuth; ver `.env.local`).
 
 ---
 

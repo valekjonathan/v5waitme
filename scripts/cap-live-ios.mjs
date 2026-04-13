@@ -35,9 +35,9 @@ console.info(`  ${url}`)
 console.info('Abre Safari en el iPhone en esa URL para comparar 1:1 con la app.')
 console.info('Safari en Mac con http://localhost:5173 es otro origen; la sesión no coincide con la IP LAN.')
 console.info('')
-console.info('  → Tras esto suele seguir Vite (`npm run dev:ios` o `npm run dev:vite`).')
+console.info('  → Tras esto suele seguir Vite (`npm run dev:ios` o `npm run dev`).')
 console.info('  → iPhone: Xcode → Run una vez; luego HMR vía red Wi‑Fi.')
-console.info('  → Solo web / sin iOS: npm run dev:vite')
+console.info('  → Solo web / sin iOS: npm run dev')
 console.info('  → Producción limpia: npm run cap:live:off\n')
 
 const r = spawnSync('npx', ['cap', 'sync', 'ios'], {

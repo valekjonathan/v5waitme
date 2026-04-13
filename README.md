@@ -9,15 +9,17 @@ npm install
 npm run dev:ios
 ```
 
-**En casa:** un solo comando — **`npm run dev:ios`** (o **`npm run dev`**). Misma **URL LAN** en Safari e iPhone; se actualizan solos (HMR) mientras el proceso sigue corriendo. La URL exacta sale en consola (`OPEN IN SAFARI` = `OPEN IN IPHONE`). **No** uses `localhost` para ese flujo en el iPhone.
+**Safari en el Mac (marco tipo iPhone, misma URL que el repo):** `npm run dev:preview:mac` (alias `npm run dev:web`). Libera :5173 si hace falta, arranca Vite, espera HTTP 200 y abre Safari en **`http://localhost:5173/?iphone=true`**. Solo Vite sin sync: **`npm run dev`**.
 
-**Fuera de casa:** la **IP LAN no sirve**. Si tienes **staging** en Vercel (rama `staging` + Preview), usa esa URL del dashboard → **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**. Si **no**, la referencia web es **producción** (tu dominio Vercel Production). Nativo: **TestFlight**.
+**En casa (iPhone físico + LAN):** **`npm run dev:ios`**. Misma **URL LAN** en consola para el WebView; HMR mientras el proceso sigue. **No** uses `localhost` en el iPhone para ese flujo.
+
+**Fuera de casa (Mac apagado):** usa el **preview o production de Vercel** (HTTPS); ver **[docs/STAGING_VERCEL.md](docs/STAGING_VERCEL.md)**. Nativo: **TestFlight** (IPA con `npm run cap:sync:prod` o flujo documentado).
 
 **Producción iOS sin `server.url`:** **`npm run cap:sync:prod`**.
 
 **Índice único:** **[docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md)**.
 
-Solo navegador sin sync iOS: `npm run dev:vite`. iOS listo para tienda (sin `server.url`): `npm run cap:sync:prod`.
+**Android:** no hay carpeta `android/` en este repo; distribución Play Internal queda fuera del árbol actual.
 
 ## Calidad
 
