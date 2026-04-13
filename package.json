@@ -13,7 +13,6 @@
     "tunnel": "ngrok http 5173",
     "dev:clean": "rm -rf node_modules/.vite && npm run dev",
     "build": "vite build",
-    "build:web": "vite build",
     "build:check": "node scripts/build-check.mjs",
     "prepare": "node scripts/ensure-git-hooks.mjs",
     "test": "node --test \"test/*.test.js\"",

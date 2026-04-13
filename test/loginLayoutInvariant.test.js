@@ -7,9 +7,9 @@ function read(rel) {
   return fs.readFileSync(path.join(process.cwd(), rel), 'utf8')
 }
 
-test('LoginPage -> MainLayout con LoginButtons como children', () => {
+test('LoginPage -> HomeLoginScene con LoginButtons como children', () => {
   const code = read('src/features/auth/components/LoginPage.jsx')
-  assert.match(code, /<MainLayout\b/i)
+  assert.match(code, /<HomeLoginScene\b/i)
   assert.match(code, /<LoginButtons\s*\/?>/i)
   assert.match(code, /import\s+LoginButtons\s+from\s+'.*LoginButtons'/i)
 })
@@ -52,12 +52,12 @@ test('ButtonBase: icono y texto comparten el mismo contenedor directo', () => {
   )
 })
 
-test('MainLayout: hero WaitMe!->subtítulo + pin; HomePage delega en MainLayout', () => {
-  const main = read('src/features/shared/components/MainLayout.jsx')
+test('HomeLoginScene: hero WaitMe!->subtítulo + pin; HomePage delega en HomeLoginScene', () => {
+  const main = read('src/features/shared/components/HomeLoginScene.jsx')
   const home = read('src/features/home/components/HomePage.jsx')
 
-  assert.match(home, /import\s+MainLayout\s+from\s+'.*MainLayout'/i)
-  assert.match(home, /<MainLayout\b/)
+  assert.match(home, /import\s+HomeLoginScene\s+from\s+'.*HomeLoginScene'/i)
+  assert.match(home, /<HomeLoginScene\b/)
   assert.match(home, /¿Dónde quieres aparcar\?/)
   assert.match(home, /¡Estoy aparcado aquí!/)
 

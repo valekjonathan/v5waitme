@@ -11,15 +11,15 @@ function assertNotIncludes(haystack, needle, message) {
   assert.equal(haystack.includes(needle), false, message)
 }
 
-test('LoginPage: MainLayout envuelve LoginButtons', () => {
+test('LoginPage: HomeLoginScene envuelve LoginButtons', () => {
   const code = read('src/features/auth/components/LoginPage.jsx')
-  assert.match(code, /<MainLayout\b/i, 'LoginPage debe usar MainLayout')
-  assert.match(code, /loginEntrance/i, 'Login mantiene animación de entrada en MainLayout')
+  assert.match(code, /<HomeLoginScene\b/i, 'LoginPage debe usar HomeLoginScene')
+  assert.match(code, /loginEntrance/i, 'Login mantiene animación de entrada en HomeLoginScene')
   assert.match(code, /<LoginButtons\s*\/?>/i, 'LoginPage debe renderizar LoginButtons')
   assert.match(
     code,
-    /import\s+MainLayout\s+from\s+'.*MainLayout'/i,
-    'LoginPage debe importar MainLayout'
+    /import\s+HomeLoginScene\s+from\s+'.*HomeLoginScene'/i,
+    'LoginPage debe importar HomeLoginScene'
   )
   assert.match(
     code,
@@ -48,7 +48,7 @@ test('Login: no debe introducir style inline object en JSX crítico', () => {
     'src/features/auth/components/LoginButtons.jsx',
     'src/features/auth/components/LoginPage.jsx',
     'src/features/home/components/HomePage.jsx',
-    'src/features/shared/components/MainLayout.jsx',
+    'src/features/shared/components/HomeLoginScene.jsx',
   ]
   for (const f of files) {
     const code = read(f)

@@ -72,7 +72,7 @@ const logoImageStyle = { width: 120, height: 120, objectFit: 'contain' }
 const meTextStyle = { color: colors.primary }
 /**
  * Espacio para halos/radar arriba y para el tallo del pin abajo (tallo ~36px) sin recorte por
- * `overflow: hidden` del layout raíz al centrar el bloque hero.
+ * `overflow: hidden` del contenedor al centrar el bloque hero.
  */
 const heroPinWrapStyle = {
   display: 'flex',
@@ -111,8 +111,8 @@ const heroLogoBoxStyle = {
   borderRadius: radius.logo,
 }
 
-function withLoginEntrance(baseStyle, isLoginLayout, visible) {
-  if (!isLoginLayout) return baseStyle
+function withLoginEntrance(baseStyle, useEntrance, visible) {
+  if (!useEntrance) return baseStyle
   return {
     ...baseStyle,
     opacity: visible ? 1 : 0,
@@ -126,13 +126,14 @@ function overlayLayerStyle(background) {
 }
 
 /**
- * Layout base compartido por Login y Home: mapa, overlay, hero (logo, título, pin).
- * `loginEntrance`: solo Login; Home puede tener children (botones) sin animación escalonada.
+ * Contenido de pantalla Home/Login: mapa, overlay, hero (logo, título, pin) y CTA opcional.
+ * No es shell de app: el chrome global es solo `ScreenShell` (Header + main + BottomNav).
+ *
  * @param {object} props
  * @param {import('react').ReactNode} [props.children]
  * @param {boolean} [props.loginEntrance]
  */
-export default function MainLayout({ children = null, loginEntrance = false }) {
+export default function HomeLoginScene({ children = null, loginEntrance = false }) {
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)

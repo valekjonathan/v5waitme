@@ -1,11 +1,11 @@
-import MainLayout from '../../shared/components/MainLayout'
+import HomeLoginScene from '../../shared/components/HomeLoginScene'
 import Button from '../../../ui/Button'
 import MagnifierIcon from '../../../ui/icons/MagnifierIcon'
 import CarIconHome from '../../../ui/icons/CarIconHome'
 
 export default function HomePage() {
   return (
-    <MainLayout>
+    <HomeLoginScene>
       <Button type="button" variant="primary">
         <MagnifierIcon />
         ¿Dónde quieres aparcar?
@@ -14,6 +14,6 @@ export default function HomePage() {
         <CarIconHome />
         ¡Estoy aparcado aquí!
       </Button>
-    </MainLayout>
+    </HomeLoginScene>
   )
 }

@@ -83,7 +83,7 @@ export default [
       'src/features/auth/components/LoginPage.jsx',
       'src/features/auth/components/LoginButtons.jsx',
       'src/features/home/components/HomePage.jsx',
-      'src/features/shared/components/MainLayout.jsx',
+      'src/features/shared/components/HomeLoginScene.jsx',
       'src/features/profile/components/ProfilePage.jsx',
       'src/features/profile/components/ProfileForm.jsx',
       'src/features/profile/components/ProfileHeader.jsx',
