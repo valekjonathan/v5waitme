@@ -385,28 +385,32 @@ export default function ProfilePage() {
       mainMode={SCREEN_SHELL_MAIN_MODE.INSET}
       mainOverflow="hidden"
     >
-      <ProfileReviewsLayout header={<ProfileHeader profile={headerProfile} />}>
+      <ProfileReviewsLayout
+        header={<ProfileHeader profile={headerProfile} />}
+        footer={
+          <div style={profileActionsFooterStyle}>
+            <div style={layoutActionsStyle}>
+              <Button
+                type="button"
+                variant="profileSave"
+                disabled={!hasChanges}
+                onClick={handleContinue}
+                style={profileReviewsFullWidthButtonStyle}
+              >
+                Guardar
+              </Button>
+              <ProfileLogoutButton
+                onLogout={handleLogout}
+                style={profileReviewsFullWidthButtonStyle}
+              />
+            </div>
+          </div>
+        }
+      >
         <div style={profileFormVerticalSlotStyle}>
           <Section style={profileFormSectionLayoutStyle}>
             <ProfileForm value={profile ?? EMPTY_APP_PROFILE} onChange={setProfile} errors={fieldErrors} />
           </Section>
-        </div>
-        <div style={profileActionsFooterStyle}>
-          <div style={layoutActionsStyle}>
-            <Button
-              type="button"
-              variant="profileSave"
-              disabled={!hasChanges}
-              onClick={handleContinue}
-              style={profileReviewsFullWidthButtonStyle}
-            >
-              Guardar
-            </Button>
-            <ProfileLogoutButton
-              onLogout={handleLogout}
-              style={profileReviewsFullWidthButtonStyle}
-            />
-          </div>
         </div>
       </ProfileReviewsLayout>
     </ScreenShell>

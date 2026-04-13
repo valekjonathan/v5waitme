@@ -29,6 +29,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/**
+ * LOCAL_DEV_MAC (Safari + `?iphone=true`): alinear letterbox con `colors.background` (#0B0B0F).
+ * El marco del teléfono sigue siendo IphoneFrame; esto no afecta IOS_BETA_REAL (waitme-capacitor).
+ */
+html.waitme-iphone-preview body {
+  background: #0b0b0f;
+}
+
 #root {
   margin: 0;
   display: flex;

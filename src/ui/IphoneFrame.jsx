@@ -62,6 +62,17 @@ export default function IphoneFrame({ children }) {
     }
   }, [iphonePreview])
 
+  /** LOCAL_DEV_MAC: mismo fondo que la app en `global.css` (evita letterbox negro puro fuera del marco). */
+  useLayoutEffect(() => {
+    if (Capacitor.isNativePlatform()) return undefined
+    const root = document.documentElement
+    if (iphonePreview) root.classList.add('waitme-iphone-preview')
+    else root.classList.remove('waitme-iphone-preview')
+    return () => {
+      root.classList.remove('waitme-iphone-preview')
+    }
+  }, [iphonePreview])
+
   if (Capacitor.isNativePlatform()) {
     return <>{children}</>
   }
