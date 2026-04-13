@@ -27,7 +27,6 @@ const overlayStyleBase = {
   position: 'absolute',
   inset: 0,
   zIndex: LAYOUT.z.overlay,
-  pointerEvents: 'none',
 }
 const centeredLayerStyle = {
   position: 'absolute',
@@ -36,6 +35,7 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  pointerEvents: 'auto',
 }
 const contentViewportStyle = {
   position: 'absolute',
@@ -46,9 +46,6 @@ const contentViewportStyle = {
   justifyContent: 'center',
   overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
-  /**
-   * Siempre `auto`: en iOS (WKWebKit) dos `none` (centered + viewport) rompían los CTAs; en web ya era `auto`.
-   */
   pointerEvents: 'auto',
 }
 const contentColumnStyle = {
