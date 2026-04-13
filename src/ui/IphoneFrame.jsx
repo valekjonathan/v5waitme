@@ -87,12 +87,12 @@ export default function IphoneFrame({ children }) {
   return (
     <div
       style={{
-        width: '100%',
         height: 'var(--app-height)',
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'center',
+        alignItems: 'center',
         overflow: 'hidden',
+        pointerEvents: 'none',
       }}
     >
       <div

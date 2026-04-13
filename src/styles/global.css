@@ -1,5 +1,5 @@
 /**
- * Altura global: solo `--app-height` (escribe `src/app/useAppHeight.js` al montar y en resize/vv).
+ * Altura global: solo `--app-height` (escribe `App.jsx` al montar y en resize/visualViewport).
  * Fallback inicial antes del primer frame JS: 100vh solo en :root.
  */
 :root {

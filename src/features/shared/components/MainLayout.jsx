@@ -22,6 +22,8 @@ const mapLayerStyle = {
   inset: 0,
   zIndex: LAYOUT.z.map,
   backgroundColor: colors.background,
+  /** Mapa interactivo (no capa decorativa). */
+  pointerEvents: 'auto',
 }
 const overlayStyleBase = {
   position: 'absolute',
