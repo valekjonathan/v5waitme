@@ -365,8 +365,11 @@ export function AuthProvider({ children }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return
+      if (event === 'SIGNED_IN') {
+        oauthDiagLog('onAuthStateChange', { event, userId: session?.user?.id ?? null })
+      }
       void (async () => {
         try {
           await syncFromSession(session)

@@ -1,7 +1,21 @@
 /**
  * @fileoverview Cliente Supabase singleton; `null` si faltan variables de entorno.
  */
+import { Capacitor } from '@capacitor/core'
 import { createClient } from '@supabase/supabase-js'
+
+/**
+ * Solo el navegador web debe parsear sesión desde la URL (`/auth/callback?code=`).
+ * En iOS/Android nativo el intercambio PKCE es explícito (`exchangeSessionFromOAuthUrl`); si esto
+ * queda en true, el WKWebView puede competir con ese flujo si la URL lleva `code`.
+ */
+function authDetectSessionInUrl() {
+  try {
+    return Capacitor.getPlatform() === 'web'
+  } catch {
+    return true
+  }
+}
 
 /** En ejecución Vite siempre existe; en Node (p. ej. tests) puede ser undefined. */
 const viteEnv = typeof import.meta !== 'undefined' && import.meta.env != null ? import.meta.env : {}
@@ -32,7 +46,7 @@ function createSupabaseClient() {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true,
+        detectSessionInUrl: authDetectSessionInUrl(),
         flowType: 'pkce',
       },
     })

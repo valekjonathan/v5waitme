@@ -19,7 +19,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
 
+        #if DEBUG
         print("WAITME URL OPEN:", url.absoluteString)
+        #endif
 
         // Obligatorio: sin esto el bridge Capacitor no entrega la URL al WKWebView (appUrlOpen / OAuth).
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)

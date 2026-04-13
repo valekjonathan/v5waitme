@@ -10,13 +10,14 @@ const isViteProd = viteEnv.PROD === true
 
 /**
  * OAuth en app Capacitor debe usar SIEMPRE `redirectTo` nativo + ASWebAuthenticationSession / deep link.
- * Si `Capacitor.isNativePlatform()` devuelve false (p. ej. bridge aún no expuesto en WKWebView) pero el
- * documento sigue siendo `capacitor://` / `ionic://`, el cliente caía en flujo web: `window.location.assign`
- * (GoTrue) + `redirectTo` tipo localhost → pantalla en blanco "localhost" en el iPhone.
  *
- * Además: con WebView cargando `https://` (p. ej. bundle remoto), si solo se miraba el protocolo se podía
- * caer en flujo **web** y `redirectTo` = origen de la pestaña (p. ej. `*.vercel.app`) → OAuth termina en Safari web.
- * `Capacitor.getPlatform() === 'ios'|'android'` fuerza nativo en la app instalada.
+ * **GoTrueClient (`@supabase/auth-js`)** `_handleProviderSignIn`: si `isBrowser() && !skipBrowserRedirect`,
+ * hace `window.location.assign(url)` → el WKWebView sigue el OAuth hasta `redirectTo` **http(s)** (p. ej.
+ * `*.vercel.app/auth/callback`) y el usuario queda en flujo web. Por eso en nativo: `skipBrowserRedirect: true`,
+ * `queryParams.skip_http_redirect`, y `WaitmeWebAuth` / deep link.
+ *
+ * Si `Capacitor.isNativePlatform()` devolvía false con origen `https:` en el WebView, `shouldUseNativeOAuth`
+ * podía ser false → ramal anterior. `Capacitor.getPlatform() === 'ios'|'android'` fuerza nativo en app instalada.
  *
  * @param {{ isNativePlatform?: () => boolean, hasNativeBridge?: boolean, locationProtocol?: string, capacitorPlatform?: string }} [signals] solo tests
  * @returns {boolean}
@@ -502,26 +503,13 @@ export async function signInWithGoogle() {
     } catch {
       /* */
     }
-    oauthDiagLog('pre_signInWithOAuth', {
-      runtimeNativeOAuth: useNativeOAuth,
-      capPlatform,
-      capIsNativePlatform: (() => {
-        try {
-          return Capacitor.isNativePlatform()
-        } catch {
-          return null
-        }
-      })(),
-      redirectToExact: redirectTo,
-      skipBrowserRedirectExact: useNativeOAuth,
-      provider: 'google',
-      windowLocationHref: typeof window !== 'undefined' ? window.location?.href : null,
-      /**
-       * `@supabase/auth-js` no pasa `skipBrowserRedirect` a `_getUrlForProvider` (bug upstream),
-       * así que `skip_http_redirect` no entraba en la query. Lo forzamos vía `queryParams` en nativo.
-       */
-      queryParamsNativeWorkaround: useNativeOAuth ? { skip_http_redirect: 'true' } : undefined,
-    })
+    const capIsNativePlatform = (() => {
+      try {
+        return Capacitor.isNativePlatform()
+      } catch {
+        return null
+      }
+    })()
     const oauthOptions = useNativeOAuth
       ? {
           redirectTo: NATIVE_OAUTH_REDIRECT_URL,
@@ -532,6 +520,17 @@ export async function signInWithGoogle() {
           redirectTo,
           skipBrowserRedirect: false,
         }
+    oauthDiagLog('pre_signInWithOAuth', {
+      runtimeNativeOAuth: useNativeOAuth,
+      capPlatform,
+      capIsNativePlatform,
+      redirectToExact: redirectTo,
+      oauthOptionsPassedToSDK: oauthOptions,
+      provider: 'google',
+      windowLocationHref: typeof window !== 'undefined' ? window.location?.href : null,
+      note:
+        'GoTrue _handleProviderSignIn: isBrowser() && !skipBrowserRedirect → window.location.assign(authorizeUrl)',
+    })
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: oauthOptions,
