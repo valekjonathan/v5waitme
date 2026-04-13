@@ -1,6 +1,7 @@
 /**
  * Navegador con `?iphone=true|1`: marco 390×844 escalado al viewport (`--app-height` + visualViewport).
- * Capacitor: sin marco; `waitme-capacitor` en `documentElement` (global.css).
+ * Escala con `transform` (no `zoom`): comportamiento más estable en Safari Mac con el preview.
+ * Capacitor: sin marco; clase `waitme-capacitor` en `documentElement` (global.css).
  */
 import { Capacitor } from '@capacitor/core'
 import { useLayoutEffect, useState } from 'react'
@@ -101,6 +102,7 @@ export default function IphoneFrame({ children }) {
           height: FRAME_H * s,
           position: 'relative',
           flexShrink: 0,
+          overflow: 'hidden',
           pointerEvents: 'auto',
         }}
       >
@@ -111,7 +113,8 @@ export default function IphoneFrame({ children }) {
             left: 0,
             width: FRAME_W,
             height: FRAME_H,
-            zoom: s,
+            transform: `scale(${s})`,
+            transformOrigin: 'top left',
             borderRadius: radius.phoneFrame,
             overflow: 'hidden',
             background: 'transparent',

@@ -11,7 +11,6 @@
     "tunnel:dev": "node scripts/tunnel-dev.mjs",
     "tunnel:public": "node scripts/ngrok-public.mjs",
     "tunnel": "ngrok http 5173",
-    "start": "node scripts/dev-local-mac.mjs",
     "dev:clean": "rm -rf node_modules/.vite && npm run dev",
     "build": "vite build",
     "build:web": "vite build",

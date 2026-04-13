@@ -6,6 +6,7 @@ import {
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
 import { Providers } from './Providers.jsx'
+import { useAppHeight } from './useAppHeight.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -289,35 +290,15 @@ function AppRouter() {
 }
 
 export default function App() {
-  useEffect(() => {
-    const setAppHeight = () => {
-      const height = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight
-
-      document.documentElement.style.setProperty('--app-height', `${height}px`)
-    }
-
-    setAppHeight()
-
-    window.visualViewport?.addEventListener('resize', setAppHeight)
-    window.visualViewport?.addEventListener('scroll', setAppHeight)
-    window.addEventListener('resize', setAppHeight)
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', setAppHeight)
-      window.visualViewport?.removeEventListener('scroll', setAppHeight)
-      window.removeEventListener('resize', setAppHeight)
-    }
-  }, [])
+  useAppHeight()
 
   return (
-    <ErrorBoundary name="root">
-      <Providers>
+    <Providers>
+      <ErrorBoundary name="root">
         <AppLayout>
           <AppRouter />
         </AppLayout>
-      </Providers>
-    </ErrorBoundary>
+      </ErrorBoundary>
+    </Providers>
   )
 }

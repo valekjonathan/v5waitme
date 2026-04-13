@@ -1,5 +1,4 @@
 const ALLOWED_EVENTS = new Set([
-  'APP_START',
   'LOGIN_CLICK',
   'LOGIN_SUCCESS',
   'PROFILE_REQUIRED',
