@@ -33,7 +33,7 @@ export default class ErrorBoundary extends React.Component {
         <div
           style={{
             display: 'flex',
-            minHeight: '100vh',
+            minHeight: 'var(--app-height)',
             width: '100%',
             alignItems: 'center',
             justifyContent: 'center',

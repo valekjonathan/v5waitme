@@ -1,16 +1,17 @@
+:root {
+  --app-height: 100vh;
+}
+
 html,
 body,
 #root {
-  height: 100%;
-}
-
-html,
-body {
-  overflow: hidden !important;
-}
-
-body {
+  height: var(--app-height);
   margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,45 +31,24 @@ body {
 }
 
 /**
- * LOCAL_DEV_MAC (Safari + `?iphone=true`): alinear letterbox con `colors.background` (#0B0B0F).
- * El marco del teléfono sigue siendo IphoneFrame; esto no afecta IOS_BETA_REAL (waitme-capacitor).
- *
- * Safari (sobre todo macOS) usa un layout viewport más alto que el visible; con solo `height: 100%`
- * el flex centraba el marco en una caja “invisible” y el frame quedaba recortado por arriba.
- * `100dvh` acota html/body/#root al viewport dinámico visible para centrar el marco completo.
+ * LOCAL_DEV_MAC (`?iphone=true`): letterbox al color de app. La altura real la fija `--app-height` (App.jsx).
  */
-html.waitme-iphone-preview {
-  overflow: hidden;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100dvh;
-}
-
 html.waitme-iphone-preview body {
   background: #0b0b0f;
-  height: 100%;
-}
-
-html.waitme-iphone-preview #root {
-  height: 100%;
 }
 
 #root {
-  margin: 0;
   display: flex;
   width: 100%;
-  height: 100%;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 /**
- * Capacitor (iPhone físico): cadena de altura útil real. Sin el centrado tipo “marco escritorio”
- * de body/#root. IphoneFrame añade esta clase en nativo; en nativo no envuelve en div extra.
+ * Capacitor: misma altura que el viewport real (`--app-height`); cadena flex para ScreenShell.
  */
 html.waitme-capacitor {
-  height: 100%;
+  height: var(--app-height);
   min-height: -webkit-fill-available;
 }
 
@@ -77,15 +57,15 @@ html.waitme-capacitor body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  min-height: 100%;
+  min-height: var(--app-height);
   min-height: -webkit-fill-available;
-  height: 100%;
+  height: var(--app-height);
 }
 
 html.waitme-capacitor #root {
   flex: 1;
   min-height: 0;
-  height: 100%;
+  height: var(--app-height);
   display: flex;
   flex-direction: column;
   align-items: stretch;
