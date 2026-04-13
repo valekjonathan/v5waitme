@@ -1,5 +1,5 @@
 /**
- * Puerto de desarrollo Vite fijo (:5173). Compartido por dev-ios, dev-web y dev-safari-live-reload.
+ * Puerto de desarrollo Vite fijo (:5173). Constante compartida con `waitme-local-iphone-preview.mjs` (URL canónica documentada).
  */
 import { execSync, spawnSync } from 'node:child_process'
 import net from 'node:net'

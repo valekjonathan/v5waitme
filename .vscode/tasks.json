@@ -15,24 +15,6 @@
       }
     },
     {
-      "label": "dev:ios",
-      "type": "shell",
-      "command": "npm run dev:ios",
-      "problemMatcher": [],
-      "runOptions": {
-        "instanceLimit": 1
-      }
-    },
-    {
-      "label": "vite:only",
-      "type": "shell",
-      "command": "npm run vite:only",
-      "problemMatcher": [],
-      "runOptions": {
-        "instanceLimit": 1
-      }
-    },
-    {
       "label": "quality",
       "type": "shell",
       "command": "npm run quality",
@@ -45,27 +27,9 @@
       "problemMatcher": []
     },
     {
-      "label": "cap:live:on",
-      "type": "shell",
-      "command": "npm run cap:live:on",
-      "problemMatcher": []
-    },
-    {
-      "label": "cap:live:off",
-      "type": "shell",
-      "command": "npm run cap:live:off",
-      "problemMatcher": []
-    },
-    {
       "label": "cap:sync:prod",
       "type": "shell",
       "command": "npm run cap:sync:prod",
-      "problemMatcher": []
-    },
-    {
-      "label": "ios:fresh:dev",
-      "type": "shell",
-      "command": "npm run ios:fresh:dev",
       "problemMatcher": []
     }
   ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * IPv4 LAN usable (10.x / 192.168.x) para Capacitor + Vite dev.
- * Exporta API para otros scripts; en CLI imprime la IP o líneas `--export-env`.
+ * IPv4 LAN usable (10.x / 192.168.x) para `VITE_DEV_LAN_ORIGIN` en preview web (OAuth desde móvil en la misma Wi‑Fi).
+ * En CLI: imprime la IP, o con `--export-env` líneas listas para copiar a `.env.local`.
  *
  * Override: CAP_LAN_IP=…  |  SKIP_LAN_PING=1
  */
@@ -88,7 +88,7 @@ export function pingLanHost(ip) {
     '  → Comprueba Wi‑Fi (Mac e iPhone en la misma red), firewall local, o ICMP bloqueado.'
   )
   console.error(
-    '  → Si la IP es correcta pero ICMP está bloqueado: SKIP_LAN_PING=1 npm run dev:ios'
+    '  → Si la IP es correcta pero ICMP está bloqueado: SKIP_LAN_PING=1 (y añade VITE_DEV_LAN_ORIGIN a mano en .env.local)'
   )
   console.error('  → Detalle:', detail.trim())
   return false
@@ -174,7 +174,7 @@ if (isCli) {
   if (args.includes('--export-env')) {
     const { ip, url } = resolveWaitmeLanDevOrExit()
     console.log(`WAITME_LAN_IP=${ip}`)
-    console.log(`WAITME_CAP_DEV_SERVER_URL=${url}`)
+    console.log(`VITE_DEV_LAN_ORIGIN=${url}`)
     process.exit(0)
   }
   const { ip } = resolveWaitmeLanDevOrExit()

@@ -2,8 +2,8 @@
  * LOCAL_DEV_MAC — única fuente de verdad para el preview tipo iPhone en Safari (Mac).
  *
  * No mezclar con:
- * - WEB_PREVIEW_CLOUD (Vercel): origen HTTPS público; `?iphone=true` opcional para demo.
- * - IOS_BETA_REAL (Capacitor): sin localhost; OAuth vía esquema nativo en auth.js.
+ * - App iOS instalada: carga solo `dist/` embebido (`npm run ios:embed:sync`), sin Vite ni localhost.
+ * - WEB_PREVIEW_CLOUD (Vercel): origen HTTPS público.
  *
  * URL final típica: http://localhost:5173/?iphone=true
  */

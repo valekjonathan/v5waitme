@@ -1,9 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 /**
- * Producción: solo bundle embebido (`webDir: dist`). No `server` aquí.
- * Live Reload LAN: `npm run cap:live:on` o `npm run dev:ios` inyectan `server.url` en
- * `ios/App/App/capacitor.config.json` tras `cap sync` (véase scripts/inject-ios-cap-dev-server.mjs).
+ * App nativa iOS: solo bundle estático embebido (`webDir: dist`).
+ * No `server`, no `server.url`, no live reload: el WKWebView carga `dist/` copiado en el proyecto Xcode.
+ * Flujo: `npm run ios:embed:sync` (build + `cap sync ios` sin variables de dev).
  */
 const config: CapacitorConfig = {
   appId: 'es.waitme.v5waitme',

@@ -1,6 +1,6 @@
 /**
  * Ngrok desde node_modules + token (.env.local / ngrok.yml).
- * Usado por `dev-ios.mjs` y `ngrok-public.mjs`. No invoca BrowserStack.
+ * Usado por `ngrok-public.mjs` y scripts de túnel. No invoca BrowserStack.
  */
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'

@@ -225,7 +225,7 @@ export default defineConfig(({ mode, command }) => {
         '.ngrok.app',
         '.trycloudflare.com',
       ],
-      /** HMR estable; sin overlay agresivo. Safari Mac preview: `npm run dev` abre `?iphone=true`. */
+      /** HMR estable; sin overlay agresivo. Preview Mac: abre manualmente `http://localhost:5173/?iphone=true`. */
       hmr: {
         overlay: false,
       },

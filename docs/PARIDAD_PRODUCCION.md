@@ -12,8 +12,8 @@
 | Qué | Dónde |
 |-----|--------|
 | `webDir`, `appId`, `appName` | `capacitor.config.ts` → `webDir: 'dist'`, `appId: 'es.waitme.v5waitme'`, `appName: 'WaitMe'` |
-| `server.url` (solo desarrollo) | Misma fuente: solo si **`WAITME_CAP_DEV_SERVER_URL`** está definida al ejecutar `npx cap sync` |
-| Generado para Xcode | `ios/App/App/capacitor.config.json` (sin `server` cuando el sync es de producción) |
+| `server` / live reload | **No** está en el repo: `capacitor.config.ts` solo define `webDir: 'dist'` |
+| Generado para Xcode | `ios/App/App/capacitor.config.json` (sin `server` tras `npm run ios:embed:sync`) |
 
 ## Flujos
 
