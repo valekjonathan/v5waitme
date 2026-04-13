@@ -6,7 +6,6 @@ import {
 } from '../lib/ProfileIncompleteNoticeContext.jsx'
 import ErrorBoundary from '../lib/ErrorBoundary.jsx'
 import { Providers } from './Providers.jsx'
-import { useAppHeight } from './useAppHeight.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
@@ -208,29 +207,9 @@ function isAuthReady(status, user, profileBootstrapReady) {
 }
 
 /**
- * Solo rutas / contenido (boot | login | main). Sin ScreenShell aquí: una sola instancia en `AppScreenShell`.
+ * Único `ScreenShell` + rutas: una sola lectura de auth/screen (sin duplicar lógica con otro componente).
  */
-function AppRoutes() {
-  const { user, status, profileBootstrapReady } = useAuth()
-
-  const authResolved = useMemo(
-    () => isAuthReady(status, user, profileBootstrapReady),
-    [status, user, profileBootstrapReady]
-  )
-
-  return (
-    <>
-      {!authResolved && <AuthBootScreen />}
-      {authResolved && !user && <LoginPage />}
-      {authResolved && user && <MainAppContent />}
-    </>
-  )
-}
-
-/**
- * Único `ScreenShell` del producto: bajo `AppLayout` (IphoneFrame), encima de `AppRoutes`.
- */
-function AppScreenShell() {
+function AppRoot() {
   const { user, status, profileBootstrapReady, isProfileComplete } = useAuth()
   const { screen } = useAppScreen()
 
@@ -302,20 +281,34 @@ function AppScreenShell() {
       style={shellConfig.style}
       contentStyle={shellConfig.contentStyle}
     >
-      <AppRoutes />
+      {!authResolved && <AuthBootScreen />}
+      {authResolved && !user && <LoginPage />}
+      {authResolved && user && <MainAppContent />}
     </ScreenShell>
   )
 }
 
 export default function App() {
-  useAppHeight()
+  useEffect(() => {
+    const setAppHeight = () => {
+      const h = window.visualViewport?.height || window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${h}px`)
+    }
+
+    setAppHeight()
+    window.addEventListener('resize', setAppHeight)
+    window.visualViewport?.addEventListener('resize', setAppHeight)
+
+    return () => {
+      window.removeEventListener('resize', setAppHeight)
+      window.visualViewport?.removeEventListener('resize', setAppHeight)
+    }
+  }, [])
 
   return (
     <Providers>
       <AppLayout>
-        <ErrorBoundary name="root">
-          <AppScreenShell />
-        </ErrorBoundary>
+        <AppRoot />
       </AppLayout>
     </Providers>
   )

@@ -1,5 +1,4 @@
-# BrowserStack y Percy: solo manual; requieren secretos en el repo.
-# Separado de ci.yml porque las condiciones `if: secrets.*` fallan la validación del workflow en GitHub.
+# BrowserStack y Percy: manual; requieren secretos.
 name: CI integrations
 
 on:
@@ -26,11 +25,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: E2E iPhone (BrowserStack Node SDK + browserstack.yml)
+      - name: E2E iPhone (BrowserStack)
         env:
           BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
           BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-        run: npm run test:e2e:browserstack
+        run: node scripts/run-browserstack-e2e.mjs
 
   percy:
     name: percy-visual
@@ -55,4 +54,4 @@ jobs:
       - name: Percy + Playwright (chromium)
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-        run: npx percy exec -- npm run test:percy
+        run: npx percy exec -- npx playwright test e2e/percy-snapshot.spec.ts --project=chromium

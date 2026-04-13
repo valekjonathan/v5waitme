@@ -161,35 +161,7 @@ export default defineConfig(({ mode, command }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
-    plugins: [
-      react(),
-      ...(command === 'serve'
-        ? [
-            {
-              name: 'waitme-dev-server-lan-log',
-              configureServer(server) {
-                server.httpServer?.once('listening', () => {
-                  if (process.env.WAITME_SKIP_VITE_LAN_LOG === '1') return
-                  const addr = server.httpServer?.address()
-                  const port = typeof addr === 'object' && addr && 'port' in addr ? addr.port : 5173
-                  const display =
-                    resolvedDevLanOrigin || (lanIpForDev ? `http://${lanIpForDev}:${port}` : '')
-                  if (display) {
-                    console.log(`\nRUNNING ON LAN: ${display}\n`)
-                  } else {
-                    console.warn(
-                      '\n[waitme] Sin IP LAN (10.x / 192.168.x). Define VITE_DEV_LAN_ORIGIN=http://<IP>:' +
-                        port +
-                        ' en .env.local\n'
-                    )
-                  }
-                })
-              },
-            },
-          ]
-        : []),
-      ...sentryPlugins,
-    ],
+    plugins: [react(), ...sentryPlugins],
     optimizeDeps: {
       include: ['mapbox-gl'],
     },

@@ -1,6 +1,4 @@
 # Push/PR a main: quality-gate completo + E2E Playwright.
-# quality = STATE_OF_APP + lint + test + test:ui + vite build (sin depender de secrets).
-# Nota: GitHub rechaza `secrets` dentro de `if:` en este workflow; Sentry opcional vía shell.
 name: CI
 
 on:
@@ -25,7 +23,6 @@ jobs:
     timeout-minutes: 25
     env:
       NODE_OPTIONS: --max-old-space-size=8192
-      # Misma variable que Vite/.env: el servidor E2E debe tener token para Mapbox Search (smoke.spec).
       VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
     steps:
       - name: Checkout
@@ -38,9 +35,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
-
-      - name: Lint (fast fail)
-        run: npm run lint
 
       - name: Quality gate
         run: npm run quality 2>&1 | tee quality-ci.log
@@ -57,7 +51,7 @@ jobs:
         run: npx playwright install --with-deps chromium webkit
 
       - name: E2E tests (Chromium + WebKit)
-        run: npm run test:e2e
+        run: npx playwright test
 
       - name: Sentry smoke (optional)
         env:
@@ -67,4 +61,4 @@ jobs:
             echo "Sentry smoke skipped (no VITE_SENTRY_DSN secret)."
             exit 0
           fi
-          npm run test:sentry
+          npx playwright test e2e/sentry-smoke.spec.ts --project=chromium

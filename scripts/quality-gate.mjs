@@ -362,34 +362,36 @@ function runStateOfApp() {
   }
 }
 
-function runNpm(script) {
+/** Sin `npm run lint|test|…` en package.json: comandos directos (scripts mínimos: dev/build/preview/quality). */
+function runShell(label, cmd) {
   console.error(SEP)
-  console.error(`[quality-gate] npm run ${script}`)
+  console.error(`[quality-gate] ${label}`)
   console.error(SEP)
-  const r = spawnSync('npm', ['run', script], {
+  const r = spawnSync(cmd, {
     stdio: 'inherit',
     cwd: root,
+    shell: true,
     env: process.env,
   })
   if (r.status !== 0) {
     console.error('')
-    console.error(`[quality-gate] ESTADO: ERROR (falló npm run ${script})`)
+    console.error(`[quality-gate] ESTADO: ERROR (${label})`)
     process.exit(r.status ?? 1)
   }
 }
 
-function runNpmBuild() {
+function runViteBuild() {
   console.error(SEP)
-  console.error('[quality-gate] npm run build (env Supabase rellenado si falta)')
+  console.error('[quality-gate] vite build (env Supabase rellenado si falta)')
   console.error(SEP)
-  const r = spawnSync('npm', ['run', 'build'], {
+  const r = spawnSync('npx', ['vite', 'build'], {
     stdio: 'inherit',
     cwd: root,
     env: envWithBuildPlaceholders(),
   })
   if (r.status !== 0) {
     console.error('')
-    console.error('[quality-gate] ESTADO: ERROR (falló npm run build)')
+    console.error('[quality-gate] ESTADO: ERROR (vite build)')
     process.exit(r.status ?? 1)
   }
 }
@@ -410,12 +412,12 @@ function main() {
 
   runStateOfApp()
 
-  runNpm('lint')
-  runNpm('knip')
-  runNpm('test')
-  runNpm('test:ui')
+  runShell('eslint + tsc', 'npx eslint . --max-warnings 0 && npx tsc --noEmit')
+  runShell('knip', 'npx knip --include files,dependencies,unlisted --no-config-hints')
+  runShell('node:test', 'node --test "test/*.test.js"')
+  runShell('vitest', 'npx vitest run')
 
-  runNpmBuild()
+  runViteBuild()
 
   console.error(SEP)
   console.error('[quality-gate] ESTADO: OK')

@@ -1,9 +1,9 @@
 /**
- * Altura global: solo `--app-height` (escribe `useAppHeight.js` vía `App.jsx`).
- * Fallback inicial antes del primer frame JS: 100vh solo en :root.
+ * Altura: `--app-height` (escribe `App.jsx` al montar y en resize/visualViewport).
+ * Fallback antes del primer frame JS: 100dvh (no 100vh).
  */
 :root {
-  --app-height: 100vh;
+  --app-height: 100dvh;
 }
 
 html,
@@ -35,7 +35,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/** LOCAL_DEV_MAC: preview `?iphone=true` — centrar marco; letterbox #0b0b0f (IphoneFrame pone el atributo). */
+/** Preview Mac `?iphone=true` — centrado letterbox (IphoneFrame fija `data-waitme-preview`). */
 html[data-waitme-preview='iphone'] body {
   align-items: center;
   justify-content: center;
@@ -55,7 +55,7 @@ html[data-waitme-preview='iphone'] #root {
   justify-content: center;
 }
 
-/** Capacitor: cadena flex; misma `--app-height` que web/PWA. */
+/** Capacitor: cadena flex; misma `--app-height`. */
 html[data-waitme-runtime='capacitor'] {
   height: var(--app-height);
   min-height: -webkit-fill-available;

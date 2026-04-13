@@ -1,9 +1,9 @@
 #!/bin/sh
-# Instalado por scripts/ensure-git-hooks.mjs (npm install / prepare)
-# Rápido: lint + test + build-check (Vite minify off; no quality completo).
+# Instalado por scripts/ensure-git-hooks.mjs si ejecutas ensure-git-hooks manualmente.
+# Rápido: lint + test + build-check (sin quality completo).
 set -e
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT" || exit 1
-npm run lint
-npm run test
-npm run build:check
+npx eslint . --max-warnings 0 && npx tsc --noEmit
+node --test "test/*.test.js"
+node scripts/build-check.mjs

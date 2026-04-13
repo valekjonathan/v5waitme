@@ -4,6 +4,9 @@
   "project": ["src/**/*.{js,jsx,ts,tsx}"],
   "ignore": ["src/vite-env.d.ts"],
   "ignoreDependencies": [
+    "ngrok",
+    "prettier",
+    "supabase",
     "browserstack-node-sdk",
     "@vitest/coverage-v8",
     "@babel/preset-react",

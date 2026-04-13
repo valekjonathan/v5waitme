@@ -23,13 +23,13 @@
     {
       "label": "test:e2e",
       "type": "shell",
-      "command": "npm run test:e2e",
+      "command": "npx playwright test",
       "problemMatcher": []
     },
     {
-      "label": "cap:sync:prod",
+      "label": "cap:sync",
       "type": "shell",
-      "command": "npm run cap:sync:prod",
+      "command": "npm run build && npx cap sync ios",
       "problemMatcher": []
     }
   ]
