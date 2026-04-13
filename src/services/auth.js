@@ -9,6 +9,35 @@ const viteEnv = typeof import.meta !== 'undefined' && import.meta.env != null ? 
 const isViteProd = viteEnv.PROD === true
 
 /**
+ * OAuth en app Capacitor debe usar SIEMPRE `redirectTo` nativo + ASWebAuthenticationSession / deep link.
+ * Si `Capacitor.isNativePlatform()` devuelve false (p. ej. bridge aún no expuesto en WKWebView) pero el
+ * documento sigue siendo `capacitor://` / `ionic://`, el cliente caía en flujo web: `window.location.assign`
+ * (GoTrue) + `redirectTo` tipo localhost → pantalla en blanco "localhost" en el iPhone.
+ *
+ * @param {{ isNativePlatform?: () => boolean, hasNativeBridge?: boolean, locationProtocol?: string }} [signals] solo tests
+ * @returns {boolean}
+ */
+export function shouldUseNativeOAuthFlow(signals) {
+  if (signals) {
+    if (signals.isNativePlatform?.()) return true
+    if (signals.hasNativeBridge) return true
+    const p = String(signals.locationProtocol || '').toLowerCase()
+    return p === 'capacitor:' || p === 'ionic:'
+  }
+  if (typeof window === 'undefined') return false
+  const win = window
+  /** Misma señal que `@capacitor/core` usa para iOS/Android frente a `web`. */
+  if (win.androidBridge || win.webkit?.messageHandlers?.bridge) return true
+  try {
+    if (Capacitor.isNativePlatform()) return true
+  } catch {
+    /* */
+  }
+  const p = String(win.location?.protocol || '').toLowerCase()
+  return p === 'capacitor:' || p === 'ionic:'
+}
+
+/**
  * URL absoluta de retorno OAuth en navegador (PKCE). Una sola fuente de verdad para `redirectTo`.
  *
  * - Producción / staging / túnel: `window.location.origin` (HTTPS u origen real de la pestaña).
@@ -305,15 +334,14 @@ export async function signInWithGoogle() {
     return { data: null, error: new Error('supabase_not_configured') }
   }
   try {
-    const isNative =
-      typeof window !== 'undefined' && Capacitor.isNativePlatform()
+    const useNativeOAuth = shouldUseNativeOAuthFlow()
     /**
      * Nativo (iOS/Android): `redirectTo` fijo al custom scheme; nunca localhost/origen web.
      * Web: debe ser un HTTPS (u origen dev) registrado en Supabase → Redirect URLs; el esquema app no aplica en el navegador.
      * iOS: `skipBrowserRedirect: true` + WaitmeWebAuth (ASWebAuthenticationSession).
      * Android: `Browser.open` + deep link.
      */
-    const redirectTo = isNative
+    const redirectTo = useNativeOAuth
       ? NATIVE_OAUTH_REDIRECT_URL
       : typeof window !== 'undefined'
         ? resolveWebOAuthRedirectTo({
@@ -327,21 +355,27 @@ export async function signInWithGoogle() {
       provider: 'google',
       options: {
         redirectTo,
-        skipBrowserRedirect: isNative,
+        skipBrowserRedirect: useNativeOAuth,
       },
     })
     if (error) {
       console.error('[WaitMe][Auth] signInWithGoogle', error.message, error)
       return { data: null, error }
     }
-    if (isNative && data?.url) {
+    if (useNativeOAuth && data?.url) {
       const oauthOpenUrl = String(data.url).trim()
       const check = validateNativeOAuthAuthorizeUrl(oauthOpenUrl, SUPABASE_PROJECT_URL)
       if (!check.ok) {
         console.error('[WaitMe][Auth] OAuth URL inválida para nativo:', check.message)
         return { data: null, error: new Error(check.message) }
       }
-      if (Capacitor.getPlatform() === 'ios') {
+      /**
+       * Android: Custom Tabs + deep link. iOS (incl. si `getPlatform()` devolviera `web` en WKWebView):
+       * ASWebAuthenticationSession vía WaitmeWebAuth; no usar `Browser.open` en iOS (evita flujo distinto).
+       */
+      if (Capacitor.getPlatform() === 'android') {
+        await Browser.open({ url: oauthOpenUrl })
+      } else {
         const { callbackUrl } = await WaitmeWebAuth.start({
           url: oauthOpenUrl,
           callbackScheme: 'es.waitme.v5waitme',
@@ -354,8 +388,6 @@ export async function signInWithGoogle() {
         if (!iosSession?.user) {
           return { data: null, error: new Error('oauth_session_missing') }
         }
-      } else {
-        await Browser.open({ url: oauthOpenUrl })
       }
     }
     return {

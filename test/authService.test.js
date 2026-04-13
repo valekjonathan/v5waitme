@@ -5,6 +5,7 @@ import {
   getSession,
   isNativeOAuthCallbackUrl,
   resolveWebOAuthRedirectTo,
+  shouldUseNativeOAuthFlow,
   signInWithGoogle,
   signOut,
 } from '../src/services/auth.js'
@@ -83,5 +84,46 @@ test('resolveWebOAuthRedirectTo: dev loopback sin LAN cae en origen actual', () 
       devLanOrigin: '',
     }),
     'http://127.0.0.1:5173/auth/callback'
+  )
+})
+
+test('shouldUseNativeOAuthFlow: true si isNativePlatform() es true', () => {
+  assert.equal(
+    shouldUseNativeOAuthFlow({
+      isNativePlatform: () => true,
+      locationProtocol: 'http:',
+    }),
+    true
+  )
+})
+
+test('shouldUseNativeOAuthFlow: true si protocolo capacitor: (WKWebView aunque falle el bridge)', () => {
+  assert.equal(
+    shouldUseNativeOAuthFlow({
+      isNativePlatform: () => false,
+      locationProtocol: 'capacitor:',
+    }),
+    true
+  )
+})
+
+test('shouldUseNativeOAuthFlow: false en navegador https normal', () => {
+  assert.equal(
+    shouldUseNativeOAuthFlow({
+      isNativePlatform: () => false,
+      locationProtocol: 'https:',
+    }),
+    false
+  )
+})
+
+test('shouldUseNativeOAuthFlow: true si hay puente nativo (misma heurística que Capacitor core)', () => {
+  assert.equal(
+    shouldUseNativeOAuthFlow({
+      isNativePlatform: () => false,
+      hasNativeBridge: true,
+      locationProtocol: 'https:',
+    }),
+    true
   )
 })
