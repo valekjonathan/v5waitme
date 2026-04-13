@@ -17,7 +17,6 @@ import Button from '../ui/Button'
 import { colors } from '../design/colors'
 import { APP_SCREEN_PROFILE, APP_SCREEN_REVIEWS } from '../lib/appScreenState.js'
 
-const fade200Style = { transition: 'opacity 200ms ease-out' }
 const homeGateStyle = { height: '100%', width: '100%' }
 
 const modalOverlayStyle = {
@@ -130,14 +129,12 @@ function HomeActionGate({ children }) {
   )
 }
 
-function AuthenticatedShellWithBoundary({ opacity, children }) {
+function AuthenticatedShellWithBoundary({ children }) {
   const { screen } = useAppScreen()
   return (
-    <div style={{ ...fade200Style, opacity }}>
-      <ErrorBoundary resetKeys={[screen]} name="shell">
-        {children}
-      </ErrorBoundary>
-    </div>
+    <ErrorBoundary resetKeys={[screen]} name="shell">
+      {children}
+    </ErrorBoundary>
   )
 }
 
@@ -178,18 +175,18 @@ function AuthBootScreen() {
   )
 }
 
-function computeTargetView(status, user, profileBootstrapReady) {
-  if (status === 'loading') return 'loading'
-  if (status === 'authenticated' && user && !profileBootstrapReady) return 'loading'
-  if (!user || status === 'unauthenticated') return 'login'
-  return 'authenticated'
+/**
+ * Auth resuelto para pintar UI distinta de "Cargando…": sesión conocida y, si hay usuario, perfil bootstrap listo.
+ * No usar solo `user` en el primer render: `null` es válido para "sin sesión" tras resolver.
+ */
+function isAuthUiReady(status, user, profileBootstrapReady) {
+  if (status === 'loading') return false
+  if (status === 'authenticated' && user && !profileBootstrapReady) return false
+  return true
 }
 
 function AppGate() {
   const { status, user, profileBootstrapReady, isProfileComplete } = useAuth()
-  const [displayedView, setDisplayedView] = useState('loading')
-  const [opacity, setOpacity] = useState(1)
-  const [targetView, setTargetView] = useState('loading')
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false)
 
   const noticeValue = useMemo(
@@ -199,42 +196,35 @@ function AppGate() {
     []
   )
 
-  useEffect(() => {
-    const next = computeTargetView(status, user, profileBootstrapReady)
-    setTargetView(next)
-  }, [status, user, profileBootstrapReady])
-
-  useEffect(() => {
-    if (displayedView === targetView) return
-    setOpacity(0)
-    const swapTimer = setTimeout(() => {
-      setDisplayedView(targetView)
-      setOpacity(1)
-    }, 200)
-    return () => clearTimeout(swapTimer)
-  }, [displayedView, targetView])
-
   const closeIncompleteModal = useCallback(() => setIncompleteModalOpen(false), [])
 
+  const authUiReady = useMemo(
+    () => isAuthUiReady(status, user, profileBootstrapReady),
+    [status, user, profileBootstrapReady]
+  )
+
+  const showLogin = authUiReady && (!user || status === 'unauthenticated')
+  const showAuthenticated = authUiReady && Boolean(user) && status === 'authenticated'
+
   /**
-   * Un solo `AppLayout` (IphoneFrame) para loading / login / autenticado: evita desmontar el marco
-   * y el árbol bajo ScreenShell en la transición OAuth → home (WKWebKit / hit-test).
+   * Un solo `AppLayout` (IphoneFrame): no se desmonta. Los hijos cambian sin `displayedView`/opacity
+   * retardado (evita doble fase de render y problemas de hit-test en WKWebView).
    */
   return (
     <AppScreenProvider>
       <AppLayout>
-        {displayedView === 'loading' ? (
+        {!authUiReady ? (
           <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
             <AuthBootScreen />
           </ScreenShell>
-        ) : displayedView === 'login' ? (
-          <div style={{ ...fade200Style, opacity, height: '100%', width: '100%' }}>
+        ) : showLogin ? (
+          <div style={{ height: '100%', width: '100%', minHeight: '100%' }}>
             <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
               <LoginPage />
             </ScreenShell>
           </div>
-        ) : (
-          <AuthenticatedShellWithBoundary opacity={opacity}>
+        ) : showAuthenticated ? (
+          <AuthenticatedShellWithBoundary>
             <ProfileIncompleteNoticeProvider value={noticeValue}>
               <IncompleteProfileModalHost
                 open={incompleteModalOpen}
@@ -243,6 +233,10 @@ function AppGate() {
               {!isProfileComplete ? <ProfilePage /> : <AuthenticatedMainChrome />}
             </ProfileIncompleteNoticeProvider>
           </AuthenticatedShellWithBoundary>
+        ) : (
+          <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
+            <AuthBootScreen />
+          </ScreenShell>
         )}
       </AppLayout>
     </AppScreenProvider>

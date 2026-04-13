@@ -1,6 +1,6 @@
 === STATE_OF_APP v1 ===
-Generated: 2026-04-13T14:03:23.355Z
-Git HEAD: 5a74c0c6f8b113f6f3c95a7b948cdaf2c13f3a97
+Generated: 2026-04-13T14:48:48.707Z
+Git HEAD: d2eb1ba100455b4549e06f0d24956b8f053c7674
 
 === ESTRUCTURA (árbol, raíz del repo; carpetas pesadas omitidas) ===
 browserstack.config.cjs
