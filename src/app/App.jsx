@@ -183,7 +183,7 @@ function Boot() {
   )
 }
 
-function LoginShell() {
+function Login() {
   return (
     <div style={{ height: '100%', width: '100%', minHeight: '100%' }}>
       <ScreenShell interactive={false} mainMode={SCREEN_SHELL_MAIN_MODE.FULL_BLEED}>
@@ -233,13 +233,37 @@ function AppGate() {
     [status, user, profileBootstrapReady]
   )
 
-  const showMain = authReady && Boolean(user) && status === 'authenticated'
+  useEffect(() => {
+    console.log('[APP MOUNT]')
+  }, [])
+
+  useEffect(() => {
+    console.log('[AUTH]', status, user)
+  }, [status, user])
+
+  useEffect(() => {
+    const handler = (e) => {
+      console.log('[CLICK]', e.target)
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [])
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      console.log(
+        '[TOP]',
+        document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)
+      )
+    }, 1500)
+    return () => window.clearTimeout(t)
+  }, [])
 
   return (
     <AppScreenProvider>
       <AppLayout>
         {!authReady && <Boot />}
-        {authReady && (showMain ? <MainApp /> : <LoginShell />)}
+        {authReady && (user ? <MainApp /> : <Login />)}
       </AppLayout>
     </AppScreenProvider>
   )

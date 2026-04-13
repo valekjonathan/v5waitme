@@ -8,11 +8,27 @@ import { platform } from 'node:process'
 export const VITE_DEV_PORT = 5173
 
 /**
+ * Antes de arrancar Vite: mata listeners TCP en `port` (SIGKILL vía pipeline).
+ * macOS/Linux: `lsof -ti :port | xargs kill -9`. Windows: no-op.
+ */
+export function killPort(port) {
+  if (platform === 'win32') return
+  try {
+    execSync(`lsof -ti :${port} | xargs kill -9`, { stdio: 'ignore', shell: '/bin/sh' })
+  } catch {
+    /* sin procesos o lsof falló */
+  }
+}
+
+/**
  * Mata procesos que escuchan en TCP :5173 (p. ej. Vite colgado) y espera a que el puerto quede libre.
  * macOS/Linux: `lsof`. En Windows no-op: el arranque fallará con EADDRINUSE si sigue ocupado.
  */
 export async function ensurePort5173Free() {
   if (platform === 'win32') return
+
+  killPort(VITE_DEV_PORT)
+  await new Promise((r) => setTimeout(r, 100))
 
   const killListeners = (signal) => {
     try {

@@ -134,6 +134,10 @@ function overlayLayerStyle(background) {
  * @param {boolean} [props.loginEntrance]
  */
 export default function MainLayout({ children = null, loginEntrance = false }) {
+  useEffect(() => {
+    console.log('[LAYOUT]')
+  }, [])
+
   const hasCta = children != null
   const [loginHeroIn, setLoginHeroIn] = useState(!loginEntrance)
   const [loginCtaIn, setLoginCtaIn] = useState(!loginEntrance)
