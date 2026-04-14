@@ -234,7 +234,7 @@ function checkLikelyUnimportedJsxModules() {
     'Switch.jsx',
     'Header.jsx',
     'BottomNav.jsx',
-    'IphoneFrame.jsx',
+    'DevViewport.jsx',
   ])
 
   for (const file of files) {

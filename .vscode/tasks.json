@@ -15,6 +15,15 @@
       }
     },
     {
+      "label": "dev:public",
+      "type": "shell",
+      "command": "npm run dev:public",
+      "problemMatcher": [],
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
       "label": "quality",
       "type": "shell",
       "command": "npm run quality",
@@ -27,9 +36,15 @@
       "problemMatcher": []
     },
     {
-      "label": "cap:sync",
+      "label": "ios:embed:sync",
       "type": "shell",
-      "command": "npm run build && npx cap sync ios",
+      "command": "npm run ios:embed:sync",
+      "problemMatcher": []
+    },
+    {
+      "label": "ios:embed:sync:clean",
+      "type": "shell",
+      "command": "npm run ios:embed:sync:clean",
       "problemMatcher": []
     }
   ]

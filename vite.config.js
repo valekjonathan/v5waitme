@@ -197,7 +197,7 @@ export default defineConfig(({ mode, command }) => {
         '.ngrok.app',
         '.trycloudflare.com',
       ],
-      /** HMR estable; sin overlay agresivo. Preview Mac: abre manualmente `http://localhost:5173/?iphone=true`. */
+      /** HMR estable; sin overlay agresivo. Preview Mac: flujo oficial en `http://localhost:5173/`. */
       hmr: {
         overlay: false,
       },

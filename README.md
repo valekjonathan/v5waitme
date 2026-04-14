@@ -6,8 +6,9 @@ WaitMe v5 — React 19 + Vite 8. Contrato de layout: `src/ui/layout/layout.ts`, 
 
 | Modo | Qué es | Comando / URL |
 |------|--------|----------------|
-| **Preview web (Mac)** | Vite en caliente; abre manualmente Safari (o el navegador) en **`http://localhost:5173/?iphone=true`** (marco `IphoneFrame`) | `npm run dev` |
-| **App iOS real** | `dist/` copiado dentro del proyecto Xcode; **sin** servidor de desarrollo, **sin** `server.url` | `npm run build && npx cap sync ios` → instalar desde Xcode / TestFlight |
+| **Preview web Jonathan (Mac)** | `npm run dev` abre Safari automáticamente en **`http://localhost:5173/`** con viewport iPhone dev fijo y centrado | `npm run dev` |
+| **Preview live iPhone fuera de casa** | `npm run dev:public` expone el localhost real por HTTPS temporal vía Cloudflare Quick Tunnel | `npm run dev:public` |
+| **App iOS real (fuente de verdad móvil)** | bundle web embebido en el proyecto iOS del repo, con auth nativa por deep link y sin `server.url` | `npm run ios:embed:sync` → instalar desde Xcode / TestFlight |
 
 La app nativa **no** usa localhost ni el Mac: embebe solo archivos estáticos tras `vite build`.
 
@@ -18,11 +19,11 @@ npm install
 npm run dev
 ```
 
-**Preview:** con el servidor en marcha, abre **`http://localhost:5173/?iphone=true`** en Safari.
+**Preview Jonathan:** `npm run dev` abre Safari automáticamente en **`http://localhost:5173/`**. El viewport iPhone dev en Mac queda fijo para Jonathan y no vuelve al ancho normal.
 
-**iOS (IPA / dispositivo):** `npm run build && npx cap sync ios` y abre `ios/` en Xcode. No hay live reload ni `server.url` en este flujo.
+**iOS (IPA / dispositivo):** `npm run ios:embed:sync` y abre `ios/` en Xcode. No hay live reload, no hay `server.url` y la referencia móvil seria ya no depende de PWA/Añadir a inicio.
 
-**Web pública (Mac apagado):** deploy en Vercel. PWA: `public/manifest.json` + meta en `index.html`.
+**Web pública estable:** deploy en Vercel. Mantiene la demo web; no sustituye la validación nativa iOS.
 
 **Índice:** [docs/FLUJO_JONATHAN.md](docs/FLUJO_JONATHAN.md).
 

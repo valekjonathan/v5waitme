@@ -3,11 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "App: Providers→AppLayout(IphoneFrame)→ScreenShell→rutas. Dev: vite :5173 → http://localhost:5173/?iphone=true. Quality: npm run quality.",
+  "description": "App: Providers→AppLayout(DevViewport en dev web)→ScreenShell→rutas. Dev Jonathan: Safari siempre abre http://localhost:5173/ en viewport iPhone. Quality: npm run quality.",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-open-safari.mjs",
+    "dev:raw": "vite",
+    "dev:public": "node scripts/cloudflare-quick-tunnel.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "ios:embed:sync": "node scripts/cap-sync-production.mjs",
+    "ios:embed:sync:clean": "node scripts/cap-sync-ios-clean.mjs",
     "quality": "node scripts/quality-gate.mjs"
   },
   "dependencies": {

@@ -17,22 +17,29 @@
 
 ## Flujos
 
-### A) Safari Mac = URL HTTPS real
+### A) Safari Mac = viewport dev estable para iterar
+
+1. `npm run dev`
+2. Safari abre `http://localhost:5173/` con viewport iPhone dev fijo y centrado.
+3. Esto sirve para iterar rápido en Mac; no sustituye la validación nativa iOS.
+
+### B) Web estable = URL HTTPS real
 
 1. Despliega el resultado de **`npm run build`** (carpeta `dist/`) en tu hosting (p. ej. flujo descrito en [STAGING_VERCEL.md](./STAGING_VERCEL.md) o producción en tu proveedor).
 2. Abre en Safari la **URL HTTPS** de ese despliegue. Esa es la referencia web estable.
 
-### B) iPhone = bundle embebido
+### C) iPhone = bundle embebido nativo
 
 1. **No** definas `WAITME_CAP_DEV_SERVER_URL`.
 2. Ejecuta **`npm run ios:embed:sync`** (o **`npm run cap:sync:prod`**, equivalente): build web + `cap sync ios` con entorno limpio.
 3. En Xcode: **Product → Archive** y distribución (TestFlight / Ad Hoc) según tu cuenta de desarrollador.
 
-### C) Comparar “lo mismo” en los dos lados
+### D) Comparar “lo mismo” en los dos lados
 
-- **Safari:** build de producción en **HTTPS**.
-- **iPhone:** mismo commit / mismo `npm run build` embebido con sync de producción.  
-No compares localhost con TestFlight.
+- **Safari Mac:** localhost con viewport iPhone dev para iterar.
+- **Web estable:** build de producción en **HTTPS**.
+- **iPhone real:** mismo commit / mismo `npm run build` embebido con sync de producción.
+No uses PWA/Añadir a inicio como referencia principal para auth/layout móvil.
 
 ## TestFlight (honesto)
 
