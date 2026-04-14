@@ -291,7 +291,12 @@ function AppRoot() {
 export default function App() {
   useEffect(() => {
     const setAppHeight = () => {
-      const h = window.visualViewport?.height || window.innerHeight
+      // En iOS standalone (PWA instalada / A2HS), `visualViewport.height` puede ser más pequeño y recortar chrome fijo.
+      // En navegador normal, `visualViewport` mejora el comportamiento con barras dinámicas.
+      const isStandalone =
+        window.matchMedia?.('(display-mode: standalone)')?.matches === true ||
+        window.navigator?.standalone === true
+      const h = isStandalone ? window.innerHeight : window.visualViewport?.height || window.innerHeight
       document.documentElement.style.setProperty('--app-height', `${h}px`)
     }
 

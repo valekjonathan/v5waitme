@@ -12,14 +12,30 @@ const FRAME_W = 390
 const FRAME_H = 844
 const VIEW_PAD = 28
 
-function readIphonePreviewQuery() {
-  if (typeof window === 'undefined') return false
+export function isStandaloneDisplayMode(win) {
+  if (!win) return false
   try {
-    const v = new URLSearchParams(window.location.search).get('iphone')
+    if (win.matchMedia?.('(display-mode: standalone)')?.matches) return true
+  } catch {
+    /* */
+  }
+  // Safari iOS legacy (A2HS) expone este flag fuera de matchMedia.
+  return win.navigator?.standalone === true
+}
+
+export function shouldEnableIphonePreview(search, standaloneMode) {
+  if (standaloneMode) return false
+  try {
+    const v = new URLSearchParams(String(search || '')).get('iphone')
     return v === 'true' || v === '1'
   } catch {
     return false
   }
+}
+
+function readIphonePreviewQuery() {
+  if (typeof window === 'undefined') return false
+  return shouldEnableIphonePreview(window.location.search, isStandaloneDisplayMode(window))
 }
 
 function readScale() {
