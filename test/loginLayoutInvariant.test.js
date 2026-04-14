@@ -71,6 +71,12 @@ test('HomeLoginScene: hero WaitMe!->subtítulo + pin; HomePage delega en HomeLog
   )
   assert.match(main, /<CenterPin\s*\/>/)
   assert.match(main, /\{hasCta \?/)
+  assert.match(main, /const\s+contentViewportStyle\s*=\s*\{[\s\S]*pointerEvents:\s*'auto'/)
+  assert.doesNotMatch(
+    main,
+    /const\s+contentViewportStyle\s*=\s*\{[\s\S]*position:\s*'absolute'[\s\S]*inset:\s*0/
+  )
+  assert.doesNotMatch(main, /const\s+centeredLayerStyle\s*=\s*\{[\s\S]*pointerEvents:\s*'none'/)
 })
 
 test('HomePage: sin UI de alertas', () => {

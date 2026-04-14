@@ -39,19 +39,17 @@ const centeredLayerStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  /** Contenedor de centrado: sin captura; la columna lleva `auto`. */
-  pointerEvents: 'none',
 }
+const contentColumnMaxWidth = 340
 const contentViewportStyle = {
-  position: 'absolute',
-  inset: 0,
-  zIndex: LAYOUT.z.content,
+  width: '100%',
+  maxWidth: contentColumnMaxWidth + LAYOUT.spacing.xl * 2,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  overflow: 'visible',
   padding: `0 ${LAYOUT.spacing.xl}px`,
-  pointerEvents: 'none',
+  boxSizing: 'border-box',
+  pointerEvents: 'auto',
 }
 const contentColumnStyle = {
   /** Columna interactiva; el resto del centeredLayer pasa el toque al mapa. */
@@ -61,7 +59,7 @@ const contentColumnStyle = {
   display: 'flex',
   height: '100%',
   width: '100%',
-  maxWidth: 340,
+  maxWidth: contentColumnMaxWidth,
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
