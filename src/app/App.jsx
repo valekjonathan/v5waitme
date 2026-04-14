@@ -11,7 +11,7 @@ import HomePage from '../features/home/components/HomePage'
 import ProfilePage from '../features/profile/components/ProfilePage'
 import ReviewsPage from '../features/reviews/pages/ReviewsPage'
 import LoginPage from '../features/auth/components/LoginPage'
-import IphoneFrame from '../ui/IphoneFrame'
+import DevViewport from '../ui/DevViewport.jsx'
 import ScreenShell from '../ui/layout/ScreenShell'
 import { SCREEN_SHELL_MAIN_MODE } from '../ui/layout/layout'
 import { profileReviewsShellContentStyle } from '../features/shared/layout/ProfileReviewsLayout'
@@ -143,7 +143,7 @@ function AuthenticatedShellWithBoundary({ children }) {
 }
 
 function AppLayout({ children }) {
-  return <IphoneFrame>{children}</IphoneFrame>
+  return <DevViewport>{children}</DevViewport>
 }
 
 /** Home: fullBleed bajo el ScreenShell global. Perfil/reseñas: solo contenido (mismo shell). */

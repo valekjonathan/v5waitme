@@ -1,6 +1,6 @@
 /**
  * Contrato maestro de layout (v5waitme).
- * Jerarquía: App (`AppLayout` = IphoneFrame) → ScreenShell (Header + main + BottomNav) → rutas.
+ * Jerarquía: App (`AppLayout` = DevViewport solo en dev web) → ScreenShell (Header + main + BottomNav) → rutas.
  * En modo inset, el padding del `<main>` usa las alturas **medidas** de Header/BottomNav (ver ScreenShell).
  */
 import type { CSSProperties } from 'react'

@@ -35,10 +35,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/** Preview Mac `?iphone=true` — centrado letterbox (IphoneFrame fija `data-waitme-preview`). */
-html[data-waitme-preview='iphone'] body {
+/** Dev web en Mac: viewport de 390px, centrado, sin marcos falsos. */
+html[data-waitme-dev-viewport='ios'] body {
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   background: #0b0b0f;
 }
 
@@ -50,9 +50,9 @@ html[data-waitme-preview='iphone'] body {
   justify-content: flex-start;
 }
 
-html[data-waitme-preview='iphone'] #root {
+html[data-waitme-dev-viewport='ios'] #root {
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 /** Capacitor: cadena flex; misma `--app-height`. */

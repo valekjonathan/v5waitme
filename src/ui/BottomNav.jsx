@@ -45,7 +45,7 @@ const BottomNav = forwardRef(function BottomNav({ interactive = true }, ref) {
       style={{
         /** Mismo contrato que Header: barra fija no debe tapar CTAs del login cuando interactive=false. */
         pointerEvents: interactive ? 'auto' : 'none',
-        position: 'fixed',
+        position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,

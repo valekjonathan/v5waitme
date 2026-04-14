@@ -13,6 +13,7 @@ const shellRootStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
+  position: 'relative',
   ...(Capacitor.isNativePlatform()
     ? { flex: 1, height: 'auto', width: '100%' }
     : { height: '100%' }),
